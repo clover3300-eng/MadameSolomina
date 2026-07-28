@@ -1,0 +1,759 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Сайдбар · мокапы редизайна (второй уровень «Портфелей»)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+       --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+       --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding:44px 0 90px;-webkit-font-smoothing:antialiased}
+.page{width:1440px;max-width:100%;margin:0 auto;padding:0 20px}
+
+/* ---------- документ ---------- */
+.doc-h{margin-bottom:34px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-acc);margin-bottom:9px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;text-wrap:balance;max-width:1000px}
+.doc-h p{margin-top:12px;font-size:15px;line-height:1.6;color:var(--doc-mut);max-width:880px}
+.verdict{margin-top:20px;display:flex;gap:14px;align-items:flex-start;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid var(--doc-acc);border-radius:14px;padding:16px 20px;max-width:960px}
+.verdict b{font-weight:700;color:var(--doc-ink)}
+.verdict p{margin:0;font-size:14.5px;line-height:1.6;color:var(--doc-quote)}
+.verdict p+p{margin-top:10px}
+
+.mk{margin-top:52px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.warn{background:rgba(217,119,6,.14);color:#c2760a}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-tag.ok{background:rgba(22,163,74,.15);color:#16a34a}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.6;max-width:960px;margin-bottom:18px}
+.notes{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 26px}
+.note{display:flex;gap:9px;font-size:13px;line-height:1.5;color:var(--doc-quote)}
+.note i{flex:none;width:18px;height:18px;border-radius:50%;background:var(--doc-ink);color:var(--doc-bg);font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.note.no i{background:#c2760a;color:#fff}
+.note.ok i{background:#16a34a;color:#fff}
+.scroller{overflow-x:auto;padding:4px 0 44px;margin-bottom:-32px}
+.strip{display:flex;gap:20px;align-items:flex-start;width:max-content}
+.spec-cap{margin-top:10px;font-size:12px;line-height:1.45;color:var(--doc-mut);max-width:300px}
+.spec-cap b{color:var(--doc-ink);font-weight:700;display:block;font-size:12.5px;margin-bottom:2px}
+@media (max-width:1000px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} }
+
+/* таблица «поле макета → откуда данные» */
+.map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th{text-align:left;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);padding:10px 14px;border-bottom:1px solid var(--doc-line)}
+.map td{padding:9px 14px;border-bottom:1px solid var(--doc-line);color:var(--doc-quote);line-height:1.5;vertical-align:top}
+.map tr:last-child td{border-bottom:0}
+.map code{font-family:var(--fN);font-size:11.5px;background:color-mix(in srgb,var(--doc-acc) 9%,transparent);color:var(--doc-acc);padding:1px 5px;border-radius:5px}
+.map .ok{color:#16a34a;font-weight:700}
+.map .no{color:#c2760a;font-weight:700}
+
+/* ================= ОБОЛОЧКА ЭКРАНА ================= */
+.app{--ink:#0f172a; --mut:#64748b; --dim:#94a3b8; --line:#e7ecf3; --bg:#f4f6fa; --card:#fff;
+     --acc:#4453ef; --grn:#16a34a; --red:#dc2626;
+     /* рейка */
+     --rail:#12161F; --ctx:#1A202B; --sb-ink:#F1F6FB; --sb-acc:#8FB3A0; --sb-acc-tx:#A7C7B5;
+     width:1180px;height:640px;display:flex;background:var(--bg);color:var(--ink);
+     border-radius:16px;overflow:hidden;border:1px solid rgba(15,23,42,.09);
+     box-shadow:0 2px 4px rgba(15,23,42,.05),0 34px 70px -34px rgba(24,38,60,.4);flex:none}
+.app.sm{width:auto;height:640px}
+.app.dark{--ink:#e8eef7;--mut:#8b98ad;--dim:#63718a;--line:rgba(255,255,255,.09);--bg:#0c1016;--card:#141a24;--acc:#6b7cff;
+          --rail:#ffffff;--ctx:#F7F9FC;--sb-ink:#1F2637;--sb-acc:#8FB3A0;--sb-acc-tx:#2f6b4f}
+.ic{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ---------- главная область (шапка + контент-скелет) ---------- */
+.main{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--bg)}
+.tb{height:58px;flex:none;display:flex;align-items:center;gap:10px;padding:0 18px;background:var(--card);
+    border-bottom:1px solid var(--line)}
+.tb-crumb{display:flex;align-items:center;gap:7px;height:34px;padding:0 13px;border-radius:999px;
+          border:1px solid var(--line);background:var(--bg);font-size:12.5px;font-weight:700;color:var(--ink);white-space:nowrap}
+.tb-crumb .sep{color:var(--dim);font-weight:400}
+.tb-crumb .sub{color:var(--mut);font-weight:600}
+.tb-crumb .dot{width:7px;height:7px;border-radius:50%;background:var(--acc)}
+.tb-sp{flex:1}
+.tb-btn{width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--card);
+        display:grid;place-items:center;color:var(--mut)}
+.tb-btn .ic{width:15px;height:15px}
+.tb-ava{width:34px;height:34px;border-radius:50%;background:linear-gradient(160deg,#4453ef,#7c8cff);color:#fff;
+        display:grid;place-items:center;font-size:12px;font-weight:700}
+/* ряд подвкладок в шапке — только для экрана «как сейчас» */
+.tb-tabs{display:flex;align-items:center;gap:1px;min-width:0;overflow:hidden}
+.tb-tab{padding:8px 9px;border-radius:8px;font-size:13px;font-weight:600;color:var(--mut);white-space:nowrap;position:relative}
+.tb-tab.on{color:var(--acc)}
+.tb-tab.on::after{content:'';position:absolute;left:9px;right:9px;bottom:0;height:2px;border-radius:2px;background:var(--acc)}
+.tb-more{padding:8px 8px;border-radius:8px;font-size:13px;font-weight:800;color:var(--mut)}
+
+.body{flex:1;min-height:0;padding:20px;display:flex;flex-direction:column;gap:14px;overflow:hidden}
+.sk-h{display:flex;align-items:center;gap:12px}
+.sk-h h3{font-family:var(--fT);font-weight:400;font-size:24px;color:var(--ink)}
+.sk-h .pill{margin-left:auto;height:30px;padding:0 12px;border-radius:9px;border:1px solid var(--line);background:var(--card);
+            display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--mut)}
+.sk-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;flex:1;min-height:0}
+.sk{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:9px;overflow:hidden}
+.sk .t{font-size:12.5px;font-weight:700;color:var(--ink)}
+.sk .l{height:8px;border-radius:5px;background:color-mix(in srgb,var(--ink) 8%,transparent)}
+.sk .l.w70{width:70%}.sk .l.w45{width:45%}.sk .l.w85{width:85%}.sk .l.w30{width:30%}
+.sk .big{font-family:var(--fN);font-size:26px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+.sk .up{font-family:var(--fN);font-size:12px;font-weight:700;color:var(--grn)}
+.spark{margin-top:auto;height:52px;border-radius:8px;
+       background:linear-gradient(180deg,color-mix(in srgb,var(--grn) 22%,transparent),transparent)}
+
+/* ================= САЙДБАР: ОБЩИЙ ЯЗЫК ================= */
+.sb{background:var(--rail);display:flex;flex-direction:column;flex:none;color:var(--sb-ink);position:relative}
+.app.dark .sb{box-shadow:1px 0 0 rgba(20,27,45,.08)}
+.sb-head{display:flex;align-items:center;gap:11px;padding:18px 14px 14px;flex:none}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(180deg,#F1F6FB 0%,#F9FAFC 100%);
+      color:#2C364C;display:grid;place-items:center;font-weight:800;font-size:15px;flex:none}
+.app.dark .logo{background:linear-gradient(180deg,#1C222E 0%,#10151F 100%);color:#F1F6FB}
+.logo-tx{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.logo-tx b{font-weight:400;font-family:var(--fT);font-size:14.5px;color:var(--sb-ink);white-space:nowrap}
+.logo-tx i{font-style:normal;font-size:9px;letter-spacing:.16em;text-transform:uppercase;
+           color:color-mix(in srgb,var(--sb-ink) 38%,transparent);margin-top:2px}
+
+/* ---- уровень 1: пункт-раздел ---- */
+.nav{display:flex;flex-direction:column;gap:2px;padding:4px 10px}
+.it{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:10px;position:relative;
+    font-size:13.5px;font-weight:500;letter-spacing:.01em;color:color-mix(in srgb,var(--sb-ink) 55%,transparent);cursor:pointer}
+.it .ic{width:19px;height:19px}
+.it:hover{background:color-mix(in srgb,var(--sb-ink) 6%,transparent);color:color-mix(in srgb,var(--sb-ink) 88%,transparent)}
+.it.on{background:color-mix(in srgb,var(--sb-acc) 16%,transparent);color:var(--sb-acc-tx);font-weight:600}
+.it.on::before{content:'';position:absolute;left:-10px;top:50%;transform:translateY(-50%);
+               width:3px;height:20px;border-radius:0 3px 3px 0;background:var(--sb-acc)}
+.it .chev{margin-left:auto;width:20px;height:20px;display:grid;place-items:center;border-radius:6px;
+          color:color-mix(in srgb,var(--sb-ink) 38%,transparent)}
+.it .chev .ic{width:13px;height:13px;stroke-width:2.2}
+.it .chev.open .ic{transform:rotate(90deg)}
+.it .cnt{margin-left:auto;font-family:var(--fN);font-size:10.5px;font-weight:600;
+         color:color-mix(in srgb,var(--sb-ink) 32%,transparent)}
+.grp-lab{padding:16px 22px 6px;font-size:9.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+         color:color-mix(in srgb,var(--sb-ink) 30%,transparent)}
+.sb-foot{margin-top:auto;flex:none;padding:9px 10px;border-top:1px solid color-mix(in srgb,var(--sb-ink) 8%,transparent)}
+.sb-foot .it{font-size:12.5px;color:color-mix(in srgb,var(--sb-ink) 40%,transparent)}
+.hair{height:1px;margin:9px 16px;background:color-mix(in srgb,var(--sb-ink) 8%,transparent)}
+
+/* ---- уровень 2: подпункт с направляющей (В1/В2) ---- */
+.subs{display:flex;flex-direction:column;padding:2px 0 6px}
+.sub{display:flex;align-items:center;gap:9px;padding:7px 12px 7px 43px;border-radius:9px;position:relative;
+     font-size:12.5px;font-weight:500;color:color-mix(in srgb,var(--sb-ink) 45%,transparent);cursor:pointer}
+.sub .bar{position:absolute;left:21px;top:0;bottom:0;width:2px;border-radius:2px;
+          background:color-mix(in srgb,var(--sb-ink) 10%,transparent)}
+.sub:hover{color:color-mix(in srgb,var(--sb-ink) 85%,transparent)}
+.sub:hover .bar{background:color-mix(in srgb,var(--sb-ink) 24%,transparent)}
+.sub.on{color:var(--sb-acc-tx);font-weight:600}
+.sub.on .bar{background:var(--sb-acc)}
+.sub .cnt{margin-left:auto;font-family:var(--fN);font-size:10px;font-weight:600;
+          color:color-mix(in srgb,var(--sb-ink) 28%,transparent)}
+.sub .dot{width:7px;height:7px;border-radius:50%;flex:none}
+.sub .x{margin-left:auto;width:16px;height:16px;display:grid;place-items:center;border-radius:5px;
+        color:color-mix(in srgb,var(--sb-ink) 30%,transparent)}
+.sub .x .ic{width:10px;height:10px;stroke-width:2.4}
+.sub.add{color:color-mix(in srgb,var(--sb-ink) 34%,transparent);font-weight:600}
+.sub.add .ic{width:13px;height:13px}
+
+/* ---- уровень 2: пункт контекстной колонки (В2/В3) ---- */
+.cx{display:flex;align-items:center;gap:10px;margin:0 8px;padding:8px 10px;border-radius:9px;position:relative;
+    font-size:13px;font-weight:500;color:color-mix(in srgb,var(--sb-ink) 58%,transparent);cursor:pointer}
+.cx .ic{width:15px;height:15px;opacity:.8}
+.cx:hover{background:color-mix(in srgb,var(--sb-ink) 6%,transparent);color:color-mix(in srgb,var(--sb-ink) 92%,transparent)}
+.cx.on{background:color-mix(in srgb,var(--sb-acc) 17%,transparent);color:var(--sb-acc-tx);font-weight:600}
+.cx.on::before{content:'';position:absolute;left:-8px;top:50%;transform:translateY(-50%);
+               width:3px;height:18px;border-radius:0 3px 3px 0;background:var(--sb-acc)}
+.cx .cnt{margin-left:auto;font-family:var(--fN);font-size:10.5px;font-weight:600;
+         color:color-mix(in srgb,var(--sb-ink) 30%,transparent)}
+.cx.on .cnt{color:color-mix(in srgb,var(--sb-acc-tx) 70%,transparent)}
+.cx .dot{width:8px;height:8px;border-radius:50%;flex:none;margin:0 3px}
+.cx .x{margin-left:auto;width:18px;height:18px;display:grid;place-items:center;border-radius:6px;
+       color:color-mix(in srgb,var(--sb-ink) 28%,transparent)}
+.cx .x .ic{width:11px;height:11px;stroke-width:2.4;opacity:1}
+.cx.gh{color:color-mix(in srgb,var(--sb-ink) 34%,transparent);font-weight:600}
+/* ---- В3: узкая рейка разделов ---- */
+.rail{width:76px;flex:none;background:var(--rail);display:flex;flex-direction:column;align-items:center;
+      padding:16px 8px 10px;gap:2px}
+.rail .logo{margin-bottom:14px}
+.rail-i{width:60px;padding:8px 0 6px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:5px;
+        position:relative;color:color-mix(in srgb,var(--sb-ink) 50%,transparent);cursor:pointer;text-align:center}
+.rail-i .ic{width:20px;height:20px}
+.rail-i span{font-size:9.5px;font-weight:600;letter-spacing:.005em;white-space:nowrap}
+.rail-i:hover{background:color-mix(in srgb,var(--sb-ink) 6%,transparent);color:color-mix(in srgb,var(--sb-ink) 88%,transparent)}
+.rail-i.on{background:color-mix(in srgb,var(--sb-acc) 16%,transparent);color:var(--sb-acc-tx)}
+.rail-i.on::before{content:'';position:absolute;left:-8px;top:50%;transform:translateY(-50%);
+                   width:3px;height:26px;border-radius:0 3px 3px 0;background:var(--sb-acc)}
+.rail-i .bdg{position:absolute;top:5px;right:11px;min-width:15px;height:15px;padding:0 4px;border-radius:8px;
+             background:var(--sb-acc);color:#0F1620;font-family:var(--fN);font-size:9px;font-weight:700;
+             display:grid;place-items:center}
+.rail-foot{margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:2px;width:100%}
+.rail-b{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
+        color:color-mix(in srgb,var(--sb-ink) 38%,transparent);cursor:pointer}
+.rail-b .ic{width:17px;height:17px}
+.rail-b:hover{background:color-mix(in srgb,var(--sb-ink) 6%,transparent);color:color-mix(in srgb,var(--sb-ink) 85%,transparent)}
+/* контекстная колонка */
+.ctxcol{width:212px;flex:none;background:var(--ctx);display:flex;flex-direction:column;
+        border-right:1px solid color-mix(in srgb,var(--sb-ink) 7%,transparent)}
+.app.dark .ctxcol{border-right-color:rgba(20,27,45,.07)}
+
+/* шапка контекстной панели/колонки */
+.cx-head{padding:14px 16px 13px;flex:none;border-bottom:1px solid color-mix(in srgb,var(--sb-ink) 7%,transparent)}
+.cx-back{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.02em;
+         color:color-mix(in srgb,var(--sb-ink) 40%,transparent);cursor:pointer;margin-bottom:9px}
+.cx-back .ic{width:13px;height:13px;stroke-width:2.2}
+.cx-head h4{font-family:var(--fT);font-weight:400;font-size:20px;line-height:1.1;color:var(--sb-ink)}
+.cx-head .meta{margin-top:5px;font-family:var(--fN);font-size:10.5px;letter-spacing:.02em;
+               color:color-mix(in srgb,var(--sb-ink) 38%,transparent)}
+.cx-list{flex:1;min-height:0;overflow:hidden;padding:6px 0}
+/* принудительный hover для витрины состояний */
+.cx.hov{background:color-mix(in srgb,var(--sb-ink) 6%,transparent);color:color-mix(in srgb,var(--sb-ink) 92%,transparent)}
+.rail-i.hov{background:color-mix(in srgb,var(--sb-ink) 6%,transparent);color:color-mix(in srgb,var(--sb-ink) 88%,transparent)}
+.cx.hov .x{color:color-mix(in srgb,var(--sb-ink) 60%,transparent)}
+.st-row{display:flex;align-items:center;gap:14px}
+.st-row .lab{font-family:var(--fN);font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+             color:var(--doc-dim);width:118px;flex:none;text-align:right}
+.st-box{width:212px;flex:none;background:var(--ctx);padding:3px 0;border-radius:10px}
+.st-wrap{display:flex;flex-direction:column;gap:9px;padding:18px;border-radius:16px;background:#12161F;
+         border:1px solid rgba(255,255,255,.06)}
+/* экраны «Торговли» — третий уровень внутри колонки */
+.cx3{margin-left:30px;padding-left:12px;font-size:12px;position:relative}
+.cx3::after{content:'';position:absolute;left:0;top:6px;bottom:6px;width:2px;border-radius:2px;
+            background:color-mix(in srgb,var(--sb-ink) 12%,transparent)}
+.cx3.on::after{background:var(--sb-acc)}
+.cx3.on::before{display:none}
+</style>
+</head>
+<body>
+<svg style="display:none" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+  <symbol id="i-calc" viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></symbol>
+  <symbol id="i-pf" viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></symbol>
+  <symbol id="i-rebal" viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></symbol>
+  <symbol id="i-market" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></symbol>
+  <symbol id="i-test" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1.2"/><circle cx="3.5" cy="12" r="1.2"/><circle cx="3.5" cy="18" r="1.2"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></symbol>
+  <symbol id="i-ops" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></symbol>
+  <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M5 7h14"/><path d="M8 7l-4 7h8z"/><path d="M16 7l-4 7h8z"/></symbol>
+  <symbol id="i-trade" viewBox="0 0 24 24"><rect x="3.5" y="8" width="6" height="9" rx="1.5"/><path d="M6.5 4v4M6.5 17v3"/><rect x="14.5" y="5" width="6" height="10" rx="1.5"/><path d="M17.5 3v2M17.5 15v6"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6h.09A1.65 1.65 0 0 0 10 3.09V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.86 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></symbol>
+  <symbol id="i-collapse" viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.6" y2="16.6"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><polygon points="12 2 15.1 8.6 22 9.5 17 14.5 18.2 21.5 12 18.2 5.8 21.5 7 14.5 2 9.5 8.9 8.6"/></symbol>
+  <symbol id="i-drag" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.3"/><circle cx="15" cy="6" r="1.3"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/><circle cx="9" cy="18" r="1.3"/><circle cx="15" cy="18" r="1.3"/></symbol>
+</svg>
+
+<div class="page">
+  <header class="doc-h">
+    <div class="doc-kicker">Сайдбар · раунд 1 · три варианта</div>
+    <h1>Сайдбар как единственная навигация: второй уровень «Портфелей» уезжает из шапки в рейку</h1>
+    <p>Сегодня у «Портфелей» восемь разделов, до восьми вкладок-портфелей и до трёх экранов «Торговли» — и всё это живёт
+       в середине глобальной шапки, где на 1280px помещается меньше половины, а хвост сворачивается в «⋯». Рейка при этом
+       наполовину пустая: семь пунктов на 640px высоты. Ниже — три способа отдать второй уровень рейке, от самого дешёвого
+       к самому сильному, плюс общий визуальный ремонт: микрокапс-заголовки групп, счётчики, точки портфелей, новая
+       плотность и активное состояние.</p>
+    <div class="verdict">
+      <p><b>Рекомендация — В3 «Двойная рейка».</b> Иконочная рейка 76px с подписями держит все семь разделов на виду,
+      контекстная колонка 212px принадлежит активному разделу и вмещает второй уровень целиком, без «⋯» и без скролла на
+      типовом наборе. У разделов без второго уровня колонка просто не появляется — контент становится шире, ничего не
+      выдумывается. Шапка при этом освобождается полностью: пилюля-селектор портфелей больше не нужна, остаётся честная
+      хлебная крошка «Портфели › Обзор».</p>
+      <p>В1 «Аккордеон» — дешёвая эволюция на существующем механизме <b>.sb-group</b>; берём её, если правка нужна сегодня.
+      В2 «Панель раздела» показана как альтернатива, но прячет верхний уровень за клик — для приложения, где постоянно
+      прыгают между «Расчётом» и «Портфелями», это шаг назад.</p>
+    </div>
+  </header>
+
+  <!-- ============ 0. КАК СЕЙЧАС ============ -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">00</span><h2>Как сейчас</h2><span class="mk-tag warn">проблема</span></div>
+    <div class="mk-sub">Второй уровень «Портфелей» — в середине шапки: восемь разделов, хвост в «⋯», портфели спрятаны
+      в попап на пилюле, «Настройки» вынесены в правый кластер отдельной шестерёнкой. Рейка слева при этом
+      простаивает: ниже «Тест» — 230px пустоты.</div>
+    <div class="scroller"><div class="strip">
+      <div class="app">
+        <!-- сайдбар как есть -->
+        <div class="sb" style="width:252px">
+          <div class="sb-head"><div class="logo">М</div><div class="logo-tx"><b>Мадам Соломина</b><i>Инвестиции</i></div></div>
+          <div class="hair"></div>
+          <div class="nav">
+            <div class="it"><svg class="ic"><use href="#i-home"/></svg>Главная</div>
+            <div class="it"><svg class="ic"><use href="#i-calc"/></svg>Расчёт<span class="chev"><svg class="ic"><use href="#i-chev"/></svg></span></div>
+            <div class="it on"><svg class="ic"><use href="#i-pf"/></svg>Портфели</div>
+            <div class="it"><svg class="ic"><use href="#i-rebal"/></svg>Ребаланс</div>
+            <div class="it"><svg class="ic"><use href="#i-market"/></svg>Рынок<span class="chev"><svg class="ic"><use href="#i-chev"/></svg></span></div>
+            <div class="it"><svg class="ic"><use href="#i-test"/></svg>Тест</div>
+          </div>
+          <div class="sb-foot"><div class="it"><svg class="ic"><use href="#i-collapse"/></svg>Свернуть</div></div>
+        </div>
+        <div class="main">
+          <div class="tb">
+            <div class="tb-crumb"><span class="dot"></span>Все портфели<span class="sep">·</span><span class="sub">8</span><svg class="ic" style="width:12px;height:12px;color:var(--dim);transform:rotate(90deg)"><use href="#i-chev"/></svg></div>
+            <div class="tb-tabs">
+              <span class="tb-tab on">Обзор</span><span class="tb-tab">Мои портфели</span><span class="tb-tab">Аналитика</span>
+              <span class="tb-tab">Отчёты</span><span class="tb-tab">Операции</span><span class="tb-more">⋯</span>
+            </div>
+            <div class="tb-sp"></div>
+            <div class="tb-btn"><svg class="ic"><use href="#i-search"/></svg></div>
+            <div class="tb-btn"><svg class="ic"><use href="#i-gear"/></svg></div>
+            <div class="tb-btn"><svg class="ic"><use href="#i-bell"/></svg></div>
+            <div class="tb-ava">Д</div>
+          </div>
+          <div class="body">
+            <div class="sk-h"><h3>Обзор</h3><div class="pill">Раскладка</div></div>
+            <div class="sk-grid">
+              <div class="sk" style="grid-column:span 5"><div class="t">Капитал</div><div class="big">4 213 480 ₽</div><div class="up">+2,4% за день</div><div class="spark"></div></div>
+              <div class="sk" style="grid-column:span 4"><div class="t">Избранное</div><div class="l w85"></div><div class="l w70"></div><div class="l w45"></div><div class="l w70"></div></div>
+              <div class="sk" style="grid-column:span 3"><div class="t">Рынок сейчас</div><div class="l w70"></div><div class="l w45"></div><div class="l w85"></div></div>
+              <div class="sk" style="grid-column:span 7"><div class="t">Новости</div><div class="l w85"></div><div class="l w70"></div><div class="l w30"></div></div>
+              <div class="sk" style="grid-column:span 5"><div class="t">Календарь выплат</div><div class="l w45"></div><div class="l w70"></div><div class="l w85"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="notes">
+      <div class="note no"><i>1</i>На 1280px в середине шапки остаётся ~515px: видно пять разделов из восьми, «Операции», «Ребаланс», «Торговля» уходят в «⋯».</div>
+      <div class="note no"><i>2</i>Вкладки-портфели вообще не видны — они внутри попапа пилюли, то есть за двумя кликами.</div>
+      <div class="note no"><i>3</i>«Настройки» пришлось выселить из ряда в кластер действий: одна навигация нарисована двумя разными компонентами.</div>
+      <div class="note"><i>4</i>Рейка держит семь пунктов и 230px пустоты — место под второй уровень есть.</div>
+      <div class="note"><i>5</i>Шапка одновременно — и хлебная крошка, и селектор портфеля, и ряд вкладок: три роли в одной строке.</div>
+      <div class="note"><i>6</i>Свёртка в «⋯» требует ResizeObserver с гвардом — механика дорогая и хрупкая.</div>
+    </div>
+  </section>
+
+  <!-- ============ В1. АККОРДЕОН ============ -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">В1</span><h2>«Аккордеон»</h2><span class="mk-tag mute">дешёвая эволюция</span></div>
+    <div class="mk-sub">«Портфели» становятся такой же раскрывающейся группой, как «Расчёт» и «Рынок» — тот же
+      <b>.sb-group</b>, та же анимация <b>grid-template-rows: 0fr→1fr</b>. Новое: раскрыт всегда ровно один раздел
+      (вход в раздел схлопывает соседей), у подпунктов появились счётчики, а вкладки-портфели вынесены отдельной
+      группой с точками и крестиками. Правка почти целиком в CSS + <b>sbSyncActive</b>.</div>
+    <div class="scroller"><div class="strip">
+      <div class="app">
+        <div class="sb" style="width:252px">
+          <div class="sb-head"><div class="logo">М</div><div class="logo-tx"><b>Мадам Соломина</b><i>Инвестиции</i></div></div>
+          <div class="hair"></div>
+          <div class="nav" style="flex:1;min-height:0;overflow:hidden;-webkit-mask-image:linear-gradient(180deg,#000 92%,transparent)">
+            <div class="it"><svg class="ic"><use href="#i-home"/></svg>Главная</div>
+            <div class="it"><svg class="ic"><use href="#i-calc"/></svg>Расчёт<span class="chev"><svg class="ic"><use href="#i-chev"/></svg></span></div>
+            <div class="it on"><svg class="ic"><use href="#i-pf"/></svg>Портфели<span class="chev open"><svg class="ic"><use href="#i-chev"/></svg></span></div>
+            <div class="subs">
+              <div class="sub on"><span class="bar"></span>Обзор</div>
+              <div class="sub"><span class="bar"></span>Мои портфели<span class="cnt">8</span></div>
+              <div class="sub"><span class="bar"></span>Аналитика</div>
+              <div class="sub"><span class="bar"></span>Отчёты<span class="cnt">3</span></div>
+              <div class="sub"><span class="bar"></span>Операции<span class="cnt">124</span></div>
+              <div class="sub"><span class="bar"></span>Ребаланс</div>
+              <div class="sub"><span class="bar"></span>Торговля<span class="cnt">2</span></div>
+              <div class="sub"><span class="bar"></span>Настройки</div>
+            </div>
+            <div class="grp-lab">Открытые портфели</div>
+            <div class="subs">
+              <div class="sub"><span class="bar"></span><span class="dot" style="background:#16a34a"></span>Пенсионный<span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+              <div class="sub"><span class="bar"></span><span class="dot" style="background:#d97706"></span>Дивидендный<span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+              <div class="sub"><span class="bar"></span><span class="dot" style="background:#4453ef"></span>Спекулятивный<span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+              <div class="sub add"><span class="bar"></span><svg class="ic"><use href="#i-plus"/></svg>Открыть портфель</div>
+            </div>
+            <div class="it"><svg class="ic"><use href="#i-rebal"/></svg>Ребаланс</div>
+            <div class="it"><svg class="ic"><use href="#i-market"/></svg>Рынок<span class="chev"><svg class="ic"><use href="#i-chev"/></svg></span></div>
+          </div>
+          <div class="sb-foot"><div class="it"><svg class="ic"><use href="#i-collapse"/></svg>Свернуть</div></div>
+        </div>
+        <div class="main">
+          <div class="tb">
+            <div class="tb-crumb">Портфели<span class="sep">›</span><span class="sub">Обзор</span></div>
+            <div class="tb-sp"></div>
+            <div class="tb-btn"><svg class="ic"><use href="#i-search"/></svg></div>
+            <div class="tb-btn"><svg class="ic"><use href="#i-bell"/></svg></div>
+            <div class="tb-ava">Д</div>
+          </div>
+          <div class="body">
+            <div class="sk-h"><h3>Обзор</h3><div class="pill">Раскладка</div></div>
+            <div class="sk-grid">
+              <div class="sk" style="grid-column:span 5"><div class="t">Капитал</div><div class="big">4 213 480 ₽</div><div class="up">+2,4% за день</div><div class="spark"></div></div>
+              <div class="sk" style="grid-column:span 4"><div class="t">Избранное</div><div class="l w85"></div><div class="l w70"></div><div class="l w45"></div><div class="l w70"></div></div>
+              <div class="sk" style="grid-column:span 3"><div class="t">Рынок сейчас</div><div class="l w70"></div><div class="l w45"></div><div class="l w85"></div></div>
+              <div class="sk" style="grid-column:span 7"><div class="t">Новости</div><div class="l w85"></div><div class="l w70"></div><div class="l w30"></div></div>
+              <div class="sk" style="grid-column:span 5"><div class="t">Календарь выплат</div><div class="l w45"></div><div class="l w70"></div><div class="l w85"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="notes">
+      <div class="note ok"><i>+</i>Механизм уже есть: <b>.sb-group / .sb-subs / sbSyncActive</b>. Новых состояний в JS почти не появляется.</div>
+      <div class="note ok"><i>+</i>Шапка освобождается целиком: остаётся крошка «Портфели › Обзор», пилюля-селектор и «⋯» не нужны.</div>
+      <div class="note ok"><i>+</i>Верхний уровень остаётся на виду — переход «Портфели → Расчёт» в один клик.</div>
+      <div class="note no"><i>−</i>Высоты не хватает: 8 подпунктов + 3 портфеля + «Ребаланс/Рынок/Тест» не влезают в 640px — список скроллится (на макете край подрезан осознанно).</div>
+      <div class="note no"><i>−</i>Аккордеон «схлопни соседа» ломает мышечную память: раскрытый «Расчёт» закрывается сам, когда уходишь в «Портфели».</div>
+      <div class="note no"><i>−</i>Второй уровень остаётся визуально второсортным: 12,5px и направляющая — слабо для основной рабочей навигации.</div>
+    </div>
+  </section>
+
+  <!-- ============ В2. ПАНЕЛЬ РАЗДЕЛА ============ -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">В2</span><h2>«Панель раздела»</h2><span class="mk-tag mute">альтернатива</span></div>
+    <div class="mk-sub">Рейка не растёт вширь, а <b>переключает содержимое</b>: вошёл в «Портфели» — вся панель стала
+      панелью раздела. Сверху «‹ Все разделы» и название сериф-заголовком, дальше подвкладки уже как полноценные
+      пункты первого уровня (13px, иконки, счётчики), внизу — открытые портфели и «Настройки». Максимум места второму
+      уровню при прежней ширине 252px.</div>
+    <div class="scroller"><div class="strip">
+      <div class="app">
+        <div class="sb" style="width:252px">
+          <div class="cx-head">
+            <div class="cx-back"><svg class="ic"><use href="#i-back"/></svg>Все разделы</div>
+            <h4>Портфели</h4>
+            <div class="meta">8 портфелей · 4,21 млн ₽</div>
+          </div>
+          <div class="cx-list">
+            <div class="cx on"><svg class="ic"><use href="#i-grid"/></svg>Обзор</div>
+            <div class="cx"><svg class="ic"><use href="#i-pf"/></svg>Мои портфели<span class="cnt">8</span></div>
+            <div class="cx"><svg class="ic"><use href="#i-calc"/></svg>Аналитика</div>
+            <div class="cx"><svg class="ic"><use href="#i-file"/></svg>Отчёты<span class="cnt">3</span></div>
+            <div class="cx"><svg class="ic"><use href="#i-ops"/></svg>Операции<span class="cnt">124</span></div>
+            <div class="cx"><svg class="ic"><use href="#i-scale"/></svg>Ребаланс</div>
+            <div class="cx"><svg class="ic"><use href="#i-trade"/></svg>Торговля<span class="cnt">2</span></div>
+            <div class="grp-lab">Открытые портфели</div>
+            <div class="cx"><span class="dot" style="background:#16a34a"></span>Пенсионный<span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+            <div class="cx"><span class="dot" style="background:#d97706"></span>Дивидендный<span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+            <div class="cx"><span class="dot" style="background:#4453ef"></span>Спекулятивный<span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+            <div class="cx gh"><svg class="ic"><use href="#i-plus"/></svg>Открыть портфель</div>
+          </div>
+          <div class="sb-foot" style="display:flex;flex-direction:column;gap:2px">
+            <div class="cx" style="margin:0"><svg class="ic"><use href="#i-gear"/></svg>Настройки</div>
+            <div class="cx" style="margin:0"><svg class="ic"><use href="#i-collapse"/></svg>Свернуть</div>
+          </div>
+        </div>
+        <div class="main">
+          <div class="tb">
+            <div class="tb-crumb">Портфели<span class="sep">›</span><span class="sub">Обзор</span></div>
+            <div class="tb-sp"></div>
+            <div class="tb-btn"><svg class="ic"><use href="#i-search"/></svg></div>
+            <div class="tb-btn"><svg class="ic"><use href="#i-bell"/></svg></div>
+            <div class="tb-ava">Д</div>
+          </div>
+          <div class="body">
+            <div class="sk-h"><h3>Обзор</h3><div class="pill">Раскладка</div></div>
+            <div class="sk-grid">
+              <div class="sk" style="grid-column:span 5"><div class="t">Капитал</div><div class="big">4 213 480 ₽</div><div class="up">+2,4% за день</div><div class="spark"></div></div>
+              <div class="sk" style="grid-column:span 4"><div class="t">Избранное</div><div class="l w85"></div><div class="l w70"></div><div class="l w45"></div><div class="l w70"></div></div>
+              <div class="sk" style="grid-column:span 3"><div class="t">Рынок сейчас</div><div class="l w70"></div><div class="l w45"></div><div class="l w85"></div></div>
+              <div class="sk" style="grid-column:span 7"><div class="t">Новости</div><div class="l w85"></div><div class="l w70"></div><div class="l w30"></div></div>
+              <div class="sk" style="grid-column:span 5"><div class="t">Календарь выплат</div><div class="l w45"></div><div class="l w70"></div><div class="l w85"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="notes">
+      <div class="note ok"><i>+</i>Второй уровень получает всю панель: 8 разделов, 3 портфеля и «Настройки» помещаются без скролла.</div>
+      <div class="note ok"><i>+</i>Ширина рейки не меняется — сетка страницы и <b>#appShell</b> остаются как есть.</div>
+      <div class="note no"><i>−</i>Верхний уровень спрятан за клик «‹ Все разделы». Для приложения, где ходят «Портфели ↔ Расчёт ↔ Рынок», это лишний шаг на каждом переходе.</div>
+      <div class="note no"><i>−</i>Свёрнутая рейка (78px) в этом режиме теряет смысл: иконок разделов на ней уже нет.</div>
+      <div class="note no"><i>−</i>Панель «прыгает» содержимым при каждом входе-выходе — самая заметная анимация в интерфейсе достаётся навигации, а не данным.</div>
+      <div class="note"><i>?</i>Если брать В2, то без анимации подмены: мгновенная замена честнее, чем слайд.</div>
+    </div>
+  </section>
+
+  <!-- ============ В3. ДВОЙНАЯ РЕЙКА ============ -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">В3</span><h2>«Двойная рейка»</h2><span class="mk-tag ok">рекомендация</span></div>
+    <div class="mk-sub">Навигация разъезжается на два столбца. Слева рейка 76px: логотип и семь разделов иконкой с
+      микроподписью — верхний уровень всегда на виду и всегда в один клик. Справа колонка 212px, принадлежащая
+      активному разделу: сериф-заголовок с итогом по разделу, восемь подвкладок с иконками и счётчиками, экраны
+      «Торговли» третьим уровнем, группа открытых портфелей с точками и перетаскиванием, «Настройки» и «Свернуть»
+      прижаты вниз. Итого 288px против 252px сегодня — плюс 36px, при том что шапка освобождается полностью.</div>
+    <div class="scroller"><div class="strip">
+      <div class="app">
+        <div class="rail">
+          <div class="logo">М</div>
+          <div class="rail-i"><svg class="ic"><use href="#i-home"/></svg><span>Главная</span></div>
+          <div class="rail-i"><svg class="ic"><use href="#i-calc"/></svg><span>Расчёт</span></div>
+          <div class="rail-i on"><svg class="ic"><use href="#i-pf"/></svg><span>Портфели</span></div>
+          <div class="rail-i"><svg class="ic"><use href="#i-rebal"/></svg><span>Ребаланс</span></div>
+          <div class="rail-i"><svg class="ic"><use href="#i-market"/></svg><span>Рынок</span></div>
+          <div class="rail-i"><svg class="ic"><use href="#i-test"/></svg><span>Тест</span></div>
+          <div class="rail-foot">
+            <div class="rail-b"><svg class="ic"><use href="#i-collapse"/></svg></div>
+          </div>
+        </div>
+        <div class="ctxcol">
+          <div class="cx-head">
+            <h4>Портфели</h4>
+            <div class="meta">8 портфелей · 4,21 млн ₽</div>
+          </div>
+          <div class="cx-list">
+            <div class="cx on"><svg class="ic"><use href="#i-grid"/></svg>Обзор</div>
+            <div class="cx"><svg class="ic"><use href="#i-pf"/></svg>Мои портфели<span class="cnt">8</span></div>
+            <div class="cx"><svg class="ic"><use href="#i-calc"/></svg>Аналитика</div>
+            <div class="cx"><svg class="ic"><use href="#i-file"/></svg>Отчёты<span class="cnt">3</span></div>
+            <div class="cx"><svg class="ic"><use href="#i-ops"/></svg>Операции<span class="cnt">124</span></div>
+            <div class="cx"><svg class="ic"><use href="#i-scale"/></svg>Ребаланс</div>
+            <div class="cx"><svg class="ic"><use href="#i-trade"/></svg>Торговля<span class="cnt">2</span></div>
+            <div class="cx cx3">Основной</div>
+            <div class="cx cx3">Идеи</div>
+            <div class="grp-lab">Открытые портфели</div>
+            <div class="cx"><span class="dot" style="background:#16a34a"></span>Пенсионный<span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+            <div class="cx"><span class="dot" style="background:#d97706"></span>Дивидендный<span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+            <div class="cx"><span class="dot" style="background:#4453ef"></span>Спекулятивный<span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+            <div class="cx gh"><svg class="ic"><use href="#i-plus"/></svg>Открыть портфель</div>
+          </div>
+          <div class="sb-foot" style="padding:8px">
+            <div class="cx" style="margin:0"><svg class="ic"><use href="#i-gear"/></svg>Настройки</div>
+          </div>
+        </div>
+        <div class="main">
+          <div class="tb">
+            <div class="tb-crumb">Портфели<span class="sep">›</span><span class="sub">Обзор</span></div>
+            <div class="tb-sp"></div>
+            <div class="tb-btn"><svg class="ic"><use href="#i-search"/></svg></div>
+            <div class="tb-btn"><svg class="ic"><use href="#i-bell"/></svg></div>
+            <div class="tb-ava">Д</div>
+          </div>
+          <div class="body">
+            <div class="sk-h"><h3>Обзор</h3><div class="pill">Раскладка</div></div>
+            <div class="sk-grid">
+              <div class="sk" style="grid-column:span 5"><div class="t">Капитал</div><div class="big">4 213 480 ₽</div><div class="up">+2,4% за день</div><div class="spark"></div></div>
+              <div class="sk" style="grid-column:span 4"><div class="t">Избранное</div><div class="l w85"></div><div class="l w70"></div><div class="l w45"></div><div class="l w70"></div></div>
+              <div class="sk" style="grid-column:span 3"><div class="t">Рынок сейчас</div><div class="l w70"></div><div class="l w45"></div><div class="l w85"></div></div>
+              <div class="sk" style="grid-column:span 7"><div class="t">Новости</div><div class="l w85"></div><div class="l w70"></div><div class="l w30"></div></div>
+              <div class="sk" style="grid-column:span 5"><div class="t">Календарь выплат</div><div class="l w45"></div><div class="l w70"></div><div class="l w85"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+    <div class="notes">
+      <div class="note ok"><i>1</i>Восемь разделов, два экрана «Торговли» и три портфеля — всё видно разом, «⋯» и ResizeObserver можно удалить.</div>
+      <div class="note ok"><i>2</i>Верхний уровень никуда не прячется: «Расчёт» и «Рынок» в один клик из любого места «Портфелей».</div>
+      <div class="note ok"><i>3</i>Второй уровень нарисован одним компонентом — конец разнобою «ряд в шапке + шестерёнка в кластере + попап на пилюле».</div>
+      <div class="note"><i>4</i>Колонка чуть светлее рейки (#12161F → #1A202B): глубина без единой тени, активный пункт держит тот же зелёный акцент, что и раздел.</div>
+      <div class="note"><i>5</i>«Настройки» прижаты к низу колонки — служебный пункт не должен стоять в одном ряду с рабочими.</div>
+      <div class="note"><i>6</i>Счётчики моноширинные и приглушённые: они справка, а не акцент. Вес держит подпись.</div>
+    </div>
+  </section>
+
+  <!-- ============ В3: СОСТОЯНИЯ ============ -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">В3·с</span><h2>Состояния</h2><span class="mk-tag">обязательны к реализации</span></div>
+    <div class="mk-sub">Четыре случая, которые решают судьбу варианта: раздел без второго уровня, чужой раздел
+      со своим вторым уровнем, тёмная тема (в ней рейка сегодня светлая) и переполнение — когда открытых портфелей
+      больше, чем влезает.</div>
+    <div class="scroller"><div class="strip">
+
+      <!-- 1. без второго уровня -->
+      <div>
+        <div class="app sm" style="width:76px">
+          <div class="rail">
+            <div class="logo">М</div>
+            <div class="rail-i"><svg class="ic"><use href="#i-home"/></svg><span>Главная</span></div>
+            <div class="rail-i"><svg class="ic"><use href="#i-calc"/></svg><span>Расчёт</span></div>
+            <div class="rail-i"><svg class="ic"><use href="#i-pf"/></svg><span>Портфели</span></div>
+            <div class="rail-i"><svg class="ic"><use href="#i-rebal"/></svg><span>Ребаланс</span></div>
+            <div class="rail-i"><svg class="ic"><use href="#i-market"/></svg><span>Рынок</span></div>
+            <div class="rail-i on"><svg class="ic"><use href="#i-test"/></svg><span>Тест</span></div>
+            <div class="rail-foot"><div class="rail-b"><svg class="ic"><use href="#i-collapse"/></svg></div></div>
+          </div>
+        </div>
+        <div class="spec-cap"><b>Раздел без второго уровня</b>Колонка не появляется вовсе — «Тест», «Ребаланс»,
+          «Главная», «Админка» отдают 212px контенту. Ничего выдумывать в колонку не нужно.</div>
+      </div>
+
+      <!-- 2. чужой раздел -->
+      <div>
+        <div class="app sm" style="width:288px">
+          <div class="rail">
+            <div class="logo">М</div>
+            <div class="rail-i"><svg class="ic"><use href="#i-home"/></svg><span>Главная</span></div>
+            <div class="rail-i on"><svg class="ic"><use href="#i-calc"/></svg><span>Расчёт</span></div>
+            <div class="rail-i"><svg class="ic"><use href="#i-pf"/></svg><span>Портфели</span></div>
+            <div class="rail-i"><svg class="ic"><use href="#i-rebal"/></svg><span>Ребаланс</span></div>
+            <div class="rail-i"><svg class="ic"><use href="#i-market"/></svg><span>Рынок</span></div>
+            <div class="rail-i"><svg class="ic"><use href="#i-test"/></svg><span>Тест</span></div>
+            <div class="rail-foot"><div class="rail-b"><svg class="ic"><use href="#i-collapse"/></svg></div></div>
+          </div>
+          <div class="ctxcol">
+            <div class="cx-head"><h4>Расчёт</h4><div class="meta">Портфель · 30 лет · 45 000 ₽/мес</div></div>
+            <div class="cx-list">
+              <div class="cx on"><svg class="ic"><use href="#i-calc"/></svg>Расчёт портфеля</div>
+              <div class="cx"><svg class="ic"><use href="#i-grid"/></svg>Смешанный портфель</div>
+              <div class="cx"><svg class="ic"><use href="#i-ops"/></svg>Ежемесячный доход</div>
+            </div>
+          </div>
+        </div>
+        <div class="spec-cap"><b>Тот же механизм чужому разделу</b>«Расчёт» и «Рынок» получают ту же колонку —
+          подвкладки результатов по-прежнему появляются после первого расчёта, а не висят пустыми.</div>
+      </div>
+
+      <!-- 3. тёмная тема -->
+      <div>
+        <div class="app sm dark" style="width:288px">
+          <div class="rail">
+            <div class="logo">М</div>
+            <div class="rail-i"><svg class="ic"><use href="#i-home"/></svg><span>Главная</span></div>
+            <div class="rail-i"><svg class="ic"><use href="#i-calc"/></svg><span>Расчёт</span></div>
+            <div class="rail-i on"><svg class="ic"><use href="#i-pf"/></svg><span>Портфели</span></div>
+            <div class="rail-i"><svg class="ic"><use href="#i-rebal"/></svg><span>Ребаланс</span></div>
+            <div class="rail-i"><svg class="ic"><use href="#i-market"/></svg><span>Рынок</span></div>
+            <div class="rail-i"><svg class="ic"><use href="#i-test"/></svg><span>Тест</span></div>
+            <div class="rail-foot"><div class="rail-b"><svg class="ic"><use href="#i-collapse"/></svg></div></div>
+          </div>
+          <div class="ctxcol">
+            <div class="cx-head"><h4>Портфели</h4><div class="meta">8 портфелей · 4,21 млн ₽</div></div>
+            <div class="cx-list">
+              <div class="cx on"><svg class="ic"><use href="#i-grid"/></svg>Обзор</div>
+              <div class="cx"><svg class="ic"><use href="#i-pf"/></svg>Мои портфели<span class="cnt">8</span></div>
+              <div class="cx"><svg class="ic"><use href="#i-calc"/></svg>Аналитика</div>
+              <div class="cx"><svg class="ic"><use href="#i-file"/></svg>Отчёты<span class="cnt">3</span></div>
+              <div class="cx"><svg class="ic"><use href="#i-ops"/></svg>Операции<span class="cnt">124</span></div>
+              <div class="cx"><svg class="ic"><use href="#i-scale"/></svg>Ребаланс</div>
+              <div class="cx"><svg class="ic"><use href="#i-trade"/></svg>Торговля<span class="cnt">2</span></div>
+              <div class="grp-lab">Открытые портфели</div>
+              <div class="cx"><span class="dot" style="background:#16a34a"></span>Пенсионный<span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+              <div class="cx"><span class="dot" style="background:#d97706"></span>Дивидендный<span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+              <div class="cx gh"><svg class="ic"><use href="#i-plus"/></svg>Открыть портфель</div>
+            </div>
+            <div class="sb-foot" style="padding:8px"><div class="cx" style="margin:0"><svg class="ic"><use href="#i-gear"/></svg>Настройки</div></div>
+          </div>
+        </div>
+        <div class="spec-cap"><b>Тёмная тема</b>Правило проекта сохранено: в тёмной теме рейка становится светлой.
+          Колонка — на полтона темнее рейки (#F7F9FC), та же логика глубины, зелёный акцент затемнён до #2f6b4f.</div>
+      </div>
+
+      <!-- 4. переполнение -->
+      <div>
+        <div class="app sm" style="width:288px">
+          <div class="rail">
+            <div class="logo">М</div>
+            <div class="rail-i"><svg class="ic"><use href="#i-home"/></svg><span>Главная</span></div>
+            <div class="rail-i"><svg class="ic"><use href="#i-calc"/></svg><span>Расчёт</span></div>
+            <div class="rail-i on"><svg class="ic"><use href="#i-pf"/></svg><span>Портфели</span><span class="bdg">8</span></div>
+            <div class="rail-i"><svg class="ic"><use href="#i-rebal"/></svg><span>Ребаланс</span></div>
+            <div class="rail-i"><svg class="ic"><use href="#i-market"/></svg><span>Рынок</span></div>
+            <div class="rail-i"><svg class="ic"><use href="#i-test"/></svg><span>Тест</span></div>
+            <div class="rail-foot"><div class="rail-b"><svg class="ic"><use href="#i-collapse"/></svg></div></div>
+          </div>
+          <div class="ctxcol">
+            <div class="cx-head"><h4>Портфели</h4><div class="meta">8 портфелей · 4,21 млн ₽</div></div>
+            <div class="cx-list" style="-webkit-mask-image:linear-gradient(180deg,#000 88%,transparent)">
+              <div class="cx"><svg class="ic"><use href="#i-grid"/></svg>Обзор</div>
+              <div class="cx"><svg class="ic"><use href="#i-pf"/></svg>Мои портфели<span class="cnt">8</span></div>
+              <div class="cx"><svg class="ic"><use href="#i-calc"/></svg>Аналитика</div>
+              <div class="cx"><svg class="ic"><use href="#i-file"/></svg>Отчёты<span class="cnt">3</span></div>
+              <div class="cx"><svg class="ic"><use href="#i-ops"/></svg>Операции<span class="cnt">124</span></div>
+              <div class="cx"><svg class="ic"><use href="#i-scale"/></svg>Ребаланс</div>
+              <div class="cx"><svg class="ic"><use href="#i-trade"/></svg>Торговля<span class="cnt">2</span></div>
+              <div class="grp-lab">Открытые портфели</div>
+              <div class="cx on"><span class="dot" style="background:#16a34a"></span>Пенсионный<span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+              <div class="cx"><span class="dot" style="background:#d97706"></span>Дивидендный<span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+              <div class="cx"><span class="dot" style="background:#4453ef"></span>Спекулятивный<span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+              <div class="cx"><span class="dot" style="background:#0891b2"></span>Облигации ОФЗ<span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+              <div class="cx"><span class="dot" style="background:#db2777"></span>ИИС<span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+              <div class="cx"><span class="dot" style="background:#65a30d"></span>Валютный<span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+              <div class="cx"><span class="dot" style="background:#7c3aed"></span>Детям<span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+              <div class="cx"><span class="dot" style="background:#0f766e"></span>Пробный<span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+              <div class="cx gh"><svg class="ic"><use href="#i-plus"/></svg>Открыть портфель</div>
+            </div>
+            <div class="sb-foot" style="padding:8px"><div class="cx" style="margin:0"><svg class="ic"><use href="#i-gear"/></svg>Настройки</div></div>
+          </div>
+        </div>
+        <div class="spec-cap"><b>Переполнение</b>Скроллится только список; шапка колонки и «Настройки» прибиты.
+          Растворение у нижней кромки вместо полосы прокрутки — язык «рейки Терминала». На рейке у раздела
+          с открытыми вкладками — счётчик.</div>
+      </div>
+
+    </div></div>
+    <div class="notes">
+      <div class="note"><i>1</i>Свёрнутое состояние = состояние 1: кнопка «Свернуть» убирает колонку, рейка остаётся. Второго уровня в свёрнутом виде нет — он возвращается вместе с колонкой.</div>
+      <div class="note"><i>2</i>Hover-peek больше не нужен: рейка и так читаема, а «подглядывание» существовало ровно ради подписей разделов.</div>
+      <div class="note"><i>3</i>Ширина <b>#appShell</b> получает три значения вместо двух: 76 / 288 / 288+ (мобильная шторка — прежняя).</div>
+    </div>
+  </section>
+
+  <!-- ============ АНАТОМИЯ ============ -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">А</span><h2>Анатомия и состояния</h2><span class="mk-tag mute">спека</span></div>
+    <div class="mk-sub">Второй уровень говорит языком рейки, а не языком шапки: тот же Inter, те же радиусы, тот же
+      зелёный акцент <b>#8FB3A0</b>. Индиго <b>#4453ef</b> из ряда подвкладок в рейку не переезжает — в чужой
+      карточке новый контрол берёт её компонент, а не свой стиль.</div>
+    <div class="scroller"><div class="strip">
+      <div class="st-wrap">
+        <div class="st-row"><span class="lab">обычный</span><div class="st-box"><div class="cx"><svg class="ic"><use href="#i-file"/></svg>Отчёты</div></div></div>
+        <div class="st-row"><span class="lab">ховер</span><div class="st-box"><div class="cx hov"><svg class="ic"><use href="#i-file"/></svg>Отчёты</div></div></div>
+        <div class="st-row"><span class="lab">активный</span><div class="st-box"><div class="cx on"><svg class="ic"><use href="#i-file"/></svg>Отчёты</div></div></div>
+        <div class="st-row"><span class="lab">со счётчиком</span><div class="st-box"><div class="cx"><svg class="ic"><use href="#i-ops"/></svg>Операции<span class="cnt">124</span></div></div></div>
+        <div class="st-row"><span class="lab">портфель</span><div class="st-box"><div class="cx hov"><span class="dot" style="background:#16a34a"></span>Пенсионный<span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div></div></div>
+        <div class="st-row"><span class="lab">3-й уровень</span><div class="st-box"><div class="cx cx3 on">Основной</div></div></div>
+        <div class="st-row"><span class="lab">призрачный</span><div class="st-box"><div class="cx gh"><svg class="ic"><use href="#i-plus"/></svg>Открыть портфель</div></div></div>
+        <div class="st-row"><span class="lab">группа</span><div class="st-box"><div class="grp-lab" style="padding:10px 14px 4px">Открытые портфели</div></div></div>
+      </div>
+
+      <div class="st-wrap" style="background:#12161F">
+        <div class="st-row"><span class="lab">рейка · обычный</span><div class="st-box" style="width:76px;background:#12161F;display:flex;justify-content:center"><div class="rail-i"><svg class="ic"><use href="#i-pf"/></svg><span>Портфели</span></div></div></div>
+        <div class="st-row"><span class="lab">рейка · ховер</span><div class="st-box" style="width:76px;background:#12161F;display:flex;justify-content:center"><div class="rail-i hov"><svg class="ic"><use href="#i-pf"/></svg><span>Портфели</span></div></div></div>
+        <div class="st-row"><span class="lab">рейка · активный</span><div class="st-box" style="width:76px;background:#12161F;display:flex;justify-content:center;padding-left:8px"><div class="rail-i on"><svg class="ic"><use href="#i-pf"/></svg><span>Портфели</span></div></div></div>
+        <div class="st-row"><span class="lab">рейка · счётчик</span><div class="st-box" style="width:76px;background:#12161F;display:flex;justify-content:center;padding-left:8px"><div class="rail-i on"><svg class="ic"><use href="#i-pf"/></svg><span>Портфели</span><span class="bdg">8</span></div></div></div>
+        <div class="st-row"><span class="lab">шапка колонки</span><div class="st-box"><div class="cx-head" style="border:0;padding:10px 14px"><h4>Портфели</h4><div class="meta">8 портфелей · 4,21 млн ₽</div></div></div></div>
+      </div>
+    </div></div>
+
+    <table class="map">
+      <tr><th>Токен</th><th>Значение</th><th>Было</th></tr>
+      <tr><td>Ширина рейки</td><td><code>76px</code> (иконка 20 + подпись 9,5)</td><td>78px свёрнутая / 252px развёрнутая</td></tr>
+      <tr><td>Ширина колонки</td><td><code>212px</code>, итого <code>288px</code></td><td>—</td></tr>
+      <tr><td>Фон рейки / колонки</td><td><code>#12161F</code> / <code>#1A202B</code>; в тёмной теме <code>#fff</code> / <code>#F7F9FC</code></td><td>#161B27 обе темы</td></tr>
+      <tr><td>Пункт рейки</td><td>60×51, радиус 12, подпись 9,5px/600</td><td>иконка без подписи</td></tr>
+      <tr><td>Пункт колонки</td><td>высота 32, радиус 9, 13px/500, иконка 15px</td><td>12,5px/500, направляющая слева</td></tr>
+      <tr><td>Акцент</td><td><code>#8FB3A0</code> заливка 16–17%, текст <code>#A7C7B5</code>, риска 3×18 слева</td><td>тот же у рейки; в ряду шапки — индиго #4453ef</td></tr>
+      <tr><td>Заголовок группы</td><td>9,5px/800, трекинг .14em, капс, прозрачность 30%</td><td>отсутствовал</td></tr>
+      <tr><td>Счётчик</td><td>JetBrains Mono 10,5px/600, прозрачность 30%</td><td>отсутствовал</td></tr>
+      <tr><td>Заголовок колонки</td><td>Georgia 20px/400 + мета JetBrains 10,5px</td><td>—</td></tr>
+    </table>
+  </section>
+
+  <!-- ============ КАРТА РЕАЛИЗАЦИИ ============ -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">Б</span><h2>Что править под В3</h2><span class="mk-tag mute">карта</span></div>
+    <div class="mk-sub">Оценка объёма до старта: три файла несут почти всё, ещё три правятся точечно.
+      Ничего из перечисленного не требует нового модуля.</div>
+    <table class="map">
+      <tr><th>Элемент макета</th><th>Где живёт сейчас</th><th>Что делать</th></tr>
+      <tr><td>Рейка 76px с подписями</td><td><code>#sbNav</code> в index.html + <code>css/site-layout.css</code></td><td>Разметка <code>.sb-item</code> → колонка «иконка + подпись»; свёрнутое состояние становится единственным видом рейки</td></tr>
+      <tr><td>Контекстная колонка</td><td>нет</td><td>Новый узел рядом с <code>#sbPanel</code>; наполняет тот же <code>sbSyncActive</code> по карте «раздел → пункты»</td></tr>
+      <tr><td>Подвкладки «Портфелей»</td><td><code>pfxTabsHtml</code> → слот <code>#topBarPfMarket</code> (portfolios.js)</td><td>Тот же список <code>PFX_TABS</code> рендерится в колонку; <code>pfxGoTab</code> не меняется</td></tr>
+      <tr><td>Свёртка хвоста в «⋯»</td><td><code>pfxTabsFit</code> + ResizeObserver</td><td class="ok">Удалить целиком — в колонке помещается всё</td></tr>
+      <tr><td>Шестерёнка «Настроек»</td><td><code>pfxGearSync</code>, правый кластер шапки</td><td class="ok">Удалить — «Настройки» возвращаются в навигацию, вниз колонки</td></tr>
+      <tr><td>Вкладки-портфели</td><td>попап <code>#pfCrumbPop</code> на пилюле (<code>pfxCrumbSync</code>)</td><td>Переезжают в группу «Открытые портфели»; логика <code>pfxOpenPf / pfxClosePfTab / pfxMoveOpenTab</code> переиспользуется как есть</td></tr>
+      <tr><td>Пилюля-селектор</td><td><code>#topBarCrumb.pf-sel-on</code></td><td class="ok">Возвращается к обычной крошке «Портфели › Обзор»</td></tr>
+      <tr><td>Экраны «Торговли»</td><td>внутренний ряд внизу экрана</td><td>Дублируются третьим уровнем колонки (<code>trading</code>, <code>trading:2</code>…), ряд внизу остаётся</td></tr>
+      <tr><td>Ширина оболочки</td><td><code>--sb-w</code>, grid <code>#appShell</code></td><td>Три значения: 76 / 288 / 288; hover-peek и <code>.sb-peek</code> отменяются</td></tr>
+      <tr><td>Мобильная шторка</td><td><code>css/mobile.css</code>, док из 6 вкладок</td><td class="no">Не трогаем: на мобиле рейки нет, второй уровень остаётся своим механизмом</td></tr>
+    </table>
+    <div class="notes">
+      <div class="note"><i>1</i>Открытые вопросы к утверждению: нужен ли счётчик-бейдж на рейке, и остаётся ли «Ребаланс» верхним разделом при живом «Ребалансе» внутри «Портфелей».</div>
+      <div class="note"><i>2</i>Порядок работ: рейка и колонка (пустая) → перенос <code>PFX_TABS</code> → перенос портфелей → снос «⋯», шестерёнки и пилюли-селектора.</div>
+      <div class="note"><i>3</i>Мокап — обязательство 1в1: расхождения называем до реализации, а не после.</div>
+    </div>
+  </section>
+</div>
+</body>
+</html>
