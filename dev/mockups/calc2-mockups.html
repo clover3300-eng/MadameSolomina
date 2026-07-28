@@ -134,13 +134,13 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .bx-cap .v{display:flex;align-items:baseline;gap:8px;margin-top:4px}
 .bx-cap .v b{font-family:var(--fN);font-size:20px;font-weight:700;letter-spacing:-.025em}
 .bx-cap .day{margin-top:2px;font-family:var(--fN);font-size:10.5px;font-weight:600;color:var(--grn)}
-.bx-cap .bar{position:relative;margin-top:10px;height:5px;border-radius:3px;background:var(--line);display:flex}
-.bx-cap .bar i{display:block;height:100%}
-.bx-cap .bar i:first-child{border-radius:3px 0 0 3px}
-.bx-cap .bar i:last-child{border-radius:0 3px 3px 0}
-.bx-cap .tick{position:absolute;top:-3px;bottom:-3px;width:1.5px;border-radius:1px;background:var(--ink)}
-.bx-cap .lg{display:flex;justify-content:space-between;gap:6px;margin-top:6px;font-family:var(--fN);font-size:8.8px;letter-spacing:-.02em;white-space:nowrap;color:var(--dim)}
-.bx-cap .lg b{font-weight:700;color:var(--mut)}
+.bx-cap .day i{font-style:normal;margin-left:6px;font-weight:600;color:var(--dim)}
+/* спарклайн вместо полосы распределения — высота ровно та же (10+5+6+11,5 = 32,5) */
+.bx-cap .spk{margin-top:10px;height:22.5px;display:flex;align-items:center;gap:8px}
+.bx-cap .spk svg.ln{flex:1;min-width:0;height:100%;color:var(--grn)}
+.bx-cap .spk svg.ln path{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.bx-cap .spk .go{flex:none;width:11px;height:11px;color:var(--dim)}
+.bx-cap .spk .go svg{width:100%;height:100%;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .bx-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:12px 12px 4px}
 .bx-cell{position:relative;padding:8px 2px 7px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:6px;
   font-size:10px;font-weight:600;color:var(--mut);text-align:center}
@@ -382,7 +382,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .shelf .rng{margin-left:auto;flex:none;padding-bottom:5px;font-size:10.5px;color:var(--dim);text-align:right;white-space:nowrap}
 
 /* — свёрнутый второй ответ (вариант В) — */
-.fold{background:var(--card);border-radius:18px;padding:15px 16px;display:flex;flex-direction:column;min-width:0;overflow:hidden;
+.fold{background:var(--card);border-radius:18px;padding:20px 20px 18px;display:flex;flex-direction:column;min-width:0;overflow:hidden;
   box-shadow:0 1px 2px rgba(16,24,40,.05),0 18px 34px -24px rgba(16,24,40,.4)}
 .sc.dark .fold{box-shadow:0 1px 2px rgba(0,0,0,.3),0 18px 34px -20px rgba(0,0,0,.6)}
 .fold em{font-style:normal;display:block;font-size:8.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
@@ -402,15 +402,15 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .fold .open svg{width:13px;height:13px;color:var(--mut)}
 
 /* — шаг мастера (вариант Г) — */
-.wh{flex:none;display:flex;align-items:flex-end;gap:20px;padding:18px 2px 13px;border-bottom:1px solid var(--line)}
+.wh{flex:none;display:flex;align-items:flex-end;gap:20px;padding:28px 2px 20px;border-bottom:1px solid var(--line)}
 .wh em{font-style:normal;display:block;font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
 .wh h3{margin-top:6px;font-family:var(--fT);font-weight:400;font-size:24px;line-height:1.1;letter-spacing:-.01em}
 .wh p{margin-top:7px;font-size:12px;line-height:1.5;color:var(--mut);max-width:480px}
 .wh .prg{margin-left:auto;flex:none;display:flex;gap:5px;padding-bottom:6px}
 .wh .prg i{width:44px;height:3px;border-radius:2px;background:var(--line)}
 .wh .prg i.on{background:var(--ink)}
-.tiles{flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:1fr 1fr;gap:12px;margin-top:14px}
-.tile{background:var(--card);border-radius:14px;padding:14px 15px;display:flex;flex-direction:column;min-width:0;overflow:hidden;
+.tiles{flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:1fr 1fr;gap:18px;margin-top:22px}
+.tile{background:var(--card);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;min-width:0;overflow:hidden;
   box-shadow:0 1px 2px rgba(16,24,40,.05),0 14px 28px -22px rgba(16,24,40,.4)}
 .sc.dark .tile{box-shadow:0 1px 2px rgba(0,0,0,.3),0 14px 28px -20px rgba(0,0,0,.6)}
 .tile.on{box-shadow:inset 0 0 0 1.5px var(--ink),0 1px 2px rgba(16,24,40,.05),0 14px 28px -22px rgba(16,24,40,.4)}
@@ -462,6 +462,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <span class="dial">Синий = <b>облигации</b>, охра = <b>акции</b></span>
     <span class="dial">Зелёный — <b>только сайдбару</b></span>
     <span class="dial">Выбор = <b>подъём</b></span>
+    <span class="dial">Контрол на экране: <b>не больше трёх в ряд</b></span>
     <span class="dial">Сцена <b>1400 × 748</b>, колонка <b>288</b></span>
   </div>
 </div>
@@ -719,12 +720,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
               <div class="v"><b class="num">1 000 000</b><span class="num">₽</span></div>
             </div>
             <div class="chips">
-              <span class="chip">100 тыс</span>
-              <span class="chip">500 тыс</span>
-              <span class="chip on">1 млн</span>
               <span class="chip wide"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Из портфелей · 1,46 млн</span>
-            </div>
-            <div class="chips" style="margin-left:16px">
               <span class="chip wide">Срок <b class="num" style="margin-left:2px;color:var(--ink)">3 года</b><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
               <span class="chip wide">Комиссия <b class="num" style="margin-left:2px;color:var(--ink)">0,3%</b><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
             </div>
@@ -746,7 +742,6 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
               <div class="facts">
                 <div class="fact"><span class="l">Доход в месяц</span><span class="v o num">≈ 7 243 ₽</span></div>
                 <div class="fact"><span class="l">Прибыль за 3 года</span><span class="v g num">+ 461 380 ₽</span></div>
-                <div class="fact"><span class="l">Вложено</span><span class="v num">1 000 000 ₽</span></div>
               </div>
               <div class="cta">
                 <span class="btn">Создать портфель<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
@@ -763,10 +758,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
                 <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 30%,var(--eq) 30% 100%)"></i><div class="n"><b>Агрессивная</b><i>Макс. рост</i></div><div class="mix"><em class="b num">Обл. 30%</em><em class="s num">Акц. 70%</em></div></div>
                 <div class="srow"><i class="wf" style="background:color-mix(in srgb,var(--ink) 14%,transparent)"></i><div class="n"><b>Своя</b><i>Настроить вручную</i></div><span class="pen"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span></div>
               </div>
-              <div class="slink">
-                <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/></svg></span>
-                <span class="t"><b>Не знаете, какую выбрать?</b><i>Подберём за 2 минуты по тесту</i></span>
-                <span class="go">Тест<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+              <div class="qlink">
+                <span>Не знаете, какую выбрать?</span><span class="sp"></span>
+                <b>Тест риск-профиля</b><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
               </div>
             </div>
           </div>
@@ -823,7 +817,6 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             </div>
             <div class="grp">Подбор</div>
             <div class="bx-sub"><svg viewBox="0 0 24 24"><path d="M9.5 17h5"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9V17h-7v-3.1A6 6 0 0 1 12 3z"/></svg><span class="tx">Тест риск-профиля</span><span class="cnt">11</span></div>
-            <div class="bx-note">В рейке 84px и на мобиле второго уровня нет — там те же условия стоят строкой над карточками.</div>
           </div>
           <div class="bx-foot">
             <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
@@ -875,15 +868,13 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             <span class="btn">Создать портфель<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
             <span class="btn ghost">Сохранить расчёт</span>
             <span class="sp"></span>
-            <span class="slink" style="margin-top:0;padding:8px 10px">
-              <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/></svg></span>
-              <span class="t"><b>Не знаете, какую стратегию выбрать?</b><i>Тест на 11 вопросов · 2 минуты</i></span>
-              <span class="go">Тест<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+            <span class="qlink" style="margin-top:0">
+              <span>Не знаете, какую стратегию выбрать?</span><b>Тест риск-профиля</b><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
             </span>
           </div>
         </div>
       </div>
-      <div class="spec-cap"><b>Б · «Пульт» · рост капитала</b>У страницы нет заголовка: первое, что она произносит, — сам ответ. Ряд действий стал подвалом страницы, а не хвостом одной карточки, и полоса теста наконец стоит рядом с кнопками, а не внутри списка стратегий.</div>
+      <div class="spec-cap"><b>Б · «Пульт» · рост капитала</b>У страницы нет заголовка: первое, что она произносит, — сам ответ. Ряд действий стал подвалом страницы, а не хвостом одной карточки. В рейке 84px и на мобиле второго уровня нет — там те же условия стоят строкой над карточками (вариант А).</div>
     </div>
 
     <div>
@@ -922,7 +913,6 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             </div>
             <div class="grp">Готовый расчёт</div>
             <div class="bx-sub"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="tx">Корзина ОФЗ</span><span class="cnt">6</span></div>
-            <div class="bx-note">Срока и комиссии у купонного режима нет — колонка показывает только те условия, которые в нём есть.</div>
           </div>
           <div class="bx-foot">
             <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
@@ -985,7 +975,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           </div>
         </div>
       </div>
-      <div class="spec-cap"><b>Б · «Пульт» · ежемесячный доход</b>Правая колонка режима перестаёт быть парой «баннер ↔ график в одном слоте» (<code>toggleScheduleView</code>): число уехало в полку, в карточке остались только выплаты. Карточки больше не прибиты формулой <code>--cx-card-h + 104px</code> — высоту задаёт сетка.</div>
+      <div class="spec-cap"><b>Б · «Пульт» · ежемесячный доход</b>Срока и комиссии у купонного режима нет — колонка показывает только те условия, которые в нём есть. Правая карточка перестаёт быть парой «баннер ↔ график в одном слоте» (<code>toggleScheduleView</code>): число уехало в полку, остались выплаты. И высоту задаёт сетка, а не формула <code>--cx-card-h + 104px</code>.</div>
     </div>
 
   </div></div>
@@ -1027,8 +1017,6 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             <div class="bx-sub"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg><span class="tx">Ежемесячный доход</span></div>
             <div class="grp">Подбор</div>
             <div class="bx-sub"><svg viewBox="0 0 24 24"><path d="M9.5 17h5"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9V17h-7v-3.1A6 6 0 0 1 12 3z"/></svg><span class="tx">Тест риск-профиля</span><span class="cnt">11</span></div>
-            <div class="bx-note">Пункт не переключает экран, а решает, какая половина раскрыта. Обе считаются от одной суммы и обе видны всегда.</div>
-            <div class="bx-void" style="margin-top:4px"><b></b></div>
           </div>
           <div class="bx-foot">
             <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
@@ -1044,17 +1032,12 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
               <div class="v"><b class="num">1 000 000</b><span class="num">₽</span></div>
             </div>
             <div class="chips">
-              <span class="chip">100 тыс</span>
-              <span class="chip">500 тыс</span>
-              <span class="chip on">1 млн</span>
               <span class="chip wide"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Из портфелей · 1,46 млн</span>
-            </div>
-            <div class="chips" style="margin-left:16px">
               <span class="chip wide">Срок <b class="num" style="margin-left:2px;color:var(--ink)">3 года</b><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
               <span class="chip wide">Комиссия <b class="num" style="margin-left:2px;color:var(--ink)">0,3%</b><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
             </div>
             <div class="sp"></div>
-            <div class="src">обе половины считаются<br>от одной суммы</div>
+            <div class="src">Цены MOEX · <b>12:04</b></div>
           </div>
           <div class="gr g3">
             <div class="cd">
@@ -1083,10 +1066,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
                 <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 30%,var(--eq) 30% 100%)"></i><div class="n"><b>Агрессивная</b><i>Макс. рост</i></div><div class="mix"><em class="b num">30%</em><em class="s num">70%</em></div></div>
                 <div class="srow"><i class="wf" style="background:color-mix(in srgb,var(--ink) 14%,transparent)"></i><div class="n"><b>Своя</b><i>Настроить вручную</i></div><span class="pen"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span></div>
               </div>
-              <div class="slink">
-                <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/></svg></span>
-                <span class="t"><b>Не знаете, какую выбрать?</b><i>Тест · 11 вопросов</i></span>
-                <span class="go">Тест<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+              <div class="qlink">
+                <span class="sp"></span><b>Тест риск-профиля</b><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
               </div>
             </div>
             <div class="fold">
@@ -1105,7 +1086,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           </div>
         </div>
       </div>
-      <div class="spec-cap"><b>В · фокус на росте</b>Свёрнутая половина стоит 236px и не мешает работать: она не спрашивает, а сообщает — «эта же сумма даёт 8 686 ₽ в месяц». Ровно то, ради чего был нужен чузер.</div>
+      <div class="spec-cap"><b>В · фокус на росте</b>Пункт колонки не переключает экран, а решает, какая половина раскрыта. Свёрнутая стоит 248px и не мешает работать: она не спрашивает, а сообщает — «эта же сумма даёт 8 686 ₽ в месяц». Ровно то, ради чего был нужен чузер.</div>
     </div>
 
     <div>
@@ -1136,7 +1117,6 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             <div class="bx-sub"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="tx">Корзина ОФЗ</span><span class="cnt">6</span></div>
             <div class="grp">Подбор</div>
             <div class="bx-sub"><svg viewBox="0 0 24 24"><path d="M9.5 17h5"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9V17h-7v-3.1A6 6 0 0 1 12 3z"/></svg><span class="tx">Тест риск-профиля</span><span class="cnt">11</span></div>
-            <div class="bx-void" style="margin-top:4px"><b></b></div>
           </div>
           <div class="bx-foot">
             <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
@@ -1152,16 +1132,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
               <div class="v"><b class="num">1 000 000</b><span class="num">₽</span></div>
             </div>
             <div class="chips">
-              <span class="chip">100 тыс</span>
-              <span class="chip">500 тыс</span>
-              <span class="chip on">1 млн</span>
               <span class="chip wide"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Из портфелей · 1,46 млн</span>
-            </div>
-            <div class="chips" style="margin-left:16px">
               <span class="chip wide">Налог <b class="num" style="margin-left:2px;color:var(--ink)">НДФЛ 13%</b><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
             </div>
             <div class="sp"></div>
-            <div class="src">Купоны и НКД по данным<br>MOEX · <b>12:04</b></div>
+            <div class="src">Купоны и НКД · MOEX <b>12:04</b></div>
           </div>
           <div class="gr g3r">
             <div class="fold">
