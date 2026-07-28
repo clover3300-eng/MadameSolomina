@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Сайдбар · свёрнутое состояние (рейка 76px)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+       --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+       --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding:44px 0 90px;-webkit-font-smoothing:antialiased}
+.page{width:1440px;max-width:100%;margin:0 auto;padding:0 20px}
+
+/* ---------- документ ---------- */
+.doc-h{margin-bottom:34px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-acc);margin-bottom:9px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;text-wrap:balance;max-width:1000px}
+.doc-h p{margin-top:12px;font-size:15px;line-height:1.6;color:var(--doc-mut);max-width:880px}
+.verdict{margin-top:20px;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid var(--doc-acc);border-radius:14px;padding:16px 20px;max-width:980px}
+.verdict b{font-weight:700;color:var(--doc-ink)}
+.verdict p{margin:0;font-size:14.5px;line-height:1.6;color:var(--doc-quote)}
+.verdict p+p{margin-top:10px}
+
+.mk{margin-top:52px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.warn{background:rgba(217,119,6,.14);color:#c2760a}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-tag.ok{background:rgba(22,163,74,.15);color:#16a34a}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.6;max-width:980px;margin-bottom:18px}
+.notes{margin-top:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 26px}
+.note{display:flex;gap:9px;font-size:13px;line-height:1.5;color:var(--doc-quote)}
+.note i{flex:none;width:18px;height:18px;border-radius:50%;background:var(--doc-ink);color:var(--doc-bg);font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.note.no i{background:#c2760a;color:#fff}
+.note.ok i{background:#16a34a;color:#fff}
+.scroller{overflow-x:auto;padding:4px 0 10px}
+.strip{display:flex;gap:22px;align-items:flex-start;width:max-content}
+.spec-cap{margin-top:10px;font-size:12px;line-height:1.45;color:var(--doc-mut);max-width:300px}
+.spec-cap b{color:var(--doc-ink);font-weight:700;display:block;font-size:12.5px;margin-bottom:2px}
+@media (max-width:1000px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} }
+
+.map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th,.map td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--doc-line);vertical-align:top}
+.map th{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);background:color-mix(in srgb,var(--doc-line) 40%,transparent)}
+.map tr:last-child td{border-bottom:0}
+.map code{font-family:var(--fN);font-size:11.5px;color:var(--doc-acc)}
+.map .no{color:#c2760a;font-weight:700}
+.map .ok{color:#16a34a;font-weight:700}
+
+/* ════════ сцена ════════ */
+.sc{
+  --ink:#101828; --mut:#64748b; --dim:#98a4b4;
+  --line:#e7ecf3; --bg:#f4f6fa; --card:#fff;
+  --acc:#4453ef; --sel:#2F6B4F;
+  display:flex; width:760px; height:560px; overflow:hidden;
+  border:1px solid var(--doc-line); border-radius:18px;
+  background:var(--bg); color:var(--ink);
+  font-family:var(--fU); -webkit-font-smoothing:antialiased;
+  box-shadow:0 22px 50px -30px rgba(16,24,40,.45);
+  position:relative;
+}
+.sc.dk{
+  --ink:#e9eef8; --mut:#93a1b8; --dim:#5e6c84;
+  --line:rgba(255,255,255,.09); --bg:#0a0e15; --card:#121722;
+  --acc:#7c8cff; --sel:#4FB98C;
+}
+.sc svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* бледный макет страницы справа — только ради пропорции */
+.pg{flex:1;min-width:0;display:flex;flex-direction:column;padding:0 22px}
+.pg-top{display:flex;align-items:center;gap:11px;padding:16px 0 13px}
+.pg-pill{display:inline-flex;align-items:center;gap:7px;background:var(--card);border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:600;box-shadow:0 4px 14px -8px rgba(16,24,40,.4)}
+.pg-pill svg{width:14px;height:14px;color:var(--mut)}
+.pg-top .sp{flex:1}
+.pg-chip{width:70px;height:26px;border-radius:999px;background:var(--card);box-shadow:0 4px 14px -8px rgba(16,24,40,.4)}
+.pg-chip.rnd{width:26px;border-radius:50%}
+.pg-hero{background:var(--card);border-radius:16px;height:130px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;box-shadow:0 10px 26px -20px rgba(16,24,40,.5)}
+.pg-hero b{font-family:var(--fT);font-weight:400;font-size:17px}
+.pg-hero span{font-size:11.5px;color:var(--dim)}
+.pg-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.pg-kpi{background:var(--card);border-radius:13px;padding:11px 13px;box-shadow:0 10px 26px -22px rgba(16,24,40,.5)}
+.pg-kpi em{font-style:normal;display:block;font-size:8px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.pg-kpi b{display:block;margin-top:4px;font-family:var(--fN);font-size:15px;font-weight:700;letter-spacing:-.02em}
+.pg-card{margin-top:10px;flex:1;background:var(--card);border-radius:16px;padding:15px 16px;box-shadow:0 10px 26px -22px rgba(16,24,40,.5);min-height:0}
+.pg-card h4{font-family:var(--fT);font-weight:400;font-size:16px}
+.pg-rows{margin-top:11px;display:flex;flex-direction:column;gap:7px}
+.pg-row{height:22px;border-radius:7px;background:var(--bg)}
+.pg-row:nth-child(2){width:88%}.pg-row:nth-child(3){width:94%}
+
+/* ── общий каркас рейки ── */
+.rl{flex:none;background:var(--card);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center}
+.rl-mark{flex:none;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
+  background:linear-gradient(180deg,#232B3B 0%,#141A26 100%);color:#F1F6FB;font-family:var(--fT);font-size:17px}
+.sc.dk .rl-mark{background:#E9EEF8;color:#0A0E15}
+.rl-sp{flex:1}
+
+/* ════════ 00 · как сейчас ════════ */
+.r0{width:76px;padding:18px 0 12px}
+.r0 .rl-mark{margin-bottom:14px}
+.r0-i{position:relative;width:60px;padding:8px 0 6px;display:flex;flex-direction:column;align-items:center;gap:5px;
+  border-radius:12px;font-size:9.5px;font-weight:600;text-align:center;line-height:1.18;color:rgba(31,38,55,.58);cursor:pointer}
+.sc.dk .r0-i{color:rgba(233,238,248,.55)}
+.r0-i svg{width:20px;height:20px}
+.r0-i em{font-style:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;max-width:100%;word-break:break-word}
+.r0-i.on{color:var(--sel);font-weight:700}
+.r0-i.on::before{content:'';position:absolute;left:-8px;top:50%;transform:translateY(-50%);width:3px;height:34px;background:var(--sel);border-radius:0 3px 3px 0}
+.r0-foot{width:32px;height:32px;display:grid;place-items:center;border-radius:9px;color:var(--dim);margin-bottom:4px}
+.r0-foot svg{width:16px;height:16px}
+
+/* ════════ Р1 · кружки ════════ */
+.r1{width:68px;padding:18px 0 14px;gap:0}
+.r1 .rl-mark{margin-bottom:16px}
+.r1-hr{width:28px;height:1px;background:var(--line);margin-bottom:14px;flex:none}
+.r1-i{position:relative;width:40px;height:40px;margin-bottom:8px;flex:none;display:grid;place-items:center;
+  border-radius:50%;border:1.5px solid var(--line);background:var(--card);color:var(--dim);cursor:pointer;
+  transition:border-color .15s,color .15s,background .15s}
+.r1-i svg{width:19px;height:19px}
+.r1-i:hover{border-color:var(--dim);color:var(--ink);background:var(--bg)}
+.r1-i.on{background:var(--sel);border-color:var(--sel);color:#fff}
+.sc.dk .r1-i.on{color:#0A0E15}
+/* подсказка — имя раздела рядом с кружком */
+.r1-tip{position:absolute;left:52px;top:50%;transform:translateY(-50%);white-space:nowrap;
+  background:var(--ink);color:var(--card);font-size:11.5px;font-weight:600;padding:6px 10px;border-radius:9px;
+  box-shadow:0 12px 26px -12px rgba(16,24,40,.5);z-index:5}
+.sc.dk .r1-tip{background:#E9EEF8;color:#0A0E15}
+.r1-tip::before{content:'';position:absolute;left:-4px;top:50%;transform:translateY(-50%) rotate(45deg);width:8px;height:8px;background:inherit;border-radius:2px}
+
+/* ════════ Р2 · подпись честного кегля ════════ */
+.r2{width:84px;padding:18px 0 12px}
+.r2 .rl-mark{margin-bottom:16px}
+.r2-i{position:relative;width:72px;height:54px;margin-bottom:2px;flex:none;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:5px;border-radius:12px;cursor:pointer;
+  font-size:11px;font-weight:600;color:var(--mut);transition:background .15s,color .15s}
+.r2-i svg{width:20px;height:20px}
+.r2-i em{font-style:normal;max-width:100%;padding:0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2}
+.r2-i:hover{background:var(--bg);color:var(--ink)}
+.r2-i.on{color:var(--sel);font-weight:700;background:color-mix(in srgb,var(--sel) 10%,transparent)}
+
+/* ════════ Р3 · кружки + вылет второго уровня ════════ */
+.r3wrap{position:relative}
+.r3-pop{position:absolute;left:64px;top:96px;width:212px;background:var(--card);border:1px solid var(--line);
+  border-radius:16px;padding:8px 0;box-shadow:0 26px 54px -20px rgba(16,24,40,.42);z-index:6}
+.r3-pop-h{padding:7px 14px 9px;margin-bottom:2px;border-bottom:1px solid var(--line);
+  font-family:var(--fT);font-weight:400;font-size:15px}
+.r3-it{display:flex;align-items:center;gap:9px;padding:7px 14px;font-size:12.5px;font-weight:500;color:var(--mut);cursor:pointer}
+.r3-it svg{width:14px;height:14px;opacity:.65}
+.r3-it u{text-decoration:none;margin-left:auto;font-family:var(--fN);font-size:10px;font-weight:600;color:var(--dim)}
+.r3-it:hover{background:var(--bg);color:var(--ink)}
+.r3-it.on{background:var(--bg);color:var(--ink);font-weight:600}
+.r3-it.on svg{opacity:1;color:var(--sel)}
+.r3-grp{padding:11px 14px 4px;font-size:9px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+.r3-dot{width:8px;height:8px;border-radius:50%;flex:none;margin:0 3px}
+
+/* ── образцы ── */
+.st{
+  --ink:#101828;--mut:#64748b;--dim:#98a4b4;--line:#e7ecf3;--bg:#f4f6fa;--card:#fff;--sel:#2F6B4F;
+  background:var(--card);border:1px solid var(--doc-line);border-radius:16px;padding:16px;color:var(--ink);
+  display:flex;align-items:center;gap:18px
+}
+.st svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.st-lab{font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--doc-dim);margin-bottom:9px}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="doc-h">
+  <div class="doc-kicker">Сайдбар · свёрнутое состояние</div>
+  <h1>Рейка 76px: что с ней не так и три способа это починить</h1>
+  <p>Развёрнутая колонка получилась, свёрнутая — нет. Ниже сначала честный слепок того,
+  что сейчас в коде, с замерами; потом три варианта. Все замеры — в CSS-пикселях
+  (на экране они ещё на 10% меньше: <code style="font-family:var(--fN);font-size:13px">body{zoom:.9}</code>).</p>
+  <div class="verdict">
+    <p><b>Корень проблемы один:</b> рейка говорит не на том языке, что колонка. В колонке раздел —
+    это кружок-иконка с именем рядом; в рейке кружок исчезает, остаётся голая иконка, а имя
+    сжимается до <span style="font-family:var(--fN)">9,5px</span> и ломается на две строки. Свёртка
+    выглядит не как «то же меню поуже», а как другое меню.</p>
+    <p><b>И один структурный изъян:</b> свёрнутая рейка — тупик. Второй уровень исчезает целиком,
+    и с «Портфелей» пропадают все подвкладки: чтобы попасть в «Операции», надо сначала развернуть
+    сайдбар. Это чинит только Р3.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════ 00 ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h">
+    <span class="mk-n">00</span>
+    <h2>Как сейчас</h2>
+    <span class="mk-tag mute">слепок кода, не рисунок</span>
+  </div>
+  <p class="mk-sub">Разметка и размеры повторяют <code style="font-family:var(--fN);font-size:13px">body.sb-rail</code>
+  из <code style="font-family:var(--fN);font-size:13px">css/sidebar-rail.css</code> один в один.</p>
+
+  <div class="scroller"><div class="strip">
+  <div>
+  <div class="sc">
+    <div class="rl r0">
+      <div class="rl-mark">M</div>
+      <div class="r0-i"><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg><em>Главная</em></div>
+      <div class="r0-i"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><em>Расчёт</em></div>
+      <div class="r0-i on"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg><em>Портфели</em></div>
+      <div class="r0-i"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg><em>Академия Ребаланс…</em></div>
+      <div class="r0-i"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><em>Рынок</em></div>
+      <div class="r0-i"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg><em>Тест</em></div>
+      <div class="rl-sp"></div>
+      <div class="r0-foot"><svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg></div>
+    </div>
+    <div class="pg">
+      <div class="pg-top"><div class="pg-pill"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Портфели</div><div class="sp"></div><div class="pg-chip"></div><div class="pg-chip rnd"></div></div>
+      <div class="pg-hero"><b>Обзор портфелей</b><span>карточки, избранное, новости</span></div>
+      <div class="pg-kpis"><div class="pg-kpi"><em>Ключевая</em><b>21.0%</b></div><div class="pg-kpi"><em>Вклады</em><b>21.5%</b></div><div class="pg-kpi"><em>Инфляция</em><b>9.1%</b></div></div>
+      <div class="pg-card"><h4>Избранное</h4><div class="pg-rows"><div class="pg-row"></div><div class="pg-row"></div><div class="pg-row"></div></div></div>
+    </div>
+  </div>
+  <div class="spec-cap"><b>Замеры с живой страницы</b>Подпись <span style="font-family:var(--fN)">9,5px</span> (на экране 8,6). Строки <span style="font-family:var(--fN)">50,2px</span>, кроме «Академии Ребалансировки» — <span style="font-family:var(--fN)">61,4px</span> в две строки и всё равно с многоточием. Список занимает <span style="font-family:var(--fN)">338</span> из <span style="font-family:var(--fN)">1000px</span> высоты.</div>
+  </div>
+  </div></div>
+
+  <div class="notes">
+    <div class="note no"><i>1</i><span><b>Подпись нечитаемая.</b> 9,5px под zoom 0,9 дают на экране 8,6px — это ниже любого разумного минимума для интерфейса.</span></div>
+    <div class="note no"><i>2</i><span><b>Ритм ломается.</b> Переименованная из админки «Академия Ребалансировки» выше соседей на 11px и всё равно обрезана — строка выпадает из ряда.</span></div>
+    <div class="note no"><i>3</i><span><b>Языки не рифмуются.</b> В колонке раздел — кружок-иконка, в рейке кружок пропадает. Свёртка читается сменой меню, а не сужением.</span></div>
+    <div class="note no"><i>4</i><span><b>Метка активного слабая.</b> Риска 3px у самого края экрана плюс зелёные чернила на 8,6px — на глаз почти незаметно.</span></div>
+    <div class="note no"><i>5</i><span><b>Тупик.</b> Второй уровень исчезает: с «Портфелей» пропадают «Операции», «Торговля», открытые портфели.</span></div>
+    <div class="note no"><i>6</i><span><b>662px пустоты.</b> Кнопка разворота одна внизу, оторвана от всего; между ней и «Тестом» — две трети высоты ни о чём.</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ Р1 ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h">
+    <span class="mk-n">Р1</span>
+    <h2>«Кружки» — рейка 68px, подписи в подсказке</h2>
+    <span class="mk-tag ok">рекомендую как основу</span>
+  </div>
+  <p class="mk-sub">Рейка начинает говорить языком колонки: раздел — тот же кружок-иконка, только
+  крупнее (40px против 29px), активный — та же зелёная заливка. Подписей нет вовсе; имя
+  показывает подсказка у курсора. Кнопка разворота становится таким же кружком — колонка читается
+  единым ритмом сверху донизу.</p>
+
+  <div class="scroller"><div class="strip">
+  <div>
+  <div class="sc">
+    <div class="rl r1">
+      <div class="rl-mark">M</div>
+      <div class="r1-hr"></div>
+      <div class="r1-i"><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg></div>
+      <div class="r1-i"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></div>
+      <div class="r1-i on"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></div>
+      <div class="r1-i"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        <span class="r1-tip">Академия Ребалансировки</span></div>
+      <div class="r1-i"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <div class="r1-i"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></div>
+      <div class="rl-sp"></div>
+      <div class="r1-hr" style="margin:0 0 12px"></div>
+      <div class="r1-i" style="margin-bottom:0"><svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg></div>
+    </div>
+    <div class="pg">
+      <div class="pg-top"><div class="pg-pill"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Портфели</div><div class="sp"></div><div class="pg-chip"></div><div class="pg-chip rnd"></div></div>
+      <div class="pg-hero"><b>Обзор портфелей</b><span>карточки, избранное, новости</span></div>
+      <div class="pg-kpis"><div class="pg-kpi"><em>Ключевая</em><b>21.0%</b></div><div class="pg-kpi"><em>Вклады</em><b>21.5%</b></div><div class="pg-kpi"><em>Инфляция</em><b>9.1%</b></div></div>
+      <div class="pg-card"><h4>Избранное</h4><div class="pg-rows"><div class="pg-row"></div><div class="pg-row"></div><div class="pg-row"></div></div></div>
+    </div>
+  </div>
+  <div class="spec-cap"><b>Наведение на «Академию»</b>Подсказка показана намеренно: это единственное место, где длинное имя из админки живёт целиком — и оно перестаёт быть проблемой вёрстки.</div>
+  </div>
+  </div></div>
+
+  <div class="notes">
+    <div class="note ok"><i>1</i><span><b>Языки срифмовались.</b> Свёртка теперь читается как сужение: кружок остаётся кружком, зелёная заливка активного — той же.</span></div>
+    <div class="note ok"><i>2</i><span><b>Переименование перестаёт ломать вёрстку.</b> Имя живёт в подсказке, и его длина рейке безразлична.</span></div>
+    <div class="note ok"><i>3</i><span><b>Ещё 8px странице.</b> Без подписей рейке хватает 68px вместо 76.</span></div>
+    <div class="note no"><i>4</i><span><b>Имена — только по наведению.</b> Иконки узнаваемы не все («Расчёт» и «Академия» соседствуют по смыслу), первое время придётся наводить.</span></div>
+    <div class="note no"><i>5</i><span><b>Тупик остаётся.</b> Второй уровень по-прежнему исчезает — это чинит Р3.</span></div>
+    <div class="note"><i>6</i><span><b>Подсказка обязана быть своя.</b> Нативный <code style="font-family:var(--fN);font-size:12px">title</code> всплывает через секунду и выглядит чужим — нужен свой чип, как на макете.</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ Р2 ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h">
+    <span class="mk-n">Р2</span>
+    <h2>«Честный кегль» — рейка 84px, подпись 11px в одну строку</h2>
+    <span class="mk-tag mute">если подписи нужны всегда</span>
+  </div>
+  <p class="mk-sub">Тот же приём, что сейчас, но без вранья: подпись читаемая (11px вместо 9,5),
+  строго одна строка с многоточием, строки одной высоты. За это рейка платит 8px ширины.</p>
+
+  <div class="scroller"><div class="strip">
+  <div>
+  <div class="sc">
+    <div class="rl r2">
+      <div class="rl-mark">M</div>
+      <div class="r2-i"><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg><em>Главная</em></div>
+      <div class="r2-i"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><em>Расчёт</em></div>
+      <div class="r2-i on"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg><em>Портфели</em></div>
+      <div class="r2-i"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg><em>Академия…</em></div>
+      <div class="r2-i"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><em>Рынок</em></div>
+      <div class="r2-i"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg><em>Тест</em></div>
+      <div class="rl-sp"></div>
+      <div class="r0-foot"><svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg></div>
+    </div>
+    <div class="pg">
+      <div class="pg-top"><div class="pg-pill"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Портфели</div><div class="sp"></div><div class="pg-chip"></div><div class="pg-chip rnd"></div></div>
+      <div class="pg-hero"><b>Обзор портфелей</b><span>карточки, избранное, новости</span></div>
+      <div class="pg-kpis"><div class="pg-kpi"><em>Ключевая</em><b>21.0%</b></div><div class="pg-kpi"><em>Вклады</em><b>21.5%</b></div><div class="pg-kpi"><em>Инфляция</em><b>9.1%</b></div></div>
+      <div class="pg-card"><h4>Избранное</h4><div class="pg-rows"><div class="pg-row"></div><div class="pg-row"></div><div class="pg-row"></div></div></div>
+    </div>
+  </div>
+  <div class="spec-cap"><b>Активный — пилюлей, а не риской</b>Зелёная риска у края экрана в этом варианте не нужна: подсветка строки читается сама, и метка перестаёт зависеть от того, где кончается экран.</div>
+  </div>
+  </div></div>
+
+  <div class="notes">
+    <div class="note ok"><i>1</i><span><b>Имена видны всегда.</b> Наводить не нужно, узнавание мгновенное — главное преимущество перед Р1.</span></div>
+    <div class="note ok"><i>2</i><span><b>Ритм ровный.</b> Строки строго 54px, длинное имя честно обрезается многоточием в одну строку.</span></div>
+    <div class="note no"><i>3</i><span><b>Рейка толстеет.</b> 84px против 76 — свёрнутое состояние отдаёт странице меньше, чем сейчас, и заметно меньше, чем Р1.</span></div>
+    <div class="note no"><i>4</i><span><b>«Академия…» всё равно не читается.</b> В 72px помещается 9–10 знаков: от переименованного имени остаётся огрызок, и подсказка всё равно нужна.</span></div>
+    <div class="note no"><i>5</i><span><b>Языки так и не срифмованы.</b> Кружка нет, свёртка по-прежнему выглядит другим меню.</span></div>
+    <div class="note no"><i>6</i><span><b>Тупик остаётся.</b> Как и в Р1.</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ Р3 ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h">
+    <span class="mk-n">Р3</span>
+    <h2>«Кружки + вылет» — Р1 плюс второй уровень по наведению</h2>
+    <span class="mk-tag ok">чинит тупик</span>
+    <span class="mk-tag warn">дороже остальных</span>
+  </div>
+  <p class="mk-sub">Всё как в Р1, но наведение на раздел со вторым уровнем показывает его список
+  карточкой поверх страницы. Свёрнутый сайдбар перестаёт быть тупиком: «Операции» и «Торговля»
+  достижимы, не разворачивая колонку. Карточка уезжает по уходу курсора и по выбору пункта.</p>
+
+  <div class="scroller"><div class="strip">
+  <div>
+  <div class="sc r3wrap">
+    <div class="rl r1">
+      <div class="rl-mark">M</div>
+      <div class="r1-hr"></div>
+      <div class="r1-i"><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg></div>
+      <div class="r1-i"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></div>
+      <div class="r1-i on"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></div>
+      <div class="r1-i"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+      <div class="r1-i"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+      <div class="r1-i"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></div>
+      <div class="rl-sp"></div>
+      <div class="r1-hr" style="margin:0 0 12px"></div>
+      <div class="r1-i" style="margin-bottom:0"><svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg></div>
+    </div>
+
+    <div class="r3-pop">
+      <div class="r3-pop-h">Портфели</div>
+      <div class="r3-it on"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>Обзор</div>
+      <div class="r3-it"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg>Мои портфели<u>3</u></div>
+      <div class="r3-it"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>Аналитика</div>
+      <div class="r3-it"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Отчёты</div>
+      <div class="r3-it"><svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Операции<u>24</u></div>
+      <div class="r3-it"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M5 7h14"/><path d="M8 7l-4 7h8z"/><path d="M16 7l-4 7h8z"/></svg>Ребаланс</div>
+      <div class="r3-it"><svg viewBox="0 0 24 24"><rect x="3.5" y="8" width="6" height="9" rx="1.5"/><path d="M6.5 4v4M6.5 17v3"/><rect x="14.5" y="5" width="6" height="10" rx="1.5"/><path d="M17.5 3v2M17.5 15v6"/></svg>Торговля<u>2</u></div>
+      <div class="r3-grp">Открытые портфели</div>
+      <div class="r3-it"><span class="r3-dot" style="background:#5f7fa8"></span>Пенсия-2045<u style="color:#16a34a">+0,9%</u></div>
+    </div>
+
+    <div class="pg" style="padding-left:22px">
+      <div class="pg-top"><div class="pg-pill"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Портфели</div><div class="sp"></div><div class="pg-chip"></div><div class="pg-chip rnd"></div></div>
+      <div class="pg-hero"><b>Обзор портфелей</b><span>карточки, избранное, новости</span></div>
+      <div class="pg-kpis"><div class="pg-kpi"><em>Ключевая</em><b>21.0%</b></div><div class="pg-kpi"><em>Вклады</em><b>21.5%</b></div><div class="pg-kpi"><em>Инфляция</em><b>9.1%</b></div></div>
+      <div class="pg-card"><h4>Избранное</h4><div class="pg-rows"><div class="pg-row"></div><div class="pg-row"></div><div class="pg-row"></div></div></div>
+    </div>
+  </div>
+  <div class="spec-cap"><b>Наведение на «Портфели»</b>Тот же список, что в развёрнутой колонке, и та же модель данных <span style="font-family:var(--fN)">PF.sbSideModel()</span> — карточка ничего не выдумывает.</div>
+  </div>
+  </div></div>
+
+  <div class="notes">
+    <div class="note ok"><i>1</i><span><b>Свёртка перестаёт быть потерей.</b> Второй уровень достижим одним наведением — свернуть сайдбар больше не значит отрезать половину навигации.</span></div>
+    <div class="note ok"><i>2</i><span><b>Данные те же.</b> Карточка берёт готовую модель раздела, новых источников не нужно.</span></div>
+    <div class="note ok"><i>3</i><span><b>Имя раздела в шапке карточки.</b> Отдельная подсказка разделам со вторым уровнем не нужна — карточка сама подписана.</span></div>
+    <div class="note no"><i>4</i><span><b>Это оверлей.</b> Такой уже отвергали 2026-07-28 — но там он предлагался как ПОСТОЯННАЯ раскладка. Здесь он живёт только в свёрнутом состоянии, которое пользователь включил сам.</span></div>
+    <div class="note no"><i>5</i><span><b>Нужна возня с наведением.</b> Задержка на открытие и на уход, чтобы карточка не мигала при проходе курсора вдоль рейки.</span></div>
+    <div class="note no"><i>6</i><span><b>Дороже всех.</b> Р1 и Р2 — правки CSS; здесь нужен ещё и рендер карточки с позиционированием по кружку.</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ состояния ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h">
+    <span class="mk-n">С</span>
+    <h2>Кружок раздела: состояния</h2>
+    <span class="mk-tag mute">в натуральную величину</span>
+  </div>
+  <p class="mk-sub">Слева направо: покой, наведение, активный, кнопка разворота внизу. Диаметр 40px,
+  обводка 1,5px, иконка 19px — те же величины, что у кружка 29px в колонке, увеличенные под рейку
+  без подписей.</p>
+
+  <div class="scroller"><div class="strip">
+    <div>
+      <div class="st">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <div class="st-lab" style="margin:0">покой</div>
+          <div style="width:40px;height:40px;display:grid;place-items:center;border-radius:50%;border:1.5px solid var(--line);color:var(--dim)">
+            <svg viewBox="0 0 24 24" style="width:19px;height:19px"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <div class="st-lab" style="margin:0">ховер</div>
+          <div style="width:40px;height:40px;display:grid;place-items:center;border-radius:50%;border:1.5px solid var(--dim);background:var(--bg);color:var(--ink)">
+            <svg viewBox="0 0 24 24" style="width:19px;height:19px"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <div class="st-lab" style="margin:0">активный</div>
+          <div style="width:40px;height:40px;display:grid;place-items:center;border-radius:50%;border:1.5px solid var(--sel);background:var(--sel);color:#fff">
+            <svg viewBox="0 0 24 24" style="width:19px;height:19px"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <div class="st-lab" style="margin:0">развернуть</div>
+          <div style="width:40px;height:40px;display:grid;place-items:center;border-radius:50%;border:1.5px solid var(--line);color:var(--dim)">
+            <svg viewBox="0 0 24 24" style="width:19px;height:19px"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg></div>
+        </div>
+      </div>
+      <div class="spec-cap" style="max-width:560px"><b>Зелёная риска у края экрана уходит</b>Она была меткой активного в текущей рейке и держалась за левый край окна. Заливка кружка — метка того же смысла, но она принадлежит самому пункту, а не краю экрана.</div>
+    </div>
+
+    <div>
+      <div class="st" style="align-items:flex-start">
+        <div>
+          <div class="st-lab">подсказка</div>
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:40px;height:40px;display:grid;place-items:center;border-radius:50%;border:1.5px solid var(--dim);background:var(--bg);color:var(--ink)">
+              <svg viewBox="0 0 24 24" style="width:19px;height:19px"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+            <span style="background:var(--ink);color:#fff;font-size:11.5px;font-weight:600;padding:6px 10px;border-radius:9px;white-space:nowrap">Академия Ребалансировки</span>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>Длинное имя — не проблема вёрстки</b>Подсказка не ограничена шириной рейки, поэтому переименование вкладки из админки перестаёт что-либо ломать.</div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ═══════════════════ сравнение ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h">
+    <span class="mk-n">Ц</span>
+    <h2>Что почём</h2>
+  </div>
+  <table class="map">
+    <thead><tr><th>&nbsp;</th><th>00 · сейчас</th><th>Р1 · кружки</th><th>Р2 · подпись 11px</th><th>Р3 · кружки + вылет</th></tr></thead>
+    <tbody>
+      <tr><td><b>Ширина рейки</b></td><td>76px</td><td class="ok">68px</td><td class="no">84px</td><td class="ok">68px</td></tr>
+      <tr><td><b>Имена разделов</b></td><td class="no">9,5px, нечитаемы</td><td>по наведению</td><td class="ok">11px, всегда</td><td>по наведению + шапка карточки</td></tr>
+      <tr><td><b>Переименование из админки</b></td><td class="no">ломает ритм</td><td class="ok">безразлично</td><td>обрезается многоточием</td><td class="ok">безразлично</td></tr>
+      <tr><td><b>Рифма с колонкой</b></td><td class="no">нет</td><td class="ok">полная</td><td class="no">нет</td><td class="ok">полная</td></tr>
+      <tr><td><b>Второй уровень</b></td><td class="no">недоступен</td><td class="no">недоступен</td><td class="no">недоступен</td><td class="ok">по наведению</td></tr>
+      <tr><td><b>Цена работы</b></td><td>—</td><td class="ok">CSS + свой тултип</td><td class="ok">только CSS</td><td class="no">CSS + рендер карточки</td></tr>
+    </tbody>
+  </table>
+
+  <div class="notes" style="grid-template-columns:1fr 1fr">
+    <div class="note"><i>!</i><span><b>Р1 и Р3 не альтернативы, а этапы.</b> Р3 — это Р1 плюс карточка второго уровня: можно взять Р1 сейчас и добавить вылет отдельным шагом.</span></div>
+    <div class="note no"><i>?</i><span><b>Открыто:</b> оставлять ли квадрат «M» в свёрнутой рейке. Он на 6px шире кружков и выбивается из ряда — но он же кнопка обновления и якорь марки.</span></div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
