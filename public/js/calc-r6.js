@@ -143,12 +143,24 @@
     var sig = 0.012 + (1 - b) * 0.05;
     var cash = S * (b * rB + (1 - b) * DIV_Y) * (1 - taxRate()) / 12; // купоны+дивиденды в месяц
     return {
-      r: r,
+      r: r, rB: rB, b: b,
       base: S * Math.pow(1 + r, YEARS),
       lo:   S * Math.pow(1 + Math.max(0.001, r - sig), YEARS),
       hi:   S * Math.pow(1 + r + sig, YEARS),
       cash: cash
     };
+  }
+
+  // Чья это прибыль: облигационная половина растёт своей ставкой rB, акционная —
+  // rB + премия. Доли нормируем на общую прибыль по смешанной ставке, поэтому
+  // сумма сегментов столбика ТОЧНО равна числу в заголовке карточки.
+  function profitSplit(S, g, i) {
+    var pB = g.b * (Math.pow(1 + g.rB, i) - 1);
+    var pE = (1 - g.b) * (Math.pow(1 + g.rB + EQ_PREM, i) - 1);
+    var tot = Math.pow(1 + g.r, i) - 1;
+    var sum = pB + pE;
+    var k = sum > 0 ? tot / sum : 0;
+    return { bond: S * pB * k, eq: S * pE * k };
   }
 
   // ── ГРАФИКИ ───────────────────────────────────────────────────────────────
@@ -209,9 +221,9 @@
     return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '">' +
       '<defs>' +
         '<linearGradient id="' + gU + '" x1="0" y1="0" x2="0" y2="1">' +
-          '<stop offset="0" stop-color="#4a8df0" stop-opacity=".26"/>' +
-          '<stop offset=".55" stop-color="#4a8df0" stop-opacity=".08"/>' +
-          '<stop offset="1" stop-color="#4a8df0" stop-opacity="0"/>' +
+          '<stop offset="0" stop-color="var(--cx-bond,#3B7AD1)" stop-opacity=".26"/>' +
+          '<stop offset=".55" stop-color="var(--cx-bond,#3B7AD1)" stop-opacity=".08"/>' +
+          '<stop offset="1" stop-color="var(--cx-bond,#3B7AD1)" stop-opacity="0"/>' +
         '</linearGradient>' +
         '<filter id="' + fS + '" x="-8%" y="-25%" width="116%" height="170%">' +
           '<feDropShadow dx="0" dy="7" stdDeviation="7" flood-color="#2f6fd0" flood-opacity=".30"/>' +
@@ -221,12 +233,12 @@
         '<line x1="0" y1="' + Math.round(yT + (yB - yT) * .33) + '" x2="' + W + '" y2="' + Math.round(yT + (yB - yT) * .33) + '"/>' +
         '<line x1="0" y1="' + Math.round(yT + (yB - yT) * .66) + '" x2="' + W + '" y2="' + Math.round(yT + (yB - yT) * .66) + '"/>' +
       '</g>' + body +
-      '<path d="' + d(basePts) + '" fill="none" stroke="#4a8df0" stroke-width="2.6" ' +
+      '<path d="' + d(basePts) + '" fill="none" stroke="var(--cx-bond,#3B7AD1)" stroke-width="2.6" ' +
         'stroke-linecap="round" filter="url(#' + fS + ')"/>' +
-      '<circle cx="' + x1 + '" cy="' + yEnd.toFixed(1) + '" r="4" fill="#4a8df0"/>' +
+      '<circle cx="' + x1 + '" cy="' + yEnd.toFixed(1) + '" r="4" fill="var(--cx-bond,#3B7AD1)"/>' +
       '<text x="' + (x1 - 9) + '" y="' + (yEnd - 11).toFixed(1) + '" text-anchor="end" font-family="var(--r5-mono,monospace)" font-size="12" font-weight="700" fill="currentColor">' + fmtCapPlain(g.base) + '</text>' +
-      '<text x="2" y="' + (H - 5) + '" font-family="var(--r5-mono,monospace)" font-size="10" fill="#97a3b4">' + year0 + '</text>' +
-      '<text x="' + x1 + '" y="' + (H - 5) + '" text-anchor="end" font-family="var(--r5-mono,monospace)" font-size="10" fill="#97a3b4">' + (year0 + YEARS) + '</text>' +
+      '<text x="2" y="' + (H - 5) + '" font-family="var(--r5-mono,monospace)" font-size="10" fill="var(--cx-dim,#66748A)">' + year0 + '</text>' +
+      '<text x="' + x1 + '" y="' + (H - 5) + '" text-anchor="end" font-family="var(--r5-mono,monospace)" font-size="10" fill="var(--cx-dim,#66748A)">' + (year0 + YEARS) + '</text>' +
     '</svg>';
   }
 
@@ -242,7 +254,7 @@
     host.innerHTML = colsSVG(S, g, W, H, host.id || 'x');
   }
 
-  // столбик с прибылью: скруглён только сверху, снизу стыкуется с основанием
+  // сегмент прибыли: скруглён только сверху, снизу стыкуется с тем, что под ним
   function capPath(x, bw, yTop, yBase) {
     var r = Math.min(6, Math.max(0, (yBase - yTop) / 2));
     return 'M' + x + ',' + yBase.toFixed(1) +
@@ -263,27 +275,34 @@
     var x0 = Math.round((W - (n * bw + (n - 1) * gap)) / 2);
     var baseH = hOf(S), yBase = bot - baseH;
     var year0 = new Date().getFullYear();
-    var gid = 'cxr6c_' + uid;
-    var s = '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">' +
-      '<stop offset="0" stop-color="#6ba4f5"/><stop offset="1" stop-color="#4a8df0"/>' +
-      '</linearGradient></defs>';
+    var s = '';
     for (var i = 0; i < n; i++) {
       var val = S * Math.pow(1 + g.r, i);
       var x = x0 + i * (bw + gap), yTop = bot - hOf(val);
       s += '<rect x="' + x + '" y="' + yBase.toFixed(1) + '" width="' + bw + '" height="' + baseH.toFixed(1) + '" fill="var(--cx-cbase,#dde5f1)"/>';
-      if (i > 0) s += '<path d="' + capPath(x, bw, yTop, yBase) + '" fill="url(#' + gid + ')"/>';
+      if (i > 0) {
+        // снизу вверх: вложено → прибыль облигаций → прибыль акций
+        var sp = profitSplit(S, g, i);
+        var yBond = yBase - hOf(sp.bond);
+        s += '<rect x="' + x + '" y="' + yBond.toFixed(1) + '" width="' + bw + '" height="' + hOf(sp.bond).toFixed(1) + '" fill="var(--cx-bond,#3B7AD1)"/>';
+        s += '<path d="' + capPath(x, bw, yTop, yBond) + '" fill="var(--cx-eq,#D08A3C)"/>';
+      }
       s += '<text x="' + (x + bw / 2) + '" y="' + (yTop - 11).toFixed(1) + '" text-anchor="middle" ' +
         'font-family="var(--r5-mono,monospace)" font-size="12.5" font-weight="700" fill="currentColor">' +
         fmtCapPlain(val) + '</text>';
       s += '<text x="' + (x + bw / 2) + '" y="' + (bot + 18) + '" text-anchor="middle" ' +
-        'font-family="var(--r5-mono,monospace)" font-size="10" font-weight="600" fill="#97a3b4">' +
+        'font-family="var(--r5-mono,monospace)" font-size="10" font-weight="600" fill="var(--cx-dim,#66748A)">' +
         (i ? (year0 + i) : 'сегодня') + '</text>';
     }
-    // легенда — что серое, что синее
-    s += '<rect x="1" y="5" width="9" height="9" rx="2" fill="var(--cx-cbase,#dde5f1)"/>' +
-      '<text x="16" y="13.5" font-family="var(--r5-mono,monospace)" font-size="9.5" font-weight="700" fill="#97a3b4">вложено</text>' +
-      '<rect x="83" y="5" width="9" height="9" rx="2" fill="#4a8df0"/>' +
-      '<text x="98" y="13.5" font-family="var(--r5-mono,monospace)" font-size="9.5" font-weight="700" fill="#97a3b4">прибыль</text>';
+    // легенда: столбик назвал источники прибыли, а не просто «прибыль»
+    var LEG = [['var(--cx-cbase,#dde5f1)', 'вложено', 1],
+               ['var(--cx-bond,#3B7AD1)', 'облигации', 78],
+               ['var(--cx-eq,#D08A3C)', 'акции', 173]];
+    LEG.forEach(function (l) {
+      s += '<rect x="' + l[2] + '" y="5" width="9" height="9" rx="2" fill="' + l[0] + '"/>' +
+        '<text x="' + (l[2] + 15) + '" y="13.5" font-family="var(--r5-mono,monospace)" font-size="9.5" ' +
+        'font-weight="700" fill="var(--cx-dim,#66748A)">' + l[1] + '</text>';
+    });
     return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '">' + s + '</svg>';
   }
 
@@ -304,34 +323,25 @@
     return html + '</div>';
   }
 
-  // ── ГЕРОЙ ─────────────────────────────────────────────────────────────────
-  // Кикер рабочих режимов — хлебная крошка: «Расчёт» кликабелен и ведёт назад,
-  // в выбор типа. Отдельной строкой кнопка «назад» стоила 50px и опускала весь
-  // герой на рабочих экранах относительно экрана выбора; крошка — 0px.
-  var CRUMB =
-    '<button type="button" id="cxHeroBack">' +
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M11 18l-6-6 6-6"/></svg>' +
-      '<span>Расчёт</span>' +
-    '</button><span class="cxh-sep">·</span>';
-
+  // ── РАБОЧАЯ ШАПКА (раунд «Пульт») ─────────────────────────────────────────
+  // Тёмной плиты 253px больше нет: шапка живёт на фоне страницы и стоит 104px.
+  // Крошка «← Расчёт» и кикер сняты — назад и переключение типа держит колонка
+  // сайдбара, а единственный капслок экрана достался подписи суммы.
   var TXT = {
     choose: {
-      kick: 'Новый расчёт',
       title: 'Что для вас важнее сейчас?',
-      sub: 'Введите сумму — обе карточки сразу покажут, что она даст: рост на годы или выплаты каждый месяц.',
-      hint: 'цифры в карточках пересчитаются мгновенно'
+      sub: 'Введите сумму: обе карточки посчитают её на реальных ценах MOEX.',
+      hint: 'цены и купоны по данным MOEX'
     },
     mix: {
-      kick: CRUMB + '<span class="acc-b">Хочу рост</span>',
-      title: 'Нарастить капитал за годы',
-      sub: 'Выберите стратегию — прогноз пересчитается мгновенно.',
-      hint: 'меняйте прямо здесь — всё пересчитается'
+      title: 'Рост капитала за годы',
+      sub: 'Стратегия задаёт долю акций. Прогноз пересчитывается сразу.',
+      hint: 'цены акций и облигаций по данным MOEX'
     },
     monthly: {
-      kick: CRUMB + '<span class="acc-o">Хочу доход</span>',
-      title: 'Получать деньги каждый месяц',
-      sub: 'Корзина из 6 выпусков ОФЗ уже разложена под вашу сумму — подкрутите под себя.',
-      hint: 'меняйте прямо здесь — всё пересчитается'
+      title: 'Деньги каждый месяц',
+      sub: 'Шесть выпусков ОФЗ разложены так, чтобы купон приходил в любой месяц года.',
+      hint: 'цены и НКД по данным MOEX'
     }
   };
 
@@ -344,11 +354,9 @@
     var hero = el('div', '', '');
     hero.id = 'cxHero';
     hero.innerHTML =
-      '<span class="cxh-wm">₽</span>' +
       '<div class="cxh-row">' +
         '<div class="cxh-left">' +
-          '<div class="cxh-kick" id="cxHeroKick"></div>' +
-          '<div class="cxh-title" id="cxHeroTitle"></div>' +
+          '<h1 class="cxh-title" id="cxHeroTitle"></h1>' +
           '<div class="cxh-sub" id="cxHeroSub"></div>' +
         '</div>' +
         '<div class="cxh-amt">' +
@@ -359,21 +367,14 @@
       '</div>';
     rows.insertBefore(hero, rows.firstChild);
 
-    // сумма переезжает в герой; обработчики #sumInput сохраняются
+    // сумма переезжает в шапку; обработчики #sumInput сохраняются
     $('cxHeroAmtHost').appendChild(amountHero);
-    // крошку «Расчёт» syncHero перерисовывает вместе с кикером, поэтому клик
-    // ловим на самом кикере, а не на самой кнопке
-    $('cxHeroKick').addEventListener('click', function (e) {
-      if (!e.target.closest('#cxHeroBack')) return;
-      if (typeof window.cxSetMode === 'function') window.cxSetMode('choose');
-    });
     return true;
   }
 
   function syncHero() {
     var m = currentMode(), t = TXT[m];
-    var k = $('cxHeroKick'), ti = $('cxHeroTitle'), s = $('cxHeroSub'), h = $('cxHeroHint');
-    if (k) k.innerHTML = t.kick;
+    var ti = $('cxHeroTitle'), s = $('cxHeroSub'), h = $('cxHeroHint');
     if (ti) ti.textContent = t.title;
     if (s) s.textContent = t.sub;
     if (h) h.textContent = t.hint;
@@ -517,8 +518,23 @@
       if (k) k.textContent = kick;
       if (t) t.textContent = title;
     };
-    setCard(cap, '01', 'Прогноз', 'Ваш портфель');
-    setCard(dist, '02', 'Распределение', 'Стратегия');
+    // приписка справа в строке заголовка (сам заголовок — .t, живёт в потоке)
+    var addAside = function (card, id, html) {
+      if ($(id)) return;
+      var t = card.querySelector(':scope > .t');
+      if (!t) return;
+      var a = el('span', 'cx-aside', html);
+      a.id = id;
+      t.appendChild(a);
+    };
+    // Кикеры сняты (водяные номера прячет css): заголовок карточки сам себя
+    // называет, и капслок-подписей на экране остаётся ровно одна — у суммы.
+    setCard(cap, '', '', 'Ваш портфель через ' + YEARS + ' года');
+    setCard(dist, '', '', 'Стратегия');
+    // приписки в правом углу заголовка: коридор сценариев и легенда полосы
+    addAside(cap, 'cxFcRange', '');
+    // Легенды в шапке «Стратегии» нет: доли называют сами строки списка
+    // («Обл. 50%» / «Акц. 50%»), там же живут поповеры терминов.
 
     var body = cap.querySelector(':scope > .ct');
     var center = cap.querySelector('.cx-cap-center');
@@ -533,8 +549,8 @@
       '<div id="cxFcRng"></div>' +
       '<div id="cxFcChart"></div>' +
       '<div id="cxFcFacts">' +
-        '<span class="f"><span class="fic">₽</span>Доход в месяц — <b id="cxFcCash">—</b></span>' +
-        '<span class="f"><span class="fic">%</span>Доходность — <b id="cxFcYield">—</b></span>' +
+        '<span class="f"><span class="fl">Доход в месяц</span><b id="cxFcCash" class="o">—</b></span>' +
+        '<span class="f"><span class="fl">Прибыль за ' + YEARS + ' года</span><b id="cxFcYield" class="g">—</b></span>' +
       '</div>' +
       '<div id="cxFcCta"></div>';
     if (body) body.insertBefore(fc, body.firstChild);
@@ -593,14 +609,19 @@
     if (fb) {
       if (g) {
         fb.innerHTML = '≈ ' + fmtCap(g.base) + ' <small>через ' + YEARS + ' года</small>';
-        $('cxFcRng').textContent = 'коридор сценариев ' + fmtCapPlain(g.lo) + ' – ' + fmtCapPlain(g.hi) +
-          ' · облигации ' + bondsPct() + '% / акции ' + (100 - bondsPct()) + '%';
+        // доли названы теми же цветами, что полоса стратегии и столбики графика
+        $('cxFcRng').innerHTML = 'облигации <b class="cxb">' + bondsPct() + '%</b> · акции <b class="cxe">' +
+          (100 - bondsPct()) + '%</b> · доходность <b>' + (g.r * 100).toFixed(1).replace('.', ',') + '% годовых</b>';
+        var rangeEl = $('cxFcRange');
+        if (rangeEl) rangeEl.textContent = 'сценарий ' + fmtCapPlain(g.lo) + ' - ' + fmtCapPlain(g.hi);
         renderCols($('cxFcChart'), S, g);
         $('cxFcCash').textContent = '≈ ' + fmtInt(g.cash) + ' ₽';
-        $('cxFcYield').textContent = (g.r * 100).toFixed(1).replace('.', ',') + '% годовых';
+        $('cxFcYield').textContent = '+ ' + fmtInt(g.base - S) + ' ₽';
       } else {
         fb.innerHTML = 'Введите сумму <small>в шапке — прогноз посчитается сам</small>';
         $('cxFcRng').textContent = '';
+        var rangeEmpty = $('cxFcRange');
+        if (rangeEmpty) rangeEmpty.textContent = '';
         $('cxFcChart').innerHTML = '';
         $('cxFcCash').textContent = '—';
         $('cxFcYield').textContent = '—';
@@ -749,6 +770,8 @@
     _lastMode = m;
     syncHero();
     if (m === 'monthly') enterMonthly();
+    // тип портфеля живёт в колонке сайдбара — подсветка обязана ехать за режимом
+    if (typeof window.sbCtxSync === 'function') { try { window.sbCtxSync(); } catch (e) {} }
     scheduleRecalc();
   }
 

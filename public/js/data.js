@@ -731,7 +731,9 @@ function recalcCustomCoupons() {
         let startMonth = (nextIdx >= 0 && rows[nextIdx]) ? rows[nextIdx].mn : new Date().getMonth();
         const baseYear = (nextIdx >= 0 && rows[nextIdx] && rows[nextIdx].year) ? rows[nextIdx].year : curYear;
 
-        const LET = 'ЯФМАМИИАСОНД';
+        // Подписи оси — трёхбуквенные MON, а не по одной букве: строка
+        // «А С О Н Д Я Ф М А М И И» не читалась вообще (четыре месяца делят
+        // букву «М», два — «И», два — «А»), и месяц опознать было нельзя.
 
         // Геометрия (в координатах viewBox 0..100, SVG растягивается на контейнер)
         const N = 12, padX = 5, topY = 22, botY = 86;
@@ -783,7 +785,7 @@ function recalcCustomCoupons() {
             overlay += '<div class="mi5-lp' + (has ? '' : ' is-empty') + flip + '" style="left:' + p.x.toFixed(2) + '%;--y:' + p.y.toFixed(2) + '%">'
                 + '<span class="mi5-lp-dot"></span>'
                 + '<div class="mi5-lp-tip"><b>' + sumTxt + '</b><span>' + dateTxt + '</span></div>'
-                + '<span class="mi5-lp-x">' + LET[p.m] + '</span>'
+                + '<span class="mi5-lp-x">' + MON[p.m] + '</span>'
                 + '</div>';
         }
 

@@ -39,6 +39,10 @@
         'calc-portfolio': '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
         'calc-mix':       '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
         'calc-monthly':   '<rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/>',
+        // второй уровень «Расчёта» (раунд «Пульт»)
+        'calc-growth':    '<path d="M3 17l6-6 4 4 8-8"/><polyline points="15 7 21 7 21 13"/>',
+        'calc-basket':    '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>',
+        'calc-quiz':      '<path d="M9.5 17h5"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9V17h-7v-3.1A6 6 0 0 1 12 3z"/>',
         'market-terminal':'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M9 10v10"/>',
         'market-stocks':  '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
         'market-bonds':   '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>'
@@ -67,6 +71,63 @@
         return { title: title, solo: true, groups: [{ label: 'Разделы', items: items }] };
     }
 
+    // «Расчёт» (раунд «Пульт»): второй уровень раздела — это ТИП ПОРТФЕЛЯ.
+    // Раньше колонка зеркалила один видимый .sb-sub и стояла почти пустой, пока
+    // тип переключался внутри контента — чузером и крошкой в шапке. Теперь
+    // переключатель живёт здесь, а вкладка избавлена от собственной навигации.
+    //
+    // Справа только СЧЁТЧИКИ: сколько выпусков в корзине, сколько вопросов в
+    // тесте. Сумм и прогноза в навигации нет — они живут на рабочей площади, и
+    // продублированные в рейке спорили бы с ней за внимание.
+    function curMode() {
+        var c = document.body.classList;
+        return c.contains('cxm-mix') ? 'mix' : c.contains('cxm-monthly') ? 'monthly' : 'choose';
+    }
+    function subVisible(id) {
+        var el = document.getElementById(id);
+        return !!el && el.style.display !== 'none';
+    }
+    function countOf(fn) {
+        try { var n = fn(); return (n > 0) ? n : null; } catch (e) { return null; }
+    }
+    function calcModel() {
+        var m = curMode();
+        var groups = [{
+            label: 'Тип портфеля',
+            items: [
+                { act: 'cxmode', key: 'mix', tx: 'Рост капитала',
+                  icon: IC['calc-growth'], on: m === 'mix' },
+                { act: 'cxmode', key: 'monthly', tx: 'Ежемесячный доход',
+                  icon: IC['calc-monthly'], on: m === 'monthly' }
+            ]
+        }];
+
+        // Готовый расчёт: пункт появляется только после настоящего расчёта —
+        // ровно тогда, когда calc-mode.js показывает соответствующий .sb-sub.
+        var done = [];
+        if (subVisible('sbSubMix')) {
+            done.push({ act: 'sub', key: 'calc-mix', tx: 'Смешанный портфель',
+                        icon: IC['calc-mix'],
+                        on: (typeof currentTab !== 'undefined' && currentTab === 'portfolio') });
+        }
+        if (subVisible('sbSubMonthly')) {
+            done.push({ act: 'sub', key: 'calc-monthly', tx: 'Корзина ОФЗ',
+                        icon: IC['calc-basket'],
+                        n: countOf(function () { return monthlyIncomeBonds.length; }) });
+        }
+        if (done.length) groups.push({ label: 'Готовый расчёт', items: done });
+
+        // VG_Q объявлен const в vanguard-test.js — он в глобальной области, но
+        // не на window, поэтому только через typeof
+        groups.push({
+            label: 'Подбор',
+            items: [{ act: 'cxquiz', key: 'quiz', tx: 'Тест риск-профиля',
+                      icon: IC['calc-quiz'],
+                      n: countOf(function () { return VG_Q.length; }) }]
+        });
+        return { title: 'Расчёт', solo: true, groups: groups };
+    }
+
     // У КАКИХ разделов колонка есть в принципе — знание статическое, и это важно:
     // «Портфели» грузятся лениво (#pfLazySrc), их модель приходит через полсекунды
     // после первого пейнта. Не зная заранее, что колонка будет, мы бы отдали ширину
@@ -86,7 +147,7 @@
         if (tab === 'portfolios') {
             return (window.PF && PF.sbSideModel) ? PF.sbSideModel() : null;
         }
-        if (tab === 'calc' || tab === 'portfolio' || tab === 'monthly') return subsModel('calc', 'Расчёт');
+        if (tab === 'calc' || tab === 'portfolio' || tab === 'monthly') return calcModel();
         if (tab === 'market' || tab === 'market-stocks' || tab === 'market-bonds') return subsModel('market', 'Рынок');
         return null;
     }
@@ -190,6 +251,23 @@
         e.stopPropagation();
         if (act === 'collapse') { if (window.toggleSidebarCollapse) window.toggleSidebarCollapse(); return; }
         if (act === 'sub') { if (window.sbNavSub) window.sbNavSub(key, e); return; }
+        // тип портфеля: вкладка могла быть не «Расчёт» (пришли с /portfolio)
+        if (act === 'cxmode') {
+            if (typeof currentTab === 'undefined' || currentTab !== 'calc') {
+                if (window.switchTab) window.switchTab('calc');
+            }
+            if (window.cxSetMode) window.cxSetMode(key);
+            return;
+        }
+        // тест риск-профиля живёт внутри карточки «Стратегия» режима mix
+        if (act === 'cxquiz') {
+            if (typeof currentTab === 'undefined' || currentTab !== 'calc') {
+                if (window.switchTab) window.switchTab('calc');
+            }
+            if (window.cxSetMode) window.cxSetMode('mix');
+            setTimeout(function () { if (window.r5OpenQuiz) window.r5OpenQuiz(); }, 140);
+            return;
+        }
         if (act === 'pfx') { if (window.pfxGoTab) window.pfxGoTab(key); return; }
         if (act === 'trading') { if (window.pfxGoTrading) window.pfxGoTrading(); return; }
         if (act === 'pf') { if (window.pfxOpenPf) window.pfxOpenPf(key); return; }

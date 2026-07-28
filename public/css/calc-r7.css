@@ -1,0 +1,452 @@
+/* ============================================================
+   calc-r7.css — «ПУЛЬТ»: «Расчёт» под сайдбар-рейку
+   ------------------------------------------------------------
+   Слой ПОВЕРХ calc-r5.css / calc-mode.css / calc-r6.css (грузится
+   после них, перед typography-tokens/desktop-zoom). Раунд решает
+   три вещи, которые сломались, когда сайдбар стал рейкой с
+   колонкой второго уровня (см. css/sidebar-rail.css):
+
+   1. НАВИГАЦИЯ УЕХАЛА В КОЛОНКУ. Тип портфеля переключается там
+      (js/sidebar-ctx.js → calcModel), поэтому вкладка снимает с
+      себя крошку «← Расчёт», кнопку «Выбор типа» и водяные номера
+      шагов: второго уровня внутри контента больше нет.
+   2. ТЁМНАЯ ПЛИТА → РАБОЧАЯ ШАПКА. #cxHero занимал 253px и был
+      приёмом светлой темы (в тёмной он сливался с фоном, а
+      наехавшие карточки резали водяные «01/02»). Теперь это
+      104px на фоне страницы, единственный герой — сумма.
+   3. ДВА ЦВЕТА ДАННЫХ ВМЕСТО АКЦЕНТА. --cx-bond (синий) —
+      облигации и накопленный капитал, --cx-eq (оранжевый) —
+      акции и деньги, которые приходят на счёт. Кнопкам, ссылкам
+      и состояниям эти цвета ЗАПРЕЩЕНЫ: они графитовые, поэтому
+      второго акцента интерфейса не возникает. Зелёный остаётся
+      сайдбару.
+
+   ЗАМОК ФОРМЫ: карточка 18 · блок 12 · контрол 10 · чип 6.
+   ============================================================ */
+
+.cx-rows.r5 {
+  --cx-bond: #3B7AD1;
+  --cx-bond-tx: #2F63AC;
+  --cx-eq:   #D08A3C;
+  --cx-eq-tx: #96591A;
+  /* Вторичный серый ПОДНЯТ до AA: проектный #97A3B4 даёт на белом 2,3:1, а им
+     покрашены не декорации, а текст — годы под столбиками, легенда графика,
+     заголовки колонок корзины, буквы месяцев. #5F6C82 = 4,9:1 и на белом, и на
+     тонированном поле списка стратегий (#F3F6FA), где запаса меньше. */
+  --cx-dim:  #5F6C82;
+  --cx-cbase: #DDE5F1;
+  --r5-radius: 18px;
+  --cx-r-block: 12px;
+  --cx-r-ctl: 10px;
+}
+body.dark-mode .cx-rows.r5 {
+  --cx-bond: #6BA4F5;
+  --cx-bond-tx: #8FBBF8;
+  --cx-eq:   #E8A05A;
+  --cx-eq-tx: #EFBC85;
+  --cx-dim:  #929FB3;      /* на карточке #1d2734 — 4,9:1 */
+  --cx-cbase: #2A3444;
+}
+
+/* ── 1 · РАБОЧАЯ ШАПКА (бывшая тёмная плита) ──────────────── */
+/* Карточки больше не «выезжают» из героя: отрицательный margin у следующего
+   блока и огромный нижний паддинг плиты были нужны только тёмному слою. */
+#cxHero {
+  background: none;
+  color: inherit;
+  border-radius: 0;
+  padding: 2px 2px 0;
+  overflow: visible;
+}
+body.dark-mode #cxHero { background: none; }
+#cxHero .cxh-wm,
+#cxHero .cxh-kick { display: none; }
+#cxHero .cxh-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+#cxHero .cxh-left { min-width: 0; }
+#cxHero .cxh-title {
+  font-family: var(--font-title, Georgia, serif);
+  font-weight: 400;
+  font-size: 32px;
+  line-height: 1.1;
+  letter-spacing: -0.005em;
+  margin: 0;
+  color: var(--r5-text);
+}
+#cxHero .cxh-sub {
+  margin-top: 9px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--r5-muted2);
+  max-width: 460px;
+}
+body.dark-mode #cxHero .cxh-title { color: #E8EEF7; }
+body.dark-mode #cxHero .cxh-sub { color: #9AA7BB; }
+
+#cxHero .cxh-amt { margin-left: auto; text-align: right; flex: none; }
+#cxHero .cxh-amt-k {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--r5-muted2);
+}
+body.dark-mode #cxHero .cxh-amt-k { color: #9AA7BB; }
+#cxHero .cxh-hint {
+  margin-top: 7px;
+  font-size: 11.5px;
+  color: var(--r5-muted2);
+}
+body.dark-mode #cxHero .cxh-hint { color: #9AA7BB; }
+
+/* сумма: чернила вместо белого, ₽ оранжевый (деньги), линия подчёркивания
+   становится акцентной по фокусу — это единственная её роль */
+#cxHero .nd-input-row {
+  border-bottom-color: var(--cx-bond);
+}
+/* Сумма была белой — на тёмной плите иначе было нельзя. Плиты нет, чернила
+   обычные; ₽ оранжевый, потому что это деньги. */
+#cxHero #sumInput,
+#cxHero .nd-input-zone,
+#cxHero .nd-amount-label {
+  color: var(--r5-text) !important;
+}
+body.dark-mode #cxHero #sumInput,
+body.dark-mode #cxHero .nd-input-zone,
+body.dark-mode #cxHero .nd-amount-label { color: #E8EEF7 !important; }
+#cxHero #ndRuble { color: var(--cx-eq-tx) !important; }
+body.dark-mode #cxHero #ndRuble { color: var(--cx-eq) !important; }
+#cxHero #sumInput::placeholder { color: var(--cx-dim); }
+
+/* кнопка «Выбор типа портфеля» из calc-mode: её работу делает колонка */
+#cxBack { display: none !important; }
+
+/* Карточки больше НЕ выезжают из-под шапки. Приём был частью тёмной плиты:
+   у неё был нижний паддинг 118px, а следующий блок поднимался на -104px, и
+   карточка ложилась поверх. Без плиты этот подъём просто накрывал заголовок
+   и сумму. Заодно снимаем боковой вылет --cx-inset: он существовал ради того,
+   чтобы плита выступала по краям. */
+body.cxm-choose #cxChooser,
+body.cxm-mix #r5Split,
+body.cxm-monthly #panel-calc #calcAccordion {
+  margin-top: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* ── 2 · КАРТОЧКИ: без водяных номеров, один заголовок ─────── */
+.cx-rows.r5 .pk-card .wm-clip { display: none; }
+/* Кольцо у «активной» карточки (.act) — язык прежнего раунда, где им
+   помечалась карточка стратегии. Карточки равны, выделять одну нечем. */
+.cx-rows.r5 .pk-card.act { box-shadow: var(--r5-shadow); }
+body.dark-mode .cx-rows.r5 .pk-card.act { box-shadow: 0 16px 36px rgba(0,0,0,.32); }
+.cx-rows.r5 .pk-card > .k { display: none; }
+.cx-rows.r5 .pk-card > .t {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-family: var(--font-title, Georgia, serif);
+  font-weight: 400;
+  font-size: 20px;
+  letter-spacing: -0.005em;
+}
+/* приписка в правом углу заголовка: коридор сценариев / легенда полосы */
+.cx-rows.r5 .cx-aside {
+  margin-left: auto;
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--cx-dim);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ── 3 · КАРТОЧКА «ВАШ ПОРТФЕЛЬ»: число, доли, факты ───────── */
+/* базовый тон строки — --r5-muted (#97A3B4) давал на белом 2,6:1 */
+#cxFcRng { color: var(--cx-dim); }
+#cxFcRng b { font-weight: 700; color: var(--r5-text); }
+#cxFcRng b.cxb { color: var(--cx-bond-tx); }
+#cxFcRng b.cxe { color: var(--cx-eq-tx); }
+body.dark-mode #cxFcRng b { color: #E8EEF7; }
+body.dark-mode #cxFcRng b.cxb { color: var(--cx-bond-tx); }
+body.dark-mode #cxFcRng b.cxe { color: var(--cx-eq-tx); }
+
+/* строка фактов: подпись сверху, число снизу — как в мокапе */
+#cxFcFacts { display: flex; gap: 26px; }
+#cxFcFacts .f {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: inherit;
+}
+#cxFcFacts .fic { display: none; }
+#cxFcFacts .fl { font-size: 11.5px; color: var(--r5-muted2); }
+#cxFcFacts b {
+  font-family: var(--r5-mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--r5-text);
+}
+#cxFcFacts b.o { color: var(--cx-eq-tx); }
+#cxFcFacts b.g { color: #177A4F; }
+body.dark-mode #cxFcFacts .fl { color: #9AA7BB; }
+body.dark-mode #cxFcFacts b { color: #E8EEF7; }
+body.dark-mode #cxFcFacts b.o { color: var(--cx-eq-tx); }
+body.dark-mode #cxFcFacts b.g { color: #3FBF87; }
+
+/* ── 4 · СПИСОК СТРАТЕГИЙ: выбор = ПОДЪЁМ ─────────────────── */
+/* Тот же язык, что у колонки сайдбара (.sbc-it.on): белая карточка над
+   тонированным полем. Заливка акцентом и чёрный радиокружок сняты. */
+.cx-rows.r5 .nd-wf-inner {
+  background: #F3F6FA;
+  border-radius: var(--cx-r-block);
+  padding: 6px;
+  gap: 2px;
+  display: flex;
+  flex-direction: column;
+}
+body.dark-mode .cx-rows.r5 .nd-wf-inner { background: rgba(255,255,255,.045); }
+
+.cx-rows.r5 .nd-wfc {
+  border-radius: var(--cx-r-ctl) !important;
+  padding: 10px 12px !important;
+  background: transparent !important;
+  transition: background .15s ease, box-shadow .15s ease;
+}
+.cx-rows.r5 .nd-wfc + .nd-wfc { border-top: 0 !important; }
+.cx-rows.r5 .nd-wfc:hover { background: rgba(31,38,55,.05) !important; }
+body.dark-mode .cx-rows.r5 .nd-wfc:hover { background: rgba(255,255,255,.05) !important; }
+
+.cx-rows.r5 .nd-wfc-selected {
+  background: var(--r5-card) !important;
+  box-shadow: inset 0 0 0 1px rgba(15,23,42,.07),
+              0 1px 1px rgba(15,23,42,.04),
+              0 10px 20px -14px rgba(24,38,60,.55);
+}
+body.dark-mode .cx-rows.r5 .nd-wfc-selected {
+  background: #1B222E !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.10),
+              0 10px 22px -14px rgba(0,0,0,.8);
+}
+/* Вертикальная полоса распределения слева от названия остаётся: она показывает
+   доли самим своим градиентом, отдельно от подписей «Обл./Акц.» справа.
+   Скрывается только галочка-кружок — выбранную строку называет подъём. */
+.cx-rows.r5 .nd-wf-check,
+.cx-rows.r5 .nd-wfc-selected .nd-wf-check { display: none !important; }
+.cx-rows.r5 .nd-wfc:not(.nd-wfc-selected):not(.nd-wfc-custom) .nd-wfr::after,
+.cx-rows.r5 .nd-wfc-custom-saved:not(.nd-wfc-selected) .nd-wfr::after { display: none; }
+
+.cx-rows.r5 .nd-wfl { gap: 12px; }
+.cx-rows.r5 .nd-wfn { font-size: 13.5px; font-weight: 600; }
+.cx-rows.r5 .nd-wfc-selected .nd-wfn { font-weight: 700; }
+/* подпись стратегии («Защита капитала») тоже была на --r5-muted — 2,4:1 */
+.cx-rows.r5 .nd-wfs { font-size: 11.5px; margin-top: 2px; color: var(--cx-dim); }
+.cx-rows.r5 .nd-wfc-custom .nd-wfn { color: var(--r5-text); }
+body.dark-mode .cx-rows.r5 .nd-wfc-custom .nd-wfn { color: #E8EEF7; }
+
+/* Доли остаются подписями «Обл. 50%» / «Акц. 50%», как были: на них же висят
+   поповеры терминов, и шесть строк объясняют состав без легенды в шапке.
+   Правится только размер под новую плотность строки. */
+.cx-rows.r5 .nd-wfr { gap: 12px; }
+.cx-rows.r5 .nd-wfp { padding-left: 14px; gap: 3px; }
+/* Тона те же (синий у облигаций, оранжевый у акций), но углублены до AA:
+   исходные #4a8df0 и #f08c3a дают на белом 3,3:1 и 2,3:1 — для 12px мало. */
+.cx-rows.r5 .nd-wfb { font-size: 12px; font-weight: 700; color: var(--cx-bond-tx); }
+.cx-rows.r5 .nd-wfst { font-size: 12px; font-weight: 700; color: var(--cx-eq-tx); }
+.cx-rows.r5 .nd-wfb .r5-term, .cx-rows.r5 .nd-wfst .r5-term { color: inherit; }
+body.dark-mode .cx-rows.r5 .nd-wfb { color: var(--cx-bond-tx); }
+body.dark-mode .cx-rows.r5 .nd-wfst { color: var(--cx-eq-tx); }
+/* «Своя» без сохранённой настройки: карандаш вместо полосы */
+.cx-rows.r5 .nd-wf-pencil {
+  width: 30px; height: 30px;
+  border-radius: var(--cx-r-ctl);
+  background: rgba(31,38,55,.06);
+  color: var(--r5-muted2);
+}
+body.dark-mode .cx-rows.r5 .nd-wf-pencil { background: rgba(255,255,255,.07); color: #9AA7BB; }
+
+/* ── 5 · CTA: тёмная кнопка + комиссия отдельным контролом ─── */
+/* Было: светло-серый капслок «ВЫБЕРИТЕ КОМИССИЮ» на светло-сером поле —
+   2,7:1 и непонятно, кнопка это или подпись. */
+/* Кнопка была капслоком с трекингом .14em — язык старой «сцены». Здесь она
+   обычная кнопка: 13,5px, вес 700, без разрядки, высота как у комиссии рядом. */
+#calcCtaBar .nd-btn-cta-g {
+  border-radius: var(--cx-r-ctl);
+  padding: 0 22px;
+  height: 48px;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  text-transform: none;
+}
+#calcCtaBar .nd-btn-cta-g .cta-tx { text-transform: none; }
+#calcCtaBar .nd-btn-cta-g.is-locked {
+  background: #E4EAF3;
+  color: #46536A;                 /* 6,3:1 — читается как выключенная, но читается */
+  box-shadow: none;
+}
+#calcCtaBar .nd-btn-cta-g.is-locked .cta-ic { color: #46536A; opacity: 1; }
+body.dark-mode #calcCtaBar .nd-btn-cta-g.is-locked {
+  background: rgba(255,255,255,.10);
+  color: #C3CEDE;
+}
+body.dark-mode #calcCtaBar .nd-btn-cta-g.is-locked .cta-ic { color: #C3CEDE; }
+.cx-rows.r5 .fee-selector-unified .fee-selector-trigger,
+.cx-rows.r5 .nd-fee-dd { border-radius: var(--cx-r-ctl); }
+
+/* Полоса теста («Не знаете, какую выбрать?») — единственная синяя кнопка на
+   экране. Синий закреплён за облигациями: кнопке он не принадлежит, и рядом с
+   синими сегментами графика она читалась как ещё один элемент данных. */
+.cx-rows.r5 .r-cta .btn,
+#r5QuizEntry .btn,
+#cxChooser .cxm-cta .btn {
+  background: var(--r5-dark);
+  color: #fff;
+  border-radius: var(--cx-r-ctl);
+}
+.cx-rows.r5 .r-cta .btn:hover,
+#r5QuizEntry .btn:hover,
+#cxChooser .cxm-cta .btn:hover { background: #232c3a; }
+body.dark-mode .cx-rows.r5 .r-cta .btn,
+body.dark-mode #r5QuizEntry .btn,
+body.dark-mode #cxChooser .cxm-cta .btn { background: #F2F6FC; color: #111823; }
+/* иконка-искра в той же полосе тоже была синей */
+.cx-rows.r5 .r-cta .ic { color: var(--r5-muted2); }
+
+/* ── 6 · ЧУЗЕР: без водяных номеров и «Хочу рост» ─────────── */
+#cxChooser .cxm-type .wm { display: none; }
+#cxChooser .cxm-type .cxm-tk { display: none; }
+#cxChooser .cxm-head .cxm-k { display: none; }
+#cxChooser { border-radius: var(--r5-radius); }
+#cxChooser .cxm-type { border-radius: var(--cx-r-block); }
+/* приписка «стратегию уточните…» уехала в строку фактов витрины */
+#cxChooser .cxr6-meta { display: none; }
+/* подстрочник живых цифр на витринах — был на --r5-muted (2,6:1 на белом) */
+#cxChooser .cxr6-rng { color: var(--cx-dim); }
+
+/* ── 7 · РАДИУСЫ: одна шкала на весь скоуп ────────────────── */
+.cx-rows.r5 .pk-card,
+.cx-rows.r5 .mi5-card { border-radius: var(--r5-radius); }
+.cx-rows.r5 .mi5-step-btn,
+.cx-rows.r5 .mi5-seg-btn,
+.cx-rows.r5 .r5-quiz-opt { border-radius: var(--cx-r-ctl); }
+
+/* ── 8 · КУПОНЫ ПО МЕСЯЦАМ: подписи и цвет ────────────────── */
+/* Ось вырождалась в «А С О Н Д Я Ф М А М И И» — одиночные буквы.
+   Трёхбуквенные ставит js/calc-r7.js. */
+#panel-calc #miMonthlyChart .mi5-lp-x {
+  font-family: var(--r5-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--cx-dim);
+  text-transform: uppercase;
+}
+
+/* столбики витрины «Хочу доход» на экране выбора — те же деньги, тот же цвет */
+.cxr6-bars .cb i { background: var(--cx-eq); opacity: .42; }
+.cxr6-bars .cb.hl i { opacity: 1; }
+.cxr6-bars .cb b { color: var(--cx-dim); }
+.cxr6-bars .cb.hl b { color: var(--cx-eq-tx); }
+
+/* ── 9 · КАРТОЧКА КУПОНОВ: заголовок вместо плашки ────────── */
+/* Пересобирает js/calc-r7.js — узлы переезжают, а не пересоздаются:
+   data.js пишет в #ndIbSub/#ndIbMonthly/#ndIbYearly/#ndIbYield по id. */
+#miBannerCard .cxr7-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+#miBannerCard .cxr7-ttl {
+  font-family: var(--font-title, Georgia, serif);
+  font-weight: 400;
+  font-size: 20px;
+  letter-spacing: -0.005em;
+  color: var(--r5-text);
+}
+body.dark-mode #miBannerCard .cxr7-ttl { color: #E8EEF7; }
+/* «Средний доход в месяц» с зелёной точкой-индикатором: заголовок карточки уже
+   сказал, что это купоны, а приписка справа — что после налога.
+   Специфичность подобрана под #panel-calc .mi5-banner-v .mi5-cb-hk. */
+#panel-calc .mi5-banner-v .mi5-cb-hk,
+#panel-calc #miBannerCard .mi5-cb-hk { display: none; }
+/* кикеры карточек режима: «КАЛЬКУЛЯТОР», «ЕЖЕМЕСЯЧНЫЙ ДОХОД», «ГРАФИК ВЫПЛАТ» */
+#panel-calc #calcAccordion .mi5-kick { display: none; }
+#panel-calc #calcAccordion .mi5-ttl {
+  font-family: var(--font-title, Georgia, serif);
+  font-weight: 400;
+  font-size: 20px;
+  letter-spacing: -0.005em;
+}
+#miBannerCard .mi5-cb-m {
+  display: block;
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--r5-muted2);
+}
+#miBannerCard .mi5-cb-mini-head .mi5-cb-mk { display: none; }
+
+/* «Подробный график» в CTA-ряду: спутник главного действия, не ярлык графика */
+#cxMoCta .cxr7-more {
+  position: static;
+  height: 44px;
+  padding: 0 16px;
+  border-radius: var(--cx-r-ctl);
+  background: #F3F6FA;
+  box-shadow: inset 0 0 0 1px var(--r5-line);
+  color: var(--r5-muted2);
+  font-size: 12.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+#cxMoCta .cxr7-more:hover { color: var(--r5-text); }
+body.dark-mode #cxMoCta .cxr7-more {
+  background: rgba(255,255,255,.06);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.10);
+  color: #9AA7BB;
+}
+body.dark-mode #cxMoCta .cxr7-more:hover { color: #E8EEF7; }
+
+/* CTA-ряд купонной карточки: «Создать портфель» + итоги + «Подробный график».
+   Втроём они не влезали в ширину карточки и обрезали последнюю кнопку. */
+#cxMoCta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  row-gap: 10px;
+}
+#cxMoCta .mi5-cb-stats { margin: 0 auto 0 0; min-height: 0; }
+
+/* Шапка перестала занимать 253px — освободившиеся ~150px отдаём карточкам
+   режима: раньше шестая строка корзины уходила под скролл. Эталон --cx-card-h
+   меряется по паре mix, поэтому добавку задаём отдельно и только здесь. */
+@media (min-width: 1024px) {
+  body.cxm-monthly #panel-calc .mi5-cols > .mi5-calc,
+  body.cxm-monthly #panel-calc .mi5-right {
+    height: calc(var(--cx-card-h, 460px) + 104px);
+  }
+}
+
+/* ── 10 · МОБИЛА ──────────────────────────────────────────── */
+@media (max-width: 1023px) {
+  #cxHero { padding: 0; }
+  #cxHero .cxh-row { gap: 18px; }
+  #cxHero .cxh-title { font-size: 26px; }
+  #cxHero .cxh-amt { margin-left: 0; text-align: left; width: 100%; }
+  #cxHero .cxh-amt-host .nd-input-row { justify-content: flex-start; }
+  .cx-rows.r5 .pk-card > .t { flex-wrap: wrap; gap: 6px; }
+  .cx-rows.r5 .cx-aside { margin-left: 0; width: 100%; }
+}

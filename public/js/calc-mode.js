@@ -308,6 +308,8 @@
   function showSub(kind) {
     var el = document.getElementById(kind === 'mix' ? 'sbSubMix' : 'sbSubMonthly');
     if (el) el.style.display = '';
+    // группа «Готовый расчёт» в колонке сайдбара появляется по этим же флагам
+    if (typeof window.sbCtxSync === 'function') { try { window.sbCtxSync(); } catch (e) {} }
   }
   function subShown(id) {
     var el = document.getElementById(id);
