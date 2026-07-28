@@ -277,11 +277,10 @@
         // ПУСТО — это тоже состояние, а не «нечего показывать»: колонка отдаёт
         // вход вместо схлопнутой дыры (js/sidebar-ctx.js)
         if (!items.length) return { empty: 'new' };
-        var total = 0, day = 0, dayKnown = false, bond = 0, stock = 0;
+        var total = 0, day = 0, dayKnown = false;
         items.forEach(function (p) {
             var c = calcPf(p);
             total += c.value;
-            bond += c.bondVal; stock += c.stockVal;
             var d = dayDelta(p, c.value);
             if (d != null) { day += d; dayKnown = true; }
         });
@@ -296,17 +295,14 @@
             // расчёта не нужно, только знак и формат (раунд 4)
             dayRub = (day >= 0 ? '+' : '−') + fmtRub(Math.abs(day));
         }
-        var mixBase = bond + stock;
         return {
             total: total,                 // сырое число — под интрадей-ряд спарклайна
             cap: fmtRub(total),
             chip: chip,
             dayRub: dayRub,
-            // доли считаем от суммы классов, а не от total: деньги вне бумаг
-            // (если появятся) не должны молча уезжать в облигации
-            mix: mixBase > 0 ? { stock: stock / mixBase * 100, bond: bond / mixBase * 100 } : null,
-            // насечка цели: null, пока цели не задана ни одному портфелю
-            target: (PF.pfTargetMix ? PF.pfTargetMix() : null),
+            // Долей классов табло больше не показывает: полоса с насечкой цели
+            // снята в пользу линии дня (2026-07-28). Дрейф остался бейджем на
+            // кружке «Ребаланса» — его и считаем.
             drift: (PF.pfDriftCount ? PF.pfDriftCount() : 0),
             // возраст цен: строка-метка либо null, если числа свежие
             stale: capStale()

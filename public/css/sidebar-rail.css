@@ -312,49 +312,51 @@
     .sbcap-pct { display: none; }
     body.sums-hidden .sbcap-rub { display: none; }
     body.sums-hidden .sbcap-pct { display: inline; }
-    /* Доли классов. Цвета НЕ свои: синий облигаций и охра акций взяты из
-       «Расчёта» (--cx-bond / --cx-eq в css/calc-r7.css) — один и тот же
-       смысл обязан быть одного цвета по всему сайту. */
-    .sbcap-bar {
-        position: relative;
-        margin-top: 10px;
-        height: 5px;
-        border-radius: 3px;
+    /* ЛИНИЯ ДНЯ. Заняла место полосы классов с насечкой цели (2026-07-28) и
+       держит РОВНО её высоту: 10 отступа + 5 полосы + 6 + 13,3 строки легенды
+       (JetBrains 9,5px) = 34,3px — отсюда и дробная высота ряда. Табло не
+       поехало ни на пиксель, а колонка перестала быть вторым местом, где живут
+       доли акций и облигаций.
+       Цвет — знак дня, тот же зелёный/красный, что у процента и рублей.
+       Шеврон не кнопка: вся пилюля .sbcap-btn и так ведёт на «Обзор», он лишь
+       делает это видимым (мишень 11px в навигации была бы промахом). */
+    .sbcap-spk {
         display: flex;
-        background: var(--sbr-line);
-    }
-    .sbcap-bar i { display: block; height: 100%; }
-    .sbcap-bar i.eq { border-radius: 3px 0 0 3px; }
-    .sbcap-bar i.bd { border-radius: 0 3px 3px 0; }
-    /* Легенда отдельной строкой под полосой: «Акции 62 · цель 58» и
-       «Обл. 38 · цель 42» рядом с полосой в 288px не помещаются. */
-    .sbcap-lg {
-        display: flex;
-        justify-content: space-between;
+        align-items: center;
         gap: 8px;
-        margin-top: 6px;
-        font-family: var(--font-num, 'JetBrains Mono', monospace);
-        font-size: 9.5px;
-        white-space: nowrap;
+        margin-top: 10px;
+        height: 24.3px;
+    }
+    .sbcap-spark {
+        flex: 1 1 auto;
+        min-width: 0;
+        height: 100%;
+        color: #16A34A;
+    }
+    .sbcap-spark.neg { color: #DC2626; }
+    body.dark-mode .sbcap-spark { color: #34D399; }
+    body.dark-mode .sbcap-spark.neg { color: #F87171; }
+    .sbcap-spark polyline {
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.6;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        vector-effect: non-scaling-stroke;
+    }
+    .sbcap-go {
+        flex: none;
+        margin-left: auto;
+        width: 11px; height: 11px;
         color: var(--sbr-dim);
     }
-    .sbcap-lg b { font-weight: 700; color: var(--sbr-mut); }
-    .sbcap-bar i.eq { background: #D08A3C; }
-    .sbcap-bar i.bd { background: #3B7AD1; }
-    body.dark-mode .sbcap-bar i.eq { background: #E8A05A; }
-    body.dark-mode .sbcap-bar i.bd { background: #6BA4F5; }
-    /* НАСЕЧКА ЦЕЛИ. Расхождение полосы и чёрточки — это и есть дрейф, о котором
-       бейджем говорит «Ребаланс»: то же событие, тот же порог, только здесь оно
-       показано геометрией. Цвет чернильный, чтобы читаться на обоих сегментах. */
-    .sbcap-bar i.tg {
-        position: absolute;
-        top: -3px; bottom: -3px;
-        width: 1.5px;
-        height: auto;
-        margin-left: -0.75px;
-        border-radius: 1px;
-        background: var(--sbr-ink);
+    .sbcap-go svg {
+        display: block;
+        width: 100%; height: 100%;
+        fill: none; stroke: currentColor; stroke-width: 2;
+        stroke-linecap: round; stroke-linejoin: round;
     }
+    .sbcap-btn:hover .sbcap-go { color: var(--sbr-mut); }
 
     /* ---------- ВОЗРАСТ ЦЕН ----------
        Метка появляется, только когда котировки перестали приходить (модель
@@ -383,8 +385,7 @@
     }
     .sbcap-btn.stale .sbcap-v,
     .sbcap-btn.stale .sbcap-day,
-    .sbcap-btn.stale .sbcap-bar,
-    .sbcap-btn.stale .sbcap-lg { opacity: 0.55; }
+    .sbcap-btn.stale .sbcap-spk { opacity: 0.55; }
 
     /* ---------- ПУСТОЕ ТАБЛО ----------
        Та же пилюля того же тона: пустое состояние — это состояние колонки, а не
@@ -1188,13 +1189,13 @@
     /* зелёный/красный тёмной темы подняты под тёмное поле — на белом они блёклые */
     body.dark-mode.tab-home .sbcap-d,
     body.dark-mode.tab-home .sbcap-day,
+    body.dark-mode.tab-home .sbcap-spark,
     body.dark-mode.tab-home .sbc-chg { color: #16A34A; }
     body.dark-mode.tab-home .sbcap-d.neg,
     body.dark-mode.tab-home .sbcap-day.neg,
+    body.dark-mode.tab-home .sbcap-spark.neg,
     body.dark-mode.tab-home .sbc-chg.neg { color: #DC2626; }
     body.dark-mode.tab-home .sbcap-day.mut { color: var(--sbr-dim); }
-    body.dark-mode.tab-home .sbcap-bar i.eq { background: #D08A3C; }
-    body.dark-mode.tab-home .sbcap-bar i.bd { background: #3B7AD1; }
     body.dark-mode.tab-home #sbNav .sb-badge { background: #DC2626; color: #fff; }
 
     /* ---------- Марка на странице ровно ОДНА ----------
