@@ -263,16 +263,14 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .vb-pf{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:9px;font-size:12.5px;font-weight:500;color:var(--mut)}
 .vb-pf .tx{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .vb-pf.on{background:var(--bg);color:var(--ink);font-weight:600}
-/* подвал: всё «личное» одной строкой */
-.vb-foot{flex:none;display:flex;align-items:center;gap:6px;padding:10px 14px 14px;border-top:1px solid var(--line)}
+/* Подвал — ровно тот, что стоит сейчас: «Настройки» раздела слева, свёртка
+   справа. Аккаунт, уведомления и тема в колонку НЕ переезжают: она про деньги
+   и разделы, а не про кабинет (решение владельца, раунд 3). */
+.vb-foot{flex:none;display:flex;align-items:center;gap:4px;padding:10px 14px 14px;border-top:1px solid var(--line)}
 .vb-foot .sp{flex:1}
-.vb-av{width:28px;height:28px;border-radius:50%;flex:none;display:grid;place-items:center;
-  background:linear-gradient(140deg,#7c8cff,#4453ef);color:#fff;font-size:11px;font-weight:700}
-.vb-foot .nm{font-size:12px;font-weight:600;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:96px}
-.vb-foot .sbtn{width:28px;height:28px;border-radius:8px}
-.vb-foot .sbtn svg{width:15px;height:15px}
-.vb-foot .sbtn.bell{position:relative}
-.vb-foot .sbtn.bell::after{content:'';position:absolute;top:5px;right:6px;width:6px;height:6px;border-radius:50%;background:var(--red);border:1.5px solid var(--card)}
+.vb-foot .vb-sub{flex:1;font-size:12px}
+.vb-foot .sbtn{width:30px;height:30px;border-radius:9px}
+.vb-foot .sbtn svg{width:16px;height:16px}
 
 /* ════════════════ В · ПАЛИТРА ════════════════ */
 .vc{flex:none;width:272px;background:var(--card);border-right:1px solid var(--line);
@@ -567,8 +565,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
 <!-- ═══════════════════ Б · ВЕРСТАК ═══════════════════ -->
 <div class="mk">
-  <div class="mk-h"><span class="mk-n">Б</span><h2>Верстак</h2><span class="mk-tag">сайдбар показывает состояние, а не оглавление</span></div>
-  <div class="mk-sub">Колонка остаётся 288px, но перестаёт быть списком. Сверху — <b>капитал и день</b> (числа уже считаются в <code>PF.sbSideModel</code>, но сегодня не рисуются). Разделы сжаты в <b>сетку 4×2</b>: все семь видны всегда и никогда не двигаются — 150px вместо 320. Освободившееся место отдано контексту активного раздела. Внизу — одна строка со всем «личным»: аватар, уведомления, тема, свёртка.</div>
+  <div class="mk-h"><span class="mk-n">Б</span><h2>Верстак</h2><span class="mk-tag ok">выбран</span><span class="mk-tag">сайдбар показывает состояние, а не оглавление</span></div>
+  <div class="mk-sub">Колонка остаётся 288px, но перестаёт быть списком. Сверху — <b>капитал и день</b> (числа уже считаются в <code>PF.sbSideModel</code>, но сегодня не рисуются). Разделы сжаты в <b>сетку 4×2</b>: все семь видны всегда и никогда не двигаются — 150px вместо 320. Освободившееся место отдано контексту активного раздела. Подвал — <b>тот же, что сейчас</b>: «Настройки» раздела и свёртка. Аватар, уведомления и тема в колонку не переезжают и остаются там, где живут (решение владельца): колонка — про деньги и разделы, а не про кабинет.</div>
   <div class="scroller"><div class="strip">
     <div>
       <div class="sc">
@@ -599,17 +597,13 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             <div class="vb-sub"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><span class="tx">Аналитика</span></div>
             <div class="vb-sub"><svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg><span class="tx">Операции</span><span class="cnt">128</span></div>
             <div class="vb-sub"><svg viewBox="0 0 24 24"><rect x="3.5" y="8" width="6" height="9" rx="1.5"/><path d="M6.5 4v4M6.5 17v3"/><rect x="14.5" y="5" width="6" height="10" rx="1.5"/><path d="M17.5 3v2M17.5 15v6"/></svg><span class="tx">Торговля</span></div>
-            <div class="vb-sub" style="color:var(--dim)"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg><span class="tx">Ещё: Отчёты, Ребаланс, Настройки</span></div>
+            <div class="vb-sub" style="color:var(--dim)"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg><span class="tx">Ещё: Отчёты и Ребаланс</span></div>
             <div class="grp"><span>Открытые портфели</span></div>
             <div class="vb-pf"><i class="dot" style="background:#4453ef"></i><span class="tx">Пенсия</span><span class="num" style="font-size:10.5px;color:var(--mut)">862 140 ₽</span><span class="chg num">+0,8%</span></div>
             <div class="vb-pf"><i class="dot" style="background:#c9683f"></i><span class="tx">Дивидендный</span><span class="num" style="font-size:10.5px;color:var(--mut)">418 900 ₽</span><span class="chg neg num">−0,3%</span></div>
           </div>
           <div class="vb-foot">
-            <div class="vb-av">ДС</div>
-            <div class="nm">Денис</div>
-            <span class="sp"></span>
-            <span class="sbtn bell"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
-            <span class="sbtn"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+            <div class="vb-sub"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg><span class="tx">Настройки</span></div>
             <span class="sbtn"><svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg></span>
           </div>
         </div>
@@ -672,12 +666,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             <div class="grp"><span>Подбор</span></div>
             <div class="vb-sub"><svg viewBox="0 0 24 24"><path d="M9.5 17h5"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9V17h-7v-3.1A6 6 0 0 1 12 3z"/></svg><span class="tx">Тест риск-профиля</span><span class="cnt">9</span></div>
           </div>
+          <!-- у «Расчёта» своих настроек нет: слот подвала пуст, как и сегодня -->
           <div class="vb-foot">
-            <div class="vb-av">ДС</div>
-            <div class="nm">Денис</div>
             <span class="sp"></span>
-            <span class="sbtn bell"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
-            <span class="sbtn"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
             <span class="sbtn"><svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg></span>
           </div>
         </div>
@@ -710,7 +701,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <div class="notes">
     <div class="note ok"><i>+</i><span><b>Разделы неподвижны и все на виду</b> — включая «Тест» и «Админку», которые сейчас уезжают под край.</span></div>
     <div class="note ok"><i>+</i><span><b>Капитал и день — в навигации.</b> Числа уже считаются (<code>calcPf</code>, <code>dayDelta</code>) и сегодня просто выбрасываются: <code>cap</code>/<code>chip</code> модель отдаёт, а колонка их не рисует.</span></div>
-    <div class="note ok"><i>+</i><span><b>Личное собрано.</b> Аватар, колокольчик и тема съезжаются в подвал из трёх разных углов экрана.</span></div>
+    <div class="note"><i>i</i><span><b>Личное остаётся снаружи.</b> Аватар, колокольчик и тема живут там же, где сегодня, — подвал держит только «Настройки» раздела и свёртку.</span></div>
     <div class="note no"><i>−</i><span><b>Подписи в сетке — 63px.</b> «Ребаланс» влезает, а переименованная из админки «Академия Ребалансировки» — нет: многоточие + подсказка, как в нынешней рейке.</span></div>
     <div class="note no"><i>−</i><span><b>Ширину не отдаёт.</b> 288px остаются у навигации; выигрыш — в порядке, а не в месте.</span></div>
     <div class="note no"><i>−</i><span><b>Второй уровень всё ещё длинный.</b> Для «Портфелей» нужен договор «первые 6 + Ещё», иначе низ снова переполнится.</span></div>
@@ -964,9 +955,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             <div class="vb-pf"><i class="dot" style="background:#7c8cff"></i><span class="tx">Пенсия</span><span class="chg num">+0,8%</span></div>
           </div>
           <div class="vb-foot">
-            <div class="vb-av">ДС</div><div class="nm">Денис</div><span class="sp"></span>
-            <span class="sbtn bell"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
-            <span class="sbtn"><svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+            <div class="vb-sub"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg><span class="tx">Настройки</span></div>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg></span>
           </div>
         </div>
       </div>
@@ -1042,9 +1032,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     </tr>
     <tr>
       <td><b>Личное (аватар, тема, звонок)</b></td>
-      <td class="no">в трёх углах</td>
+      <td>в трёх углах</td>
       <td>аватар в доке, остальное как есть</td>
-      <td class="yes">одной строкой в подвале</td>
+      <td>остаётся как сейчас — в колонку не переезжает</td>
       <td class="yes">одной строкой в подвале</td>
     </tr>
     <tr>
@@ -1081,18 +1071,19 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <tr><td>«Недавнее» (В)</td><td class="no">новое</td><td>новый ключ, пишется на каждом <code>switchTab</code>/<code>pfxGoTab</code>, хранит 8 последних</td></tr>
     <tr><td>Цена и день бумаги в пине (В)</td><td class="yes">есть</td><td>MOEX ISS — тот же фетч, что кормит «Избранное» и терминал</td></tr>
     <tr><td>Результаты палитры шире бумаг (В)</td><td class="no">новое</td><td><code>searchAssets</code> ищет только бумаги; подвкладки, портфели, экраны и действия — новые источники</td></tr>
-    <tr><td>Аватар и имя в подвале (Б, В)</td><td class="yes">есть</td><td><code>profile-menu.js</code> — переезжает из угла, не пишется заново</td></tr>
+    <tr><td>Аватар и имя в подвале (только В)</td><td class="yes">есть</td><td><code>profile-menu.js</code> — переехал бы из угла, не пишется заново. В выбранном Б подвал остаётся прежним, кабинет не трогаем</td></tr>
   </table>
 </div>
 
 <div class="mk">
-  <div class="mk-h"><span class="mk-n">→</span><h2>Что я рекомендую</h2></div>
+  <div class="mk-h"><span class="mk-n">→</span><h2>Решение</h2><span class="mk-tag ok">Б «Верстак»</span></div>
   <div class="rec">
-    <h3>А как основа, один блок из Б сверху</h3>
-    <p><b>А</b> решает главную поломку — гармошку — и делает это дешевле всех: док 84px уже написан (это сегодняшняя свёрнутая рейка), а <code>#sbCtx</code> вместо переезда в <code>#sbNav</code> становится плавающей панелью. Плюс он единственный отдаёт странице ширину, а у нас стакан, свечи и широкие таблицы.</p>
-    <p><b>Б</b> ценен одной идеей: сайдбар знает состояние. Капитал, день и доли уже посчитаны и сегодня просто выбрасываются. Эту часть можно взять в А отдельным блоком — но тогда док придётся расширить примерно до 120px, и выигрыш ширины уменьшится вдвое. Либо оставить числа на «Обзоре», а в доке показать только бейдж дрейфа на «Ребалансе».</p>
-    <p><b>В</b> — самый интересный и самый дорогой: он требует вернуть горизонтальный ряд подвкладок, который сняли 28 июля вместе с восемью строителями. Его стоит держать как <i>слой поверх</i> любого из первых двух: закрепления и расширенная палитра ⌘K пригодятся и доку, и верстаку, отдельным раундом.</p>
-    <p style="color:var(--doc-dim);font-size:13px">Раунд — светлая и тёмная темы, десктоп. Мобильная шторка (<code>css/mobile.css</code>) во всех трёх вариантах не меняется: она и сейчас живёт по своим правилам через <code>#sbRail{display:contents}</code>.</p>
+    <h3>Взят Б, подвал остаётся прежним</h3>
+    <p><b>Что делаем.</b> Капитал, день и полоса классов сверху; разделы сеткой 4×2 — все семь на виду и неподвижны; под чертой контекст активного раздела, для «Портфелей» — первые шесть пунктов и строка «Ещё»; открытые портфели с суммой и дневным изменением. Подвал <b>не меняется</b>: «Настройки» раздела и свёртка, как сейчас.</p>
+    <p><b>Чего не делаем.</b> Аватар, имя, колокольчик и переключатель темы в колонку не переезжают — кабинет, уведомления и тема остаются на своих местах (<code>profile-menu.js</code>, звоночек в шапке, FAB-ы в углу). Колонка отвечает за деньги и разделы.</p>
+    <p><b>Что ещё предстоит решить.</b> Порог, при котором на «Ребалансе» загорается бейдж дрейфа (величина считается, порога нет — тот же порог просит «Пульс дня»); поведение сетки в свёрнутом состоянии — рейка 84px остаётся как есть или сетка сжимается в один столбец.</p>
+    <p style="color:var(--doc-dim);font-size:13px">Варианты <b>А</b> и <b>В</b> остаются в файле как отвергнутая развилка: А отдавал странице 204px, но прятал второй уровень за клик; В требовал вернуть горизонтальный ряд подвкладок, снесённый 28 июля вместе с восемью строителями. Идея пинов и расширенной палитры ⌘K из В может лечь слоем поверх «Верстака» отдельным раундом.</p>
+    <p style="color:var(--doc-dim);font-size:13px">Раунд — светлая и тёмная темы, десктоп. Мобильная шторка (<code>css/mobile.css</code>) не меняется: она живёт по своим правилам через <code>#sbRail{display:contents}</code>.</p>
   </div>
 </div>
 
