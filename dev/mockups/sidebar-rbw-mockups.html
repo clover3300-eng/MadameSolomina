@@ -166,6 +166,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .g1-lg{margin-top:6px;display:flex;justify-content:space-between;font-family:var(--fN);font-size:9.5px;font-weight:600;color:var(--mut)}
 .g1-lg .a{color:var(--stock)}.g1-lg .b{color:var(--bond)}
 .g1-foot{margin-top:10px;display:flex;align-items:center;gap:4px}
+/* в Г1 карточки контекста нет — подвал сам прибивается к низу и отделяется линией */
+.g1 > .g1-foot{margin-top:auto;padding-top:10px;border-top:1px solid var(--line)}
 .g1-fbtn{flex:1;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:9px;
     font-size:12px;font-weight:600;color:var(--mut);cursor:pointer}
 .g1-fbtn svg{width:14px;height:14px;opacity:.7}
@@ -239,9 +241,13 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   навигацию: два варианта, разбор состояний и цена вопроса.</p>
   <div class="verdict">
     <p><b>Что переносится дословно:</b> воздух и ритм, шапка «надстрочник + Georgia», строка
-    «кружок 29px + имя + пояснение», волосяная линия вложенности от кружка вниз и нижняя карточка
-    контекста <code style="font-family:var(--fN);font-size:12.5px">.rbw-ctx</code> — она превращает
-    мёртвый низ сайдбара в живое число портфеля.</p>
+    «кружок 29px + имя + пояснение» и волосяная линия вложенности от кружка вниз.</p>
+    <p><b>Что примерили и сняли:</b> нижнюю карточку контекста
+    <code style="font-family:var(--fN);font-size:12.5px">.rbw-ctx</code> с суммой портфелей.
+    В визарде она нужна — там она держит контекст, который иначе теряется между шагами. В сайдбаре
+    это второй «Обзор» под навигацией: сумма и раскладка уже есть на самой странице, а низ колонки
+    она забирала целиком. В Г1 её нет, освободившееся отдано списку разделов; в Г2 она осталась —
+    посмотреть, как язык выглядит с ней.</p>
     <p><b>Что переносить НЕЛЬЗЯ:</b> нумерованные кружки со сплошной линией между ними. В визарде это
     последовательность («шаг 2 после шага 1»), у разделов последовательности нет — цифры и связующая
     линия соврали бы. Поэтому кружок несёт иконку, а линия рисуется только там, где есть настоящая
@@ -261,7 +267,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   </div>
   <p class="mk-sub">Рейка и колонка второго уровня сливаются в один лист, как у визарда. Разделы —
   строки с кружком-иконкой и пояснением; активный раскрывает свой второй уровень прямо под собой,
-  вложенность держит волосяная линия от кружка. Внизу — карточка портфеля.</p>
+  вложенность держит волосяная линия от кружка. Внизу — только «Настройки» и кнопка схлопывания:
+  карточку контекста из визарда примерили и сняли.</p>
 
   <div class="scroller"><div class="strip">
   <div class="sc">
@@ -314,13 +321,6 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         </div>
       </div>
 
-      <div class="g1-ctx">
-        <em>Портфели</em>
-        <div class="g1-cr"><span class="dot" style="background:#5f7fa8"></span><b>Все портфели</b><span class="g1-drift ok">+0,8%</span></div>
-        <u class="g1-cv num">4 812 300 ₽</u>
-        <div class="g1-bar"><i class="st" style="width:38%"></i><i class="bd" style="width:62%"></i></div>
-        <div class="g1-lg"><span class="a">Акции 38</span><span class="b">Обл. 62</span></div>
-      </div>
       <div class="g1-foot">
         <div class="g1-fbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg>Настройки</div>
         <div class="g1-ficon"><svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg></div>
@@ -354,10 +354,10 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
   <div class="notes">
     <div class="note ok"><i>1</i><span><b>Длинное имя наконец влезает.</b> «Академия Ребалансировки» из админки в 60px рейки ужималась в две строки с многоточием — здесь она читается целиком.</span></div>
-    <div class="note ok"><i>2</i><span><b>Низ перестаёт пустовать.</b> Карточка <code style="font-family:var(--fN);font-size:12px">.rbw-ctx</code> отдаёт сумму, дневное изменение и раскладку «акции/облигации» — данные уже есть в <code style="font-family:var(--fN);font-size:12px">PF.calcPf</code>.</span></div>
+    <div class="note ok"><i>2</i><span><b>Низ отдан списку.</b> Карточки контекста нет — «Настройки» с волосяной линией прибиты к низу, а освободившиеся ~130px уходят разделам: на этом макете список получает <span class="num">505px</span> вместо <span class="num">386px</span>.</span></div>
     <div class="note ok"><i>3</i><span><b>Один клик вместо двух.</b> Второй уровень виден сразу, без кнопки разворота: колонка одна и она всегда открыта.</span></div>
     <div class="note no"><i>4</i><span><b>268px постоянно.</b> Сегодня без колонки страница получает 76px — здесь узкого состояния нет, кроме полного схлопывания в иконки.</span></div>
-    <div class="note no"><i>5</i><span><b>Разделы уезжают под скролл.</b> Замерено на этом же макете: раскрытый второй уровень «Портфелей» просит <span class="num">628px</span>, а после шапки и карточки контекста остаётся <span class="num">386px</span> — «Рынок» и «Тест» видны только прокруткой. Это возвращает болезнь аккордеона, от которой ушли в В3-б.</span></div>
+    <div class="note no"><i>5</i><span><b>На коротком окне разделы уходят под скролл.</b> Замерено: раскрытый второй уровень «Портфелей» просит <span class="num">628px</span>. На этом макете (<span class="num">648px</span>) списку достаётся <span class="num">505px</span> — не хватает <span class="num">123px</span>. На окне 900px сайдбару остаётся около <span class="num">1000</span> CSS-px (zoom 0,9) и всё влезает с запасом; скролл возвращается на низких окнах и когда открыто много портфелей.</span></div>
     <div class="note no"><i>6</i><span><b>Пояснения — лишние чернила.</b> В визарде их 4 штуки на экран-мастер; в сайдбаре 6 подписей висят перед глазами всегда.</span></div>
   </div>
 </div>
@@ -498,7 +498,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
     <div>
       <div class="st-wrap">
-        <div class="st-lab">Карточка контекста</div>
+        <div class="st-lab">Г2 · карточка контекста</div>
         <div class="g1-ctx" style="margin-top:0">
           <em>Портфели</em>
           <div class="g1-cr"><span class="dot" style="background:#5f7fa8"></span><b>Все портфели</b><span class="g1-drift ok">+0,8%</span></div>
@@ -512,7 +512,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           <div style="margin-top:7px;font-size:11px;color:var(--mut);line-height:1.45">Создайте первый — тогда здесь появятся сумма и раскладка.</div>
         </div>
       </div>
-      <div class="spec-cap"><b>С данными и без них</b>Числа только там, где есть источник: сумма — <span class="num">PF.calcPf</span>, дневное — <span class="num">PF.dayDelta</span>. Нет вчерашнего снимка — чипа нет, а не ноль.</div>
+      <div class="spec-cap"><b>С данными и без них</b>Только для Г2 — в Г1 карточку сняли. Числа берутся там, где есть источник: сумма — <span class="num">PF.calcPf</span>, дневное — <span class="num">PF.dayDelta</span>. Нет вчерашнего снимка — чипа нет, а не ноль.</div>
     </div>
 
     <div>
@@ -547,14 +547,14 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       <tr><td><b>js/sidebar-ctx.js</b></td><td>рендерит и разделы, и второй уровень; нужен режим «раскрыт под активным»</td><td>без изменений, кроме шапки колонки (надстрочник + число)</td></tr>
       <tr><td><b>js/sidebar.js</b></td><td>смысл <code>sb-collapsed</code> меняется снова: колонка одна</td><td>без изменений</td></tr>
       <tr><td><b>Мобильная шторка</b></td><td>под угрозой: она держится на <code>#sbRail{display:contents}</code></td><td>не затрагивается (весь код в десктопной медиа)</td></tr>
-      <tr><td><b>Новые данные</b></td><td colspan="2">нет: сумма и раскладка — <code>PF.calcPf</code>, дневное — <code>PF.dayDelta</code>, счётчики — как сейчас</td></tr>
+      <tr><td><b>Новые данные</b></td><td>нет вовсе: карточка контекста снята, счётчики — как сейчас</td><td>нет: сумма и раскладка — <code>PF.calcPf</code>, дневное — <code>PF.dayDelta</code></td></tr>
       <tr><td><b>Язык выбора</b></td><td colspan="2">«подъём» из В3-б уходит: на белом поле выбор — тонированная пилюля с зелёной риской</td></tr>
     </tbody>
   </table>
 
   <div class="notes" style="grid-template-columns:1fr 1fr">
     <div class="note no"><i>?</i><span><b>Открыто:</b> оставлять ли пояснения под разделами в Г1 — они и есть главный «премиальный» приём визарда, и они же главный источник лишних чернил в чроме.</span></div>
-    <div class="note no"><i>?</i><span><b>Открыто:</b> нужна ли карточка контекста на разделах без портфелей («Рынок», «Тест») — или там низ колонки остаётся пустым.</span></div>
+    <div class="note ok"><i>✓</i><span><b>Решено:</b> карточки контекста в Г1 нет. Вопрос «что показывать в ней на „Рынке“ и „Тесте“» снимается вместе с ней; низ колонки держат «Настройки».</span></div>
   </div>
 </div>
 
