@@ -40,6 +40,9 @@
         trading:   '<rect x="3.5" y="8" width="6" height="9" rx="1.5"/><path d="M6.5 4v4M6.5 17v3"/><rect x="14.5" y="5" width="6" height="10" rx="1.5"/><path d="M17.5 3v2M17.5 15v6"/>',
         settings:  '<circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/>',
         plus:      '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+        // часы-«цены не свежие»: не восклицательный знак — это не ошибка
+        // пользователя и не тревога, а сообщение о возрасте чисел
+        warn:      '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',
         collapse:  '<polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/>',
         chev:      '<polyline points="6 9 12 15 18 9"/>',
         // подвкладки «Расчёта» и «Рынка» — по data-sub
@@ -259,22 +262,24 @@
     // ---------- подвал ----------
     // «Настройки» раздела живут ВНИЗУ колонки, а не в конце списка: список
     // раскрывается под активным разделом, и подвал, приклеенный к нему, висел бы
-    // посреди навигации. Кнопка схлопывания уже стоит в разметке #sbRailFoot —
-    // сюда дорисовывается только левый слот.
+    // посреди навигации.
+    // С 2026-07-28 это ШЕСТЕРЁНКА в ряду личного, рядом с лупой (просьба
+    // владельца): широкой строкой «⚙ Настройки» подвал занимал целый ряд ради
+    // одного пункта, а рядом уже стоял ряд круглых кнопок того же назначения.
+    // Кнопка живёт в разметке (#sbSettingsBtn) — здесь только её видимость и
+    // адрес перехода; клик ловит общий слушатель #sbRailFoot по data-act.
     function footSync(m) {
-        var host = document.getElementById('sbRailFoot');
-        if (!host) return;
-        // подвал теперь двухрядный: «Настройки» живут в верхней строке, рядом
-        // со свёрткой, а не над рядом с аватаром и поиском
-        var row = host.querySelector('.sbf-main') || host;
-        var slot = row.querySelector('.sbf-slot');
-        if (!slot) {
-            slot = document.createElement('div');
-            slot.className = 'sbf-slot';
-            row.insertBefore(slot, row.firstChild);
-        }
-        var html = (m && m.foot && wide()) ? itemHtml(m.foot) : '';
-        if (slot.__sbfHtml !== html) { slot.innerHTML = html; slot.__sbfHtml = html; }
+        var btn = document.getElementById('sbSettingsBtn');
+        if (!btn) return;
+        var f = (m && m.foot && wide()) ? m.foot : null;
+        btn.hidden = !f;
+        if (!f) { btn.removeAttribute('data-act'); btn.removeAttribute('data-key'); return; }
+        btn.setAttribute('data-act', f.act);
+        btn.setAttribute('data-key', f.key || '');
+        btn.classList.toggle('on', !!f.on);
+        var tx = f.tx || 'Настройки';
+        if (btn.title !== tx) { btn.title = tx; btn.setAttribute('aria-label', tx); }
+        btn.setAttribute('aria-current', f.on ? 'page' : 'false');
     }
 
     // ---------- КАПИТАЛ (#sbCap) ----------
@@ -291,7 +296,28 @@
     // Полоса и легенда идут ОТДЕЛЬНЫМИ строками: в одну строку «Акции 62 · цель
     // 58 [полоса] Облигации 38 · цель 42» не влезает — легенда ломалась пополам,
     // а полосу выжимало в ноль.
+    // ПУСТОЕ СОСТОЯНИЕ. У нового пользователя портфелей нет, табло схлопывалось
+    // через #sbCap:empty, и верх колонки читался не пустым, а сломанным: между
+    // именем продукта и сеткой разделов зияла дыра, а второй уровень «Портфелей»
+    // состоял из одного «Обзора». На месте табло встаёт ВХОД: та же пилюля того
+    // же размера, но зовёт не смотреть капитал, а завести первый портфель.
+    // Два повода для пустоты — и зовут они в разные места: портфелей нет вовсе
+    // ('new') или портфель заведён, но пуст ('fill'). Одно «Создать портфель» на
+    // оба случая советовало бы второму пользователю завести лишний портфель
+    // вместо того, чтобы наполнить уже созданный.
+    var CAP_EMPTY = {
+        'new':  { act: 'capnew', t: 'Создать портфель', s: 'Капитал и день появятся здесь' },
+        'fill': { act: 'capfill', t: 'Добавить бумаги', s: 'В портфеле пока пусто' }
+    };
+    function capEmptyHtml(kind) {
+        var c = CAP_EMPTY[kind] || CAP_EMPTY['new'];
+        return '<button type="button" class="sbcap-btn sbcap-empty" data-act="' + c.act + '" data-key=""' +
+            ' title="' + esc(c.t) + '">' +
+            '<span class="sbcap-plus" aria-hidden="true">' + svg(IC.plus) + '</span>' +
+            '<span class="sbcap-etx"><b>' + esc(c.t) + '</b><i>' + esc(c.s) + '</i></span></button>';
+    }
     function capHtml(m) {
+        if (m.empty) return capEmptyHtml(m.empty);
         var h = '<div class="sbcap-top"><span class="sbcap-l">Капитал · все портфели</span></div>' +
             '<div class="sbcap-v"><span class="sbcap-n">' + esc(m.cap) + '</span>' +
             (m.chip ? '<span class="sbcap-d' + (m.chip.neg ? ' neg' : '') + '">' + esc(m.chip.tx) + '</span>' : '') +
@@ -321,8 +347,15 @@
                 '<div class="sbcap-lg"><span>Акции <b>' + st + '</b>' + (tg ? ' · цель ' + tSt : '') + '</span>' +
                 '<span>Облигации <b>' + bd + '</b>' + (tg ? ' · цель ' + (100 - tSt) : '') + '</span></div>';
         }
-        return '<button type="button" class="sbcap-btn" data-act="capgo" data-key=""' +
-            ' title="Открыть «Обзор»">' + h + '</button>';
+        // НЕСВЕЖЕСТЬ. Если MOEX не ответил, цены остаются прежними, и табло
+        // молча показывало вчерашнее число сегодняшним — правды об этом в
+        // колонке не было вовсе. Метка называет ВРЕМЯ последних пришедших цен
+        // (PF.quotesOkTs), а сами числа приглушаются: соврать они не могут, но и
+        // выдавать себя за живые не должны.
+        var cls = 'sbcap-btn' + (m.stale ? ' stale' : '');
+        if (m.stale) h += '<div class="sbcap-stale">' + svg(IC.warn) + '<span>' + esc(m.stale) + '</span></div>';
+        return '<button type="button" class="' + cls + '" data-act="capgo" data-key=""' +
+            ' title="' + (m.stale ? esc(m.stale) + '. ' : '') + 'Открыть «Обзор»">' + h + '</button>';
     }
     // В СВЁРНУТОЙ РЕЙКЕ КАПИТАЛА НЕТ. Чип «1,46 млн / +0,8%» из мокапа Б+3 был
     // сделан и снят по просьбе владельца: свёрнутая рейка — это выбор «покажи
@@ -354,6 +387,11 @@
     function capSync() {
         var host = document.getElementById('sbCap');
         var m = null;
+        // Цены обновляет рендер «Портфелей», а табло висит на ЛЮБОЙ вкладке —
+        // без этой строчки на «Расчёте» оно показывало бы числа часовой давности
+        // и само же честно сообщало о своей несвежести. Вызов дешёвый: внутри
+        // ensureQuotes стоит TTL 60с, чаще одного запроса в минуту не выйдет.
+        try { if (wide() && window.PF && PF.ensureQuotes && PF.store && PF.store.items.length) PF.ensureQuotes(); } catch (e) {}
         try { m = (wide() && window.PF && PF.sbCapModel) ? PF.sbCapModel() : null; } catch (e) { m = null; }
         if (host) {
             // в рейке табло не живёт вовсе (см. выше) — узел просто пуст
@@ -437,6 +475,18 @@
             if (window.pfxGoTab) window.pfxGoTab('overview');
             return;
         }
+        // вход пустого табло: сперва на «Портфели» (кнопка видна с любой вкладки,
+        // а новая карточка появляется именно там), потом само создание
+        if (act === 'capnew' || act === 'capfill') {
+            if (typeof currentTab === 'undefined' || currentTab !== 'portfolios') {
+                if (window.switchTab) window.switchTab('portfolios');
+            }
+            // 'capfill' — портфель уже есть: ведём в «Мои портфели», где бумаги
+            // и добавляют, а не заводим второй пустой
+            if (act === 'capfill') { if (window.pfxGoTab) window.pfxGoTab('ports'); return; }
+            if (window.pfAddPortfolio) window.pfAddPortfolio();
+            return;
+        }
         if (act === 'sub') { if (window.sbNavSub) window.sbNavSub(key, e); return; }
         // тип портфеля: вкладка могла быть не «Расчёт» (пришли с /portfolio)
         if (act === 'cxmode') {
@@ -487,4 +537,12 @@
     // ширина рейки меняется вместе с колонкой — пересобираем на кроссинге брейкпоинта
     if (MQ.addEventListener) MQ.addEventListener('change', sbCtxSync);
     else if (MQ.addListener) MQ.addListener(sbCtxSync);
+    // Свой тик табло. На «Портфелях» его пересобирает рендер, но на остальных
+    // вкладках сайдбар — единственный, кто вообще спрашивает цены: без тика
+    // метка возраста однажды бы зажглась и осталась гореть навсегда.
+    setInterval(function () {
+        if (!wide() || document.hidden) return;
+        if (!document.getElementById('sbCap')) return;
+        capSync();
+    }, 60000);
 })();

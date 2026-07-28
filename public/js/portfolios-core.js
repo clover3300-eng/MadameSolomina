@@ -144,7 +144,13 @@
 
     // ---------- котировки ----------
     var quotes = {};         // ticker -> { price, chgPct }
-    PF.quotesTs = 0;   // время последнего батча котировок; читает и рендер — только через PF
+    PF.quotesTs = 0;   // время последней ПОПЫТКИ батча (по нему живёт TTL); читает и рендер — только через PF
+    // Время последних РЕАЛЬНО ПРИШЕДШИХ цен. Отдельно от quotesTs намеренно: тот
+    // ставится и на неудачном ответе (иначе ensureQuotes зациклился бы), поэтому
+    // судить по нему о свежести чисел нельзя — MOEX мог не ответить, а штамп
+    // обновиться. Этим меряет возраст табло сайдбара (PF.sbCapModel).
+    PF.quotesOkTs = 0;
+    PF.quotesFresh = function () { PF.quotesOkTs = Date.now(); };
     var quotesLoading = false;
     var bondQuotes = {};     // isin -> price (₽), 0 = «не нашли»
     var bondPending = {};
@@ -197,6 +203,8 @@
                 quotes[t] = { price: +last, chgPct: (pi >= 0 && row[pi] != null ? +row[pi] : null) };
             });
             PF.quotesTs = Date.now();
+            // цены действительно пришли — только теперь табло вправе считать себя свежим
+            if (Object.keys(best).length) PF.quotesFresh();
         });
     }
 
@@ -212,7 +220,12 @@
         if (full === isin && !/RMFS/.test(isin) && !bondsReady()) return;
         bondPending[isin] = true;
         Promise.resolve(fetchBondData(full))
-            .then(function (r) { bondQuotes[isin] = (r && r.price > 0) ? r.price : 0; })
+            .then(function (r) {
+                bondQuotes[isin] = (r && r.price > 0) ? r.price : 0;
+                // портфель может быть чисто облигационным — тогда свежесть табло
+                // держат ЭТИ цены, батча акций для него не бывает вовсе
+                if (bondQuotes[isin] > 0) PF.quotesFresh();
+            })
             .catch(function () { bondQuotes[isin] = 0; })
             .then(function () { bondPending[isin] = false; PF.softRerender(); });
     }
@@ -241,6 +254,7 @@
                 if (key && found[key] == null && last != null && last !== '' && +last > 0)
                     found[key] = +last * (bondFaceMap[t] > 0 ? bondFaceMap[t] : 1000) / 100;
             });
+            if (Object.keys(found).length) PF.quotesFresh();
             return found;
         });
     }

@@ -13,7 +13,8 @@
        двигаются, ~150px вместо 320;
      • под волосяной чертой — второй уровень активного раздела (#sbCtx),
        у «Портфелей» шесть строк и «Ещё»;
-     • подвал: «Настройки» раздела + схлопывание — как было.
+     • подвал: ряд личного — аватар кабинета, звоночек, шестерёнка «Настроек»
+       раздела и лупа поиска (поле раскрывается поверх ряда).
 
    ЧЕГО ЗДЕСЬ НЕТ НАМЕРЕННО:
      • аватара, имени, звоночка и переключателя темы в подвале — кабинет,
@@ -355,6 +356,78 @@
         background: var(--sbr-ink);
     }
 
+    /* ---------- ВОЗРАСТ ЦЕН ----------
+       Метка появляется, только когда котировки перестали приходить (модель
+       отдаёт m.stale — см. PF.sbCapModel). Числа при этом ПРИГЛУШАЮТСЯ: они не
+       врут, но и выдавать себя за «сейчас» больше не вправе. Приглушение через
+       opacity, а не сменой цвета: зелёный/красный дня несут знак, и перекрасить
+       их в серый значило бы отнять смысл, а не свежесть. */
+    .sbcap-stale {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 8px;
+        padding-top: 7px;
+        border-top: 1px solid var(--sbr-line);
+        font-family: var(--font-ui, 'Inter', sans-serif);
+        font-size: 9.5px;
+        font-weight: 600;
+        line-height: 1.2;
+        color: var(--sbr-dim);
+    }
+    .sbcap-stale svg {
+        flex: none;
+        width: 11px; height: 11px;
+        fill: none; stroke: currentColor; stroke-width: 2;
+        stroke-linecap: round; stroke-linejoin: round;
+    }
+    .sbcap-btn.stale .sbcap-v,
+    .sbcap-btn.stale .sbcap-day,
+    .sbcap-btn.stale .sbcap-bar,
+    .sbcap-btn.stale .sbcap-lg { opacity: 0.55; }
+
+    /* ---------- ПУСТОЕ ТАБЛО ----------
+       Та же пилюля того же тона: пустое состояние — это состояние колонки, а не
+       её отсутствие. Раньше здесь схлопывался #sbCap:empty, и между именем
+       продукта и сеткой разделов зияла дыра — у нового пользователя верх колонки
+       читался сломанным, а не пустым. */
+    .sbcap-empty {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 12px;
+    }
+    .sbcap-plus {
+        flex: none;
+        display: grid;
+        place-items: center;
+        box-sizing: border-box;
+        width: 30px; height: 30px;
+        border: 1.5px dashed var(--sbr-line);
+        border-radius: 50%;
+        color: var(--sbr-dim);
+    }
+    .sbcap-plus svg {
+        width: 14px; height: 14px;
+        fill: none; stroke: currentColor; stroke-width: 2.2;
+        stroke-linecap: round; stroke-linejoin: round;
+    }
+    .sbcap-etx { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+    .sbcap-etx b {
+        font-family: var(--font-ui, 'Inter', sans-serif);
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--sbr-ink);
+    }
+    .sbcap-etx i {
+        font-family: var(--font-ui, 'Inter', sans-serif);
+        font-size: 10px;
+        font-style: normal;
+        font-weight: 500;
+        color: var(--sbr-dim);
+    }
+    .sbcap-empty:hover .sbcap-plus { border-color: var(--sbr-sel); color: var(--sbr-sel); }
+
     /* ---------- Разделы: сетка 4 в ряд ----------
        Сетка, а не список: семь разделов занимают две строки (~150px) вместо
        семи (~320px), и — главное — НЕ ДВИГАЮТСЯ при смене активного, потому
@@ -448,6 +521,13 @@
     }
     #sbNav .sb-item.active .sb-label { color: var(--sbr-ink); font-weight: 700; }
     #sbNav .sb-item.active { color: var(--sbr-ink); }
+    /* КЛАВИАТУРА: по сетке ходят стрелки (onSbKey в js/sidebar.js), и фокус
+       обязан быть виден — иначе ход есть, а где ты стоишь, непонятно. Обводка
+       та же, что у второго уровня и табло: один язык выделения на всю колонку. */
+    #sbNav .sb-item:focus-visible {
+        outline: 2px solid var(--sbr-sel);
+        outline-offset: -1px;
+    }
     /* второй уровень уехал в #sbCtx — шевроны и inline-подпункты не нужны */
     #sbNav .sb-chev,
     #sbNav .sb-subs { display: none; }
@@ -654,9 +734,13 @@
         border-top: 1px solid var(--sbr-line);
     }
     #sbRailFoot .sbf-main { display: flex; align-items: center; gap: 4px; }
-    #sbRailFoot .sbf-slot { flex: 1 1 auto; min-width: 0; }
-    #sbRailFoot .sbf-slot:empty { flex: 1 1 auto; }
     #sbRailFoot .sbc-it { font-size: 12px; }
+    /* В РАЗВЁРНУТОЙ КОЛОНКЕ ВЕРХНЕГО РЯДА ПОДВАЛА НЕТ (просьба владельца
+       2026-07-28). Свернуть колонку теперь можно шевроном у имени (#sbHeadCollapse),
+       а «Настройки» переехали шестерёнкой в ряд личного — ряд остался бы пустой
+       полосой с чертой. В рейке ряд ЖИВ: там это единственный способ вернуть
+       колонку, а шеврона у имени в 84px нет. */
+    body:not(.sb-rail) #sbRailFoot .sbf-main { display: none; }
 
     /* ---------- Личное: аватар · звоночек · лупа ----------
        Ряд не перестраивается при открытии поиска: поле ложится ПОВЕРХ него
@@ -681,6 +765,34 @@
         flex: none;
     }
     #sbPersonalSlot #nfBell svg { width: 16px; height: 16px; }
+    /* шестерёнка «Настроек» раздела — тот же кружок, что у лупы; видимость и
+       адрес перехода ставит footSync (js/sidebar-ctx.js) */
+    #sbSettingsBtn {
+        flex: none;
+        width: 30px; height: 30px;
+        display: grid;
+        place-items: center;
+        margin-left: auto;
+        padding: 0;
+        border: 0;
+        border-radius: 9px;
+        background: transparent;
+        color: var(--sbr-dim);
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease, opacity 0.14s ease;
+    }
+    #sbSettingsBtn[hidden] { display: none; }
+    #sbSettingsBtn svg {
+        width: 16px; height: 16px;
+        fill: none; stroke: currentColor; stroke-width: 1.7;
+        stroke-linecap: round; stroke-linejoin: round;
+    }
+    #sbSettingsBtn:hover { background: var(--sbr-page); color: var(--sbr-ink); }
+    #sbSettingsBtn:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 2px; }
+    /* открытые «Настройки» помечаются так же, как активная подвкладка списка */
+    #sbSettingsBtn.on { background: var(--sbr-page); color: var(--sbr-sel); }
+    /* лупа стоит последней; когда шестерёнка есть, отступ слева держит она */
+    #sbPersonal:has(#sbSettingsBtn:not([hidden])) #sbSearchBtn { margin-left: 0; }
     #sbSearchBtn {
         flex: none;
         width: 30px; height: 30px;
@@ -746,8 +858,9 @@
         color: var(--sbr-ink);
     }
     #sbSearchInput::placeholder { color: var(--sbr-dim); }
-    /* аватар и звоночек уступают место полю, но остаются на своих местах */
-    #sbPersonal.open #sbPersonalSlot {
+    /* аватар, звоночек и шестерёнка уступают место полю, но остаются на местах */
+    #sbPersonal.open #sbPersonalSlot,
+    #sbPersonal.open #sbSettingsBtn {
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.14s ease;
@@ -894,7 +1007,6 @@
         background: var(--sbr-page);
         color: var(--sbr-ink);
     }
-    body.sb-rail #sbRailFoot .sbf-slot { display: none; }
     /* В 84px три кнопки в ряд не встают — личное складывается в столбик над
        свёрткой, теми же кружками 36px, что и разделы. Поле поиска в рейке не
        живёт: ему нужна ширина, а колонка её как раз и не даёт — лупа

@@ -79,12 +79,22 @@
             if (lbl) lbl.textContent = collapsed ? 'Закрепить' : 'Свернуть';
             btn.title = collapsed ? 'Закрепить меню' : 'Свернуть меню';
         }
-        // та же кнопка внизу колонки: подпись обязана говорить, что произойдёт
+        // та же кнопка внизу колонки: подпись обязана говорить, что произойдёт.
+        // В развёрнутой колонке её больше не видно (css: свернуть можно шевроном
+        // у имени), но в рейке она — единственный способ вернуть колонку.
         var rb = document.querySelector('#sbRailFoot .sbc-btn');
         if (rb) {
             var t = collapsed ? 'Развернуть меню' : 'Свернуть в рейку';
             rb.title = t;
             rb.setAttribute('aria-label', t);
+        }
+        // квадрат-марка: в рейке он разворачивает колонку, в колонке — обновляет
+        // страницу. Подсказка обязана называть то, что случится (см. sbReload).
+        var mark = document.querySelector('#sbHead .sb-logo-mark');
+        if (mark) {
+            var mt = markExpands() ? 'Развернуть колонку' : 'Обновить страницу';
+            mark.title = mt;
+            mark.setAttribute('aria-label', mt);
         }
     }
     window.updateCollapseLabel = updateCollapseLabel;
@@ -104,13 +114,21 @@
             window.pfFitNumbers && window.pfFitNumbers();
         });
     };
-    // Квадрат с «M» в шапке сайдбара — перезагрузка страницы. Клик по ИМЕНИ
-    // рядом по-прежнему ведёт на Главную, поэтому всплытие гасим: иначе
-    // сработали бы оба действия и переход перебил бы перезагрузку.
-    // Путь вкладки живёт в адресе (route-hash.js), так что обновление
-    // возвращает ровно тот же раздел, а не Главную.
+    // Квадрат с «M» в шапке сайдбара. Клик по ИМЕНИ рядом по-прежнему ведёт на
+    // Главную, поэтому всплытие гасим: иначе сработали бы оба действия.
+    //   • колонка развёрнута — ОБНОВЛЕНИЕ страницы. Путь вкладки живёт в адресе
+    //     (route-hash.js), так что возвращается ровно тот же раздел;
+    //   • колонка свёрнута в рейку — марка РАЗВОРАЧИВАЕТ её (просьба владельца
+    //     2026-07-28). В рейке 84px это самая крупная мишень сверху, а шеврон
+    //     разворота стоит в самом низу — тянуться к нему через всю колонку.
+    // На «Главной» рейка не про свёртку, а про саму вкладку (sbRailSync), и
+    // разворот там ничего бы не изменил — марка остаётся обновлением.
+    function markExpands() {
+        return sbIsDesktop() && !sbIsHome() && document.body.classList.contains('sb-collapsed');
+    }
     window.sbReload = function(e) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
+        if (markExpands()) { window.toggleSidebarCollapse(); return false; }
         location.reload();
         return false;
     };
@@ -128,9 +146,12 @@
         var bell = document.getElementById('nfBell');
         var toSide = sbIsDesktop() && !sbIsHome();
         if (toSide) {
-            // порядок в подвале: звоночек, затем аватар — как было в шапке
-            if (bell && bell.parentNode !== slot) slot.appendChild(bell);
+            // Порядок в подвале: АВАТАР, затем звоночек (просьба владельца
+            // 2026-07-28) — в шапке было наоборот, но там ряд читался справа
+            // налево от края окна, а здесь он начинается от левого края колонки,
+            // и первым по чтению должен идти кабинет.
             if (prof.parentNode !== slot) slot.appendChild(prof);
+            if (bell && bell.parentNode !== slot) slot.appendChild(bell);
         } else {
             var home = document.getElementById('topBarActions');
             if (!home) return;
@@ -199,6 +220,76 @@
             return r;
         };
     })();
+
+    // ===== КЛАВИАТУРА: стрелки ходят по колонке =====
+    // Tab по сайдбару работал и раньше (разделы — <a href>, второй уровень —
+    // <button>), но Tab идёт ПО ОДНОМУ узлу и не знает про сетку: чтобы попасть
+    // из «Расчёта» в «Тест» под ним, нужно было пройти весь первый ряд. Стрелки
+    // говорят на языке раскладки — влево/вправо по ряду, вверх/вниз по столбцу,
+    // а на границе сетки фокус перетекает во второй уровень и обратно.
+    // Раскладку НЕ ЗАШИВАЕМ: число колонок читаем из реального положения ячеек
+    // (в рейке колонка одна, в сетке четыре) — иначе рейка ходила бы по правилам
+    // сетки, которой в ней нет.
+    var NAVKEYS = { ArrowUp: 1, ArrowDown: 1, ArrowLeft: 1, ArrowRight: 1, Home: 1, End: 1 };
+    function sbVisible(el) { return !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length); }
+    function sbNavCells() {
+        var nav = document.getElementById('sbNav');
+        if (!nav) return [];
+        return Array.prototype.filter.call(nav.querySelectorAll('.sb-item[data-tab]'), sbVisible);
+    }
+    function sbCtxCells() {
+        var ctx = document.getElementById('sbCtx');
+        if (!ctx || !document.body.classList.contains('sb-ctx')) return [];
+        return Array.prototype.filter.call(ctx.querySelectorAll('.sbc-it'), sbVisible);
+    }
+    // сколько ячеек в первом ряду: у сетки 4, у рейки 1 — считаем по offsetTop
+    function sbPerRow(cells) {
+        if (cells.length < 2) return 1;
+        var top = cells[0].offsetTop, n = 0;
+        for (var i = 0; i < cells.length; i++) { if (cells[i].offsetTop !== top) break; n++; }
+        return n || 1;
+    }
+    function sbFocus(el) { if (el) { try { el.focus(); } catch (e) {} } }
+    function onSbKey(e) {
+        if (!sbIsDesktop() || !NAVKEYS[e.key]) return;
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        var t = e.target;
+        if (!t || !t.closest) return;
+        // поле поиска само обрабатывает стрелки (выбор строки в палитре)
+        if (t.id === 'sbSearchInput') return;
+        var inNav = !!t.closest('#sbNav'), inCtx = !!t.closest('#sbCtx');
+        if (!inNav && !inCtx) return;
+        var cells = inNav ? sbNavCells() : sbCtxCells();
+        var i = cells.indexOf(t.closest(inNav ? '.sb-item' : '.sbc-it'));
+        if (i < 0) return;
+        var per = inNav ? sbPerRow(cells) : 1;
+        var to = null, other;
+        if (e.key === 'Home') to = cells[0];
+        else if (e.key === 'End') to = cells[cells.length - 1];
+        else if (e.key === 'ArrowRight') to = cells[Math.min(i + 1, cells.length - 1)];
+        else if (e.key === 'ArrowLeft') to = cells[Math.max(i - 1, 0)];
+        else if (e.key === 'ArrowDown') {
+            if (inNav && i + per >= cells.length) {
+                // из последнего ряда сетки — в первый пункт второго уровня
+                other = sbCtxCells();
+                to = other.length ? other[0] : cells[cells.length - 1];
+            } else to = cells[Math.min(i + per, cells.length - 1)];
+        } else if (e.key === 'ArrowUp') {
+            if (inCtx && i === 0) {
+                other = sbNavCells();
+                to = other.length ? other[other.length - 1] : null;
+            } else to = cells[Math.max(i - per, 0)];
+        }
+        if (!to) return;
+        e.preventDefault();
+        sbFocus(to);
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+        var sb = document.getElementById('sideBar');
+        // на самом сайдбаре, а не на документе: стрелки в таблицах и полях
+        // страницы остаются страничными
+        if (sb) sb.addEventListener('keydown', onSbKey);
+    });
 
     window.openSidebarDrawer = function() {
         document.body.classList.add('sb-open');

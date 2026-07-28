@@ -259,10 +259,24 @@
     // «Обзоре», но не деньги (см. память hide-scope-overview-only).
     // Дневное изменение — только при вчерашнем снимке: dayDelta вернул null у
     // всех ⇒ chip остаётся null и в разметке его просто нет.
+    // ВОЗРАСТ ЦЕН. PF.quotesOkTs (portfolios-core.js) — время последних РЕАЛЬНО
+    // пришедших котировок, а не последней попытки: если MOEX молчит, оно стоит
+    // на месте. Пока цены моложе порога, табло молчит тоже — метка появляется
+    // ровно тогда, когда числам перестало быть можно верить как «сейчас».
+    var STALE_MS = 5 * 60000;
+    function capStale() {
+        var ok = PF.quotesOkTs || 0;
+        if (!ok) return PF.quotesTs ? 'Цены ещё не пришли' : null;   // попытки были, ответа нет
+        if (Date.now() - ok < STALE_MS) return null;
+        var d = new Date(ok), p = function (n) { return n < 10 ? '0' + n : '' + n; };
+        return 'Цены на ' + p(d.getHours()) + ':' + p(d.getMinutes());
+    }
     PF.sbCapModel = function () {
         if (!pfxWide()) return null;
         var items = (PF.store && PF.store.items) || [];
-        if (!items.length) return null;
+        // ПУСТО — это тоже состояние, а не «нечего показывать»: колонка отдаёт
+        // вход вместо схлопнутой дыры (js/sidebar-ctx.js)
+        if (!items.length) return { empty: 'new' };
         var total = 0, day = 0, dayKnown = false, bond = 0, stock = 0;
         items.forEach(function (p) {
             var c = calcPf(p);
@@ -271,7 +285,9 @@
             var d = dayDelta(p, c.value);
             if (d != null) { day += d; dayKnown = true; }
         });
-        if (!(total > 0)) return null;
+        // Портфель заведён, но бумаг в нём нет: капитала всё равно нет, а звать
+        // заводить ВТОРОЙ портфель было бы советом мимо — зовём наполнить этот
+        if (!(total > 0)) return { empty: 'fill' };
         var chip = null, dayRub = null;
         if (dayKnown && total - day > 0) {
             var pct = day / (total - day) * 100;
@@ -291,7 +307,9 @@
             mix: mixBase > 0 ? { stock: stock / mixBase * 100, bond: bond / mixBase * 100 } : null,
             // насечка цели: null, пока цели не задана ни одному портфелю
             target: (PF.pfTargetMix ? PF.pfTargetMix() : null),
-            drift: (PF.pfDriftCount ? PF.pfDriftCount() : 0)
+            drift: (PF.pfDriftCount ? PF.pfDriftCount() : 0),
+            // возраст цен: строка-метка либо null, если числа свежие
+            stale: capStale()
         };
     };
     PF.sbSideModel = function () {

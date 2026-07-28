@@ -235,13 +235,13 @@
         // при 2 или 4 портфелях сразу видно много карточек — календарь сворачиваем до
         // ближайшей даты выплаты (если на неё приходится сразу несколько купонов —
         // показываем их все); полный список — по клику на «Показать все»
-        var collapseNext = (PF.store.items.length === 2 || PF.store.items.length === 4) && !asCell && !forceFull;
+        var collapseNext = (PF.store.items.length === 2 || PF.store.items.length === 4) && !asCell;
         var shown;
         if (collapseNext && !payCalFull) {
             var d0 = evs[0].date;
             shown = evs.filter(function (e) { return sameCalDay(e.date, d0); });
         } else {
-            shown = (payCalFull || asCell || forceFull) ? evs : evs.slice(0, LIMIT);
+            shown = (payCalFull || asCell) ? evs : evs.slice(0, LIMIT);
         }
         var soonEvs = evs.filter(function (e) { return (e.date.getTime() - Date.now()) <= 30 * 86400000; });
         var soonSum = soonEvs.reduce(function (s, e) { return s + e.amount; }, 0);
@@ -252,7 +252,7 @@
         var soon = '<div class="pfpc-soon"><span class="pfpc-soon-l">За 30 дней</span>' + cntBadge + '<span class="pfpc-soon-v">+' + fmtRub(soonSum) + '</span></div>';
         // при раскрытии shown === evs, поэтому evs.length > shown.length перестаёт быть true —
         // в развёрнутом виде кнопку показываем принудительно (иначе нельзя свернуть обратно)
-        var more = (!asCell && !forceFull && (payCalFull || evs.length > shown.length)) ? '<button class="pfpc-more' + (payCalFull ? ' on' : '') + '" onclick="pfTogglePayCal()">' +
+        var more = (!asCell && (payCalFull || evs.length > shown.length)) ? '<button class="pfpc-more' + (payCalFull ? ' on' : '') + '" onclick="pfTogglePayCal()">' +
             '<span>' + (payCalFull ? 'Свернуть' : 'Показать все · ' + evs.length) + '</span>' +
             '<svg class="pfpc-more-ch' + (payCalFull ? ' up' : '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>' : '';
         var right = '<div class="pfpc-head-r">' + calFilterHtml() + soon + '</div>';
