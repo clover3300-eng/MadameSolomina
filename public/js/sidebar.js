@@ -50,6 +50,7 @@
         } catch (e) {}
         sbRailSync();
         sbTitleSync();
+        if (window.sbPersonalSync) window.sbPersonalSync();
         if (window.updateCollapseLabel) window.updateCollapseLabel();
         if (window.sbCtxSync) window.sbCtxSync();
     }
@@ -113,6 +114,92 @@
         location.reload();
         return false;
     };
+    // ===== ЛИЧНОЕ В ПОДВАЛЕ КОЛОНКИ =====
+    // Шапка сайта на десктопе снята со всех вкладок, кроме «Главной» (просьба
+    // владельца 2026-07-28), и аватар кабинета со звоночком переезжают в подвал
+    // сайдбара ФИЗИЧЕСКИ — как #bgFab/#themeFab переезжают в панель действий
+    // «Портфелей» (pfxAdoptGlobals). Пересоздавать узлы нельзя: их держат
+    // js/profile-menu.js и js/notifications.js, и на новые копии они не смотрят.
+    // На «Главной» шапка остаётся — там кнопки возвращаются в неё.
+    function sbPersonalSync() {
+        var slot = document.getElementById('sbPersonalSlot');
+        var prof = document.getElementById('topProfileBtn');
+        if (!slot || !prof) return;
+        var bell = document.getElementById('nfBell');
+        var toSide = sbIsDesktop() && !sbIsHome();
+        if (toSide) {
+            // порядок в подвале: звоночек, затем аватар — как было в шапке
+            if (bell && bell.parentNode !== slot) slot.appendChild(bell);
+            if (prof.parentNode !== slot) slot.appendChild(prof);
+        } else {
+            var home = document.getElementById('topBarActions');
+            if (!home) return;
+            if (prof.parentNode !== home) home.appendChild(prof);
+            // звоночек штатно стоит СЛЕВА от аватара (js/notifications.js)
+            if (bell && bell.parentNode !== home) home.insertBefore(bell, prof);
+        }
+    }
+    window.sbPersonalSync = sbPersonalSync;
+
+    // ---- поиск в подвале: лупа раскрывается полем ПОВЕРХ аватара и звоночка ----
+    // Поле — не своя реализация поиска, а второй вход в ту же палитру
+    // (js/top-search.js): oninput/onkeydown зовут её же обработчики, а результаты
+    // рисуются в общий #searchResults. Признак body.sbs-open переставляет палитру
+    // к сайдбару и прячет её собственное поле — иначе полей было бы два.
+    function sbSearchSet(on) {
+        var row = document.getElementById('sbPersonal');
+        var btn = document.getElementById('sbSearchBtn');
+        var inp = document.getElementById('sbSearchInput');
+        var overlay = document.getElementById('searchOverlay');
+        if (!row || !inp) return;
+        row.classList.toggle('open', !!on);
+        if (btn) btn.setAttribute('aria-expanded', on ? 'true' : 'false');
+        inp.tabIndex = on ? 0 : -1;
+        document.body.classList.toggle('sbs-open', !!on);
+        if (on) {
+            if (overlay) overlay.classList.add('open');
+            document.body.classList.add('ts-open');
+            try { inp.focus(); } catch (e) {}
+        } else {
+            inp.value = '';
+            if (window.closeTopSearch) window.closeTopSearch();
+        }
+    }
+    window.sbSearchToggle = function (e) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        var row = document.getElementById('sbPersonal');
+        var open = !(row && row.classList.contains('open'));
+        // в рейке 84px полю негде развернуться — сперва разворачиваем колонку,
+        // потом открываем поиск: клик по лупе всё равно приводит к поиску
+        if (open && document.body.classList.contains('sb-rail') && document.body.classList.contains('sb-collapsed')) {
+            window.toggleSidebarCollapse();
+            setTimeout(function () { sbSearchSet(true); }, 270);   // после перехода ширины
+            return;
+        }
+        sbSearchSet(open);
+    };
+    window.sbSearchClose = function () { sbSearchSet(false); };
+    // Палитра закрывается своими путями (Esc, клик по подложке, выбор бумаги) —
+    // подвал обязан свернуться следом, иначе поле осталось бы раскрытым поверх
+    // аватара уже без палитры.
+    (function () {
+        var prev = window.closeTopSearch;
+        if (typeof prev !== 'function') return;
+        window.closeTopSearch = function () {
+            var r = prev.apply(this, arguments);
+            var row = document.getElementById('sbPersonal');
+            if (row && row.classList.contains('open')) {
+                row.classList.remove('open');
+                document.body.classList.remove('sbs-open');
+                var inp = document.getElementById('sbSearchInput');
+                if (inp) { inp.value = ''; inp.tabIndex = -1; }
+                var btn = document.getElementById('sbSearchBtn');
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+            }
+            return r;
+        };
+    })();
+
     window.openSidebarDrawer = function() {
         document.body.classList.add('sb-open');
     };
@@ -152,16 +239,13 @@
             // вкладку могли переименовать в админке (js/tab-gates.js) — своё имя
             // старше словаря; пустой titleOf значит «зовётся как встроено»
             var nm = (window.tabGates && window.tabGates.titleOf && window.tabGates.titleOf(tabId)) || s.name;
-            // Второй уровень «Портфелей» больше не написан нигде в шапке (ряд
-            // подвкладок уехал в колонку), а знать, что открыт «Обзор», нужно:
-            // дописываем подвкладку к разделу — «Портфели · Обзор».
-            var sub = '';
-            if (tabId === 'portfolios' && window.PF && PF.pfxCrumb) {
-                try { sub = PF.pfxCrumb() || ''; } catch (e) { sub = ''; }
-            }
+            // Подвкладка («Портфели · Обзор») из крошки СНЯТА вместе с самой
+            // шапкой: на десктопе её больше нет нигде, кроме «Главной», а там
+            // разделов не бывает. Раздел и подвкладку показывает сайдбар —
+            // зелёный кружок в сетке и пилюля в списке. Крошка осталась ради
+            // мобильной шапки, которая никуда не делась.
             var html = '<span class="hdr-chip"><svg viewBox="0 0 24 24">' + s.icon + '</svg></span>' +
                        '<span class="hdr-sec">' + esc(nm) + '</span>';
-            if (sub) html += '<span class="hdr-sub">' + esc(sub) + '</span>';
             if (crumb.innerHTML !== html) crumb.innerHTML = html;
             crumb.style.display = 'flex';
         } else {
@@ -290,6 +374,10 @@
         // «Главная» показывает рейку, остальные разделы — колонку
         sbRailSync();
         sbTitleSync();   // подпись могли переименовать из админки — подсказка следом
+        // на «Главной» шапка сайта жива, и аватар со звоночком уезжают обратно в неё
+        sbPersonalSync();
+        // поиск, раскрытый в подвале, уходить вместе с вкладкой не должен зависать
+        if (window.sbSearchClose) window.sbSearchClose();
         // Второй уровень зеркалит эти же .sb-sub («Расчёт»/«Рынок») и спрашивает
         // PF о «Портфелях» — пересобирается ПОСЛЕ простановки .active, а ещё он
         // встаёт в разметку сразу за активным разделом (см. placeCtx)
@@ -544,5 +632,8 @@
             btn.classList.toggle('active', isActive);
         });
         sbSyncActive(ct);
+        // profile-menu.js и notifications.js грузятся ПОСЛЕ нас — их узлы
+        // появляются только к этому моменту, поэтому переезд повторяем здесь
+        sbPersonalSync();
     });
 })();

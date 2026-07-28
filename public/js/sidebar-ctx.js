@@ -264,11 +264,14 @@
     function footSync(m) {
         var host = document.getElementById('sbRailFoot');
         if (!host) return;
-        var slot = host.querySelector('.sbf-slot');
+        // подвал теперь двухрядный: «Настройки» живут в верхней строке, рядом
+        // со свёрткой, а не над рядом с аватаром и поиском
+        var row = host.querySelector('.sbf-main') || host;
+        var slot = row.querySelector('.sbf-slot');
         if (!slot) {
             slot = document.createElement('div');
             slot.className = 'sbf-slot';
-            host.insertBefore(slot, host.firstChild);
+            row.insertBefore(slot, row.firstChild);
         }
         var html = (m && m.foot && wide()) ? itemHtml(m.foot) : '';
         if (slot.__sbfHtml !== html) { slot.innerHTML = html; slot.__sbfHtml = html; }
@@ -280,51 +283,16 @@
     // «Портфелей». Пока цепочка #pfLazySrc не загружена, PF нет вовсе — узел
     // остаётся пустым, и CSS (#sbCap:empty) убирает его вместе с отступами.
     // Маскировать суммы не наше дело: sums-privacy.js сам находит лист с «₽».
-    // ---- интрадей-ряд для мини-спарклайна ----
-    // Готового ряда «капитал в течение дня» в проекте нет: снимки пишутся раз в
-    // сутки. Собираем свой — точка не чаще раза в минуту, ключ живёт один день
-    // (в облако НЕ зеркалим: это данные устройства за сегодня, а не позиция UI).
-    // Пока точек меньше трёх — линия соврала бы формой, спарклайна просто нет.
-    var SERIES_KEY = 'sb_day_series', SERIES_MIN_MS = 60000, SERIES_MAX = 300;
-    function today() {
-        var d = new Date();
-        return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
-    }
-    function series(total) {
-        var s = null;
-        try { s = JSON.parse(localStorage.getItem(SERIES_KEY) || 'null'); } catch (e) {}
-        if (!s || s.d !== today() || !Array.isArray(s.v)) s = { d: today(), v: [], t: 0 };
-        var now = Date.now();
-        if (total > 0 && (now - (s.t || 0) >= SERIES_MIN_MS)) {
-            s.v.push(Math.round(total));
-            if (s.v.length > SERIES_MAX) s.v = s.v.slice(-SERIES_MAX);
-            s.t = now;
-            try { localStorage.setItem(SERIES_KEY, JSON.stringify(s)); } catch (e) {}
-        }
-        return s.v;
-    }
-    function sparkHtml(v, neg) {
-        if (!v || v.length < 3) return '';
-        var min = Math.min.apply(null, v), max = Math.max.apply(null, v);
-        var span = max - min;
-        var W = 58, H = 18;
-        var pts = v.map(function (n, i) {
-            var x = v.length > 1 ? (i / (v.length - 1) * W) : 0;
-            // плоский день — линия ровно посередине, а не по верхнему краю
-            var y = span > 0 ? (H - (n - min) / span * H) : H / 2;
-            return x.toFixed(1) + ',' + y.toFixed(1);
-        }).join(' ');
-        return '<svg class="sbcap-spark' + (neg ? ' neg' : '') + '" viewBox="0 0 ' + W + ' ' + H +
-            '" preserveAspectRatio="none" aria-hidden="true"><polyline points="' + pts + '"/></svg>';
-    }
-    // Табло: капитал, день в рублях и процентах, спарклайн, полоса классов с
-    // насечкой цели. Клик ведёт на «Обзор» — там капитал разобран по полочкам.
+    // МИНИ-СПАРКЛАЙН ДНЯ СНЯТ (просьба владельца 2026-07-28) вместе со своим
+    // интрадей-рядом sb_day_series: график в навигации — это уже вторая
+    // «динамика капитала», а она разобрана на «Обзоре». День остаётся числом.
+    // Табло: капитал, день в рублях и процентах, полоса классов с насечкой
+    // цели. Клик ведёт на «Обзор» — там капитал разобран по полочкам.
     // Полоса и легенда идут ОТДЕЛЬНЫМИ строками: в одну строку «Акции 62 · цель
-    // 58 [полоса] Обл. 38 · цель 42» не влезает — легенда ломалась пополам, а
-    // полосу выжимало в ноль.
-    function capHtml(m, total) {
-        var h = '<div class="sbcap-top"><span class="sbcap-l">Капитал · все портфели</span>' +
-            (m.chip ? sparkHtml(series(total), m.chip.neg) : '') + '</div>' +
+    // 58 [полоса] Облигации 38 · цель 42» не влезает — легенда ломалась пополам,
+    // а полосу выжимало в ноль.
+    function capHtml(m) {
+        var h = '<div class="sbcap-top"><span class="sbcap-l">Капитал · все портфели</span></div>' +
             '<div class="sbcap-v"><span class="sbcap-n">' + esc(m.cap) + '</span>' +
             (m.chip ? '<span class="sbcap-d' + (m.chip.neg ? ' neg' : '') + '">' + esc(m.chip.tx) + '</span>' : '') +
             '</div>';
@@ -351,7 +319,7 @@
                 (tg ? '<i class="tg" style="left:' + tg.stock.toFixed(1) + '%"></i>' : '') +
                 '</div>' +
                 '<div class="sbcap-lg"><span>Акции <b>' + st + '</b>' + (tg ? ' · цель ' + tSt : '') + '</span>' +
-                '<span>Обл. <b>' + bd + '</b>' + (tg ? ' · цель ' + (100 - tSt) : '') + '</span></div>';
+                '<span>Облигации <b>' + bd + '</b>' + (tg ? ' · цель ' + (100 - tSt) : '') + '</span></div>';
         }
         return '<button type="button" class="sbcap-btn" data-act="capgo" data-key=""' +
             ' title="Открыть «Обзор»">' + h + '</button>';
@@ -390,7 +358,7 @@
         if (host) {
             // в рейке табло не живёт вовсе (см. выше) — узел просто пуст
             var rail = document.body.classList.contains('sb-rail');
-            var html = (!m || rail) ? '' : capHtml(m, m.total);
+            var html = (!m || rail) ? '' : capHtml(m);
             if (host.__sbcapHtml !== html) { host.innerHTML = html; host.__sbcapHtml = html; }
         }
         badgeSync(m ? m.drift : 0);

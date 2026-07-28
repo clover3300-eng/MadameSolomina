@@ -1154,22 +1154,47 @@ function checkRebalanceEmptyState() {
 }
 
 // Патчим switchTab чтобы проверять пустое состояние при переходе на ребаланс
+// ---- ВЫГРУЗКА «ТЕРМИНАЛА»: где живёт кнопка ----
+// «Портфель»: Excel-кнопка давно переехала в карточку капитала → в шапке скрыта.
+// «Терминал» выгружает текущую таблицу, и с 2026-07-28 на ДЕСКТОПЕ делает это из
+// углового столбика: шапки сайта там больше нет (решение владельца), а слот
+// #cstPage под страничные кнопки в столбике был. На мобиле шапка на месте, а
+// столбик наоборот скрыт (corner-stack.css — только с 1024px), поэтому кнопка
+// остаётся в шапке: иначе выгрузка пропала бы с телефона совсем.
+// Узел ПЕРЕЕЗЖАЕТ физически, как #bgFab/#themeFab: обработчик и состояние на
+// нём, копию пришлось бы синхронизировать.
+var _termExpMq = window.matchMedia ? window.matchMedia('(min-width: 1024px)') : { matches: true };
+function syncTermExportHost(tabId) {
+    var pageHost = document.getElementById('topBarPageActions');
+    if (!pageHost) return;
+    if (tabId == null) tabId = (typeof currentTab !== 'undefined' ? currentTab : '');
+    var onTerm = tabId === 'market-stocks' || tabId === 'market-bonds';
+    var pfB = document.getElementById('pfHdrExportBtn');
+    if (pfB) pfB.style.display = 'none';
+    var tmB = document.getElementById('termHdrExportBtn');
+    if (tmB) {
+        var toCorner = onTerm && _termExpMq.matches;
+        if (toCorner && window.cornerStack && window.cornerStack.ensure) window.cornerStack.ensure();
+        var slot = toCorner ? document.getElementById('cstPage') : null;
+        if (slot) { if (tmB.parentNode !== slot) slot.appendChild(tmB); }
+        else if (tmB.parentNode !== pageHost) pageHost.appendChild(tmB);
+        tmB.style.display = onTerm ? '' : 'none';
+        tmB.classList.toggle('cst-btn', toCorner);
+        if (toCorner) tmB.setAttribute('data-tip', 'Выгрузить в Excel');
+        else tmB.removeAttribute('data-tip');
+    }
+    // шапка на десктопе скрыта целиком, на мобиле ряд нужен только в «Терминале»
+    pageHost.style.display = (onTerm && !_termExpMq.matches) ? 'flex' : 'none';
+}
+if (_termExpMq.addEventListener) _termExpMq.addEventListener('change', function () { syncTermExportHost(); });
+else if (_termExpMq.addListener) _termExpMq.addListener(function () { syncTermExportHost(); });
+
 var _origSwitchTab2 = switchTab;
 switchTab = function(tabId) {
     _origSwitchTab2(tabId);
     // Excel-кнопки страниц в глобальной шапке (#topBarPageActions, рядом с «Поиском»):
     // «Портфель» выгружает состав расчёта, «Терминал» — текущую таблицу (акции/облигации)
-    var pageHost = document.getElementById('topBarPageActions');
-    if (pageHost) {
-        // «Портфель»: Excel-кнопка переехала в карточку капитала → в шапке скрыта.
-        // «Терминал» по-прежнему выгружает текущую таблицу из глобальной шапки.
-        var onTerm = tabId === 'market-stocks' || tabId === 'market-bonds';
-        var pfB = document.getElementById('pfHdrExportBtn');
-        var tmB = document.getElementById('termHdrExportBtn');
-        if (pfB) pfB.style.display = 'none';
-        if (tmB) tmB.style.display = onTerm ? '' : 'none';
-        pageHost.style.display = onTerm ? 'flex' : 'none';
-    }
+    syncTermExportHost(tabId);
     if (tabId === 'rebalance') {
         setTimeout(checkRebalanceEmptyState, 50);
     }

@@ -33,7 +33,13 @@ body.quiz-mode #cornerStack, body.sd-drawer-open #cornerStack, body.pfsd-open #c
    переезжают в кластер панели (#pfabGlobals), пустую капсулу прячем —
    :has(#panel-portfolios) в селекторе даёт id-специфичность, правило бьёт
    показ body:not(.tab-home) выше без !important */
-#cornerStack .cst-page { display: none; }
+/* Слот страничных кнопок. Пустует на большинстве вкладок, но с 2026-07-28 в
+   него переезжает выгрузка «Терминала» (шапки сайта на десктопе больше нет —
+   см. css/sidebar-rail.css). Пустой слот по-прежнему не занимает места. */
+#cornerStack .cst-page { display: flex; flex-direction: column; gap: 6px; order: 1; }
+#cornerStack .cst-page:empty { display: none; }
+/* приехавшая кнопка была текстовой «Выгрузить в Excel» — в столбике она кружок */
+#cornerStack .cst-page .hdr-excel span { display: none; }
 #cornerStack .cst-hr { display: none; }
 body:has(#panel-portfolios.active) #cornerStack { display: none; }
 #cornerStack #bgFab { order: 3; }

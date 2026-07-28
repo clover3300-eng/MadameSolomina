@@ -250,9 +250,9 @@
     <link rel="stylesheet" href="css/calc-r6.css?v=11">
     <link rel="stylesheet" href="css/calc-r7.css?v=1">
     <link rel="stylesheet" href="css/home-register.css?v=22">
-    <link rel="stylesheet" href="css/corner-stack.css?v=3">
+    <link rel="stylesheet" href="css/corner-stack.css?v=4">
     <link rel="stylesheet" href="css/site-bg.css?v=15">
-    <link rel="stylesheet" href="css/profile-menu.css?v=20">
+    <link rel="stylesheet" href="css/profile-menu.css?v=21">
     <link rel="stylesheet" href="css/notifications.css?v=3">
     <link rel="stylesheet" href="css/tab-gates.css?v=4">
     <link rel="stylesheet" href="css/admin.css?v=13">
@@ -266,7 +266,7 @@
     <!-- Сайдбар «Подъём»: рейка 76px + колонка второго уровня (мокап В3-б).
          Идёт ПОСЛЕ site-layout.css — перебивает и его базовые правила рейки,
          и блок body.dark-mode (рейка светлая в обеих темах), но ДО mobile.css -->
-    <link rel="stylesheet" href="css/sidebar-rail.css?v=18">
+    <link rel="stylesheet" href="css/sidebar-rail.css?v=19">
     <!-- Мобильный слой (≤1023px) — всегда ПОСЛЕДНИЙ, перебивает всё -->
     <link rel="stylesheet" href="css/mobile.css?v=26">
     
@@ -399,10 +399,10 @@
             <!-- Пункты — настоящие ссылки: Cmd/Ctrl/средний клик открывает раздел в новой
                  вкладке браузера (SPA-фолбэк вернёт index.html, route-hash восстановит),
                  обычный клик перехватывают sbGo/sbGoParent/sbGoSub (sidebar.js) -->
-            <a class="sb-item" data-tab="home" href="/" onclick="return sbGo(event, 'home')" title="Главная">
-                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                <span class="sb-label">Главная</span>
-            </a>
+            <!-- «Главная» отдельным пунктом СНЯТА (просьба владельца 2026-07-28):
+                 на неё ведёт имя «Madame Solomi'na» в шапке колонки, а в мобильной
+                 шторке — тот же клик по имени и «Главная» в нижнем доке. Дублировать
+                 переход ячейкой сетки незачем. -->
             <div class="sb-group" data-group="calc">
                 <a class="sb-item sb-parent" data-tab="calc" href="/calc" onclick="return sbGoParent(event, 'calc')" title="Расчёт">
                     <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
@@ -463,9 +463,28 @@
         <!-- «Свернуть» внизу рейки — видна только когда колонки второго уровня
              нет (у раздела её либо не бывает, либо она свёрнута) -->
         <div id="sbRailFoot">
-            <button type="button" class="sbc-btn" onclick="toggleSidebarCollapse()" title="Развернуть колонку разделов" aria-label="Развернуть колонку разделов">
-                <svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
-            </button>
+            <!-- строка раздела: «Настройки» (слот наполняет sidebar-ctx.js) + свёртка -->
+            <div class="sbf-main">
+                <button type="button" class="sbc-btn" onclick="toggleSidebarCollapse()" title="Развернуть колонку разделов" aria-label="Развернуть колонку разделов">
+                    <svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+                </button>
+            </div>
+            <!-- ЛИЧНОЕ: аватар кабинета и звоночек ПЕРЕЕЗЖАЮТ сюда из шапки сайта
+                 физически (sbPersonalSync в js/sidebar.js) — на «Главной» шапка
+                 остаётся и они возвращаются в неё. Поиск — лупа справа: по клику
+                 поле раскрывается ПОВЕРХ аватара и звоночка, не двигая их. -->
+            <div id="sbPersonal">
+                <div id="sbPersonalSlot"></div>
+                <div id="sbSearchField">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="sbSearchInput" placeholder="Тикер, название или ISIN"
+                           autocomplete="off" tabindex="-1" aria-label="Поиск по бумагам"
+                           oninput="handleTopSearchInput(event)" onkeydown="handleTopSearchKeydown(event)">
+                </div>
+                <button type="button" id="sbSearchBtn" onclick="sbSearchToggle(event)" title="Поиск" aria-label="Поиск" aria-expanded="false">
+                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </button>
+            </div>
         </div>
         </div><!-- /sbRail -->
         <!-- Второй уровень активного раздела; наполняет js/sidebar-ctx.js -->
@@ -2770,7 +2789,7 @@
 <script src="js/registration.js?v=3" defer></script>
 <script src="js/menu-controller.js?v=1" defer></script>
 <script src="js/vanguard-test.js?v=1" defer></script>
-<script src="js/webapp-tabs.js?v=36" defer></script>
+<script src="js/webapp-tabs.js?v=38" defer></script>
 <script src="js/top-search.js?v=2" defer></script>
 <script src="js/income-chart.js?v=1" defer></script>
 <script src="js/backtest.js?v=11" defer></script>
@@ -2780,10 +2799,10 @@
 <script src="js/calc-r6.js?v=11" defer></script>
 <script src="js/calc-r7.js?v=1" defer></script>
 <script src="js/dashboard.js?v=6" defer></script>
-<script src="js/sidebar.js?v=16" defer></script>
+<script src="js/sidebar.js?v=17" defer></script>
 <!-- Колонка второго уровня: строго ПОСЛЕ sidebar.js (пользуется sbNavSub и
      дёргается из его sbSyncActive) -->
-<script src="js/sidebar-ctx.js?v=9" defer></script>
+<script src="js/sidebar-ctx.js?v=10" defer></script>
 <script src="js/stock-terminal.js?v=13" defer></script>
 <script src="js/bond-terminal.js?v=10" defer></script>
 <script src="js/table-tooltip.js?v=1" defer></script>

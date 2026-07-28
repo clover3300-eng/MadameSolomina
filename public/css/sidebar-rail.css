@@ -46,6 +46,9 @@
 /* свёртка — понятие только десктопное: в мобильной шторке колонка не сужается,
    а закрывается крестиком #sbCloseBtn */
 #sbHeadCollapse { display: none; }
+/* Личное в подвале — тоже только десктоп: на мобиле шапка сайта на месте, и
+   аватар со звоночком остаются в ней (переезд гейтит sbPersonalSync). */
+#sbPersonal { display: none; }
 /* бейдж дрейфа — деталь сетки разделов; в мобильной шторке строки плоские,
    и метка встала бы обычным текстом в конце строки */
 #sbNav .sb-badge { display: none; }
@@ -308,11 +311,6 @@
     .sbcap-pct { display: none; }
     body.sums-hidden .sbcap-rub { display: none; }
     body.sums-hidden .sbcap-pct { display: inline; }
-    .sbcap-spark { flex: none; width: 58px; height: 18px; opacity: 0.8; color: #16A34A; }
-    .sbcap-spark.neg { color: #DC2626; }
-    body.dark-mode .sbcap-spark { color: #34D399; }
-    body.dark-mode .sbcap-spark.neg { color: #F87171; }
-    .sbcap-spark polyline { fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
     /* Доли классов. Цвета НЕ свои: синий облигаций и охра акций взяты из
        «Расчёта» (--cx-bond / --cx-eq в css/calc-r7.css) — один и тот же
        смысл обязан быть одного цвета по всему сайту. */
@@ -640,21 +638,120 @@
     }
     .sbc-it.lvl3.on::after { background: var(--sbr-sel); }
 
-    /* ---------- Подвал: «Настройки» раздела + схлопывание ---------- */
+    /* ---------- Подвал: раздел + ЛИЧНОЕ ----------
+       Две строки: сверху «Настройки» раздела и свёртка (как было), снизу —
+       аватар кабинета, звоночек и поиск, приехавшие из снятой шапки сайта. */
     #sbRailFoot {
         display: flex;
-        align-items: center;
-        gap: 4px;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
         box-sizing: border-box;      /* иначе паддинги вылезают за корпус */
         width: auto;
         margin-top: auto;
         flex: 0 0 auto;
-        padding: 10px 20px 16px;
+        padding: 10px 16px 14px;
         border-top: 1px solid var(--sbr-line);
     }
+    #sbRailFoot .sbf-main { display: flex; align-items: center; gap: 4px; }
     #sbRailFoot .sbf-slot { flex: 1 1 auto; min-width: 0; }
     #sbRailFoot .sbf-slot:empty { flex: 1 1 auto; }
     #sbRailFoot .sbc-it { font-size: 12px; }
+
+    /* ---------- Личное: аватар · звоночек · лупа ----------
+       Ряд не перестраивается при открытии поиска: поле ложится ПОВЕРХ него
+       (position:absolute), поэтому лупа остаётся ровно там же, где была, а
+       аватар и звоночек уходят фейдом, не дёргая раскладку. */
+    #sbPersonal {
+        position: relative;
+        display: flex;         /* базовое правило выше гасит ряд на мобиле */
+        align-items: center;
+        gap: 4px;
+        min-height: 34px;
+    }
+    #sbPersonalSlot { display: flex; align-items: center; gap: 4px; flex: 1 1 auto; min-width: 0; }
+    /* аватар и звоночек приезжают из шапки со своими стилями — приводим к
+       языку колонки: те же 30px кружки, что у служебных кнопок подвала */
+    #sbPersonalSlot #topProfileBtn,
+    #sbPersonalSlot #nfBell {
+        position: relative;
+        width: 30px; height: 30px;
+        min-width: 30px;
+        margin: 0;
+        flex: none;
+    }
+    #sbPersonalSlot #nfBell svg { width: 16px; height: 16px; }
+    #sbSearchBtn {
+        flex: none;
+        width: 30px; height: 30px;
+        display: grid;
+        place-items: center;
+        margin-left: auto;
+        padding: 0;
+        border: 0;
+        border-radius: 9px;
+        background: transparent;
+        color: var(--sbr-dim);
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+    #sbSearchBtn svg {
+        width: 16px; height: 16px;
+        fill: none; stroke: currentColor; stroke-width: 1.9;
+        stroke-linecap: round; stroke-linejoin: round;
+    }
+    #sbSearchBtn:hover { background: var(--sbr-page); color: var(--sbr-ink); }
+    #sbSearchBtn:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 2px; }
+    #sbPersonal.open #sbSearchBtn { background: var(--sbr-page); color: var(--sbr-ink); }
+
+    /* Поле поиска: тонированная пилюля цвета страницы — тот же тон, которым в
+       колонке помечен выбор. Раскрывается справа налево, от лупы. */
+    #sbSearchField {
+        position: absolute;
+        left: 0; top: 50%;
+        transform: translateY(-50%);
+        right: 34px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        height: 30px;
+        padding: 0 10px;
+        border-radius: 9px;
+        background: var(--sbr-page);
+        opacity: 0;
+        pointer-events: none;
+        clip-path: inset(0 0 0 100% round 9px);
+        transition: clip-path 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.16s ease;
+    }
+    #sbPersonal.open #sbSearchField {
+        opacity: 1;
+        pointer-events: auto;
+        clip-path: inset(0 0 0 0 round 9px);
+    }
+    #sbSearchField > svg {
+        flex: none;
+        width: 14px; height: 14px;
+        fill: none; stroke: currentColor; stroke-width: 2;
+        stroke-linecap: round; stroke-linejoin: round;
+        color: var(--sbr-dim);
+    }
+    #sbSearchInput {
+        flex: 1 1 auto;
+        min-width: 0;
+        border: 0;
+        outline: none;
+        background: transparent;
+        font-family: var(--font-ui, 'Inter', sans-serif);
+        font-size: 12px;
+        color: var(--sbr-ink);
+    }
+    #sbSearchInput::placeholder { color: var(--sbr-dim); }
+    /* аватар и звоночек уступают место полю, но остаются на своих местах */
+    #sbPersonal.open #sbPersonalSlot {
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.14s ease;
+    }
     .sbc-btn {
         width: 32px; height: 32px;
         flex: none;
@@ -798,6 +895,26 @@
         color: var(--sbr-ink);
     }
     body.sb-rail #sbRailFoot .sbf-slot { display: none; }
+    /* В 84px три кнопки в ряд не встают — личное складывается в столбик над
+       свёрткой, теми же кружками 36px, что и разделы. Поле поиска в рейке не
+       живёт: ему нужна ширина, а колонка её как раз и не даёт — лупа
+       разворачивает колонку и открывает поиск уже в ней. */
+    body.sb-rail #sbRailFoot { padding: 10px 0 14px; gap: 8px; }
+    body.sb-rail #sbRailFoot .sbf-main { justify-content: center; order: 2; }
+    body.sb-rail #sbPersonal {
+        flex-direction: column;
+        gap: 4px;
+        min-height: 0;
+        order: 1;
+    }
+    body.sb-rail #sbPersonalSlot { flex-direction: column; gap: 4px; flex: none; }
+    body.sb-rail #sbSearchBtn { margin-left: 0; width: 36px; height: 36px; }
+    body.sb-rail #sbSearchField { display: none; }
+    body.sb-rail #sbPersonalSlot #topProfileBtn,
+    body.sb-rail #sbPersonalSlot #nfBell { width: 36px; height: 36px; min-width: 36px; }
+    /* На «Главной» шапка сайта жива и личное живёт в ней — ряд в подвале пуст,
+       и лупа рядом с пустотой была бы вторым поиском на одном экране */
+    body.tab-home #sbPersonal { display: none; }
 
     /* «Главная» (экран «Добро пожаловать») — рейка остаётся компактной парящей
        карточкой по содержимому, ровно как была: сплошная полоса во весь экран
@@ -842,11 +959,9 @@
     /* зелёный/красный тёмной темы подняты под тёмное поле — на белом они блёклые */
     body.dark-mode.tab-home .sbcap-d,
     body.dark-mode.tab-home .sbcap-day,
-    body.dark-mode.tab-home .sbcap-spark,
     body.dark-mode.tab-home .sbc-chg { color: #16A34A; }
     body.dark-mode.tab-home .sbcap-d.neg,
     body.dark-mode.tab-home .sbcap-day.neg,
-    body.dark-mode.tab-home .sbcap-spark.neg,
     body.dark-mode.tab-home .sbc-chg.neg { color: #DC2626; }
     body.dark-mode.tab-home .sbcap-day.mut { color: var(--sbr-dim); }
     body.dark-mode.tab-home .sbcap-bar i.eq { background: #D08A3C; }
@@ -868,4 +983,40 @@
     /* Слот середины больше не наполняется (см. renderTopBarMarket) — глушим,
        чтобы пустой flex-элемент не съедал ширину у крошки и кластера действий. */
     #topBarPfMarket { display: none !important; }
+
+    /* ================================================================
+       ШАПКИ САЙТА НА ДЕСКТОПЕ БОЛЬШЕ НЕТ — кроме «Главной»
+       (просьба владельца 2026-07-28). Всё, что в ней жило, разошлось:
+         • раздел и подвкладка — их и так показывает колонка;
+         • аватар и звоночек — в подвал колонки (sbPersonalSync);
+         • поиск — лупа в том же подвале;
+         • тема — кнопка #themeFab в правом нижнем углу, она была там и раньше;
+         • «Добавить виджет» и «Раскладки» — угловая панель «Портфелей» (#pfActMar);
+         • выгрузка Excel/CSV — слот #cstPage углового столбика.
+       На «Главной» шапка остаётся: там нет ни разделов, ни колонки во всю
+       высоту, и марка с кабинетом живут именно в ней.
+       ================================================================ */
+    body:not(.tab-home) #headerWrapper { display: none; }
+    /* Контент занимал место под шапкой отступом — снимаем вместе с ней */
+    body:not(.tab-home) #contentArea { padding-top: 18px; }
+
+    /* ---------- Палитра поиска, открытая из подвала ----------
+       Та же палитра (#searchPalette), но пришвартована к сайдбару и без своего
+       поля ввода: печатают в поле подвала, иначе полей было бы два. */
+    body.sbs-open #searchOverlay {
+        align-items: flex-end;
+        justify-content: flex-start;
+        padding: 0;
+    }
+    body.sbs-open #searchPalette {
+        position: fixed;
+        left: calc(var(--sb-w, 288px) + 14px);
+        bottom: 18px;
+        top: auto; right: auto;
+        width: 420px;
+        max-width: calc(100vw - var(--sb-w, 288px) - 28px);
+        transform: none !important;
+        transform-origin: left bottom;
+    }
+    body.sbs-open #searchBox { display: none; }
 }
