@@ -239,6 +239,45 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
          border-top:1px solid var(--sb-line)}
 .cx-foot .cx{margin:0;flex:1}
 .cx-foot .rail-b{width:34px;height:34px;border-radius:9px;flex:none}
+/* =====================================================================
+   В3-б «ПОДЪЁМ» — альтернативная трактовка той же двойной рейки.
+   Механика (рейка 76 + колонка 212) не меняется, меняется ЯЗЫК выбора:
+   вместо зелёной заливки активный пункт колонки становится белой
+   поднятой карточкой на тонированном поле, а зелёный остаётся только
+   риске раздела и живым числам. Всё под .app.alt — соседние экраны
+   стилями не задевает.
+   ===================================================================== */
+.app.alt{--ctx:#E9EEF6}
+.app.alt .rail{border-right-color:transparent}
+/* раздел на рейке: без пилюли — риска, зелёные чернила, иконка в полную силу */
+.app.alt .rail-i.on{background:transparent;color:var(--sb-acc-tx)}
+.app.alt .rail-i.on::before{height:34px;width:3px;left:-8px}
+/* пункт колонки: выбор = подъём, а не цвет */
+.app.alt .cx{padding:9px 10px;border-radius:10px}
+.app.alt .cx.on{background:var(--rail);color:var(--sb-ink);font-weight:600;
+                box-shadow:inset 0 0 0 1px rgba(15,23,42,.07),0 1px 1px rgba(15,23,42,.04),
+                           0 10px 20px -14px rgba(24,38,60,.55)}
+.app.alt .cx.on .ic{opacity:1;color:var(--sb-acc-tx)}
+.app.alt .cx.on .cnt{color:color-mix(in srgb,var(--sb-ink) 46%,transparent)}
+.app.alt .cx:hover{background:color-mix(in srgb,var(--sb-ink) 4%,transparent)}
+/* подпись группы держит волосяную линию: разделитель и заголовок — один элемент */
+.app.alt .grp-lab{display:flex;align-items:center;gap:10px;padding:14px 16px 6px}
+.app.alt .grp-lab::after{content:'';flex:1;height:1px;background:var(--sb-line)}
+/* шапка колонки: главным становится число, а не подпись раздела */
+.app.alt .cx-head{padding:15px 16px 14px}
+.app.alt .cx-head h4{font-size:15px;font-family:var(--fU);font-weight:600;letter-spacing:-.01em;
+                     color:color-mix(in srgb,var(--sb-ink) 60%,transparent)}
+.app.alt .cx-head .cap{margin-top:7px;display:flex;align-items:baseline;gap:8px;
+                       font-family:var(--fN);font-size:15px;font-weight:700;letter-spacing:-.02em;color:var(--sb-ink)}
+.app.alt .cx-head .cap .chip{font-size:10px;padding:2px 6px;border-radius:6px;
+                             background:rgba(23,122,79,.13);color:#177a4f;font-weight:700}
+/* третий уровень: направляющая тоньше и светлее — вложенность даёт отступ */
+.app.alt .cx3{margin-left:26px;padding-left:14px}
+.app.alt .cx3::after{width:1px;background:color-mix(in srgb,var(--sb-ink) 18%,transparent)}
+.app.alt .cx3.on::after{width:2px;background:var(--sb-acc-tx)}
+/* подвал: та же полка, но карточка «Настроек» не поднимается — она не выбор */
+.app.alt .cx-foot{border-top-color:var(--sb-line)}
+
 /* принудительный hover для витрины состояний */
 .cx.hov{background:color-mix(in srgb,var(--sb-ink) 6%,transparent);color:color-mix(in srgb,var(--sb-ink) 92%,transparent)}
 .rail-i.hov{background:color-mix(in srgb,var(--sb-ink) 6%,transparent);color:color-mix(in srgb,var(--sb-ink) 88%,transparent)}
@@ -304,6 +343,10 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       «Открытые портфели», подвал колонки с «Настройками» и «Свернуть», счётчик-бейдж на разделе.
       Варианты В1 и В2 оставлены ниже как отвергнутые — они перекрашены в ту же светлую палитру, чтобы
       сравнение шло по структуре, а не по цвету.</p>
+      <p><b>Развилка внутри В3.</b> Структура выбрана и не обсуждается: рейка 76 + колонка 212. Осталось выбрать
+      язык выбора — <b>В3-а «Заливка»</b> (зелёная пилюля у активного) или <b>В3-б «Подъём»</b> (белая поднятая
+      карточка на тонированном поле, зелёный только у риски раздела и живых чисел). Оба экрана ниже, в конце
+      В3-б — один и тот же фрагмент в двух трактовках и таблица различий. Смешивать их нельзя.</p>
       <p><b>Почему именно В3.</b> Иконочная рейка 76px с подписями держит все семь разделов на виду,
       контекстная колонка 212px принадлежит активному разделу и вмещает второй уровень целиком, без «⋯» и без скролла на
       типовом наборе. У разделов без второго уровня колонка просто не появляется — контент становится шире, ничего не
@@ -509,7 +552,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
   <!-- ============ В3. ДВОЙНАЯ РЕЙКА ============ -->
   <section class="mk">
-    <div class="mk-h"><span class="mk-n">В3</span><h2>«Двойная рейка»</h2><span class="mk-tag ok">выбрано · раунд 2</span></div>
+    <div class="mk-h"><span class="mk-n">В3-а</span><h2>«Двойная рейка» · заливка</h2><span class="mk-tag ok">выбрано · раунд 2</span></div>
     <div class="mk-sub">Навигация разъезжается на два столбца. Слева рейка 76px: логотип и семь разделов иконкой с
       микроподписью — верхний уровень всегда на виду и всегда в один клик. Справа колонка 212px, принадлежащая
       активному разделу: сериф-заголовок с итогом по разделу, восемь подвкладок с иконками и счётчиками, экраны
@@ -750,6 +793,141 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       <div class="note"><i>2</i>Hover-peek больше не нужен: рейка и так читаема, а «подглядывание» существовало ровно ради подписей разделов.</div>
       <div class="note"><i>3</i>Ширина <b>#appShell</b> получает три значения вместо двух: 76 / 288 / 288+ (мобильная шторка — прежняя).</div>
     </div>
+  </section>
+
+  <!-- ============ В3-б. ПОДЪЁМ ============ -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">В3-б</span><h2>«Подъём»</h2><span class="mk-tag">альтернатива к В3-а</span></div>
+    <div class="mk-sub">Та же двойная рейка — 76 + 212, те же пункты, та же логика колонки. Отличается только
+      <b>язык выбора</b>. В В3-а выбранное красится зелёным; здесь зелёного в колонке нет вовсе: активный пункт
+      становится <b>белой поднятой карточкой</b> на тонированном поле (#E9EEF6), а рейка отдаёт активному разделу
+      риску и зелёные чернила без пилюли. Освободившийся цвет уходит туда, где он несёт смысл, — дневному
+      изменению и чипу в шапке. Заодно шапка колонки переворачивает иерархию: главное в ней теперь <b>число</b>
+      (капитал моноширинным), а название раздела — подпись над ним, потому что имя раздела уже написано на рейке
+      в 76px левее.</div>
+    <div class="scroller"><div class="strip">
+      <div class="app alt">
+        <div class="rail">
+          <div class="logo">М</div>
+          <div class="rail-i"><svg class="ic"><use href="#i-home"/></svg><span>Главная</span></div>
+          <div class="rail-i"><svg class="ic"><use href="#i-calc"/></svg><span>Расчёт</span></div>
+          <div class="rail-i on"><svg class="ic"><use href="#i-pf"/></svg><span>Портфели</span></div>
+          <div class="rail-i"><svg class="ic"><use href="#i-rebal"/></svg><span>Ребаланс</span></div>
+          <div class="rail-i"><svg class="ic"><use href="#i-market"/></svg><span>Рынок</span></div>
+          <div class="rail-i"><svg class="ic"><use href="#i-test"/></svg><span>Тест</span></div>
+        </div>
+        <div class="ctxcol">
+          <div class="cx-head">
+            <h4>Портфели</h4>
+            <div class="cap">4 213 480 ₽<span class="chip">+2,4%</span></div>
+          </div>
+          <div class="cx-list">
+            <div class="grp-lab">Разделы</div>
+            <div class="cx on"><svg class="ic"><use href="#i-grid"/></svg>Обзор</div>
+            <div class="cx"><svg class="ic"><use href="#i-pf"/></svg>Мои портфели<span class="cnt">8</span></div>
+            <div class="cx"><svg class="ic"><use href="#i-calc"/></svg>Аналитика</div>
+            <div class="cx"><svg class="ic"><use href="#i-file"/></svg>Отчёты<span class="cnt">3</span></div>
+            <div class="cx"><svg class="ic"><use href="#i-ops"/></svg>Операции<span class="cnt">124</span></div>
+            <div class="cx"><svg class="ic"><use href="#i-scale"/></svg>Ребаланс</div>
+            <div class="cx"><svg class="ic"><use href="#i-trade"/></svg>Торговля<span class="cnt">2</span></div>
+            <div class="cx cx3">Основной</div>
+            <div class="cx cx3">Идеи</div>
+            <div class="grp-lab">Открытые</div>
+            <div class="cx"><span class="dot" style="background:#16a34a"></span>Пенсионный<span class="chg up">+1,8%</span><span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+            <div class="cx hov"><span class="dot" style="background:#d97706"></span>Дивидендный<span class="chg up">+0,4%</span><span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+            <div class="cx"><span class="dot" style="background:#4453ef"></span>Спекулятивный<span class="chg dn">−2,1%</span><span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+            <div class="cx gh"><svg class="ic"><use href="#i-plus"/></svg>Открыть портфель</div>
+          </div>
+          <div class="cx-foot">
+            <div class="cx"><svg class="ic"><use href="#i-gear"/></svg>Настройки</div>
+            <div class="rail-b" title="Свернуть"><svg class="ic"><use href="#i-collapse"/></svg></div>
+          </div>
+        </div>
+        <div class="main">
+          <div class="tb">
+            <div class="tb-crumb">Портфели<span class="sep">›</span><span class="sub">Обзор</span></div>
+            <div class="tb-sp"></div>
+            <div class="tb-btn"><svg class="ic"><use href="#i-search"/></svg></div>
+            <div class="tb-btn"><svg class="ic"><use href="#i-bell"/></svg></div>
+            <div class="tb-ava">Д</div>
+          </div>
+          <div class="body">
+            <div class="sk-h"><h3>Обзор</h3><div class="pill">Раскладка</div></div>
+            <div class="sk-grid">
+              <div class="sk" style="grid-column:span 5"><div class="t">Капитал</div><div class="big">4 213 480 ₽</div><div class="up">+2,4% за день</div><div class="spark"></div></div>
+              <div class="sk" style="grid-column:span 4"><div class="t">Избранное</div><div class="l w85"></div><div class="l w70"></div><div class="l w45"></div><div class="l w70"></div></div>
+              <div class="sk" style="grid-column:span 3"><div class="t">Рынок сейчас</div><div class="l w70"></div><div class="l w45"></div><div class="l w85"></div></div>
+              <div class="sk" style="grid-column:span 7"><div class="t">Новости</div><div class="l w85"></div><div class="l w70"></div><div class="l w30"></div></div>
+              <div class="sk" style="grid-column:span 5"><div class="t">Календарь выплат</div><div class="l w45"></div><div class="l w70"></div><div class="l w85"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div></div>
+
+    <!-- сравнение двух трактовок на одном фрагменте -->
+    <div class="scroller"><div class="strip">
+      <div>
+        <div class="app sm" style="width:288px;height:300px">
+          <div class="rail" style="justify-content:flex-start">
+            <div class="rail-i"><svg class="ic"><use href="#i-calc"/></svg><span>Расчёт</span></div>
+            <div class="rail-i on"><svg class="ic"><use href="#i-pf"/></svg><span>Портфели</span></div>
+            <div class="rail-i"><svg class="ic"><use href="#i-rebal"/></svg><span>Ребаланс</span></div>
+          </div>
+          <div class="ctxcol">
+            <div class="cx-list" style="padding-top:12px">
+              <div class="cx on"><svg class="ic"><use href="#i-grid"/></svg>Обзор</div>
+              <div class="cx"><svg class="ic"><use href="#i-pf"/></svg>Мои портфели<span class="cnt">8</span></div>
+              <div class="cx"><svg class="ic"><use href="#i-ops"/></svg>Операции<span class="cnt">124</span></div>
+              <div class="grp-lab">Открытые</div>
+              <div class="cx"><span class="dot" style="background:#16a34a"></span>Пенсионный<span class="chg up">+1,8%</span><span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+            </div>
+          </div>
+        </div>
+        <div class="spec-cap"><b>В3-а «Заливка»</b>Выбор кричит цветом: зелёная пилюля и на рейке, и в колонке.
+          Найти активное можно боковым зрением, но зелёного в панели два пятна из трёх.</div>
+      </div>
+      <div>
+        <div class="app sm alt" style="width:288px;height:300px">
+          <div class="rail" style="justify-content:flex-start">
+            <div class="rail-i"><svg class="ic"><use href="#i-calc"/></svg><span>Расчёт</span></div>
+            <div class="rail-i on"><svg class="ic"><use href="#i-pf"/></svg><span>Портфели</span></div>
+            <div class="rail-i"><svg class="ic"><use href="#i-rebal"/></svg><span>Ребаланс</span></div>
+          </div>
+          <div class="ctxcol">
+            <div class="cx-list" style="padding-top:12px">
+              <div class="cx on"><svg class="ic"><use href="#i-grid"/></svg>Обзор</div>
+              <div class="cx"><svg class="ic"><use href="#i-pf"/></svg>Мои портфели<span class="cnt">8</span></div>
+              <div class="cx"><svg class="ic"><use href="#i-ops"/></svg>Операции<span class="cnt">124</span></div>
+              <div class="grp-lab">Открытые</div>
+              <div class="cx"><span class="dot" style="background:#16a34a"></span>Пенсионный<span class="chg up">+1,8%</span><span class="x"><svg class="ic"><use href="#i-x"/></svg></span></div>
+            </div>
+          </div>
+        </div>
+        <div class="spec-cap"><b>В3-б «Подъём»</b>Выбор показан материалом: белая карточка лежит выше поля.
+          Цвет в панели остаётся один — риска раздела и живые проценты, и он больше ни с чем не спорит.</div>
+      </div>
+    </div></div>
+
+    <div class="notes">
+      <div class="note ok"><i>+</i>Зелёный перестаёт конкурировать сам с собой: на экране одна зелёная метка вместо двух пятен.</div>
+      <div class="note ok"><i>+</i>Активный пункт читается при любом фоне и в тёмной теме — подъём не зависит от насыщенности акцента.</div>
+      <div class="note ok"><i>+</i>Число в шапке отвечает на вопрос «сколько у меня» без захода в «Обзор»: навигация начинает работать как сводка.</div>
+      <div class="note no"><i>−</i>Тень — дорогой приём: строк в колонке до 15, и каждая перерисовка активного пункта трогает слой. Тень мягкая и одна, но это ограничение надо помнить.</div>
+      <div class="note no"><i>−</i>Тонированное поле колонки (#E9EEF6) заметно темнее рейки — на светлой теме панель выглядит тяжелее, чем В3-а.</div>
+      <div class="note"><i>?</i>Смешивать нельзя: либо заливка, либо подъём. Два языка выбора в одной панели дадут ровно ту разноголосицу, ради которой всё и затевалось.</div>
+    </div>
+
+    <table class="map">
+      <tr><th>Что</th><th>В3-а «Заливка»</th><th>В3-б «Подъём»</th></tr>
+      <tr><td>Активный раздел (рейка)</td><td>пилюля 24% + риска + чернила #2F6B4F</td><td>риска + чернила, без пилюли</td></tr>
+      <tr><td>Активный пункт (колонка)</td><td>зелёная заливка 24%, чернила #2F6B4F</td><td>белая карточка, обводка 1px, тень; чернила #1F2637</td></tr>
+      <tr><td>Фон колонки</td><td><code>#F5F8FC</code></td><td><code>#E9EEF6</code> — темнее, чтобы белое читалось подъёмом</td></tr>
+      <tr><td>Роль зелёного</td><td>метка выбора + числа</td><td>только риска раздела и числа</td></tr>
+      <tr><td>Шапка колонки</td><td>Georgia 20 «Портфели» + мета мелким</td><td>подпись 15 + капитал моно 15/700 + чип</td></tr>
+      <tr><td>Подпись группы</td><td>капс без линии</td><td>капс + волосяная линия до правого края</td></tr>
+      <tr><td>Цена реализации</td><td>две заливки, ноль теней</td><td>+1 тень и +1 обводка на активном пункте</td></tr>
+    </table>
   </section>
 
   <!-- ============ АНАТОМИЯ ============ -->
