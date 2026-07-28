@@ -128,17 +128,6 @@
             btn.classList.toggle('active', isActive);
         });
     }
-    var _origBrandHTML = null;
-    function updateHomeGreeting(tabId) {
-        var t = document.getElementById('topBarTitle');
-        if (!t) return;
-        if (_origBrandHTML === null) _origBrandHTML = t.innerHTML;
-        if (tabId === 'home') {
-            t.innerHTML = '<span style="font-weight:300;">Добро </span><span style="font-weight:800;">пожаловать!</span>';
-        } else {
-            t.innerHTML = _origBrandHTML;
-        }
-    }
     function renderHeaderBadge(tabId) {
         // «Ежемесячный доход» объединён с расчётом — бейдж показываем расчётный
         if (tabId === 'monthly') tabId = 'calc';

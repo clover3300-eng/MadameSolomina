@@ -177,7 +177,7 @@
         color: var(--sbr-ink);
     }
     #sbHead .sb-logo-name > span:first-child { font-weight: 400 !important; color: var(--sbr-mut); }
-    #sbHead .sb-logo-name > span:last-child  { font-weight: 400 !important; }
+    #sbHead .sb-logo-name > span:last-child  { font-weight: 700 !important; }
     #sbHead .sb-logo-sub { display: none; }
 
     /* Квадрат с «M» — кнопка обновления страницы (клик по имени по-прежнему
@@ -536,6 +536,17 @@
         box-shadow: 0 10px 30px rgba(20, 27, 45, 0.10);
     }
     body.dark-mode.tab-home #sbPanel { box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45); }
+
+    /* ---------- Марка на странице ровно ОДНА ----------
+       Развёрнутая колонка сама пишет «Madame Solomi'na» — вторая такая же в
+       топ-баре была бы эхом в 30px от первой. Поэтому в этом состоянии марку
+       в шапке гасим, а вместе с ней и чёрточку-разделитель с отступом крошки:
+       иначе строка начиналась бы с висящей палки.
+       В рейке (свёрнуто и «Главная») сайдбар показывает только квадрат «M» —
+       там марка в шапке единственная и остаётся. */
+    body:not(.sb-rail) #topBarTitle { display: none; }
+    body:not(.sb-rail) #topBarCrumb { margin-left: 0 !important; }
+    body:not(.sb-rail) #topBarCrumb::before { display: none; }
 
     /* ---------- Шапка сайта: ряд подвкладок «Портфелей» уехал в колонку ---------- */
     /* Слот середины больше не наполняется (см. renderTopBarMarket) — глушим,
