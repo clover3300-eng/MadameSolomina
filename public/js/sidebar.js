@@ -89,6 +89,16 @@
             window.pfFitNumbers && window.pfFitNumbers();
         });
     };
+    // Квадрат с «M» в шапке сайдбара — перезагрузка страницы. Клик по ИМЕНИ
+    // рядом по-прежнему ведёт на Главную, поэтому всплытие гасим: иначе
+    // сработали бы оба действия и переход перебил бы перезагрузку.
+    // Путь вкладки живёт в адресе (route-hash.js), так что обновление
+    // возвращает ровно тот же раздел, а не Главную.
+    window.sbReload = function(e) {
+        if (e) { e.preventDefault(); e.stopPropagation(); }
+        location.reload();
+        return false;
+    };
     window.openSidebarDrawer = function() {
         document.body.classList.add('sb-open');
     };

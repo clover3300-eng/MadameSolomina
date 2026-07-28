@@ -1,11 +1,12 @@
 /* =====================================================================
    САЙДБАР «МАСТЕР» (мокап Г1, dev/mockups/sidebar-rbw-mockups.html)
    =====================================================================
-   Навигация — ОДНА колонка 268px на языке левой рейки визарда «Ребаланс»
+   Навигация — ОДНА колонка 288px на языке левой рейки визарда «Ребаланс»
    (.rbw-rail в css/rebalance-wizard.css):
      • корпус во всю высоту экрана, без скругления и тени, волосяная
        линия справа — сайдбар стоит НА краю экрана, а не лежит на нём;
-     • шапка «надстрочник + Georgia»;
+     • шапка: квадрат-марка (клик — обновление страницы) + имя Georgia
+       в одну строку;
      • раздел = кружок-иконка 29px + имя;
      • второй уровень раскрывается ПОД активным разделом, вложенность
        держит волосяная линия от кружка (#sbCtx переезжает в #sbNav);
@@ -21,7 +22,7 @@
 
    ДВА СОСТОЯНИЯ, признак — body.sb-rail (ставит js/sidebar.js, а на первом
    кадре — инлайн-скрипт под <body>):
-     • нет sb-rail — колонка 268px (умолчание);
+     • нет sb-rail — колонка 288px (умолчание);
      • есть sb-rail — прежняя рейка 76px: иконки с микроподписями, второго
        уровня нет. Сюда попадают «свёрнуто» и «Главная» (на манифесте
        поверх живой карты колонка во всю высоту читалась бы чужой).
@@ -51,13 +52,12 @@
         --sbr-mut:   #64748B;
         --sbr-dim:   #98A4B4;
         --sbr-line:  #E7ECF3;
-        --sbr-acc:   #4453EF;      /* надстрочник марки — акцент визарда */
         --sbr-sel:   #2F6B4F;      /* активный раздел */
         --sbr-sel-ic:#FFFFFF;      /* иконка внутри активного кружка */
     }
     /* Тёмная тема — палитра самого визарда (body.dark-mode .rbw). Прежняя
        инверсия «светлый сайдбар в обеих темах» снята: светлая рейка 76px
-       читалась кантом, светлая колонка 268px во всю высоту — белой стеной.
+       читалась кантом, светлая колонка во всю высоту — белой стеной.
        Зелёный не меняется, а поднимается: #2F6B4F на #121722 даёт 2,8:1,
        #4FB98C — 7,4:1. */
     body.dark-mode {
@@ -67,7 +67,6 @@
         --sbr-mut:   #93A1B8;
         --sbr-dim:   #5E6C84;
         --sbr-line:  rgba(255, 255, 255, 0.09);
-        --sbr-acc:   #7C8CFF;
         --sbr-sel:   #4FB98C;
         --sbr-sel-ic:#0A0E15;
     }
@@ -132,11 +131,9 @@
     }
     #sbNav, #sbHead { box-sizing: border-box; min-width: 0; }
 
-    /* ---------- Шапка: надстрочник + Georgia ----------
+    /* ---------- Шапка: квадрат-марка + имя в одну строку ----------
        Разметка не трогается: .sb-logo-name уже состоит из двух span'ов
-       («Madame » + «Solomi'na»), их достаточно поставить в колонку. Инлайновые
-       font-weight в разметке перебиваем !important — переписывать их в HTML
-       ради двух правил незачем. */
+       («Madame » + «Solomi'na») — им достаточно сменить кегль и тон. */
     #sbHead {
         flex: 0 0 auto;
         padding: 22px 20px 24px;
@@ -164,24 +161,31 @@
         color: #0A0E15;
     }
     #sbHead .sb-logo-text { display: block; opacity: 1 !important; min-width: 0; }
-    #sbHead .sb-logo-name { display: flex; flex-direction: column; gap: 1px; }
-    #sbHead .sb-logo-name > span:first-child {
-        font-family: var(--font-num, 'JetBrains Mono', monospace);
-        font-size: 9px;
-        font-weight: 700 !important;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        color: var(--sbr-acc);
-    }
-    #sbHead .sb-logo-name > span:last-child {
+    /* Марка в ОДНУ строку. У визарда шапка двухэтажная («надстрочник + Georgia»),
+       но здесь этажи занимало имя продукта, а не название раздела, и второй этаж
+       читался подписью ни к чему. Слова разделены не кеглем, а тоном: «Madame»
+       приглушено, «Solomi'na» — чернила. Инлайновые font-weight из разметки
+       перебиваем !important. */
+    #sbHead .sb-logo-name {
+        display: block;
         font-family: var(--font-title, Georgia, serif);
-        font-size: 19px;
-        font-weight: 400 !important;
+        font-size: 18px;
+        font-weight: 400;
         letter-spacing: -0.01em;
-        line-height: 1.1;
+        line-height: 1.15;
+        white-space: nowrap;
         color: var(--sbr-ink);
     }
+    #sbHead .sb-logo-name > span:first-child { font-weight: 400 !important; color: var(--sbr-mut); }
+    #sbHead .sb-logo-name > span:last-child  { font-weight: 400 !important; }
     #sbHead .sb-logo-sub { display: none; }
+
+    /* Квадрат с «M» — кнопка обновления страницы (клик по имени по-прежнему
+       ведёт на Главную), поэтому у него своя реакция на наведение */
+    #sbHead .sb-logo-mark { cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease; }
+    #sbHead .sb-logo-mark:hover { transform: translateY(-1px); box-shadow: 0 6px 16px -6px rgba(20, 27, 45, 0.45); }
+    #sbHead .sb-logo-mark:active { transform: translateY(0); }
+    #sbHead .sb-logo-mark:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 2px; }
 
     /* ---------- Разделы ---------- */
     #sbNav {
