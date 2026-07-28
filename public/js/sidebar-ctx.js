@@ -435,6 +435,258 @@
         return '<button type="button" class="' + cls + '" data-act="capgo" data-key=""' +
             ' title="' + (m.stale ? esc(m.stale) + '. ' : '') + 'Открыть «Обзор»">' + h + '</button>';
     }
+    // ---------- СЛОТ: ВИДЖЕТ КОЛОНКИ ВМЕСТО ТАБЛО ----------
+    // Табло капитала перестало быть единственным жильцом верха колонки: тот же
+    // прямоугольник теперь занимает ЛЮБОЙ из шести виджетов, выбор — в ховер-хроме
+    // блока (кнопка «⋯» → список). Набор УЗКИЙ и сделан под 252px: виджеты
+    // конструктора «Портфелей» рассчитаны на 4–12 колонок сетки и в колонке
+    // читались бы обрубками. Каждый берёт данные из УЖЕ существующего источника,
+    // своих запросов слот не делает:
+    //   cap   — PF.sbCapModel()            (как было)
+    //   drift — PF.calcPf + PF.pfTargetMix + pfDriftCount/pfDriftMax
+    //   next  — PF.collectUpcomingPayouts()
+    //   idx   — скрытые узлы дашборда val-imoex/usdrub/btc (их кормит core.js)
+    //   rates — те же скрытые узлы ставок + window.ratesData
+    //   note  — свой текст, ключ sb_note_v1
+    // Выбор живёт в sb_widget_v1 и зеркалится в облако (WATCH в cloud-sync.js):
+    // это позиция интерфейса, а не данные устройства.
+    var SLOT_KEY = 'sb_widget_v1', NOTE_KEY = 'sb_note_v1';
+    var SLOTS = [
+        { id: 'cap',   name: 'Капитал',           desc: 'Стоимость всех портфелей, день и линия дня' },
+        { id: 'drift', name: 'Доли и дрейф',      desc: 'Акции против облигаций и расхождение с целью' },
+        { id: 'next',  name: 'Ближайшая выплата', desc: 'Дата, бумага и сумма купона или дивиденда' },
+        { id: 'idx',   name: 'Рынок сейчас',      desc: 'IMOEX, доллар и биткойн' },
+        { id: 'rates', name: 'Ставки рынка',      desc: 'Ключевая, вклады, инфляция и ОФЗ 10 лет' },
+        { id: 'note',  name: 'Заметка',           desc: 'Свой текст под рукой на любой вкладке' }
+    ];
+    function slotOf(id) { for (var i = 0; i < SLOTS.length; i++) if (SLOTS[i].id === id) return SLOTS[i]; return null; }
+    var slotId = (function () {
+        var v = null;
+        try { v = localStorage.getItem(SLOT_KEY); } catch (e) {}
+        return slotOf(v) ? v : 'cap';
+    })();
+    var slotPopOpen = false;
+    var slotWarm = 0;              // модуль «Портфелей» дозаказан один раз за сессию
+    // Виджеты «Портфелей» живут на ЛЮБОЙ вкладке, а модуль #pfLazySrc грузится
+    // только при входе на неё — до первого захода слот молчал. Просим модуль
+    // сами, но по трём правилам, чтобы не платить за это всем:
+    //   · только когда выбранный виджет и правда про портфели;
+    //   · только если портфели у пользователя ЕСТЬ (ключ portfolios_v1 непуст) —
+    //     новичку грузить 236КБ незачем, ему слот и так покажет вход «Создать»;
+    //   · в простое (requestIdleCallback), чтобы не спорить с загрузкой вкладки.
+    // Сама цепочка тем же путём грузится по наведению на пункт «Портфели», так
+    // что режим «загрузилась, но вкладка другая» для неё штатный.
+    // Возвращает, есть ли у пользователя портфели вообще: по этому же ответу
+    // виджет решает, что написать, пока модуля нет.
+    function slotWarmPf() {
+        var has = false;
+        try {
+            var raw = JSON.parse(localStorage.getItem('portfolios_v1') || 'null');
+            has = !!(raw && ((Array.isArray(raw) && raw.length) || (raw.items && raw.items.length)));
+        } catch (e) { has = false; }
+        if (!has || slotWarm || !window.ensurePortfoliosJs) return has;
+        slotWarm = 1;
+        var idle = window.requestIdleCallback || function (fn) { setTimeout(fn, 1200); };
+        idle(function () { window.ensurePortfoliosJs(function () { capSync(); }); });
+        return has;
+    }
+
+    function num(v) { return '<span class="sbw-n">' + esc(v) + '</span>'; }
+    function txtOf(id) { var e = document.getElementById(id); return e ? (e.textContent || '').trim() : ''; }
+    // Значение из скрытого узла дашборда годится, только если в нём есть цифра:
+    // пока MOEX не ответил, там «—», «---» или мусор из таблицы — такое в колонку
+    // не пускаем и честно говорим, что значений ещё нет (правило rateTiles).
+    function liveOk(s) { return !!s && /\d/.test(s) && s.indexOf('---') < 0 && s.indexOf('#') < 0; }
+    function slotEmpty(tx) { return '<div class="sbw-mut">' + esc(tx) + '</div>'; }
+    function rub(v) {
+        try { return (window.PF && PF.fmtRub) ? PF.fmtRub(v) : (Math.round(v).toLocaleString('ru-RU') + ' ₽'); }
+        catch (e) { return Math.round(v) + ' ₽'; }
+    }
+
+    // ---- Доли и дрейф ----
+    // Полоса классов с насечкой цели вернулась — но уже как ВЫБОР пользователя,
+    // а не как часть табло: из капитала её сняли в пользу линии дня (2026-07-28),
+    // и спорить с тем решением незачем — здесь она живёт отдельным виджетом.
+    function driftHtml() {
+        var st = 0, bd = 0;
+        try {
+            ((PF.store && PF.store.items) || []).forEach(function (p) {
+                if (p.hidden) return;
+                var c = PF.calcPf(p);
+                st += c.stockVal || 0; bd += c.bondVal || 0;
+            });
+        } catch (e) { return null; }
+        var base = st + bd;
+        if (!(base > 0)) return slotEmpty('Доли появятся, когда в портфелях будут бумаги');
+        var sp = st / base * 100, bp = 100 - sp;
+        var tgt = null;
+        try { tgt = PF.pfTargetMix ? PF.pfTargetMix() : null; } catch (e) {}
+        var n = 0, d = null;
+        try { n = PF.pfDriftCount ? PF.pfDriftCount() : 0; d = PF.pfDriftMax ? PF.pfDriftMax() : null; } catch (e) {}
+        var h = '<div class="sbw-h"><span class="sbw-l">Доли · все портфели</span></div>' +
+            '<div class="sbw-bar"><i class="st" style="width:' + sp.toFixed(1) + '%"></i><i class="bd"></i>' +
+            // насечка — ТОЛЬКО при явной цели: без неё чёрточка показала бы
+            // выдуманное расхождение уже в первый день (правило раунда 4)
+            (tgt ? '<span class="sbw-tick" style="left:' + tgt.stock.toFixed(1) + '%"></span>' : '') +
+            '</div>' +
+            '<div class="sbw-lg"><span>Акции ' + num(Math.round(sp)) + (tgt ? ' · цель ' + Math.round(tgt.stock) : '') + '</span>' +
+            '<span>Обл. ' + num(Math.round(bp)) + (tgt ? ' · цель ' + Math.round(tgt.bond) : '') + '</span></div>';
+        if (n > 0) {
+            h += '<div class="sbw-say warn">' +
+                esc(d != null ? ('Дрейф ' + d.toFixed(1).replace('.', ',') + ' п.п. в ' +
+                    n + ' ' + plural(n, 'портфеле', 'портфелях', 'портфелях')) : ('Дрейф в ' + n + ' портфелях')) +
+                '</div>';
+        } else if (tgt) {
+            h += '<div class="sbw-say">Доли в цели</div>';
+        } else {
+            h += '<div class="sbw-say mut">Цель не задана — задайте её в мастере</div>';
+        }
+        return card('driftgo', 'Открыть «Ребаланс»', h);
+    }
+
+    // ---- Ближайшая выплата ----
+    function nextHtml() {
+        var evs = null;
+        try { evs = PF.collectUpcomingPayouts ? PF.collectUpcomingPayouts() : null; } catch (e) { evs = null; }
+        if (!evs) return null;
+        if (!evs.length) return slotEmpty('Ближайших выплат нет — добавьте облигации или дивидендные акции');
+        var e0 = evs.slice().sort(function (a, b) { return a.date - b.date; })[0];
+        var days = Math.max(0, Math.round((e0.date.getTime() - Date.now()) / 86400000));
+        var when = e0.date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+        var h = '<div class="sbw-h"><span class="sbw-l">Ближайшая выплата</span></div>' +
+            '<div class="sbw-v"><span class="sbw-big">' + esc(rub(e0.amount)) + '</span></div>' +
+            '<div class="sbw-say">' + esc(when) + ' · ' +
+            esc(days === 0 ? 'сегодня' : 'через ' + days + ' ' + plural(days, 'день', 'дня', 'дней')) + '</div>' +
+            '<div class="sbw-row"><span class="sbw-tk">' + esc(e0.ticker || e0.name) + '</span>' +
+            '<span class="sbw-kind">' + (e0.kind === 'coupon' ? 'купон' : 'дивиденд') + '</span></div>';
+        return card('nextgo', 'Открыть «Портфели»', h);
+    }
+
+    // ---- Рынок сейчас ----
+    // Значения берём из скрытых узлов дашборда — тех же, что кормят виджет
+    // «Рынок сейчас» на «Портфелях». Своего запроса слот не делает: колонка
+    // висит на всех вкладках, и второй поллинг MOEX ради трёх строк лишний.
+    var IDX_ROWS = [['IMOEX', 'val-imoex', 'dyn-imoex'], ['USD/RUB', 'val-usdrub', 'dyn-usdrub'], ['BTC', 'val-btc', 'dyn-btc']];
+    function idxHtml() {
+        var rows = '', live = 0;
+        IDX_ROWS.forEach(function (r) {
+            var v = txtOf(r[1]), dEl = document.getElementById(r[2]);
+            var d = dEl ? (dEl.textContent || '').trim() : '';
+            var neg = dEl && dEl.classList.contains('negative');
+            if (!liveOk(v)) return;
+            live++;
+            rows += '<div class="sbw-irow"><span class="sbw-it">' + esc(r[0]) + '</span>' +
+                '<span class="sbw-iv">' + esc(v) + '</span>' +
+                '<span class="sbw-ic' + (neg ? ' neg' : '') + '">' + esc(d) + '</span></div>';
+        });
+        if (!live) return slotEmpty('Значения появятся, когда ответит биржа');
+        return card('mktgo', 'Открыть «Рынок»',
+            '<div class="sbw-h"><span class="sbw-l">Рынок сейчас</span></div><div class="sbw-irows">' + rows + '</div>');
+    }
+
+    // ---- Ставки рынка ----
+    var RATE_ROWS = [['Ключевая ставка', 'val-key-rate', 'keyRate'], ['Вклады', 'val-deposit-rate', 'depositRate'],
+                     ['Инфляция, год', 'val-inflation', 'inflation'], ['ОФЗ 10 лет', 'val-ofz10', 'ofz10']];
+    function ratesHtml() {
+        var rd = window.ratesData || {};
+        var rows = '', live = 0;
+        RATE_ROWS.forEach(function (r) {
+            var v = txtOf(r[1]);
+            if (!liveOk(v)) v = String(rd[r[2]] == null ? '' : rd[r[2]]);
+            if (!liveOk(v)) return;
+            live++;
+            rows += '<div class="sbw-irow"><span class="sbw-it">' + esc(r[0]) + '</span>' +
+                '<span class="sbw-iv">' + esc(v) + '</span></div>';
+        });
+        if (!live) return slotEmpty('Ставки появятся, когда загрузятся данные');
+        return '<div class="sbw-card">' +
+            '<div class="sbw-h"><span class="sbw-l">Ставки рынка</span></div>' +
+            '<div class="sbw-irows">' + rows + '</div></div>';
+    }
+
+    // ---- Заметка ----
+    // Единственный виджет со своим состоянием: текст живёт в sb_note_v1 и
+    // зеркалится в облако. Перерисовку блока с полем нельзя делать на каждом
+    // тике — увёл бы каретку; за этим следит slotBusy() в capSync.
+    function noteRead() { try { return localStorage.getItem(NOTE_KEY) || ''; } catch (e) { return ''; } }
+    function noteHtml() {
+        return '<div class="sbw-card sbw-notecard">' +
+            '<div class="sbw-h"><span class="sbw-l">Заметка</span></div>' +
+            '<textarea class="sbw-note" rows="3" placeholder="Мысль, план, тикер — что угодно" ' +
+            'aria-label="Заметка в колонке">' + esc(noteRead()) + '</textarea></div>';
+    }
+
+    // Общая оболочка нажимаемого виджета: как у табло, вся площадь — одна мишень.
+    function card(act, title, inner) {
+        return '<button type="button" class="sbw-card sbw-go" data-act="' + esc(act) + '" data-key=""' +
+            ' title="' + esc(title) + '">' + inner +
+            '<span class="sbcap-go" aria-hidden="true">' + svg(IC.chevr) + '</span></button>';
+    }
+
+    // Ховер-хром блока: одна кнопка «сменить виджет» (PFD_OWN_CHROME — язык
+    // конструктора «Портфелей»). Кнопка НЕ внутри тела виджета: тело часто само
+    // <button>, а кнопка в кнопке — сломанная разметка и мёртвый клик.
+    var IC_DOTS = '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>';
+    var IC_CHECK = '<polyline points="4 12.5 9 17.5 20 6.5"/>';
+    function slotPopHtml() {
+        return '<div class="sbw-pop" role="menu" aria-label="Виджет колонки">' +
+            '<div class="sbw-pop-h">Виджет колонки</div>' +
+            SLOTS.map(function (s) {
+                var on = s.id === slotId;
+                return '<button type="button" class="sbw-opt' + (on ? ' on' : '') + '" role="menuitemradio"' +
+                    ' aria-checked="' + (on ? 'true' : 'false') + '" data-act="wset" data-key="' + esc(s.id) + '">' +
+                    '<span class="sbw-opt-tx"><b>' + esc(s.name) + '</b><i>' + esc(s.desc) + '</i></span>' +
+                    (on ? '<span class="sbw-opt-on" aria-hidden="true">' + svg(IC_CHECK) + '</span>' : '') +
+                '</button>';
+            }).join('') + '</div>';
+    }
+    function slotBodyHtml(m) {
+        // На мобиле колонки нет вовсе (CSS гасит #sbCap вне десктопной медиа) —
+        // но и в разметку виджет попадать не должен: поле «Заметки» в скрытом
+        // узле осталось бы табстопом мобильной шторки.
+        if (!wide()) return '';
+        // Табло ведёт себя ровно как раньше: нет модуля — нет узла (#sbCap:empty
+        // схлопывает его вместе с отступами), заглушку вместо чисел не рисуем.
+        // Разница только в том, что теперь мы просим модуль догрузиться — иначе
+        // на «Расчёте» пустой слот нельзя было бы даже сменить: хром живёт на теле.
+        if (slotId === 'cap') { if (!m) slotWarmPf(); return m ? capHtml(m) : ''; }
+        if (slotId === 'note') return noteHtml();
+        if (slotId === 'idx') return idxHtml();
+        if (slotId === 'rates') return ratesHtml();
+        // Виджеты «Портфелей» просят модуль #pfLazySrc, а он грузится только при
+        // входе на вкладку. Табло (умолчание) этого не меняет — пустой узел, как
+        // было. А вот «Доли» и «Выплату» пользователь выбрал САМ: молчать в ответ
+        // на явный выбор нельзя, поэтому модуль подтягиваем и держим подпись,
+        // чтобы хром смены виджета не исчез вместе с числами.
+        if (!window.PF || !PF.store) {
+            var has = slotWarmPf();
+            return '<div class="sbw-card">' +
+                '<div class="sbw-h"><span class="sbw-l">' + esc(slotOf(slotId).name) + '</span></div>' +
+                '<div class="sbw-say mut">' + (has ? 'Считаем по портфелям…' : 'Появится, когда будет первый портфель') + '</div></div>';
+        }
+        if (slotId === 'drift') return driftHtml();
+        if (slotId === 'next') return nextHtml();
+        return '';
+    }
+    function slotHtml(m) {
+        var body = slotBodyHtml(m);
+        if (!body) return '';        // #sbCap:empty схлопнет узел вместе с отступами
+        return '<div class="sbw" data-w="' + esc(slotId) + '">' + body +
+            '<button type="button" class="sbw-pick" data-act="wpick" data-key=""' +
+            ' title="Сменить виджет колонки" aria-label="Сменить виджет колонки"' +
+            ' aria-expanded="' + (slotPopOpen ? 'true' : 'false') + '">' + svg(IC_DOTS) + '</button>' +
+            (slotPopOpen ? slotPopHtml() : '') + '</div>';
+    }
+    // Поле заметки под курсором или фокусом перерисовывать нельзя: пропала бы
+    // каретка, а вместе с ней и несохранённый хвост строки.
+    function slotBusy() {
+        var host = document.getElementById('sbCap');
+        if (!host) return false;
+        if (slotPopOpen) return false;                       // список сам себя не перерисовывает
+        var a = document.activeElement;
+        return !!(a && a !== document.body && host.contains(a));
+    }
+
     // В СВЁРНУТОЙ РЕЙКЕ КАПИТАЛА НЕТ. Чип «1,46 млн / +0,8%» из мокапа Б+3 был
     // сделан и снят по просьбе владельца: свёрнутая рейка — это выбор «покажи
     // только разделы», и пилюля с суммой в ней спорила с этим выбором. Состояние
@@ -491,10 +743,12 @@
         // ensureQuotes стоит TTL 60с, чаще одного запроса в минуту не выйдет.
         try { if (wide() && window.PF && PF.ensureQuotes && PF.store && PF.store.items.length) PF.ensureQuotes(); } catch (e) {}
         try { m = (wide() && window.PF && PF.sbCapModel) ? PF.sbCapModel() : null; } catch (e) { m = null; }
-        if (host) {
-            // в рейке табло не живёт вовсе (см. выше) — узел просто пуст
+        if (host && !slotBusy()) {
+            // в рейке виджета не живёт вовсе (см. выше) — узел просто пуст
             var rail = document.body.classList.contains('sb-rail');
-            var html = (!m || rail) ? '' : capHtml(m);
+            // Слот рисует ВЫБРАННЫЙ виджет: 'cap' спрашивает модель, остальные
+            // берут свои источники сами и живут даже без загруженного PF.
+            var html = rail ? '' : slotHtml(m);
             if (host.__sbcapHtml !== html) { host.innerHTML = html; host.__sbcapHtml = html; }
         }
         badgeSync(m ? m.drift : 0);
@@ -595,6 +849,33 @@
             if (window.rbxAcademyOpen) window.rbxAcademyOpen();
             return;
         }
+        // ---- слот виджета колонки ----
+        if (act === 'wpick') { slotPopOpen = !slotPopOpen; capSync(); return; }
+        if (act === 'wset') {
+            slotPopOpen = false;
+            if (slotOf(key) && key !== slotId) {
+                slotId = key;
+                try { localStorage.setItem(SLOT_KEY, slotId); } catch (e2) {}
+            }
+            capSync();
+            return;
+        }
+        // Виджеты ведут туда, где их число разобрано подробно, — тот же договор,
+        // что у табло («вся площадь нажимается, шеврон — признак»).
+        if (act === 'driftgo') {
+            if (typeof currentTab === 'undefined' || currentTab !== 'rebalance') {
+                if (window.switchTab) window.switchTab('rebalance');
+            }
+            return;
+        }
+        if (act === 'nextgo') {
+            if (typeof currentTab === 'undefined' || currentTab !== 'portfolios') {
+                if (window.switchTab) window.switchTab('portfolios');
+            }
+            if (window.pfxGoTab) window.pfxGoTab('overview');
+            return;
+        }
+        if (act === 'mktgo') { if (window.switchTab) window.switchTab('market'); return; }
         if (act === 'sub') { if (window.sbNavSub) window.sbNavSub(key, e); return; }
         // тип портфеля: вкладка могла быть не «Расчёт» (пришли с /portfolio)
         if (act === 'cxmode') {
@@ -639,7 +920,39 @@
         if (foot) foot.addEventListener('click', onClick);
         // табло живёт выше сетки и в блок второго уровня не входит — свой слушатель
         var cap = document.getElementById('sbCap');
-        if (cap) cap.addEventListener('click', onClick);
+        if (cap) {
+            cap.addEventListener('click', onClick);
+            // Заметка пишется прямо в колонке. Сохраняем с задержкой: буква за
+            // буквой в localStorage писать незачем, а уход фокуса и закрытие
+            // вкладки дожимают запись сразу (blur).
+            var noteTimer = null;
+            function noteSave(el) {
+                try { localStorage.setItem(NOTE_KEY, el.value); } catch (e) {}
+            }
+            cap.addEventListener('input', function (e) {
+                var el = e.target;
+                if (!el || !el.classList || !el.classList.contains('sbw-note')) return;
+                clearTimeout(noteTimer);
+                noteTimer = setTimeout(function () { noteSave(el); }, 400);
+            });
+            cap.addEventListener('focusout', function (e) {
+                var el = e.target;
+                if (!el || !el.classList || !el.classList.contains('sbw-note')) return;
+                clearTimeout(noteTimer); noteSave(el);
+            });
+        }
+        // Список выбора закрывается кликом мимо и по Esc — как любой поповер
+        // проекта. Слушатели на документе, потому что «мимо» лежит вне #sbCap.
+        document.addEventListener('click', function (e) {
+            if (!slotPopOpen) return;
+            var host = document.getElementById('sbCap');
+            if (host && e.target && host.contains(e.target)) return;
+            slotPopOpen = false; capSync();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key !== 'Escape' || !slotPopOpen) return;
+            slotPopOpen = false; capSync();
+        });
         sbCtxSync();
     });
     // ширина рейки меняется вместе с колонкой — пересобираем на кроссинге брейкпоинта
@@ -653,4 +966,13 @@
         if (!document.getElementById('sbCap')) return;
         capSync();
     }, 60000);
+    // «Рынок сейчас» и «Ставки» читают ЧУЖИЕ узлы, которые обновляются сами по
+    // себе, — минутного тика им мало, значения выглядели бы подвисшими. Свой
+    // тик частый, но дешёвый: пересборка идёт только при разнице html.
+    setInterval(function () {
+        if (!wide() || document.hidden) return;
+        if (slotId !== 'idx' && slotId !== 'rates') return;
+        if (!document.getElementById('sbCap')) return;
+        capSync();
+    }, 12000);
 })();

@@ -243,6 +243,219 @@
         font-family: var(--font-ui, 'Inter', sans-serif);
     }
     #sbCap:empty { display: none; }
+
+    /* ============ СЛОТ ВИДЖЕТА КОЛОНКИ (2026-07-29) ============
+       Верх колонки перестал принадлежать одному табло: тот же прямоугольник
+       занимает любой из шести виджетов (js/sidebar-ctx.js, SLOTS). Набор узкий
+       и сделан ПОД 252px — виджеты конструктора «Портфелей» рассчитаны на 4–12
+       колонок сетки и здесь читались бы обрубками.
+       Смена — ховер-хром блока (кнопка «⋯» в правом верхнем углу, язык
+       PFD_OWN_CHROME конструктора), список раскрывается тут же под кнопкой.
+       Кнопка лежит СНАРУЖИ тела виджета: тело чаще всего само <button>. */
+    .sbw { position: relative; }
+    .sbw-pick {
+        position: absolute;
+        top: 6px; right: 6px;
+        width: 22px; height: 22px;
+        display: grid;
+        place-items: center;
+        padding: 0;
+        border: 0;
+        border-radius: 7px;
+        background: transparent;
+        color: var(--sbr-dim);
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+    .sbw-pick svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; }
+    /* хром появляется по наведению на блок — и ВСЕГДА виден с клавиатуры */
+    .sbw:hover .sbw-pick,
+    .sbw-pick:focus,
+    .sbw-pick:focus-visible,
+    .sbw-pick[aria-expanded="true"] { opacity: 1; }
+    .sbw-pick:hover { background: var(--sbr-card); color: var(--sbr-ink); }
+    .sbw-pick:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 1px; }
+
+    /* список выбора: раскрывается под блоком, ширина колонки — наружу не лезет
+       (у #sbPanel overflow:hidden, всплывающее меню было бы срезано) */
+    .sbw-pop {
+        position: absolute;
+        z-index: 12;
+        top: calc(100% + 6px); left: 0; right: 0;
+        padding: 6px;
+        border: 1px solid var(--sbr-line);
+        border-radius: 13px;
+        background: var(--sbr-card);
+        box-shadow: 0 18px 38px -22px rgba(16, 24, 40, 0.55);
+    }
+    body.dark-mode .sbw-pop { box-shadow: 0 18px 38px -20px rgba(0, 0, 0, 0.7); }
+    .sbw-pop-h {
+        padding: 5px 8px 6px;
+        font-size: 8.5px;
+        font-weight: 800;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+        color: var(--sbr-dim);
+    }
+    .sbw-opt {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        padding: 7px 8px;
+        border: 0;
+        border-radius: 9px;
+        background: transparent;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+    }
+    .sbw-opt:hover { background: var(--sbr-page); }
+    .sbw-opt:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: -2px; }
+    .sbw-opt.on { background: var(--sbr-page); }
+    .sbw-opt-tx { flex: 1 1 auto; min-width: 0; }
+    .sbw-opt-tx b { display: block; font-size: 12.5px; font-weight: 600; color: var(--sbr-ink); }
+    .sbw-opt-tx i {
+        display: block;
+        margin-top: 1px;
+        font-style: normal;
+        font-size: 10.5px;
+        line-height: 1.3;
+        color: var(--sbr-dim);
+    }
+    .sbw-opt-on { flex: none; color: var(--sbr-sel); display: grid; place-items: center; }
+    .sbw-opt-on svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.4; }
+
+    /* ---- общее тело виджета: тот же прямоугольник, что у табло ---- */
+    .sbw-card {
+        display: block;
+        width: 100%;
+        margin: 0;
+        padding: 12px 14px 11px;
+        border: 0;
+        border-radius: 14px;
+        background: var(--sbr-page);
+        font: inherit;
+        text-align: left;
+    }
+    .sbw-go { cursor: pointer; transition: background 0.15s ease; }
+    .sbw-go:hover { background: color-mix(in srgb, var(--sbr-sel) 8%, var(--sbr-page)); }
+    .sbw-go:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 2px; }
+    .sbw-h { display: flex; align-items: center; gap: 8px; padding-right: 20px; }
+    .sbw-l {
+        flex: 1 1 auto;
+        min-width: 0;
+        font-size: 8.5px;
+        font-weight: 800;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+        color: var(--sbr-dim);
+    }
+    .sbw-v { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+    .sbw-big {
+        font-family: var(--font-num, 'JetBrains Mono', monospace);
+        font-size: 19px;
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        color: var(--sbr-ink);
+    }
+    .sbw-n { font-family: var(--font-num, 'JetBrains Mono', monospace); font-weight: 700; color: var(--sbr-mut); }
+    .sbw-say {
+        margin-top: 6px;
+        font-family: var(--font-num, 'JetBrains Mono', monospace);
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--sbr-mut);
+    }
+    .sbw-say.warn { color: #C2760A; }
+    body.dark-mode .sbw-say.warn { color: #E0A33E; }
+    .sbw-say.mut { color: var(--sbr-dim); font-weight: 500; }
+    .sbw-mut {
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: var(--sbr-page);
+        font-size: 11.5px;
+        line-height: 1.4;
+        color: var(--sbr-dim);
+    }
+    .sbw-row { display: flex; align-items: baseline; gap: 8px; margin-top: 7px; }
+    .sbw-tk {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--sbr-ink);
+    }
+    .sbw-kind { flex: none; font-size: 10px; color: var(--sbr-dim); }
+
+    /* ---- «Доли и дрейф»: полоса классов с насечкой цели ----
+       Она была в табло и снята в пользу линии дня (2026-07-28). Здесь это
+       отдельный виджет — выбор пользователя, а не возврат снятого решения.
+       Цвета классов те же, что на «Расчёте»: оранжевый — акции, синий — облигации. */
+    .sbw-bar {
+        position: relative;
+        display: flex;
+        margin-top: 10px;
+        height: 5px;
+        border-radius: 3px;
+        background: var(--sbr-line);
+        overflow: hidden;
+    }
+    .sbw-bar i { display: block; height: 100%; }
+    .sbw-bar i.st { background: #C9683F; }
+    .sbw-bar i.bd { flex: 1 1 auto; background: #5F7FA8; }
+    .sbw-tick {
+        position: absolute;
+        top: -2px; bottom: -2px;
+        width: 1.5px;
+        border-radius: 1px;
+        background: var(--sbr-ink);
+    }
+    .sbw-lg {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 6px;
+        font-size: 9.5px;
+        color: var(--sbr-dim);
+    }
+
+    /* ---- «Рынок сейчас» и «Ставки»: строка = подпись + значение ---- */
+    .sbw-irows { margin-top: 7px; display: flex; flex-direction: column; gap: 5px; }
+    .sbw-irow { display: flex; align-items: baseline; gap: 8px; }
+    .sbw-it { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        font-size: 11.5px; color: var(--sbr-mut); }
+    .sbw-iv { flex: none; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12px;
+        font-weight: 700; color: var(--sbr-ink); }
+    .sbw-ic { flex: none; min-width: 42px; text-align: right;
+        font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 10px; font-weight: 700; color: #16A34A; }
+    .sbw-ic.neg { color: #DC2626; }
+    body.dark-mode .sbw-ic { color: #34D399; }
+    body.dark-mode .sbw-ic.neg { color: #F87171; }
+
+    /* ---- «Заметка»: единственный виджет, в который пишут ---- */
+    .sbw-notecard { padding-bottom: 10px; }
+    .sbw-note {
+        display: block;
+        width: 100%;
+        margin-top: 7px;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        resize: none;
+        font-family: var(--font-ui, 'Inter', sans-serif);
+        font-size: 12.5px;
+        line-height: 1.45;
+        color: var(--sbr-ink);
+    }
+    .sbw-note::placeholder { color: var(--sbr-dim); }
+    .sbw-note:focus { outline: none; }
+    .sbw-notecard:focus-within { box-shadow: inset 0 0 0 2px var(--sbr-sel); border-radius: 14px; }
+
     .sbcap-btn {
         display: block;
         width: 100%;
