@@ -42,7 +42,29 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
 .mk{margin-top:52px}
 .mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
-.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-n{flex:none;width:30px;height:30px;border-radius:9px;background:var(--doc-acc);color:#fff;
+  font-family:var(--fN);font-size:14px;font-weight:800;display:grid;place-items:center;align-self:center}
+.mk-n.mute{background:color-mix(in srgb,var(--doc-mut) 22%,transparent);color:var(--doc-mut);font-size:12px}
+.mk-h h2{align-self:center}
+
+/* метка над каждой сценой: любой отдельный экран называет себя сам */
+.sc-hd{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+.sc-badge{flex:none;width:24px;height:24px;border-radius:7px;background:var(--doc-acc);color:#fff;
+  font-family:var(--fN);font-size:12px;font-weight:800;display:grid;place-items:center}
+.sc-badge.mute{background:color-mix(in srgb,var(--doc-mut) 22%,transparent);color:var(--doc-mut);font-size:10px}
+.sc-name{font-size:13px;font-weight:700;color:var(--doc-ink);letter-spacing:-.01em}
+.sc-name span{font-weight:500;color:var(--doc-mut)}
+
+/* оглавление: четыре варианта одной строкой каждый */
+.toc{margin-top:24px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:1010px}
+.toc-it{display:flex;gap:11px;align-items:flex-start;padding:14px 15px;border-radius:12px;text-decoration:none;
+  background:var(--doc-panel);border:1px solid var(--doc-line)}
+.toc-it b{flex:none;width:26px;height:26px;border-radius:8px;background:var(--doc-acc);color:#fff;
+  font-family:var(--fN);font-size:13px;font-weight:800;display:grid;place-items:center}
+.toc-it .t{min-width:0}
+.toc-it .t i{display:block;font-style:normal;font-size:13.5px;font-weight:700;color:var(--doc-ink);letter-spacing:-.01em}
+.toc-it .t span{display:block;margin-top:4px;font-size:12px;line-height:1.45;color:var(--doc-mut)}
+@media (max-width:1000px){ .toc{grid-template-columns:1fr} }
 .mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
 .mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
 .mk-tag.warn{background:rgba(217,119,6,.14);color:#c2760a}
@@ -457,6 +479,13 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       <p><b>Чего варианты не делают.</b> Живой прогноз и суммы в колонку не возвращаются — их уже пробовали в «Пульте» и владелец отверг («спорят с рабочей площадью за внимание»). Там, где в колонку что-то уезжает (вариант Б), уезжает <b>только ввод</b>: сумма, срок, комиссия, налог. И к каждому такому переезду прилагается обязательный дубль на странице — в рейке 84px и на мобиле второго уровня не существует.</p>
     </div>
   </div>
+
+  <div class="toc">
+    <a class="toc-it" href="#v-a"><b>А</b><span class="t"><i>Строка</i><span>Заголовка-дубля нет — на его месте рабочая строка суммы. Экран выбора снят персистом режима.</span></span></a>
+    <a class="toc-it" href="#v-b"><b>Б</b><span class="t"><i>Пульт</i><span>Условия расчёта уезжают в колонку сайдбара. Страница отдана ответу и начинается с числа.</span></span></a>
+    <a class="toc-it" href="#v-v"><b>В</b><span class="t"><i>Два ответа</i><span>Экран выбора становится рабочим: обе половины считаются всегда, колонка решает, какая крупнее.</span></span></a>
+    <a class="toc-it" href="#v-g"><b>Г</b><span class="t"><i>Мастер</i><span>Три шага на языке «Мастера ребаланса». Шесть стратегий плитками, у каждой свой исход.</span></span></a>
+  </div>
   <div class="dials">
     <span class="dial">Имён на странице: <b>1</b></span>
     <span class="dial">Каждый факт — <b>ровно в одном месте</b></span>
@@ -466,12 +495,13 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 </div>
 
 <!-- ═══════════════════ КАК СЕЙЧАС ═══════════════════ -->
-<div class="mk">
-  <div class="mk-h"><span class="mk-n">00</span><h2>Как сейчас</h2><span class="mk-tag warn">шесть поломок</span></div>
+<div class="mk" id="v-now">
+  <div class="mk-h"><span class="mk-n mute">00</span><h2>Как сейчас</h2><span class="mk-tag warn">шесть поломок</span></div>
   <div class="mk-sub">Слева — рабочий режим «Рост капитала», справа — то, с чего вкладка начинается при каждом заходе. Сцены сняты с живой страницы: <code>public/css/calc-r7.css</code> + <code>js/sidebar-ctx.js → calcModel()</code>.</div>
   <div class="scroller"><div class="strip2">
 
     <div>
+      <div class="sc-hd"><span class="sc-badge mute">00</span><span class="sc-name">Как сейчас <span>· режим «Рост капитала»</span></span></div>
       <div class="sc">
         <!-- САЙДБАР -->
         <div class="bx">
@@ -566,6 +596,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     </div>
 
     <div>
+      <div class="sc-hd"><span class="sc-badge mute">00</span><span class="sc-name">Как сейчас <span>· первый вход, экран выбора</span></span></div>
       <div class="sc">
         <div class="bx">
           <div class="bx-head"><div class="mark sm">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
@@ -676,11 +707,12 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   </div>
 </div>
 <!-- ═══════════════════ А ═══════════════════ -->
-<div class="mk">
+<div class="mk" id="v-a">
   <div class="mk-h"><span class="mk-n">А</span><h2>«Строка» — заголовка нет, вместо него сумма</h2><span class="mk-tag mute">минимальное вмешательство</span></div>
-  <div class="mk-sub">Самый осторожный ответ. Ничего не переезжает, раскладка та же. Уходят две вещи: <b>серифный заголовок-дубль</b> и <b>экран выбора как отдельный экран</b> — режим начинает персиститься (<code>cx_mode_v1</code>), вход в «Расчёт» открывает последний, у нового пользователя «Рост капитала». На месте шапки — <b>рабочая строка</b> 56px: сумма крупно и слева (там, где взгляд начинает страницу), рядом чипы быстрых сумм, включая живую «Из портфелей · 1,46 млн», следом условия расчёта чипами. Комиссия перестаёт быть главным действием и становится тем, чем является, — условием; главная кнопка «Создать портфель» с первой секунды живая. Освободившиеся ≈90px уходят карточкам: режим дохода перестаёт вылезать за окно. Колонка не меняется — <b>пустота под тремя пунктами остаётся</b>, это цена варианта.</div>
+  <div class="mk-sub">Самый осторожный ответ. Ничего не переезжает, раскладка та же. Уходят две вещи: <b>серифный заголовок-дубль</b> и <b>экран выбора как отдельный экран</b> — режим начинает персиститься (<code>cx_mode_v1</code>), вход в «Расчёт» открывает последний, у нового пользователя «Рост капитала». На месте шапки — <b>рабочая строка</b> 56px: сумма крупно и слева (там, где взгляд начинает страницу), рядом два условия расчёта — срок и комиссия. Быстрых сумм и подстановки «взять из портфелей» в строке нет: они раскрываются по клику на самой сумме, чтобы ряд оставался из трёх элементов. Комиссия перестаёт быть главным действием и становится тем, чем является, — условием; главная кнопка «Создать портфель» с первой секунды живая. Освободившиеся ≈90px уходят карточкам: режим дохода перестаёт вылезать за окно. Колонка не меняется — <b>пустота под тремя пунктами остаётся</b>, это цена варианта.</div>
   <div class="scroller"><div class="strip2">
     <div>
+      <div class="sc-hd"><span class="sc-badge">А</span><span class="sc-name">Строка <span>· рост капитала</span></span></div>
       <div class="sc">
         <div class="bx">
           <div class="bx-head"><div class="mark sm">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
@@ -773,16 +805,17 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <div class="notes">
     <div class="note ok"><i>1</i><span><b>Закрывает</b> поломки 1, 2, 3, 5 и 6. Пустота в колонке (4) остаётся нетронутой.</span></div>
     <div class="note"><i>2</i><span>Персист режима — <b>новое поведение</b>: сегодня <code>calc-mode.js</code> сознательно не запоминает режим и всегда показывает чузер. Экран выбора остаётся живым как страница <b>для нового пользователя</b> (пока ни одного расчёта не было) и по кнопке «Новый расчёт».</span></div>
-    <div class="note"><i>3</i><span>Объём: одна новая строка в разметке + перенос <code>#ndInputHero</code>; чипы сумм и «Из портфелей» — новое (сумма портфелей уже считается в <code>PF.sbCapModel</code>).</span></div>
+    <div class="note"><i>3</i><span>Объём: одна новая строка в разметке + перенос <code>#ndInputHero</code> + персист режима. Подстановка суммы портфелей — новое, но число уже считается (<code>PF.sbCapModel</code>).</span></div>
   </div>
 </div>
 <!-- ═══════════════════ Б ═══════════════════ -->
-<div class="mk">
+<div class="mk" id="v-b">
   <div class="mk-h"><span class="mk-n">Б</span><h2>«Пульт» — условия расчёта уезжают в колонку</h2><span class="mk-tag">закрывает пустоту</span></div>
-  <div class="mk-sub">Тот же ход, которым только что чинили «Академию»: у раздела пустует второй уровень — значит, туда должно уехать то, чему там место. Здесь это <b>условия расчёта</b>: сумма, срок, комиссия, налог. В колонку уезжает <b>только ввод</b> — живого прогноза и сумм в навигации нет, это уже пробовали в «Пульте» и отвергли. Страница освобождается целиком под ответ: сверху <b>полка результата</b> во всю ширину (число, из чего оно сложилось, три факта), под ней столбики по годам и стратегии, внизу — ряд действий. Своего заголовка у страницы нет вовсе: первое, что она говорит, — «1,46 млн через 3 года», и это честнее любого имени. <b>Цена названа:</b> в рейке 84px и на мобиле второго уровня не существует, поэтому условия обязаны дублироваться строкой над карточками — той самой, что нарисована в варианте А.</div>
+  <div class="mk-sub">Тот же ход, которым только что чинили «Академию»: у раздела пустует второй уровень — значит, туда должно уехать то, чему там место. Здесь это <b>условия расчёта</b>: сумма, срок, комиссия, налог. В колонку уезжает <b>только ввод</b> — живого прогноза и сумм в навигации нет, это уже пробовали в «Пульте» и отвергли. Страница освобождается целиком под ответ: сверху <b>полка результата</b> во всю ширину — крупное число, одна строка о том, из чего оно сложилось, и одна цифра прибыли справа; под ней столбики по годам и стратегии, внизу — одна кнопка. Своего заголовка у страницы нет вовсе: первое, что она говорит, — «1,46 млн через 3 года», и это честнее любого имени. <b>Цена названа:</b> в рейке 84px и на мобиле второго уровня не существует, поэтому условия обязаны дублироваться строкой над карточками — той самой, что нарисована в варианте А.</div>
   <div class="scroller"><div class="strip2">
 
     <div>
+      <div class="sc-hd"><span class="sc-badge">Б</span><span class="sc-name">Пульт <span>· рост капитала</span></span></div>
       <div class="sc">
         <div class="bx">
           <div class="bx-head"><div class="mark sm">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
@@ -875,6 +908,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     </div>
 
     <div>
+      <div class="sc-hd"><span class="sc-badge">Б</span><span class="sc-name">Пульт <span>· ежемесячный доход</span></span></div>
       <div class="sc">
         <div class="bx">
           <div class="bx-head"><div class="mark sm">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
@@ -982,12 +1016,13 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   </div>
 </div>
 <!-- ═══════════════════ В ═══════════════════ -->
-<div class="mk">
+<div class="mk" id="v-v">
   <div class="mk-h"><span class="mk-n">В</span><h2>«Два ответа» — экран выбора становится рабочим экраном</h2><span class="mk-tag">убирает вопрос совсем</span></div>
-  <div class="mk-sub">Наблюдение, из которого вырос вариант: <b>лучший экран вкладки сегодня — это чузер</b>. Только он показывает оба исхода одной суммы живыми числами («1,46 млн через 3 года» и «8 686 ₽ в месяц») — и именно его выбрасывают первым же кликом, чтобы больше никогда не показать. Здесь он не выбрасывается: обе половины считаются всегда, а пункт колонки решает не «какой экран открыть», а <b>какая половина раскрыта</b>. Раскрытая занимает две карточки и держит рабочие контролы, свёрнутая — узкую полосу 236px с числом и мини-графиком. Вопроса «что для вас важнее» больше нет ни разу: ответ на него виден всегда, и его можно поменять одним кликом, ничего не потеряв.</div>
+  <div class="mk-sub">Наблюдение, из которого вырос вариант: <b>лучший экран вкладки сегодня — это чузер</b>. Только он показывает оба исхода одной суммы живыми числами («1,46 млн через 3 года» и «8 686 ₽ в месяц») — и именно его выбрасывают первым же кликом, чтобы больше никогда не показать. Здесь он не выбрасывается: обе половины считаются всегда, а пункт колонки решает не «какой экран открыть», а <b>какая половина раскрыта</b>. Раскрытая занимает две карточки и держит рабочие контролы, свёрнутая — узкую полосу 248px с числом и мини-графиком. Вопроса «что для вас важнее» больше нет ни разу: ответ на него виден всегда, и его можно поменять одним кликом, ничего не потеряв.</div>
   <div class="scroller"><div class="strip2">
 
     <div>
+      <div class="sc-hd"><span class="sc-badge">В</span><span class="sc-name">Два ответа <span>· фокус на росте</span></span></div>
       <div class="sc">
         <div class="bx">
           <div class="bx-head"><div class="mark sm">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
@@ -1090,17 +1125,18 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   </div></div>
   <div class="notes">
     <div class="note ok"><i>1</i><span><b>Единственный вариант, который убирает вопрос совсем.</b> Ни на первом входе, ни после перезагрузки вкладка ничего не спрашивает: оба ответа уже на экране.</span></div>
-    <div class="note no"><i>2</i><span><b>Цена — ширина.</b> 236px уходит половине, которой сейчас не занимаются. Рабочие карточки сжимаются; на 1280px их станет тесно, свёрнутую придётся класть полосой под ними.</span></div>
+    <div class="note no"><i>2</i><span><b>Цена — ширина.</b> 248px уходит половине, которой сейчас не занимаются. Рабочие карточки сжимаются; на 1280px их станет тесно, свёрнутую придётся класть полосой под ними.</span></div>
     <div class="note"><i>3</i><span>Обе половины должны считаться <b>всегда</b> — сегодня купонная корзина собирается лениво, по входу в режим. Пересчёт от суммы для обеих одновременно — новая работа.</span></div>
   </div>
 </div>
 <!-- ═══════════════════ Г ═══════════════════ -->
-<div class="mk">
+<div class="mk" id="v-g">
   <div class="mk-h"><span class="mk-n">Г</span><h2>«Мастер» — вкладка ведёт за руку, колонка держит шаги</h2><span class="mk-tag warn">меняет механику</span></div>
   <div class="mk-sub">Самый радикальный ответ, и единственный, который меняет не раскладку, а <b>жанр</b>. В проекте уже есть готовый язык пошагового мастера — рельса «Мастера ребаланса» (<code>rebalance-wizard.css</code>). Здесь он ставится на «Расчёт»: колонка держит три шага и <b>сводку выбранного</b>, страница показывает один шаг во всю ширину. Второй шаг перестаёт быть списком из шести строк в узкой карточке и становится шестью плитками с собственным исходом у каждой — «эта стратегия даст 1,41 млн, эта 1,52 млн». Это то, чего сегодня нет нигде: сравнить стратегии между собой можно только переключая их по одной.</div>
   <div class="scroller"><div class="strip2">
 
     <div>
+      <div class="sc-hd"><span class="sc-badge">Г</span><span class="sc-name">Мастер <span>· шаг 2 · стратегия</span></span></div>
       <div class="sc">
         <div class="bx">
           <div class="bx-head"><div class="mark sm">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
@@ -1200,6 +1236,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     </div>
 
     <div>
+      <div class="sc-hd"><span class="sc-badge">Г</span><span class="sc-name">Мастер <span>· шаг 3 · портфель</span></span></div>
       <div class="sc">
         <div class="bx">
           <div class="bx-head"><div class="mark sm">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
@@ -1301,10 +1338,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 </div>
 <!-- ═══════════════════ ТЁМНАЯ ═══════════════════ -->
 <div class="mk">
-  <div class="mk-h"><span class="mk-n">Д</span><h2>Тёмная тема</h2><span class="mk-tag mute">на примере Б</span></div>
+  <div class="mk-h"><span class="mk-n mute">Б</span><h2>Тёмная тема — на примере варианта Б</h2></div>
   <div class="mk-sub">Тёмная — не отдельный вариант, а проверка. Полка результата держится без плиты: число само по себе яркое пятно, фон страницы <code>#0A0E15</code>, карточки <code>#121722</code> — палитра «Верстака». Два цвета данных поднимаются (<code>#6BA4F5</code> и <code>#E8A05A</code>), зелёный остаётся у сайдбара и у прибыли. Проверить при реализации: «Обл./Акц.» в списке стратегий и годы под столбиками — в светлой они уже подняты до AA, в тёмной поднимать надо заново.</div>
   <div class="scroller"><div class="strip2">
     <div>
+      <div class="sc-hd"><span class="sc-badge">Б</span><span class="sc-name">Пульт <span>· тёмная тема</span></span></div>
       <div class="sc dark">
         <div class="bx">
           <div class="bx-head"><div class="mark sm">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
@@ -1395,7 +1433,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
 <!-- ═══════════════════ СРАВНЕНИЕ ═══════════════════ -->
 <div class="mk">
-  <div class="mk-h"><span class="mk-n">•</span><h2>Сравнение по восьми вопросам</h2></div>
+  <div class="mk-h"><span class="mk-n mute">•</span><h2>Сравнение по восьми вопросам</h2></div>
   <table class="map">
     <tr><th>Вопрос</th><th>А «Строка»</th><th>Б «Пульт»</th><th>В «Два ответа»</th><th>Г «Мастер»</th></tr>
     <tr><td>Имя вкладки на странице ровно одно?</td><td class="yes">да</td><td class="yes">да, имени нет вовсе</td><td class="yes">да</td><td class="mid">имя шага, не вкладки</td></tr>
@@ -1411,7 +1449,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
 <!-- ═══════════════════ ДАННЫЕ ═══════════════════ -->
 <div class="mk">
-  <div class="mk-h"><span class="mk-n">•</span><h2>Поле макета → откуда данные</h2></div>
+  <div class="mk-h"><span class="mk-n mute">•</span><h2>Поле макета → откуда данные</h2></div>
   <div class="mk-sub">Ничего не выдумано: почти всё уже считается, вопрос только в том, где это показать.</div>
   <table class="map">
     <tr><th>Поле</th><th>Источник</th><th>Есть?</th></tr>
@@ -1419,7 +1457,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <tr><td>Столбики по годам, сценарный коридор</td><td><code>renderCols/colsSVG</code> (<code>calc-r6.js</code>)</td><td class="yes">да</td></tr>
     <tr><td>Шесть стратегий с долями</td><td><code>ndBuildWF</code> (<code>calculator-ui.js</code>)</td><td class="yes">да</td></tr>
     <tr><td>Корзина ОФЗ, купоны по месяцам, ближайшая выплата</td><td>mi5-калькулятор, <code>monthlyIncomeBonds</code> / <code>bondQtyMap</code>, цены и НКД MOEX ISS</td><td class="yes">да</td></tr>
-    <tr><td>Чип «Из портфелей · 1,46 млн»</td><td><code>PF.sbCapModel()</code> (<code>portfolios-tabs.js</code>) — то же число, что в табло колонки</td><td class="yes">да, но во вкладке не используется</td></tr>
+    <tr><td>Подстановка «взять сумму портфелей» (1,46 млн)</td><td><code>PF.sbCapModel()</code> (<code>portfolios-tabs.js</code>) — то же число, что в табло колонки</td><td class="yes">да, но во вкладке не используется</td></tr>
     <tr><td>Персист режима (вариант А и все остальные)</td><td>новый ключ рядом с <code>calc_monthly_v1</code>; сегодня режим сознательно не запоминается</td><td class="no">новое</td></tr>
     <tr><td>Срок расчёта как поле (сейчас константа <code>YEARS</code>)</td><td>константа в <code>calc-r6.js</code>; чтобы вынести в колонку, нужен параметр и пересчёт</td><td class="no">новое</td></tr>
     <tr><td>Исход у каждой стратегии сразу (вариант Г)</td><td>шесть прогонов движка вместо одного</td><td class="no">новое</td></tr>
@@ -1431,7 +1469,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 <div class="rec">
   <h3>Что рекомендую</h3>
   <p><b>Базой — Б «Пульт».</b> Он единственный закрывает все шесть поломок сразу и делает это тем же ходом, которым только что чинили «Академию»: у раздела пустовал второй уровень — туда уехало то, чему там место. Важно, что уехал <b>ввод, а не результат</b>: живые числа в навигации уже пробовали и отвергли, и этот вариант их не возвращает.</p>
-  <p><b>С двумя прививками.</b> Первая обязательна: строка условий из <b>А</b> должна существовать с первого дня — в рейке 84px и на мобиле второго уровня нет, и без неё сумму станет негде ввести. Вторая по желанию: свёрнутая полоса «второго ответа» из <b>В</b> — 236px, которые заменяют собой весь экран выбора и делают его ненужным навсегда.</p>
+  <p><b>С двумя прививками.</b> Первая обязательна: строка условий из <b>А</b> должна существовать с первого дня — в рейке 84px и на мобиле второго уровня нет, и без неё сумму станет негде ввести. Вторая по желанию: свёрнутая полоса «второго ответа» из <b>В</b> — 248px, которые заменяют собой весь экран выбора и делают его ненужным навсегда.</p>
   <p><b>Г «Мастер» — отдельное решение, а не оформление.</b> Он даёт две вещи, которых нет ни у кого: сравнение шести стратегий рядом и состав портфеля до покупки. Но платит за это мгновенностью пересчёта — главным свойством вкладки — и не вмещает купонный режим. Если хочется его достоинств без его цены, обе идеи можно взять внутрь Б: плитки стратегий с исходами вместо списка (шире карточка) и раскрывающийся состав под полкой результата.</p>
 </div>
 </div>
