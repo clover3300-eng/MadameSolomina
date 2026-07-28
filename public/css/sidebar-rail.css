@@ -38,45 +38,60 @@
 
     /* ---------- Оболочка: три состояния ширины вместо двух ----------
        76 (одна рейка) / 288 (рейка + колонка). Hover-peek отменён: рейка
-       и так читаема, «подглядывание» существовало ради подписей разделов. */
+       и так читаема, «подглядывание» существовало ради подписей разделов.
+       Отступа-жёлоба вокруг сайдбара БОЛЬШЕ НЕТ (см. «Сплошная колонка» ниже) —
+       навигация занимает ровно свою ширину, остальное уходит странице. */
     body:not(.sb-ctx) #appShell,
     body.sb-collapsed #appShell,
     body.sb-collapsed.sb-peek #appShell {
-        grid-template-columns: calc(var(--sbr-rail-w) + 14px) minmax(0, 1fr);
+        grid-template-columns: var(--sbr-rail-w) minmax(0, 1fr);
     }
     body.sb-ctx #appShell,
     body.sb-ctx.sb-collapsed #appShell {
-        grid-template-columns: calc(var(--sbr-rail-w) + var(--sbr-ctx-w) + 14px) minmax(0, 1fr);
+        grid-template-columns: calc(var(--sbr-rail-w) + var(--sbr-ctx-w)) minmax(0, 1fr);
     }
     body:not(.sb-ctx) { --sb-w: var(--sbr-rail-w); }
     body.sb-ctx { --sb-w: calc(var(--sbr-rail-w) + var(--sbr-ctx-w)); }
 
-    /* ---------- Карточка: рейка и колонка внутри одного скругления ---------- */
+    /* ---------- Сплошная колонка вместо парящей карточки ----------
+       Образец — рейка визарда «Ребаланс» (.rbw-rail, css/rebalance-wizard.css):
+       навигация стоит НА краю экрана, во всю его высоту, отделена от контента
+       волосяной линией. Карточка со скруглением, тенью и жёлобом 14px читалась
+       «панелькой, положенной на страницу»; сплошная колонка читается корпусом
+       приложения — и отдаёт странице 28px по горизонтали. */
+    #sideBar { padding: 0; }
     #sbPanel {
         flex-direction: row;
         background: var(--sbr-rail);
-        border-radius: 20px;
-        overflow: hidden;               /* колонка скроллится сама, карта — нет */
-        box-shadow: 0 10px 30px rgba(20, 27, 45, 0.10);
+        border-radius: 0;
+        border-right: 1px solid var(--sbr-line);
+        box-shadow: none;
+        overflow: hidden;               /* колонка скроллится сама, корпус — нет */
         transition: width 0.28s ease;
-        /* карта теперь ВО ВСЮ ВЫСОТУ: подвал колонки («Настройки» и «Свернуть»)
-           обязан стоять внизу, а прежний hug-to-content оставлял его висеть
-           посреди экрана сразу под последним пунктом */
+        /* во всю высоту экрана: подвал колонки («Настройки» и «Свернуть») обязан
+           стоять внизу, а прежний hug-to-content оставлял его висеть посреди
+           экрана сразу под последним пунктом */
         flex: 1 1 auto;
         height: 100%;
     }
+    body.dark-mode #sbPanel { background: var(--sbr-rail); }
+
     /* «Главная» (она же экран «Добро пожаловать» с регистрацией) — исключение:
-       второго уровня у неё нет, тянуть карточку во всю высоту незачем, и на
-       манифесте поверх живой карты белая полоса во весь экран читалась чужой.
-       Здесь рейка остаётся компактной карточкой по содержимому — как была. */
+       второго уровня у неё нет, а на манифесте поверх живой карты сплошная белая
+       полоса во весь экран читалась бы чужой. Здесь навигация остаётся компактной
+       парящей карточкой по содержимому — ровно как была. */
+    body.tab-home #appShell {
+        grid-template-columns: calc(var(--sbr-rail-w) + 14px) minmax(0, 1fr);
+    }
+    body.tab-home #sideBar { padding: 14px 0 14px 14px; }
     body.tab-home #sbPanel {
         flex: 0 1 auto;
         height: auto;
+        border-radius: 20px;
+        border-right: 0;
+        box-shadow: 0 10px 30px rgba(20, 27, 45, 0.10);
     }
-    body.dark-mode #sbPanel {
-        background: var(--sbr-rail);
-        box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45);
-    }
+    body.dark-mode.tab-home #sbPanel { box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45); }
     body:not(.sb-ctx) #sbPanel,
     body.sb-collapsed #sbPanel,
     body.sb-collapsed.sb-peek #sbPanel { width: var(--sbr-rail-w); }
