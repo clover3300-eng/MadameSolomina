@@ -232,7 +232,7 @@
     <link rel="stylesheet" href="css/rebalance.css?v=1">
     <link rel="stylesheet" href="css/rebalance-stocks.css?v=1">
     <link rel="stylesheet" href="css/webapp-layout.css?v=4">
-    <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=51">
+    <link id="siteLayoutCSS" rel="stylesheet" href="css/site-layout.css?v=52">
     <link rel="stylesheet" href="css/components.css?v=3">
     <link rel="stylesheet" href="css/backtest.css?v=17">
     <link rel="stylesheet" href="css/rebalance-r4.css?v=10">
@@ -266,7 +266,7 @@
     <!-- Сайдбар «Подъём»: рейка 76px + колонка второго уровня (мокап В3-б).
          Идёт ПОСЛЕ site-layout.css — перебивает и его базовые правила рейки,
          и блок body.dark-mode (рейка светлая в обеих темах), но ДО mobile.css -->
-    <link rel="stylesheet" href="css/sidebar-rail.css?v=17">
+    <link rel="stylesheet" href="css/sidebar-rail.css?v=18">
     <!-- Мобильный слой (≤1023px) — всегда ПОСЛЕДНИЙ, перебивает всё -->
     <link rel="stylesheet" href="css/mobile.css?v=26">
     
@@ -380,6 +380,14 @@
             </div>
             <button id="sbCloseBtn" onclick="closeSidebarDrawer()" aria-label="Закрыть меню">
                 <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <!-- Свернуть колонку прямо из шапки: та же команда, что у шеврона в
+                 подвале, но под рукой у имени. Только десктоп и только в
+                 развёрнутом виде — в рейке 84px рядом с маркой места нет,
+                 разворачивает по-прежнему подвал (css/sidebar-rail.css). -->
+            <button type="button" id="sbHeadCollapse" onclick="toggleSidebarCollapse()"
+                    title="Свернуть в рейку" aria-label="Свернуть в рейку">
+                <svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
             </button>
         </div>
         <!-- Капитал и день по ВСЕМ портфелям (мокап Б «Верстак»): наполняет
@@ -2772,10 +2780,10 @@
 <script src="js/calc-r6.js?v=11" defer></script>
 <script src="js/calc-r7.js?v=1" defer></script>
 <script src="js/dashboard.js?v=6" defer></script>
-<script src="js/sidebar.js?v=15" defer></script>
+<script src="js/sidebar.js?v=16" defer></script>
 <!-- Колонка второго уровня: строго ПОСЛЕ sidebar.js (пользуется sbNavSub и
      дёргается из его sbSyncActive) -->
-<script src="js/sidebar-ctx.js?v=8" defer></script>
+<script src="js/sidebar-ctx.js?v=9" defer></script>
 <script src="js/stock-terminal.js?v=13" defer></script>
 <script src="js/bond-terminal.js?v=10" defer></script>
 <script src="js/table-tooltip.js?v=1" defer></script>
@@ -2785,7 +2793,7 @@
 <!-- «Портфели» грузятся ЛЕНИВО при первом входе на вкладку или импорте из расчёта —
      ensurePortfoliosJs в webapp-tabs.js. src — ЦЕПОЧКА файлов (исполняются по
      порядку, последним ВСЕГДА portfolios.js с интеграцией); актуальные ?v живут здесь -->
-<script id="pfLazySrc" type="application/json">{"src":["js/portfolios-core.js?v=11","js/portfolios-dash.js?v=33","js/portfolios-widgets.js?v=27","js/portfolios-payouts.js?v=6","js/portfolios-tabs.js?v=30","js/portfolios-cards.js?v=23","js/portfolios-trades.js?v=5","js/portfolios-trading.js?v=100","js/portfolios-broker-pf.js?v=3","js/portfolios-chart.js?v=12","js/portfolios-screens.js?v=14","js/rebalance-wizard.js?v=25","js/portfolios.js?v=194"]}</script>
+<script id="pfLazySrc" type="application/json">{"src":["js/portfolios-core.js?v=11","js/portfolios-dash.js?v=34","js/portfolios-widgets.js?v=27","js/portfolios-payouts.js?v=6","js/portfolios-tabs.js?v=31","js/portfolios-cards.js?v=23","js/portfolios-trades.js?v=5","js/portfolios-trading.js?v=100","js/portfolios-broker-pf.js?v=3","js/portfolios-chart.js?v=12","js/portfolios-screens.js?v=14","js/rebalance-wizard.js?v=25","js/portfolios.js?v=194"]}</script>
 <!-- Стеклянный столбик правого нижнего угла: обязан идти ДО site-bg.js и
      profile-menu.js — их кнопки аппендятся в его капсулу #cornerStack -->
 <script src="js/corner-stack.js?v=2" defer></script>

@@ -247,8 +247,25 @@
         letter-spacing: -0.01em;
         white-space: nowrap;
     }
+    /* Подвкладка в той же плашке: «Портфели · Обзор». Точка — псевдоэлемент,
+       а не символ в тексте: имя подвкладки приходит из данных (экраны
+       «Торговли» и вкладки-портфели переименовываются), и разделитель обязан
+       принадлежать вёрстке. Тише раздела — это уточнение, а не второй титул. */
+    .hdr-sub {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px; font-weight: 500;
+        color: var(--text-deep, #2C364C);
+        opacity: 0.62;
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+        max-width: 190px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .hdr-sub::before { content: '·'; margin-right: 6px; opacity: 0.75; }
     body.dark-mode .hdr-chip svg { stroke: #F1F6FB; }
     body.dark-mode .hdr-sec { color: #F1F6FB; }
+    body.dark-mode .hdr-sub { color: #F1F6FB; opacity: 0.6; }
 
     @media (min-width: 1024px) {
         /* На десктопе раздел снова в «плашке-пилюле» (как раньше) — иконка + название

@@ -319,6 +319,11 @@
         for (var i = 0; i < PF.PFX_TABS.length; i++) if (PF.PFX_TABS[i][0] === t) return PF.PFX_TABS[i][1];
         return 'Обзор';
     }
+    // Имя ТЕКУЩЕЙ подвкладки — для крошки в шапке («Портфели · Обзор»),
+    // её собирает renderHeaderBadge в js/sidebar.js
+    PF.pfxCrumb = function () {
+        try { return pfxTabLabel(pfxEffTab()); } catch (e) { return ''; }
+    };
     // подпись экрана: своё имя из конфига или «Экран N» по номеру ключа
     function pfxTradeName(t) {
         var c = pfTabCfgs[t] || pfTabsStore[t];

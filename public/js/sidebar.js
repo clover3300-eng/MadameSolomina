@@ -152,8 +152,17 @@
             // вкладку могли переименовать в админке (js/tab-gates.js) — своё имя
             // старше словаря; пустой titleOf значит «зовётся как встроено»
             var nm = (window.tabGates && window.tabGates.titleOf && window.tabGates.titleOf(tabId)) || s.name;
-            crumb.innerHTML = '<span class="hdr-chip"><svg viewBox="0 0 24 24">' + s.icon + '</svg></span>' +
-                              '<span class="hdr-sec">' + esc(nm) + '</span>';
+            // Второй уровень «Портфелей» больше не написан нигде в шапке (ряд
+            // подвкладок уехал в колонку), а знать, что открыт «Обзор», нужно:
+            // дописываем подвкладку к разделу — «Портфели · Обзор».
+            var sub = '';
+            if (tabId === 'portfolios' && window.PF && PF.pfxCrumb) {
+                try { sub = PF.pfxCrumb() || ''; } catch (e) { sub = ''; }
+            }
+            var html = '<span class="hdr-chip"><svg viewBox="0 0 24 24">' + s.icon + '</svg></span>' +
+                       '<span class="hdr-sec">' + esc(nm) + '</span>';
+            if (sub) html += '<span class="hdr-sub">' + esc(sub) + '</span>';
+            if (crumb.innerHTML !== html) crumb.innerHTML = html;
             crumb.style.display = 'flex';
         } else {
             crumb.style.display = 'none';

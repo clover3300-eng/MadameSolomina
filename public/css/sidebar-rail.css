@@ -43,6 +43,9 @@
    #sbRail отдаёт своих детей родителю через display:contents */
 #sbCap, #sbCtx, #sbRailFoot { display: none; }
 #sbRail { display: contents; }
+/* свёртка — понятие только десктопное: в мобильной шторке колонка не сужается,
+   а закрывается крестиком #sbCloseBtn */
+#sbHeadCollapse { display: none; }
 /* бейдж дрейфа — деталь сетки разделов; в мобильной шторке строки плоские,
    и метка встала бы обычным текстом в конце строки */
 #sbNav .sb-badge { display: none; }
@@ -151,7 +154,32 @@
         margin-bottom: 0;
         justify-content: flex-start;
     }
-    #sbHead #sbLogo { display: flex; align-items: center; gap: 11px; min-width: 0; }
+    #sbHead #sbLogo { display: flex; align-items: center; gap: 11px; min-width: 0; flex: 1 1 auto; }
+    /* Кнопка свёртки у имени. Тон — как у прочих служебных кнопок колонки
+       (.sbc-btn в подвале), чтобы не спорить с маркой за внимание. */
+    #sbHeadCollapse {
+        display: grid;
+        place-items: center;
+        flex: none;
+        width: 28px; height: 28px;
+        margin-left: 6px;
+        padding: 0;
+        border: 0;
+        border-radius: 9px;
+        background: transparent;
+        color: var(--sbr-dim);
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+    #sbHeadCollapse svg {
+        width: 16px; height: 16px;
+        fill: none; stroke: currentColor; stroke-width: 1.9;
+        stroke-linecap: round; stroke-linejoin: round;
+    }
+    #sbHeadCollapse:hover { background: var(--sbr-page); color: var(--sbr-ink); }
+    #sbHeadCollapse:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 2px; }
+    /* в рейке рядом с маркой места нет — разворачивает подвал */
+    body.sb-rail #sbHeadCollapse { display: none; }
     #sbHead .sb-logo-mark,
     body.dark-mode #sbHead .sb-logo-mark {
         flex: none;
@@ -659,45 +687,11 @@
     body.sb-rail #sbHead { padding: 18px 0 12px; justify-content: center; }
     body.sb-rail #sbHead #sbLogo { justify-content: center; gap: 0; }
     body.sb-rail #sbHead .sb-logo-text { display: none; }
-    /* Табло в 84px не живёт («1 462 380 ₽» просит 118px) — от него остаётся
-       ЧИП ДНЯ: компакт-капитал и процент, клик разворачивает колонку. Состояние
-       переживает свёртку: «Верстак» не превращается обратно в оглавление. */
-    body.sb-rail #sbCap { margin: 0 6px 2px; }
-    .sbcap-chip {
-        display: block;
-        width: 100%;
-        margin: 0;
-        padding: 5px 4px 6px;
-        border: 0;
-        border-radius: 11px;
-        background: var(--sbr-page);
-        font: inherit;
-        text-align: center;
-        cursor: pointer;
-        -webkit-tap-highlight-color: transparent;
-    }
-    .sbcap-chip:hover { background: color-mix(in srgb, var(--sbr-sel) 10%, var(--sbr-page)); }
-    .sbcap-chip:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 2px; }
-    .sbcap-cn {
-        display: block;
-        font-family: var(--font-num, 'JetBrains Mono', monospace);
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-        line-height: 1.25;
-        color: var(--sbr-ink);
-    }
-    .sbcap-cd {
-        display: block;
-        font-family: var(--font-num, 'JetBrains Mono', monospace);
-        font-size: 9.5px;
-        font-weight: 700;
-        line-height: 1.25;
-        color: #16A34A;
-    }
-    .sbcap-cd.neg { color: #DC2626; }
-    body.dark-mode .sbcap-cd { color: #34D399; }
-    body.dark-mode .sbcap-cd.neg { color: #F87171; }
+    /* В СВЁРНУТОЙ РЕЙКЕ КАПИТАЛА НЕТ. Чип «1,46 млн / +0,8%» из мокапа Б+3 был
+       реализован и снят по просьбе владельца: свёрнутая рейка — это выбор
+       «покажи только разделы», и пилюля с суммой спорила бы с ним. Состояние в
+       84px по-прежнему держит бейдж дрейфа на кружке «Ребаланса». */
+    body.sb-rail #sbCap { display: none; }
     /* сетка разворачивается обратно в столбец: в 84px «сетка» из одного
        столбца — это и есть вертикальный список, только с лишним понятием */
     body.sb-rail #sbNav {
@@ -820,6 +814,44 @@
         box-shadow: 0 10px 30px rgba(20, 27, 45, 0.10);
     }
     body.dark-mode.tab-home #sbPanel { box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45); }
+
+    /* ---------- «Главная»: рейка СВЕТЛАЯ в обеих темах ----------
+       Просьба владельца. Общая инверсия «сайдбар светлый всегда» была отменена
+       в раунде 2 и не возвращается — здесь исключение ровно для экрана
+       «Добро пожаловать»: манифест лежит поверх живой карты, сам по себе
+       тёмный, и тёмная карточка-рейка на нём тонула. Светлая читается тем же
+       предметом, каким была до появления тёмной темы.
+       Токены переобъявляем НА КОРПУСЕ — всё внутри наследует их само; отдельно
+       откатываем те правила тёмной темы, где цвет прибит гвоздями. */
+    body.dark-mode.tab-home #sbPanel {
+        --sbr-card:  #FFFFFF;
+        --sbr-page:  #F4F6FA;
+        --sbr-ink:   #101828;
+        --sbr-mut:   #64748B;
+        --sbr-dim:   #98A4B4;
+        --sbr-line:  #E7ECF3;
+        --sbr-sel:   #2F6B4F;
+        --sbr-sel-ic:#FFFFFF;
+        background: var(--sbr-card);
+    }
+    /* марка: на светлом поле снова тёмный знак */
+    body.dark-mode.tab-home #sbHead .sb-logo-mark {
+        background: linear-gradient(180deg, #232B3B 0%, #141A26 100%);
+        color: #F1F6FB;
+    }
+    /* зелёный/красный тёмной темы подняты под тёмное поле — на белом они блёклые */
+    body.dark-mode.tab-home .sbcap-d,
+    body.dark-mode.tab-home .sbcap-day,
+    body.dark-mode.tab-home .sbcap-spark,
+    body.dark-mode.tab-home .sbc-chg { color: #16A34A; }
+    body.dark-mode.tab-home .sbcap-d.neg,
+    body.dark-mode.tab-home .sbcap-day.neg,
+    body.dark-mode.tab-home .sbcap-spark.neg,
+    body.dark-mode.tab-home .sbc-chg.neg { color: #DC2626; }
+    body.dark-mode.tab-home .sbcap-day.mut { color: var(--sbr-dim); }
+    body.dark-mode.tab-home .sbcap-bar i.eq { background: #D08A3C; }
+    body.dark-mode.tab-home .sbcap-bar i.bd { background: #3B7AD1; }
+    body.dark-mode.tab-home #sbNav .sb-badge { background: #DC2626; color: #fff; }
 
     /* ---------- Марка на странице ровно ОДНА ----------
        Развёрнутая колонка сама пишет «Madame Solomi'na» — вторая такая же в

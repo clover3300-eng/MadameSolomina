@@ -284,9 +284,6 @@
         return {
             total: total,                 // сырое число — под интрадей-ряд спарклайна
             cap: fmtRub(total),
-            // «1,46 млн» для чипа свёрнутой рейки: точность теряем намеренно —
-            // полные рубли показывает развёрнутая колонка
-            capShort: capCompact(total),
             chip: chip,
             dayRub: dayRub,
             // доли считаем от суммы классов, а не от total: деньги вне бумаг
@@ -297,15 +294,6 @@
             drift: (PF.pfDriftCount ? PF.pfDriftCount() : 0)
         };
     };
-    // Компакт капитала для рейки: «1,46 млн» (мокап Б+3). Знака ₽ нет — в 84px
-    // он лишний, а маскировать строку «Скрывать суммы» всё равно будет по явной
-    // пометке data-money, а не по знаку валюты. Intl умеет компакт сам; на
-    // старых движках без notation:'compact' падать нельзя — отдаём обычный формат.
-    function capCompact(v) {
-        try {
-            return new Intl.NumberFormat('ru', { notation: 'compact', maximumFractionDigits: 2 }).format(v);
-        } catch (e) { return fmtRub(v); }
-    }
     PF.sbSideModel = function () {
         if (!pfxWide()) return null;              // на мобиле колонки нет вовсе
         var eff = pfxEffTab();

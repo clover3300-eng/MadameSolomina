@@ -356,14 +356,10 @@
         return '<button type="button" class="sbcap-btn" data-act="capgo" data-key=""' +
             ' title="Открыть «Обзор»">' + h + '</button>';
     }
-    // Чип свёрнутой рейки: тот же капитал компактом + день. Знака ₽ в «1,46 млн»
-    // может не быть, а маскировать его надо — помечаем data-money явно.
-    function capRailHtml(m) {
-        return '<button type="button" class="sbcap-chip" data-act="capexpand" data-key=""' +
-            ' title="Развернуть колонку"><span class="sbcap-cn" data-money>' + esc(m.capShort) + '</span>' +
-            (m.chip ? '<span class="sbcap-cd' + (m.chip.neg ? ' neg' : '') + '">' + esc(m.chip.tx) + '</span>' : '') +
-            '</button>';
-    }
+    // В СВЁРНУТОЙ РЕЙКЕ КАПИТАЛА НЕТ. Чип «1,46 млн / +0,8%» из мокапа Б+3 был
+    // сделан и снят по просьбе владельца: свёрнутая рейка — это выбор «покажи
+    // только разделы», и пилюля с суммой в ней спорила с этим выбором. Состояние
+    // в 84px по-прежнему держит бейдж дрейфа на кружке «Ребаланса».
     // Бейдж «сколько портфелей просят ребаланса» на кружке раздела. Правило
     // порога живёт в мастере (PF.pfDriftCount) — здесь только показ.
     function plural(n, one, few, many) {
@@ -392,10 +388,9 @@
         var m = null;
         try { m = (wide() && window.PF && PF.sbCapModel) ? PF.sbCapModel() : null; } catch (e) { m = null; }
         if (host) {
-            // в рейке 84px табло не поместиться («1 462 380 ₽» просит 118px) —
-            // там от него остаётся чип «1,46 млн / +0,8%»
+            // в рейке табло не живёт вовсе (см. выше) — узел просто пуст
             var rail = document.body.classList.contains('sb-rail');
-            var html = !m ? '' : (rail ? capRailHtml(m) : capHtml(m, m.total));
+            var html = (!m || rail) ? '' : capHtml(m, m.total);
             if (host.__sbcapHtml !== html) { host.innerHTML = html; host.__sbcapHtml = html; }
         }
         badgeSync(m ? m.drift : 0);
@@ -416,6 +411,11 @@
     // каждую секунду, а живой :hover и фокус в колонке рвать нельзя.
     function sbCtxSync() {
         capSync();                                  // капитал живёт и без второго уровня
+        // крошка в шапке несёт подвкладку («Портфели · Обзор»), а меняется та
+        // без switchTab — обновляем здесь, на каждом рендере «Портфелей»
+        if (window.renderHeaderBadge && typeof currentTab !== 'undefined' && currentTab) {
+            try { window.renderHeaderBadge(currentTab); } catch (e) {}
+        }
         var host = document.getElementById('sbCtx');
         if (!host) return;
         var tab = (typeof currentTab !== 'undefined' && currentTab) ? currentTab : 'home';
@@ -469,7 +469,6 @@
             if (window.pfxGoTab) window.pfxGoTab('overview');
             return;
         }
-        if (act === 'capexpand') { if (window.toggleSidebarCollapse) window.toggleSidebarCollapse(); return; }
         if (act === 'sub') { if (window.sbNavSub) window.sbNavSub(key, e); return; }
         // тип портфеля: вкладка могла быть не «Расчёт» (пришли с /portfolio)
         if (act === 'cxmode') {
