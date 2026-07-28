@@ -258,7 +258,7 @@
     <link rel="stylesheet" href="css/admin.css?v=13">
     <link rel="stylesheet" href="css/rebalance-r6.css?v=11">
     <link rel="stylesheet" href="css/typography-tokens.css?v=14">
-    <link rel="stylesheet" href="css/portfolios-r7.css?v=69">
+    <link rel="stylesheet" href="css/portfolios-r7.css?v=70">
     <link rel="stylesheet" href="css/broker.css?v=66">
     <link rel="stylesheet" href="css/trading-scene.css?v=46">
     <link rel="stylesheet" href="css/rebalance-wizard.css?v=17">
@@ -266,9 +266,9 @@
     <!-- Сайдбар «Подъём»: рейка 76px + колонка второго уровня (мокап В3-б).
          Идёт ПОСЛЕ site-layout.css — перебивает и его базовые правила рейки,
          и блок body.dark-mode (рейка светлая в обеих темах), но ДО mobile.css -->
-    <link rel="stylesheet" href="css/sidebar-rail.css?v=7">
+    <link rel="stylesheet" href="css/sidebar-rail.css?v=8">
     <!-- Мобильный слой (≤1023px) — всегда ПОСЛЕДНИЙ, перебивает всё -->
-    <link rel="stylesheet" href="css/mobile.css?v=25">
+    <link rel="stylesheet" href="css/mobile.css?v=26">
     
     <!-- ВСЕ скрипты здесь — defer, и это несущее требование, а не уборка.
          Без defer классический <script> в <head> ПАРСЕР-БЛОКИРУЮЩИЙ: браузер
@@ -384,13 +384,11 @@
             <a class="sb-item" data-tab="home" href="/" onclick="return sbGo(event, 'home')" title="Главная">
                 <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 <span class="sb-label">Главная</span>
-                <span class="sb-cap">манифест и живая карта</span>
             </a>
             <div class="sb-group" data-group="calc">
                 <a class="sb-item sb-parent" data-tab="calc" href="/calc" onclick="return sbGoParent(event, 'calc')" title="Расчёт">
                     <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
                     <span class="sb-label">Расчёт</span>
-                <span class="sb-cap">портфель из ОФЗ и акций</span>
                     <span class="sb-chev" onclick="sbToggleGroup('calc', event)" aria-label="Развернуть"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
                 </a>
                 <div class="sb-subs" id="sbSubs-calc">
@@ -414,18 +412,15 @@
             <a class="sb-item" data-tab="portfolios" href="/portfolios" onclick="return sbGo(event, 'portfolios')" title="Портфели">
                 <svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg>
                 <span class="sb-label">Портфели</span>
-                <span class="sb-cap">трекер, сделки, ребаланс</span>
             </a>
             <a class="sb-item" data-tab="rebalance" href="/rebalance" onclick="return sbGo(event, 'rebalance')" title="Ребаланс">
                 <svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
                 <span class="sb-label">Ребаланс</span>
-                <span class="sb-cap">зачем и как выравнивать</span>
             </a>
             <div class="sb-group" data-group="market">
                 <a class="sb-item sb-parent" data-tab="market" href="/market" onclick="return sbGoParent(event, 'market')" title="Рынок">
                     <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
                     <span class="sb-label">Рынок</span>
-                <span class="sb-cap">дашборд и терминал</span>
                     <span class="sb-chev" onclick="sbToggleGroup('market', event)" aria-label="Развернуть"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></span>
                 </a>
                 <div class="sb-subs" id="sbSubs-market">
@@ -440,13 +435,11 @@
             <a class="sb-item" data-tab="backtest" href="/backtest" onclick="return sbGo(event, 'backtest')" title="Тест портфеля">
                 <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg>
                 <span class="sb-label">Тест</span>
-                <span class="sb-cap">портфель на истории</span>
             </a>
             <!-- Админка: скрыта до подтверждения роли admin (показ — gateNav в js/admin.js) -->
             <a class="sb-item" id="sbAdminBtn" data-tab="admin" href="/admin" style="display:none" onclick="return sbGo(event, 'admin')" title="Админка">
                 <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
                 <span class="sb-label">Админка</span>
-                <span class="sb-cap">пользователи и события</span>
             </a>
         </div>
         <!-- «Свернуть» внизу рейки — видна только когда колонки второго уровня
@@ -2782,7 +2775,7 @@
 <!-- «Портфели» грузятся ЛЕНИВО при первом входе на вкладку или импорте из расчёта —
      ensurePortfoliosJs в webapp-tabs.js. src — ЦЕПОЧКА файлов (исполняются по
      порядку, последним ВСЕГДА portfolios.js с интеграцией); актуальные ?v живут здесь -->
-<script id="pfLazySrc" type="application/json">{"src":["js/portfolios-core.js?v=11","js/portfolios-dash.js?v=33","js/portfolios-widgets.js?v=27","js/portfolios-payouts.js?v=6","js/portfolios-tabs.js?v=26","js/portfolios-cards.js?v=23","js/portfolios-trades.js?v=5","js/portfolios-trading.js?v=100","js/portfolios-broker-pf.js?v=3","js/portfolios-chart.js?v=12","js/portfolios-screens.js?v=14","js/rebalance-wizard.js?v=23","js/portfolios.js?v=193"]}</script>
+<script id="pfLazySrc" type="application/json">{"src":["js/portfolios-core.js?v=11","js/portfolios-dash.js?v=33","js/portfolios-widgets.js?v=27","js/portfolios-payouts.js?v=6","js/portfolios-tabs.js?v=27","js/portfolios-cards.js?v=23","js/portfolios-trades.js?v=5","js/portfolios-trading.js?v=100","js/portfolios-broker-pf.js?v=3","js/portfolios-chart.js?v=12","js/portfolios-screens.js?v=14","js/rebalance-wizard.js?v=23","js/portfolios.js?v=194"]}</script>
 <!-- Стеклянный столбик правого нижнего угла: обязан идти ДО site-bg.js и
      profile-menu.js — их кнопки аппендятся в его капсулу #cornerStack -->
 <script src="js/corner-stack.js?v=2" defer></script>

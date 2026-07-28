@@ -65,8 +65,7 @@
     var PFX_TABS = PF.PFX_TABS, pfxActivateTab = PF.pfxActivateTab, pfxApplyCorner = PF.pfxApplyCorner, pfxBgRowHtml = PF.pfxBgRowHtml, pfxCornerRowHtml = PF.pfxCornerRowHtml, pfxDrawerSync = PF.pfxDrawerSync;
     var pfxDropPfTab = PF.pfxDropPfTab, pfxFabSeen = PF.pfxFabSeen, pfxFabSync = PF.pfxFabSync, pfxFlashBlock = PF.pfxFlashBlock, pfxGoOverviewFor = PF.pfxGoOverviewFor;
     var pfxOpenPfTabs = PF.pfxOpenPfTabs, pfxPanelWrap = PF.pfxPanelWrap, pfxSaveOpenTabs = PF.pfxSaveOpenTabs, pfxSeedLayout = PF.pfxSeedLayout, pfxSetCardHtml = PF.pfxSetCardHtml, pfxSyncPath = PF.pfxSyncPath;
-    var pfxTabPortsHtml = PF.pfxTabPortsHtml, pfxTabsHtml = PF.pfxTabsHtml, pfxTabsScrollSync = PF.pfxTabsScrollSync, pfxVisRowsHtml = PF.pfxVisRowsHtml, pfxWide = PF.pfxWide;
-    var pfxCrumbSync = PF.pfxCrumbSync, pfxGearSync = PF.pfxGearSync;
+    var pfxTabPortsHtml = PF.pfxTabPortsHtml, pfxVisRowsHtml = PF.pfxVisRowsHtml, pfxWide = PF.pfxWide;
     // импорт карточек (portfolios-cards.js, загружен до нас):
     var XMARK_SVG = PF.XMARK_SVG, assetDisplayName = PF.assetDisplayName, cardHtml = PF.cardHtml, closeImpMenus = PF.closeImpMenus, menuHtml = PF.menuHtml;
     var paintPfChartMini = PF.paintPfChartMini, pfCardHead = PF.pfCardHead, pfConfirm = PF.pfConfirm, pfImpOutside = PF.pfImpOutside, repaintMiniCharts = PF.repaintMiniCharts;
@@ -188,17 +187,12 @@
             pfxSyncCfg();      // R8: PF.dashCfg = конфиг активной подвкладки
             pfxApplyCorner();
             pfxSeedLayout();
-            // Ряд подвкладок (Обзор | Мои портфели | …) с 2026-07-21 живёт в СЕРЕДИНЕ
-            // глобальной шапки (#topBarPfMarket, наполняет renderTopBarMarket ниже) —
-            // контент вкладки начинается сразу под шапкой. Здесь ряд нужен только
-            // чтобы решить, оборачивать ли контент в tabpanel: у гостя и на мобиле
-            // ряда нет, и обёртка ссылалась бы на несуществующие вкладки.
             // R8: у КАЖДОЙ подвкладки свой дашборд-конструктор (pfdBodyHtml с её
             // конфигом), «Обзор» дополнительно умеет классический вид.
-            var tabsHtml = pfxTabsHtml();
-            // R9.5: при живом ряде вкладок контент оборачивается в role=tabpanel
-            // (aria-controls вкладок ведёт на #pfxTabPanel); без ряда — как есть.
-            var wrapPanel = tabsHtml ? pfxPanelWrap : function (x) { return x; };
+            // Обёртка #pfxTabPanel нужна только на широком экране с портфелями —
+            // на неё завязаны отступы полноэкранных сцен (css/broker.css).
+            var wrapPanel = (PF.store.items.length && pfxWide())
+                ? pfxPanelWrap : function (x) { return x; };
             var body;
             if (PF.pfxIsTradeTab(pfxEffTab())) {
                 // «Торговля», раунд 2 «Эволюция»: сцена всегда полноэкранная и
@@ -296,9 +290,6 @@
             pfPlistSparksSoon();   // спарклайны «Моих портфелей» без снимков — дорисовать из истории
             pfxDrawerSync();       // R9.1: шторка настроек портфеля обновляется вместе со страницей
             pfxFabSync();          // парящие узлы: слот столбика #cornerStack + панель действий #pfActBar
-            pfxTabsScrollSync();   // ряд подвкладок в шапке: клавиатура, ResizeObserver, свёртка в «⋯»
-            pfxCrumbSync();        // селектор портфелей на пилюле раздела (#topBarCrumb)
-            pfxGearSync();         // шестерёнка «Настроек» в правом кластере шапки, за «Поиском»
             if (PF.openMenu) {
                 var m = dq('pfMenu-' + PF.openMenu); if (m) m.scrollTop = 0;
                 // пустой портфель → сразу ставим фокус на ввод тикера (интуитивнее)
@@ -409,20 +400,11 @@
         }, 150);
     }
 
-    // ---- РЯД ПОДВКЛАДОК В ШАПКЕ САЙТА (#topBarPfMarket) ----
-    // Слот в середине глобального топ-бара исторически носил рыночную ленту
-    // IMOEX/USD/BTC (по «премиальному» решению скрытую с 2026-07-14); с 2026-07-21
-    // его занимает ряд подвкладок «Портфелей» (pfxTabsHtml из portfolios-tabs.js) —
-    // страница начинается сразу с контента. Своп только при изменении HTML: фоновый
-    // тик котировок не должен закрывать открытое меню «⋯» и рвать hover. Прячет
-    // слот при уходе со вкладки обёртка switchTab (секция «ИНТЕГРАЦИЯ» внизу);
-    // ленты Главной и «Рынка» (#topBarDashMarket/#topBarMktMarket) остаются
-    // заглушенными точечным правилом в portfolios.css.
-    // Ряд подвкладок в середине шапки СНЯТ: второй уровень «Портфелей» переехал
-    // в колонку сайдбара (PF.sbSideModel + js/sidebar-ctx.js), где помещается
-    // целиком — вместе со «Настройками», экранами «Торговли» и открытыми
-    // вкладками-портфелями. Слот держим пустым и скрытым, а не удаляем: он
-    // общий для вкладок (.topbar-tab-market), и обёртка switchTab им управляет.
+    // ---- СЛОТ В СЕРЕДИНЕ ШАПКИ (#topBarPfMarket) ----
+    // Слот исторически носил рыночную ленту IMOEX/USD/BTC (скрыта с 2026-07-14),
+    // потом ряд подвкладок «Портфелей» (снят 2026-07-28 — второй уровень уехал в
+    // колонку сайдбара). Держим его пустым и скрытым, а не удаляем: слот общий
+    // для вкладок (.topbar-tab-market), и обёртка switchTab им управляет.
     function renderTopBarMarket() {
         var host = document.getElementById('topBarPfMarket'); if (!host) return;
         if (host.__pfxHtml) { host.innerHTML = ''; host.__pfxHtml = ''; }
@@ -831,18 +813,12 @@
             else {
                 if (dq('pfOverlay')) window.pfCloseOverlay();
                 // ушли со вкладки — карточку раскладки закрываем (иначе гард рендера её бы
-                // держал открытой при возврате), панель действий и ряд подвкладок прячем.
-                // Пилюля раздела: узлы селектора уже снёс renderHeaderBadge (sidebar.js,
-                // отработал раньше по цепочке обёрток), наш — только класс .pf-sel-on
+                // держал открытой при возврате), панель действий и слот шапки прячем
                 PF.dashEdit = false;
                 var tbHost = document.getElementById('topBarPfActions');
                 if (tbHost) { tbHost.style.display = 'none'; tbHost.innerHTML = ''; }
                 var tbMkt = document.getElementById('topBarPfMarket');
                 if (tbMkt) { tbMkt.style.display = 'none'; tbMkt.innerHTML = ''; tbMkt.__pfxHtml = ''; }
-                var tbCrumb = document.getElementById('topBarCrumb');
-                if (tbCrumb) tbCrumb.classList.remove('pf-sel-on');
-                var tbGear = document.getElementById('pfxTab-settings');
-                if (tbGear) tbGear.remove();
                 var tbLay = document.getElementById('pfLayoutBtn');
                 if (tbLay) tbLay.style.display = 'none';
                 var tbLaySep = document.getElementById('pfLayoutSep');
