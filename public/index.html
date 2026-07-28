@@ -262,6 +262,10 @@
     <link rel="stylesheet" href="css/trading-scene.css?v=46">
     <link rel="stylesheet" href="css/rebalance-wizard.css?v=17">
     <link rel="stylesheet" href="css/desktop-zoom.css?v=4">
+    <!-- Сайдбар «Подъём»: рейка 76px + колонка второго уровня (мокап В3-б).
+         Идёт ПОСЛЕ site-layout.css — перебивает и его базовые правила рейки,
+         и блок body.dark-mode (рейка светлая в обеих темах), но ДО mobile.css -->
+    <link rel="stylesheet" href="css/sidebar-rail.css?v=1">
     <!-- Мобильный слой (≤1023px) — всегда ПОСЛЕДНИЙ, перебивает всё -->
     <link rel="stylesheet" href="css/mobile.css?v=25">
     
@@ -354,6 +358,10 @@
     <!-- ===== LEFT SIDEBAR (desktop) / DRAWER (mobile) ===== -->
     <nav id="sideBar" aria-label="Основная навигация">
         <div id="sbPanel">
+        <!-- Рейка разделов (76px на десктопе). На мобиле #sbRail — display:contents,
+             то есть шторка видит прежнюю плоскую структуру #sbHead + #sbNav и
+             ничего про рейку не знает (css/sidebar-rail.css, css/mobile.css). -->
+        <div id="sbRail">
         <div id="sbHead">
             <div id="sbLogo" onclick="switchTab('home')" title="На главную">
                 <div class="sb-logo-mark">M</div>
@@ -431,6 +439,16 @@
                 <span class="sb-label">Админка</span>
             </a>
         </div>
+        <!-- «Свернуть» внизу рейки — видна только когда колонки второго уровня
+             нет (у раздела её либо не бывает, либо она свёрнута) -->
+        <div id="sbRailFoot">
+            <button type="button" class="sbc-btn" onclick="toggleSidebarCollapse()" title="Развернуть колонку разделов" aria-label="Развернуть колонку разделов">
+                <svg viewBox="0 0 24 24"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+            </button>
+        </div>
+        </div><!-- /sbRail -->
+        <!-- Второй уровень активного раздела; наполняет js/sidebar-ctx.js -->
+        <div id="sbCtx" aria-label="Разделы"></div>
         </div><!-- /sbPanel -->
         <div id="sbFoot">
             <button class="sb-item" id="sbCollapseBtn" onclick="toggleSidebarCollapse()" title="Свернуть меню">
@@ -2740,7 +2758,10 @@
 <script src="js/calc-mode.js?v=11" defer></script>
 <script src="js/calc-r6.js?v=10" defer></script>
 <script src="js/dashboard.js?v=6" defer></script>
-<script src="js/sidebar.js?v=8" defer></script>
+<script src="js/sidebar.js?v=9" defer></script>
+<!-- Колонка второго уровня: строго ПОСЛЕ sidebar.js (пользуется sbNavSub и
+     дёргается из его sbSyncActive) -->
+<script src="js/sidebar-ctx.js?v=1" defer></script>
 <script src="js/stock-terminal.js?v=13" defer></script>
 <script src="js/bond-terminal.js?v=10" defer></script>
 <script src="js/table-tooltip.js?v=1" defer></script>
@@ -2750,7 +2771,7 @@
 <!-- «Портфели» грузятся ЛЕНИВО при первом входе на вкладку или импорте из расчёта —
      ensurePortfoliosJs в webapp-tabs.js. src — ЦЕПОЧКА файлов (исполняются по
      порядку, последним ВСЕГДА portfolios.js с интеграцией); актуальные ?v живут здесь -->
-<script id="pfLazySrc" type="application/json">{"src":["js/portfolios-core.js?v=11","js/portfolios-dash.js?v=33","js/portfolios-widgets.js?v=27","js/portfolios-payouts.js?v=6","js/portfolios-tabs.js?v=25","js/portfolios-cards.js?v=23","js/portfolios-trades.js?v=5","js/portfolios-trading.js?v=100","js/portfolios-broker-pf.js?v=3","js/portfolios-chart.js?v=12","js/portfolios-screens.js?v=14","js/rebalance-wizard.js?v=23","js/portfolios.js?v=192"]}</script>
+<script id="pfLazySrc" type="application/json">{"src":["js/portfolios-core.js?v=11","js/portfolios-dash.js?v=33","js/portfolios-widgets.js?v=27","js/portfolios-payouts.js?v=6","js/portfolios-tabs.js?v=26","js/portfolios-cards.js?v=23","js/portfolios-trades.js?v=5","js/portfolios-trading.js?v=100","js/portfolios-broker-pf.js?v=3","js/portfolios-chart.js?v=12","js/portfolios-screens.js?v=14","js/rebalance-wizard.js?v=23","js/portfolios.js?v=193"]}</script>
 <!-- Стеклянный столбик правого нижнего угла: обязан идти ДО site-bg.js и
      profile-menu.js — их кнопки аппендятся в его капсулу #cornerStack -->
 <script src="js/corner-stack.js?v=2" defer></script>

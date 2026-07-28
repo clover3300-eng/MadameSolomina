@@ -221,6 +221,105 @@
     var PFX_GEAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg>';
     // подвкладки, живущие РЯДОМ (без «Настроек» — они ушли в шестерёнку шапки)
     function pfxRowTabs() { return PFX_TABS.filter(function (t) { return t[0] !== 'settings'; }); }
+
+    // ================= МОДЕЛЬ БОКОВОЙ КОЛОНКИ (сайдбар «Подъём») =================
+    // С этой правкой второй уровень «Портфелей» живёт НЕ в шапке, а в колонке
+    // сайдбара (js/sidebar-ctx.js рисует, мы отдаём данные). Сюда переехали:
+    // ряд подвкладок (был #topBarPfMarket), шестерёнка «Настроек» (была в правом
+    // кластере шапки), список открытых вкладок-портфелей (был попапом на пилюле)
+    // и экраны «Торговли» третьим уровнем (полоса внизу экрана осталась).
+    //
+    // Числа только ЧЕСТНЫЕ: счётчик появляется, когда его есть откуда взять, а
+    // дневное изменение портфеля — лишь при наличии вчерашнего снимка (dayDelta
+    // возвращает null, пока снимка нет; выдумывать проценты нельзя).
+    function pfxSideCount(key) {
+        try {
+            if (key === 'ports') return PF.store.items.length || null;
+            if (key === 'ops') {
+                var n = PF.collectTrades ? PF.collectTrades(true).length : 0;
+                return n || null;
+            }
+            if (key === 'trading') {
+                var s = PF.pfxTradeTabs ? PF.pfxTradeTabs().length : 0;
+                return s > 1 ? s : null;      // один экран — не число, а данность
+            }
+        } catch (e) {}
+        return null;
+    }
+    // дневное изменение портфеля в процентах (или null — снимка ещё нет)
+    function pfxSideDay(p, value) {
+        var d = dayDelta(p, value);
+        if (d == null) return null;
+        var base = value - d;
+        if (!(base > 0)) return null;
+        var pct = d / base * 100;
+        if (!isFinite(pct)) return null;
+        return { tx: (pct >= 0 ? '+' : '−') + Math.abs(pct).toFixed(1).replace('.', ',') + '%', neg: pct < 0 };
+    }
+    PF.sbSideModel = function () {
+        if (!pfxWide()) return null;              // на мобиле колонки нет вовсе
+        var eff = pfxEffTab();
+        var items = PF.store.items;
+        // шапка колонки: капитал и его изменение за день — суммарно по ВСЕМ
+        // портфелям (скрытые тоже считаются: деньги никуда не деваются)
+        var total = 0, day = 0, dayKnown = false;
+        items.forEach(function (p) {
+            var c = calcPf(p);
+            total += c.value;
+            var d = dayDelta(p, c.value);
+            if (d != null) { day += d; dayKnown = true; }
+        });
+        var chip = null;
+        if (dayKnown && total - day > 0) {
+            var pct = day / (total - day) * 100;
+            if (isFinite(pct)) chip = { tx: (pct >= 0 ? '+' : '−') + Math.abs(pct).toFixed(1).replace('.', ',') + '%', neg: pct < 0 };
+        }
+        // ---- разделы ----
+        var secs = [];
+        pfxRowTabs().forEach(function (t) {
+            var key = t[0];
+            var on = key === 'trading' ? pfxIsTradeTab(eff) : eff === key;
+            secs.push({
+                act: key === 'trading' ? 'trading' : 'pfx', key: key, tx: t[1],
+                icon: null, iconKey: key, on: on, n: pfxSideCount(key)
+            });
+            // экраны «Торговли» — третий уровень, разворачивается на своём разделе
+            if (key === 'trading' && on) {
+                var tabs = PF.pfxTradeTabs ? PF.pfxTradeTabs() : ['trading'];
+                if (tabs.length > 1) {
+                    tabs.forEach(function (tt) {
+                        secs.push({
+                            act: 'pfx', key: tt, cls: 'lvl3',
+                            tx: (PF.pfxTradeName && PF.pfxTradeName(tt)) || 'Основной',
+                            on: eff === tt
+                        });
+                    });
+                }
+            }
+        });
+        // ---- открытые вкладки-портфели ----
+        var curPid = pfxIsPfTab(eff) ? eff.slice(3) : null;
+        var ports = pfxOpenPfTabs.map(findPf).filter(Boolean).map(function (p) {
+            var c = calcPf(p);
+            return {
+                act: 'pf', key: p.id, tx: p.name, dot: colorVal(p.color),
+                on: curPid === p.id, cls: p.hidden ? 'dim' : '',
+                title: p.name + ' · ' + fmtRub(c.value),
+                chg: pfxSideDay(p, c.value),
+                close: { act: 'pf-close', key: p.id }
+            };
+        });
+        ports.push({ act: 'pf-new', key: '', tx: 'Новый портфель', iconKey: 'plus', cls: 'gh' });
+        var groups = [{ label: 'Разделы', items: secs }];
+        groups.push({ label: 'Открытые портфели', items: ports });
+        return {
+            title: 'Портфели',
+            cap: items.length ? fmtRub(total) : null,
+            chip: chip,
+            groups: groups,
+            foot: { act: 'pfx', key: 'settings', tx: 'Настройки', iconKey: 'settings', on: eff === 'settings' }
+        };
+    };
     // Ряд подвкладок. С 2026-07-21 живёт НЕ на странице, а в середине глобальной
     // шапки (#topBarPfMarket, наполняет renderTopBarMarket в portfolios.js), прижат
     // К ПИЛЮЛЕ раздела: на широком экране центрирование уводило ряд на середину
@@ -270,8 +369,11 @@
         var host = document.getElementById('topBarActions');
         var anchor = document.getElementById('topSearchBtn');
         var gear = document.getElementById('pfxTab-settings');
-        var need = pfxWide() && PF.store.items.length &&
-            (typeof currentTab === 'undefined' || currentTab === 'portfolios');
+        // Шестерёнка в кластере шапки БОЛЬШЕ НЕ НУЖНА: «Настройки» вернулись в
+        // навигацию — они прижаты к низу колонки сайдбара (PF.sbSideModel.foot).
+        // Функция осталась снимающей: у кого кнопка уже висит в живой вкладке,
+        // тот получит её удаление на первом же рендере.
+        var need = false;
         if (!need) { if (gear) gear.remove(); return; }
         if (!host || !anchor) return;
         if (!gear) {
@@ -301,10 +403,18 @@
             var p = findPf(eff.slice(3));
             return '<div id="pfxTabPanel" role="tabpanel" aria-label="Дашборд портфеля «' + attr(p ? p.name : '') + '»">' + inner + '</div>';
         }
-        // экраны «Торговли» называет одна и та же вкладка ряда (#pfxTab-trading):
-        // aria-labelledby обязан указывать на СУЩЕСТВУЮЩИЙ id, а кнопки 'trading:2' нет
+        // Ряда подвкладок в шапке больше нет — второй уровень уехал в колонку
+        // сайдбара (PF.sbSideModel + js/sidebar-ctx.js), кнопок #pfxTab-* в
+        // документе не осталось. aria-labelledby указывал бы в пустоту, поэтому
+        // панель называем НАПРЯМУЮ подписью активной подвкладки.
         var slug = pfxIsTradeTab(eff) ? 'trading' : eff;
-        return '<div id="pfxTabPanel" role="tabpanel" aria-labelledby="pfxTab-' + slug + '">' + inner + '</div>';
+        var nm = '';
+        for (var i = 0; i < PFX_TABS.length; i++) if (PFX_TABS[i][0] === slug) { nm = PFX_TABS[i][1]; break; }
+        if (pfxIsTradeTab(eff) && PF.pfxTradeName) {
+            var sn = PF.pfxTradeName(eff);
+            if (sn) nm += ' · ' + sn;
+        }
+        return '<div id="pfxTabPanel" role="tabpanel" aria-label="' + attr(nm || 'Портфели') + '">' + inner + '</div>';
     }
 
     // ---- подвкладка «Торговля»: гейт по состоянию подключения брокера ----
@@ -956,8 +1066,12 @@
     function pfxCrumbSync() {
         var crumb = document.getElementById('topBarCrumb');
         if (!crumb) return;
-        pfxCrumbWatch(crumb);
-        if (!pfxWide()) {
+        // Селектор портфелей на пилюле СНЯТ: открытые вкладки-портфели переехали
+        // в колонку сайдбара («Открытые портфели»), а пилюля вернулась к честной
+        // крошке раздела «Портфели». Ветка ниже снимает узлы и класс — тем, у
+        // кого они уже стоят в живой вкладке.
+        var legacyOff = true;
+        if (legacyOff || !pfxWide()) {
             crumb.classList.remove('pf-sel-on');
             var s0 = document.getElementById('pfCrumbSel'); if (s0) s0.remove();
             var p0 = document.getElementById('pfCrumbPop'); if (p0) p0.remove();

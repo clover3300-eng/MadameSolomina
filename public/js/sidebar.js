@@ -9,57 +9,33 @@
         });
     }
 
-    // Default state: on desktop the sidebar rests collapsed (icon rail) and
-    // expands on hover; on mobile it's an off-canvas drawer. The user can pin
-    // it open via the collapse toggle, which we remember in localStorage ('0').
-    // We (re)apply this whenever the viewport crosses the desktop breakpoint so
-    // it survives resizes and late viewport sizing.
+    // Состояние по умолчанию. С переходом на рейку «Подъём» (мокап В3-б) смысл
+    // sb-collapsed изменился: это больше не «узкая рейка против широкой панели»,
+    // а «спрятана ли КОЛОНКА второго уровня» — сама рейка 76px видна всегда.
+    // Поэтому по умолчанию сайдбар РАЗВЁРНУТ: колонка и есть навигация раздела,
+    // прятать её по умолчанию значило бы прятать подвкладки. Явный выбор
+    // пользователя (localStorage) по-прежнему старше умолчания.
     function applySidebarDefault() {
         try {
             var stored = localStorage.getItem('sbCollapsed');
-            if (stored === null) {
-                document.body.classList.toggle('sb-collapsed', sbIsDesktop());
-            } else {
-                document.body.classList.toggle('sb-collapsed', stored === '1');
-            }
+            document.body.classList.toggle('sb-collapsed', stored === '1');
         } catch (e) {}
         if (window.updateCollapseLabel) window.updateCollapseLabel();
+        if (window.sbCtxSync) window.sbCtxSync();
     }
     applySidebarDefault();
     if (sbMqDesktop.addEventListener) sbMqDesktop.addEventListener('change', applySidebarDefault);
     else if (sbMqDesktop.addListener) sbMqDesktop.addListener(applySidebarDefault);
     window.addEventListener('load', applySidebarDefault);
 
-    // Desktop hover-to-peek: while the cursor is over the collapsed rail the
-    // sidebar expands and the content column shifts right (same as pinned);
-    // moving the cursor away (into the content) collapses it again.
+    // Hover-peek ОТМЕНЁН вместе с переходом на рейку «Подъём»: подглядывание
+    // существовало ровно ради подписей разделов, а на рейке 76px подписи есть
+    // всегда. Класс sb-peek больше никто не ставит; правила под него в
+    // site-layout.css остались нейтральными (css/sidebar-rail.css задаёт
+    // ширины для обоих состояний одинаково).
     document.addEventListener('DOMContentLoaded', function() {
         applySidebarDefault();
-
-        var sb = document.getElementById('sideBar');
-        if (!sb) return;
-        // Раскрытие по наведению — с небольшой задержкой «намерения»: случайный
-        // пролёт курсора через рельсу больше не вспыхивает оверлеем над контентом.
-        // У САМОЙ левой грани окна (мёртвая зона EDGE_DEAD px) не раскрываемся —
-        // там ОС/браузер выкидывает свою боковую панель, и два сайдбара разом
-        // выглядят странно. Открыть можно, отведя курсор чуть правее по рельсе.
-        var peekTimer = null, peekArmed = false;
-        var EDGE_DEAD = 4;
-        function onRailMove(e) {
-            if (!sbIsDesktop() || !document.body.classList.contains('sb-collapsed')) return;
-            if (e.clientX <= EDGE_DEAD) {           // у самого края — гасим намерение
-                clearTimeout(peekTimer); peekArmed = false; return;
-            }
-            if (peekArmed || document.body.classList.contains('sb-peek')) return;
-            peekArmed = true;
-            peekTimer = setTimeout(function() { document.body.classList.add('sb-peek'); }, 180);
-        }
-        sb.addEventListener('mouseenter', onRailMove);
-        sb.addEventListener('mousemove', onRailMove);
-        sb.addEventListener('mouseleave', function() {
-            clearTimeout(peekTimer); peekArmed = false;
-            document.body.classList.remove('sb-peek');
-        });
+        document.body.classList.remove('sb-peek');
     });
 
     // Keep the footer toggle's label honest: collapsed → it pins the menu open,
@@ -79,6 +55,7 @@
         document.body.classList.remove('sb-peek');
         try { localStorage.setItem('sbCollapsed', collapsed ? '1' : '0'); } catch (e) {}
         updateCollapseLabel();
+        if (window.sbCtxSync) window.sbCtxSync();   // колонка второго уровня прячется/возвращается
         // ширина сайдбара изменилась → пересчитываем левый край портфеля
         requestAnimationFrame(function() {
             window.pfSyncLeftEdge && window.pfSyncLeftEdge();
@@ -236,6 +213,9 @@
         document.querySelectorAll('.sb-sub').forEach(function(s) {
             s.classList.toggle('active', !!activeSub && s.getAttribute('data-sub') === activeSub);
         });
+        // Колонка второго уровня зеркалит эти же .sb-sub («Расчёт»/«Рынок») и
+        // спрашивает PF о «Портфелях» — пересобирается ПОСЛЕ простановки .active
+        if (window.sbCtxSync) window.sbCtxSync();
     }
     window.sbSyncActive = sbSyncActive;
 

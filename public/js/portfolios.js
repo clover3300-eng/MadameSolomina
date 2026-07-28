@@ -418,16 +418,16 @@
     // слот при уходе со вкладки обёртка switchTab (секция «ИНТЕГРАЦИЯ» внизу);
     // ленты Главной и «Рынка» (#topBarDashMarket/#topBarMktMarket) остаются
     // заглушенными точечным правилом в portfolios.css.
+    // Ряд подвкладок в середине шапки СНЯТ: второй уровень «Портфелей» переехал
+    // в колонку сайдбара (PF.sbSideModel + js/sidebar-ctx.js), где помещается
+    // целиком — вместе со «Настройками», экранами «Торговли» и открытыми
+    // вкладками-портфелями. Слот держим пустым и скрытым, а не удаляем: он
+    // общий для вкладок (.topbar-tab-market), и обёртка switchTab им управляет.
     function renderTopBarMarket() {
         var host = document.getElementById('topBarPfMarket'); if (!host) return;
-        var html = pfxTabsHtml();   // '' — у гостя и на мобиле: слот не показываем
-        if (!html) {
-            if (host.__pfxHtml) { host.innerHTML = ''; host.__pfxHtml = ''; }
-            host.style.display = 'none';
-            return;
-        }
-        if (host.__pfxHtml !== html) { host.innerHTML = html; host.__pfxHtml = html; }
-        host.style.display = 'flex';
+        if (host.__pfxHtml) { host.innerHTML = ''; host.__pfxHtml = ''; }
+        host.style.display = 'none';
+        if (window.sbCtxSync) window.sbCtxSync();   // вместо ряда пересобираем колонку
     }
     // Рыночной ленты в шапке больше нет — живые значения нужны только виджету
     // «Рынок сейчас» (pfwIdxHtml); источник прежний: скрытые span'ы дашборда
