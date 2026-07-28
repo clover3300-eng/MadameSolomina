@@ -54,6 +54,27 @@
         var fill = (n.fill === 'full' || n.fill === 'none') ? n.fill : 'edge';   // заливка: кант | вся карточка | без линии
         return { id: String(n.id || genId('n')), color: color, items: items, due: due, dueStart: dueStart, name: name, fill: fill };
     }
+    // ---- пресеты высоты S/M/L — МЯГКИЕ ----------------------------------------
+    // S задаёт ПОТОЛОК (max-height), L — ПОЛ (min-height), M — высоту по содержимому.
+    // Раньше оба были жёсткой height, и у виджетов с коротким контентом (KPI, «Ставки»,
+    // «Дивиденды») S = 300px оказывался ВЫШЕ, чем M «по содержимому» ≈ 80–230px, а L = 560
+    // ужимал «Календарь» (~610px) — размеры путались местами. Теперь порядок S ≤ M ≤ L
+    // соблюдается всегда: S только ужимает высокое, L только растягивает низкое.
+    var PFD_H_S = 300, PFD_H_L = 560;
+    // Миграция раскладок, сохранённых ДО мягких пресетов: там S/L лежали жёсткой высотой
+    // 300/560 без пометки режима. Ровно эти два значения читаем как пресеты (ручной ресайз
+    // попадает в них разве что случайно) — иначе старые дашборды остались бы с прежней
+    // путаницей «S выше, чем M».
+    function pfdMigrHm(c) {
+        var hm = (c && c.hm && typeof c.hm === 'object') ? c.hm : {};
+        var h = (c && c.h) || {};
+        Object.keys(h).forEach(function (id) {
+            if (id === 'panel' || hm[id]) return;
+            if (+h[id] === PFD_H_S) hm[id] = 'max';
+            else if (+h[id] === PFD_H_L) hm[id] = 'min';
+        });
+        return hm;
+    }
     PF.dashCfg = loadDashCfg();   // конфиг АКТИВНОЙ подвкладки (подменяется pfxSyncCfg) — только через PF
     PF.dashEdit = false;        // режим правки (не персистится)
     PF.pfdWantRender = false;   // наш собственный ре-рендер в режиме правки
@@ -73,12 +94,15 @@
                 if (Array.isArray(c.order)) c.order = c.order.map(function (x) { return x === 'cap' ? 'cap2' : x; });
             }
             return { on: firstRun ? true : !!c.on, order: Array.isArray(c.order) ? c.order : [], span: c.span || {}, h: c.h || {},
+                // режим высоты пресетов: 'max' (S — «не выше») / 'min' (L — «не ниже»);
+                // без записи высота из h жёсткая (ручной ресайз) — см. pfdHProp
+                hm: pfdMigrHm(c),
                 hidden: c.hidden || {}, col: c.col || {}, notes: notes,
                 allocPf: c.allocPf || 'all',                    // выбранный портфель в «Распределении активов»
                 thm: (c.thm && typeof c.thm === 'object') ? c.thm : {},   // per-виджет тема ('dark') из пикера
                 corner: (c.corner === 'main' || c.corner === 'lg') ? c.corner : 'std',   // скругление карточек
                 saved: c.saved || null };                       // снимок сохранённой раскладки (для «Вернуть сохранённую»)
-        } catch (e) { return { on: true, order: [], span: {}, h: {}, hidden: {}, col: {}, notes: [], allocPf: 'all', thm: {}, corner: 'std', saved: null }; }
+        } catch (e) { return { on: true, order: [], span: {}, h: {}, hm: {}, hidden: {}, col: {}, notes: [], allocPf: 'all', thm: {}, corner: 'std', saved: null }; }
     }
     // R9.4: ручной known-список (pfdKnownIds) УДАЛЁН — он молча стирал из конфига
     // любой виджет, который забыли в него дописать (мина для каждого нового
@@ -100,7 +124,7 @@
             // тащит его в облако через cloud-sync). Скрытые портфели остаются в
             // PF.store.items, их раскладка переживает «скрыть/показать».
             PF.dashCfg.order = (PF.dashCfg.order || []).filter(function (id) { return !pfdDeadId(id); });
-            [PF.dashCfg.span, PF.dashCfg.h, PF.dashCfg.hidden, PF.dashCfg.col, PF.dashCfg.thm].forEach(function (m) {
+            [PF.dashCfg.span, PF.dashCfg.h, PF.dashCfg.hm, PF.dashCfg.hidden, PF.dashCfg.col, PF.dashCfg.thm].forEach(function (m) {
                 Object.keys(m || {}).forEach(function (id) { if (pfdDeadId(id)) delete m[id]; });
             });
             // R8: активная раскладка пер-вкладочная. «Обзор» живёт в старом ключе pf_dash_v1
@@ -136,6 +160,7 @@
         c = c || {};
         var notes = Array.isArray(c.notes) ? c.notes.filter(function (n) { return n && n.id; }).map(pfdNormNote) : [];
         return { on: true, order: Array.isArray(c.order) ? c.order : [], span: c.span || {}, h: c.h || {},
+            hm: pfdMigrHm(c),
             hidden: c.hidden || {}, col: c.col || {}, thm: (c.thm && typeof c.thm === 'object') ? c.thm : {},
             // name — подпись ЭКРАНА «Торговли» (см. pfxIsTradeTab): имя живёт в самом
             // конфиге, а не отдельным ключом, поэтому едет в облако вместе с раскладкой
@@ -505,7 +530,8 @@
         var isNote = function (id) { return id.indexOf('note:') === 0; };
         function remap(m) { var o = {}; Object.keys(m || {}).forEach(function (k) { if (!isNote(k)) o[tok(k)] = m[k]; }); return o; }
         return { order: order.filter(function (id) { return !isNote(id); }).map(tok),
-            span: remap(snap.span), h: remap(snap.h), hidden: remap(snap.hidden), col: remap(snap.col), allocPf: 'all' };
+            span: remap(snap.span), h: remap(snap.h), hm: remap(snap.hm), hidden: remap(snap.hidden),
+            col: remap(snap.col), allocPf: 'all' };
     }
     // ---- инстанцирование: портативный пресет → раскладка для ЭТОГО пользователя ----
     function pfPresetInstantiate(snap) {
@@ -518,12 +544,12 @@
         var order = [], seen = {};
         (snap.order || []).forEach(function (id) { var r = sub(id); if (r && !seen[r]) { order.push(r); seen[r] = 1; } });
         function remap(m) { var o = {}; Object.keys(m || {}).forEach(function (k) { var r = sub(k); if (r) o[r] = m[k]; }); return o; }
-        var span = remap(snap.span), h = remap(snap.h), hidden = remap(snap.hidden), col = remap(snap.col);
+        var span = remap(snap.span), h = remap(snap.h), hm = remap(snap.hm), hidden = remap(snap.hidden), col = remap(snap.col);
         // портфелей БОЛЬШЕ, чем в пресете — не теряем: добавляем хвост карточек дефолтным размером
         real.forEach(function (id) { if (!seen[id]) { order.push(id); if (span[id] == null) span[id] = 4; } });
         // личные заметки пользователя сохраняем — их блоки дописываем в конец
         (PF.dashCfg.notes || []).forEach(function (n) { var id = 'note:' + n.id; if (order.indexOf(id) === -1) order.push(id); });
-        return { order: order, span: span, h: h, hidden: hidden, col: col, allocPf: snap.allocPf || 'all' };
+        return { order: order, span: span, h: h, hm: hm, hidden: hidden, col: col, allocPf: snap.allocPf || 'all' };
     }
     // структурная подпись раскладки (без заметок) — для отметки «активен» у пресета
     function pfStructSig(c) {
@@ -670,6 +696,10 @@
             grid.style.setProperty('--pft-row', '1px');
             void grid.offsetHeight;   // заставляем применить ДО замеров ниже
         }
+        // ширина колонок изменилась → натуральная высота блока другая: мягкие пресеты
+        // пересматривают решение перед каждой упаковкой (в полноэкранном режиме высоту
+        // всё равно диктует растяжка — там подгонка не нужна)
+        if (!fs) items.forEach(function (item) { pfdSoftFit(item, item.getAttribute('data-pfd')); });
         items.forEach(function (item) {
             var span = pfdSpanOf(item, colW, gap);
             var h = Math.max(1, Math.ceil(item.offsetHeight));
@@ -767,6 +797,11 @@
                 if (el.classList && el.classList.contains('pfd-item')) pfdRO.observe(el);
             });
         }
+        // мягкие пресеты: решение «ужать / растянуть / оставить как есть» принимаем ДО
+        // упаковки — pfdPack меряет уже итоговые высоты
+        Array.prototype.forEach.call(grid.children, function (el) {
+            if (el.classList && el.classList.contains('pfd-item')) pfdSoftFit(el, el.getAttribute('data-pfd'));
+        });
         pfdPack();   // синхронно — первый пейнт уже с masonry-раскладкой, без мигания
     }
 
@@ -982,6 +1017,44 @@
     // высотой колонки (идентити+KPI+кнопки+отступы) — тогда переход бесшовный: ниже порога
     // min-height ужимает панель плавно до ~84px, выше — колонка заполняет высоту.
     var PFD_PANEL_TALL = 320;
+    // мягкий ли режим высоты у блока (пресет S/L из пикера и поповера)
+    function pfdSoftMode(id) {
+        if (id === 'panel') return '';
+        var m = (PF.dashCfg.hm || {})[id];
+        return (m === 'max' || m === 'min') ? m : '';
+    }
+    // ПОДГОНКА МЯГКОГО ПРЕСЕТА. Чистым CSS (max-height/min-height) её сделать нельзя:
+    // hset-правила отдают внутренностям карточки всю высоту блока (height:100%/flex:1),
+    // и блок с «резиновым» контентом схлопывается к своему пределу — «Календарь» в L
+    // ужимался до 560 вместо своих 610. Поэтому решаем в JS: меряем НАТУРАЛЬНУЮ высоту
+    // (без заданной высоты, без hset и вне растянутой masonry-ячейки) и включаем жёсткую
+    // height только в нужную сторону — S ужимает высокое, L растягивает низкое.
+    function pfdSoftFit(item, id) {
+        var mode = pfdSoftMode(id);
+        if (!mode) return false;
+        var h = +((PF.dashCfg.h || {})[id]) || 0;
+        if (!h) return false;
+        var gr = item.style.gridRow;
+        item.style.gridRow = 'auto'; item.style.height = '';
+        item.classList.remove('pfd-hset');
+        var nat = item.offsetHeight;
+        item.style.gridRow = gr;
+        var fit = (mode === 'max') ? (nat > h + 4) : (nat < h - 4);
+        if (fit) { item.style.height = h + 'px'; item.classList.add('pfd-hset'); }
+        return true;
+    }
+    // применить высоту блока живьём (пикер/поповер) — один способ на всех, чтобы
+    // inline-стиль всегда совпадал с тем, что нарисует рендер
+    function pfdApplyH(item, id) {
+        var h = +((PF.dashCfg.h || {})[id]) || 0;
+        var isPanel = id === 'panel';
+        item.style.maxHeight = ''; item.style.minHeight = '';
+        if (pfdSoftMode(id)) { item.style.height = ''; item.classList.remove('pfd-hset'); pfdSoftFit(item, id); return; }
+        item.style.height = (!isPanel && h) ? h + 'px' : '';
+        item.style.minHeight = (isPanel && h) ? h + 'px' : '';
+        item.classList.toggle('pfd-hset', !!h && !isPanel);
+        if (isPanel) item.classList.toggle('pfd-ptall', h >= PFD_PANEL_TALL);
+    }
     // мини-эскизы блоков для полки «Добавить блок» — не рендерим тяжёлый настоящий блок,
     // а показываем узнаваемый набросок (карточка + характерная графика)
     var PV_CARD = '<rect x="6" y="7" width="108" height="46" rx="9" class="pv-card"/>';
@@ -1335,9 +1408,12 @@
             var minH = 72;
             // Панель — контент-бар: заданная высота работает как МИНИМУМ (растёт под контент при
             // узкой ширине — кнопки не режутся), БЕЗ hset-клипа (меню/поповеры не обрезаются).
+            // мягкий пресет (S/L) высоту в разметку НЕ пишет: её ставит pfdSoftFit уже в DOM,
+            // когда известна натуральная высота блока (см. pfdSchedulePack)
+            var soft = pfdSoftMode(b.id);
             var style = 'grid-column: span ' + span + ';' +
-                (h ? ((isPanel ? 'min-height:' : 'height:') + clamp(h, minH, 1400) + 'px;') : '');
-            var hsetClass = (h && !isPanel) ? ' pfd-hset' : '';
+                ((h && !soft) ? ((isPanel ? 'min-height:' : 'height:') + clamp(h, minH, 1400) + 'px;') : '');
+            var hsetClass = (h && !isPanel && !soft) ? ' pfd-hset' : '';
             // Высокая «Панель управления»: контент раскладывается по ВСЕЙ высоте (идентити сверху,
             // KPI акцентом, кнопки снизу), а не висит компактной группой в центре пустоты. Порог
             // PFD_PANEL_TALL ≈ натуральной высоте колонки — ниже него панель = компактная полоса
@@ -1494,6 +1570,7 @@
     function pfdSavedSnap() {
         return { order: (PF.dashCfg.order || []).slice(),
             span: Object.assign({}, PF.dashCfg.span), h: Object.assign({}, PF.dashCfg.h),
+            hm: Object.assign({}, PF.dashCfg.hm || {}),
             hidden: Object.assign({}, PF.dashCfg.hidden), col: Object.assign({}, PF.dashCfg.col),
             thm: Object.assign({}, PF.dashCfg.thm || {}),
             notes: JSON.parse(JSON.stringify(PF.dashCfg.notes || [])),
@@ -1503,6 +1580,7 @@
     function pfdLayoutSig(snap) {
         snap = snap || {};
         return JSON.stringify([snap.order || [], pfdCanonMap(snap.span), pfdCanonMap(snap.h),
+            pfdCanonMap(snap.hm),
             pfdCanonMap(snap.hidden), pfdCanonMap(snap.col), snap.allocPf || 'all',
             pfdCanonMap(snap.thm),
             (snap.notes || []).map(function (n) { return [n.id, n.text || '', n.items || [], n.due || '']; })]);
@@ -1797,6 +1875,7 @@
         delete PF.dashCfg.cleared;
         PF.dashCfg.order = (s.order || []).slice();
         PF.dashCfg.span = Object.assign({}, s.span); PF.dashCfg.h = Object.assign({}, s.h);
+        PF.dashCfg.hm = Object.assign({}, s.hm || {});
         PF.dashCfg.hidden = Object.assign({}, s.hidden); PF.dashCfg.col = Object.assign({}, s.col);
         PF.dashCfg.thm = Object.assign({}, s.thm || {});
         PF.dashCfg.notes = JSON.parse(JSON.stringify(s.notes || []));
@@ -1880,7 +1959,7 @@
         // бы его от реестра вкладок); corner/notes/saved остаются как были
         PF.dashCfg.on = true;
         delete PF.dashCfg.cleared;
-        PF.dashCfg.order = c.order; PF.dashCfg.span = c.span; PF.dashCfg.h = c.h;
+        PF.dashCfg.order = c.order; PF.dashCfg.span = c.span; PF.dashCfg.h = c.h; PF.dashCfg.hm = {};
         PF.dashCfg.hidden = c.hidden; PF.dashCfg.col = c.col; PF.dashCfg.thm = {};
         PF.dashCfg.allocPf = c.allocPf;
         PF.dashEdit = false;
@@ -1953,7 +2032,7 @@
         var c = pfPresetInstantiate(p.snap);
         PF.dashCfg.on = true;
         delete PF.dashCfg.cleared;
-        PF.dashCfg.order = c.order; PF.dashCfg.span = c.span; PF.dashCfg.h = c.h;
+        PF.dashCfg.order = c.order; PF.dashCfg.span = c.span; PF.dashCfg.h = c.h; PF.dashCfg.hm = c.hm || {};
         PF.dashCfg.hidden = c.hidden; PF.dashCfg.col = c.col; PF.dashCfg.allocPf = c.allocPf;
         saveDashCfg();
         PF.dashEdit = false;
@@ -2104,12 +2183,14 @@
         if (cn && PF.pfcChartLabel) return PF.pfcChartLabel(cn);
         return id === 'panel' ? 'Панель управления' : 'Виджет';
     }
-    // текущий пресет высоты — те же значения, что пишет пикер (s=300 / l=560 / m=авто);
-    // произвольная высота от ручного ресайза не подсвечивает ни одну кнопку
+    // текущий пресет высоты — те же значения, что пишет пикер (s=потолок 300 / l=пол 560 /
+    // m=по содержимому); произвольная высота от ручного ресайза (жёсткая, без hm) не
+    // подсвечивает ни одну кнопку
     function pfdCfgSizeOf(id) {
         var h = +((PF.dashCfg.h || {})[id]) || 0;
         if (!h) return 'm';
-        return h === 300 ? 's' : h === 560 ? 'l' : '';
+        var m = (PF.dashCfg.hm || {})[id];
+        return (m === 'max' && h === PFD_H_S) ? 's' : (m === 'min' && h === PFD_H_L) ? 'l' : '';
     }
     function pfdCfgHtml(id) {
         var size = pfdCfgSizeOf(id);
@@ -2141,9 +2222,9 @@
             // выбора темы здесь нет: все виджеты стеклянные (см. pfdItemsHtml)
             '<div class="pfdcfg-lbl">Высота</div>' +
             '<div class="pfdcfg-seg">' +
-                segBtn('pfdCfgSetSize', 's', size, 'S', 'Компактный · 300 px') +
+                segBtn('pfdCfgSetSize', 's', size, 'S', 'Компактный · не выше 300 px') +
                 segBtn('pfdCfgSetSize', 'm', size, 'M', 'Средний · по содержимому') +
-                segBtn('pfdCfgSetSize', 'l', size, 'L', 'Большой · 560 px') +
+                segBtn('pfdCfgSetSize', 'l', size, 'L', 'Большой · не ниже 560 px') +
             '</div>' +
             capExtra +
             '<div class="pfdcfg-hint">Изменения применяются сразу. Ширину и место меняйте перетаскиванием за кромки блока.</div>';
@@ -2208,21 +2289,18 @@
         pfdUpdateSaveBtn();
         updateLayoutBtn();   // поповер раскладки сразу видит «не сохранена» после смены раскраски
     };
-    // высота — пресеты пикера (s=300 / m=авто / l=560); стиль блока правим живьём и
-    // перепаковываем masonry — ровно как штатный ресайз за кромку
+    // высота — МЯГКИЕ пресеты пикера (s = потолок 300 / m = по содержимому / l = пол 560);
+    // стиль блока правим живьём и перепаковываем masonry — ровно как штатный ресайз за кромку
     window.pfdCfgSetSize = function (id, s) {
         pfdPushUndo();
-        var hMap = { s: 300, l: 560 };
-        if (s === 'm') delete PF.dashCfg.h[id]; else PF.dashCfg.h[id] = hMap[s];
+        PF.dashCfg.hm = PF.dashCfg.hm || {};
+        var hMap = { s: PFD_H_S, l: PFD_H_L }, mMap = { s: 'max', l: 'min' };
+        if (s === 'm') { delete PF.dashCfg.h[id]; delete PF.dashCfg.hm[id]; }
+        else { PF.dashCfg.h[id] = hMap[s]; PF.dashCfg.hm[id] = mMap[s]; }
         saveDashCfg();
         var item = document.querySelector('#pfWrap .pfd-item[data-pfd="' + id + '"]');
         if (item) {
-            var h = +(PF.dashCfg.h[id]) || 0;
-            var isPanel = id === 'panel';
-            item.style.height = (!isPanel && h) ? h + 'px' : '';
-            item.style.minHeight = (isPanel && h) ? h + 'px' : '';
-            item.classList.toggle('pfd-hset', !!h && !isPanel);
-            if (isPanel) item.classList.toggle('pfd-ptall', h >= PFD_PANEL_TALL);
+            pfdApplyH(item, id);
             pfdRepackSoon();
         }
         pfdCfgRepaint();
@@ -2275,7 +2353,7 @@
     // ---- undo: каждый шаг правки кладёт снимок раскладки, Cmd/Ctrl+Z возвращает ----
     // Стек живёт в памяти на сессию правки (вход в режим начинает новую).
     var pfdUndoStack = [];
-    function pfdCfgSnap() { return JSON.stringify({ order: PF.dashCfg.order, span: PF.dashCfg.span, h: PF.dashCfg.h, hidden: PF.dashCfg.hidden, col: PF.dashCfg.col, thm: PF.dashCfg.thm, notes: PF.dashCfg.notes }); }
+    function pfdCfgSnap() { return JSON.stringify({ order: PF.dashCfg.order, span: PF.dashCfg.span, h: PF.dashCfg.h, hm: PF.dashCfg.hm, hidden: PF.dashCfg.hidden, col: PF.dashCfg.col, thm: PF.dashCfg.thm, notes: PF.dashCfg.notes }); }
     function pfdPushUndo() {
         pfdUndoStack.push(pfdCfgSnap());
         if (pfdUndoStack.length > 40) pfdUndoStack.shift();
@@ -2288,7 +2366,7 @@
         try {
             var o = JSON.parse(snap);
             PF.dashCfg.order = o.order || []; PF.dashCfg.span = o.span || {};
-            PF.dashCfg.h = o.h || {}; PF.dashCfg.hidden = o.hidden || {}; PF.dashCfg.col = o.col || {};
+            PF.dashCfg.h = o.h || {}; PF.dashCfg.hm = o.hm || {}; PF.dashCfg.hidden = o.hidden || {}; PF.dashCfg.col = o.col || {};
             PF.dashCfg.thm = o.thm || {}; PF.dashCfg.notes = o.notes || [];
         } catch (e) { return; }
         window.pfdCfgClose();   // откат мог поменять/убрать блок с открытым поповером настроек
@@ -2653,19 +2731,20 @@
         var startW = item.offsetWidth, startH = item.offsetHeight;
         var hadH = item.classList.contains('pfd-hset');
         var hadPtall = item.classList.contains('pfd-ptall');
-        var startColStyle = item.style.gridColumn, startHStyle = item.style.height, startMinHStyle = item.style.minHeight;
+        var startColStyle = item.style.gridColumn, startHStyle = item.style.height, startMinHStyle = item.style.minHeight,
+            startMaxHStyle = item.style.maxHeight;
         var id = item.getAttribute('data-pfd');
         // ОБЩЕЕ ПРАВИЛО виджетов: минимум по высоте = натуральная высота блока (его контент),
         // а не фикс-порог 240 — иначе «Ставки» (полоса ~85px) и т.п. нельзя вернуть в линию.
         // natH меряем один раз на старте: снимаем заданную высоту/hset/ptall, читаем offsetHeight,
         // возвращаем как было (синхронно, без мигания). Утянул ниже natH → блок сворачивается в АВТО.
         var natH = (function () {
-            var sh = item.style.height, smh = item.style.minHeight,
+            var sh = item.style.height, smh = item.style.minHeight, smx = item.style.maxHeight,
                 hh = item.classList.contains('pfd-hset'), pt = item.classList.contains('pfd-ptall');
-            item.style.height = ''; item.style.minHeight = '';
+            item.style.height = ''; item.style.minHeight = ''; item.style.maxHeight = '';
             item.classList.remove('pfd-hset'); item.classList.remove('pfd-ptall');
             var n = item.offsetHeight;
-            item.style.height = sh; item.style.minHeight = smh;
+            item.style.height = sh; item.style.minHeight = smh; item.style.maxHeight = smx;
             if (hh) item.classList.add('pfd-hset'); if (pt) item.classList.add('pfd-ptall');
             return n;
         })();
@@ -2824,9 +2903,13 @@
                 } else if (collapse) {
                     // ОБЩЕЕ: любой блок утянутый к натуральной высоте — обратно в авто (без hset-клипа),
                     // так «Ставки» и др. возвращаются в компактную линию, а не застревают
-                    item.style.height = ''; item.style.minHeight = ''; item.classList.remove('pfd-hset');
+                    item.style.height = ''; item.style.minHeight = ''; item.style.maxHeight = '';
+                    item.classList.remove('pfd-hset');
                 } else {
-                    item.style.height = newH + 'px'; item.classList.add('pfd-hset');
+                    // тяга за кромку задаёт ЖЁСТКУЮ высоту — мягкие потолок/пол пресета S/L
+                    // при этом снимаем, иначе они спорили бы с height
+                    item.style.height = newH + 'px'; item.style.minHeight = ''; item.style.maxHeight = '';
+                    item.classList.add('pfd-hset');
                 }
             }
             pfdRepackSoon();   // masonry: соседи переезжают под новый размер
@@ -2848,10 +2931,12 @@
                 // ОБЩЕЕ ПРАВИЛО: около натуральной высоты (±16px) → сбрасываем в АВТО (не пишем
                 // cfg.h); заметно выше ИЛИ НИЖЕ натуральной — сохраняем заданную высоту (ужатый
                 // блок клипуется hset, списки скроллятся внутри).
+                PF.dashCfg.hm = PF.dashCfg.hm || {};
                 if (newH >= snapLo && newH <= snapHi) {
-                    delete PF.dashCfg.h[id]; item.style.height = ''; item.style.minHeight = '';
+                    delete PF.dashCfg.h[id]; delete PF.dashCfg.hm[id];
+                    item.style.height = ''; item.style.minHeight = ''; item.style.maxHeight = '';
                     item.classList.remove('pfd-ptall'); item.classList.remove('pfd-hset');
-                } else { PF.dashCfg.h[id] = newH; }
+                } else { PF.dashCfg.h[id] = newH; delete PF.dashCfg.hm[id]; }   // ручная высота — жёсткая
                 changed = true;
             }
             if (changed) saveDashCfg();
@@ -2868,6 +2953,7 @@
             item.style.gridColumn = startColStyle;
             item.style.height = startHStyle;
             item.style.minHeight = startMinHStyle;
+            item.style.maxHeight = startMaxHStyle;
             if (sideAxis) {   // вернуть прежнюю стартовую колонку (или снять, если её не было)
                 if (colHome == null) { if (PF.dashCfg.col) delete PF.dashCfg.col[id]; }
                 else PF.dashCfg.col[id] = colHome;
@@ -2900,9 +2986,10 @@
         var axis = rs.classList.contains('pfd-rs-r') ? 'x'
                  : rs.classList.contains('pfd-rs-l') ? 'x'
                  : rs.classList.contains('pfd-rs-b') ? 'y' : 'both';
+        PF.dashCfg.hm = PF.dashCfg.hm || {};
         if (axis === 'x') { delete PF.dashCfg.span[id]; toast('Ширина — по умолчанию'); }
-        else if (axis === 'y') { delete PF.dashCfg.h[id]; toast('Высота — авто'); }
-        else if (PF.dashCfg.h[id] != null) { delete PF.dashCfg.h[id]; toast('Высота — авто'); }
+        else if (axis === 'y') { delete PF.dashCfg.h[id]; delete PF.dashCfg.hm[id]; toast('Высота — авто'); }
+        else if (PF.dashCfg.h[id] != null) { delete PF.dashCfg.h[id]; delete PF.dashCfg.hm[id]; toast('Высота — авто'); }
         else { delete PF.dashCfg.span[id]; toast('Ширина — по умолчанию'); }
         saveDashCfg();
         pfdRerender();
@@ -3484,7 +3571,9 @@
     window.pfl2Add = function () {
         if (!pfl2SelIds.length) { toast('Сначала выберите виджет', true); return; }
         var defOn = PF.dashTab === 'overview' ? { fav: 1, cal: 1, rates: 1, trades: 1, sum: 1 } : {};
-        var hMap = { s: 300, l: 560 };
+        // те же МЯГКИЕ пресеты, что в поповере настроек: S — потолок, L — пол
+        var hMap = { s: PFD_H_S, l: PFD_H_L }, mMap = { s: 'max', l: 'min' };
+        PF.dashCfg.hm = PF.dashCfg.hm || {};
         var added = [], skipped = 0, notes = 0;
         pfdPushUndo();
         pfl2SelIds.forEach(function (id) {
@@ -3508,7 +3597,8 @@
                 PF.dashCfg.span = PF.dashCfg.span || {}; PF.dashCfg.span.panel = 12;
                 PF.dashCfg.col = PF.dashCfg.col || {}; PF.dashCfg.col.panel = 1;
             }
-            if (o.size !== 'm') PF.dashCfg.h[real] = hMap[o.size]; else delete PF.dashCfg.h[real];
+            if (o.size !== 'm') { PF.dashCfg.h[real] = hMap[o.size]; PF.dashCfg.hm[real] = mMap[o.size]; }
+            else { delete PF.dashCfg.h[real]; delete PF.dashCfg.hm[real]; }
             if (o.theme === 'dark' || o.theme === 'glass') PF.dashCfg.thm[real] = o.theme; else delete PF.dashCfg.thm[real];
             if (real === 'cap' || real === 'cap2') PF.pfdCapRange = o.period || 'all';
             added.push(real);
