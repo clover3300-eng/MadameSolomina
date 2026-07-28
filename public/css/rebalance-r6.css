@@ -155,7 +155,7 @@ body.dark-mode .rbx-bh .t { color: #F1F5F9; }
 }
 body.dark-mode .rbx-bh .cnt { color: #8b98ab; }
 /* инструменты (сортировка ОФЗ / подсказка эшелонов) прижаты вправо */
-.rbx-bh .rbx-sort, .rbx-bh .rbx-esh-hint { margin-left: auto; }
+.rbx-bh .rbx-esh-hint { margin-left: auto; }
 
 /* KPI бывшего тёмного героя: средняя доходность и средний потенциал переехали
    в витрины СВОИХ списков — число встало рядом с тем, что оно описывает. */
@@ -198,16 +198,20 @@ body.dark-mode .rbx-hint:hover { color: #eef2f7; background: rgba(255, 255, 255,
    второй уровень сайдбара (#sbCtx, .sbc-why в css/sidebar-rail.css), где у
    «Академии» пустовал слот. Полная редакция текста — в шторке #rbxAcademy. */
 
-/* Кнопки сортировки (Доходность / Цена) — живут в плоском ряду переключателя,
-   поэтому и сами плоские: рамка с белой заливкой возвращала бы в ряд «интерфейс»,
-   от которого мы там уходим. Активная — только цветом текста и стрелкой. */
-.rbx-sort { display: flex; gap: 2px; }
+/* Кнопки сортировки (Доходность / Цена) живут ТОЛЬКО в ряду заголовков колонок
+   (.rbx-colhead), поэтому их палитра — палитра этого ряда, а не своя: неактивный
+   заголовок обязан читаться заодно с соседним «Инструмент». Активная колонка
+   выделяется тоном текста и стрелкой — это единственное отличие.
+   Тона повторяют .rbx-colhead один в один; менять их — только вместе.
+   (Переопределять цвет контекстным `body.dark-mode .rbx-colhead .rbx-sc` не
+   выходит: собственные правила класса перебивали его, и активный заголовок
+   чернел на тёмном фоне. Раз класс больше нигде не используется — правим здесь.) */
 .rbx-sc {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 7px 9px; border-radius: 4px; cursor: pointer;
     border: none; background: transparent;
     font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.12em; color: #a8b1bf;
+    text-transform: uppercase; letter-spacing: 0.12em; color: #94A3B8;
     transition: background 0.18s ease, color 0.18s ease;
 }
 .rbx-sc:hover { color: #12161f; background: rgba(18, 22, 31, 0.045); }
@@ -218,7 +222,7 @@ body.dark-mode .rbx-hint:hover { color: #eef2f7; background: rgba(255, 255, 255,
 .rbx-sc.act .ic-neutral { opacity: 0; }
 .rbx-sc.act .ic-dir { opacity: 1; }
 .rbx-sc.act.asc .ic-dir { transform: rotate(180deg); }
-body.dark-mode .rbx-sc { color: #6b7889; }
+body.dark-mode .rbx-sc { color: #7d8aa0; }
 body.dark-mode .rbx-sc:hover { color: #e8edf4; background: rgba(255, 255, 255, 0.06); }
 body.dark-mode .rbx-sc.act { color: #e8edf4; }
 
@@ -507,10 +511,7 @@ body.dark-mode .rbx-tile .bar { background: rgba(255, 255, 255, 0.09); }
     .rbx-grid { grid-template-columns: minmax(280px, 0.92fr) minmax(0, 1.5fr); }
     .rbx-top { flex-wrap: wrap; gap: 14px; }
     .rbx-top-act { width: 100%; justify-content: flex-end; }
-    /* витрине списка тесно вчетвером — инструменты сортировки уходят на свою
-       строку, как это уже делает мобильный слой (mobile.css) */
     .rbx-bh { flex-wrap: wrap; row-gap: 8px; }
-    .rbx-bh .rbx-sort { width: 100%; justify-content: flex-end; margin-bottom: -4px; }
 }
 
 /* Блок под prefers-reduced-motion был про анимации тёмного героя (свечения,

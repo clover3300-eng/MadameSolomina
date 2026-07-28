@@ -476,7 +476,7 @@
        инструменты уходят под название */
     .rbx-bh { flex-wrap: wrap; row-gap: 8px; padding: 0 0 10px; margin-bottom: 12px; }
     .rbx-bh .t { font-size: 16px; }
-    .rbx-bh .rbx-sort, .rbx-bh .rbx-esh-hint { width: 100%; justify-content: flex-end; margin-bottom: -4px; }
+    .rbx-bh .rbx-esh-hint { width: 100%; justify-content: flex-end; margin-bottom: -4px; }
 
     /* таблица ОФЗ плотнее */
     .rbx-colhead, .rbx-row-main { grid-template-columns: 22px minmax(0, 1fr) 78px 84px 14px; gap: 5px; }

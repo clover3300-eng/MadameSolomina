@@ -202,7 +202,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .bx-again svg{width:13px;height:13px;color:var(--dim)}
 
 /* ════════════════ СТРАНИЦА «РАСЧЁТ» ════════════════ */
-.pg{flex:1;min-width:0;display:flex;flex-direction:column;padding:0 24px 18px;min-height:0}
+.pg{flex:1;min-width:0;display:flex;flex-direction:column;padding:0 34px 26px;min-height:0}
 
 /* — старая шапка 104px (экраны «как сейчас») — */
 .oh{flex:none;display:flex;align-items:flex-end;gap:34px;padding:20px 2px 16px}
@@ -217,15 +217,15 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .oh .r i{display:block;font-style:normal;margin-top:6px;font-size:10.5px;color:var(--mut)}
 
 /* — рабочая строка суммы (варианты А · В · дубль Б) — */
-.cxb{flex:none;display:flex;align-items:center;gap:16px;padding:16px 2px 13px;border-bottom:1px solid var(--line)}
+.cxb{flex:none;display:flex;align-items:center;gap:26px;padding:26px 2px 20px;border-bottom:1px solid var(--line)}
 .cxb .fld{flex:none}
 .cxb .fld em{font-style:normal;display:block;font-size:8.5px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
 .cxb .fld .v{display:flex;align-items:baseline;gap:6px;margin-top:3px;padding-bottom:4px;border-bottom:1.5px solid var(--bond)}
 .cxb .fld .v b{font-family:var(--fN);font-size:26px;font-weight:700;letter-spacing:-.035em}
 .cxb .fld .v span{font-family:var(--fN);font-size:17px;font-weight:700;color:var(--eqtx)}
-.cxb .chips{display:flex;align-items:center;gap:5px;padding-top:11px}
-.chip{height:27px;padding:0 10px;border-radius:8px;background:var(--bg);display:inline-flex;align-items:center;gap:6px;
-  font-family:var(--fN);font-size:10.5px;font-weight:700;letter-spacing:-.01em;color:var(--mut);white-space:nowrap}
+.cxb .chips{display:flex;align-items:center;gap:8px;padding-top:13px}
+.chip{height:30px;padding:0 12px;border-radius:8px;background:var(--bg);display:inline-flex;align-items:center;gap:7px;
+  font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:-.01em;color:var(--mut);white-space:nowrap}
 .chip.on{background:var(--ink);color:var(--card)}
 .chip.wide{font-family:var(--fU);font-size:11px;font-weight:600}
 .chip svg{width:12px;height:12px;color:var(--dim)}
@@ -235,11 +235,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .cxb .src b{font-family:var(--fN);font-weight:700;color:var(--mut)}
 
 /* — общий каркас карточек — */
-.gr{flex:1;min-height:0;display:grid;gap:14px;margin-top:14px}
+.gr{flex:1;min-height:0;display:grid;gap:20px;margin-top:22px}
 .gr.g2{grid-template-columns:minmax(0,1.24fr) minmax(0,1fr)}
-.gr.g3{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) 236px}
-.gr.g3r{grid-template-columns:236px minmax(0,1.1fr) minmax(0,1fr)}
-.cd{background:var(--card);border-radius:18px;padding:17px 19px;min-width:0;display:flex;flex-direction:column;overflow:hidden;
+.gr.g3{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) 248px}
+.gr.g3r{grid-template-columns:248px minmax(0,1.1fr) minmax(0,1fr)}
+.cd{background:var(--card);border-radius:18px;padding:22px 26px;min-width:0;display:flex;flex-direction:column;overflow:hidden;
   box-shadow:0 1px 2px rgba(16,24,40,.05),0 18px 34px -24px rgba(16,24,40,.4)}
 .sc.dark .cd{box-shadow:0 1px 2px rgba(0,0,0,.3),0 18px 34px -20px rgba(0,0,0,.6)}
 .cd-hd{flex:none;display:flex;align-items:baseline;gap:10px}
@@ -251,7 +251,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .cd-hd .aside i.d0{background:color-mix(in srgb,var(--ink) 11%,transparent)}
 
 /* — крупное число + подстрочник — */
-.lead{display:flex;align-items:baseline;gap:8px;margin-top:14px;font-family:var(--fN);font-size:36px;font-weight:700;
+.lead{display:flex;align-items:baseline;gap:8px;margin-top:20px;font-family:var(--fN);font-size:36px;font-weight:700;
   letter-spacing:-.045em;color:var(--ink);line-height:1}
 .lead .ap{font-size:23px;color:var(--dim);font-weight:600}
 .lead .u{font-size:14px;font-weight:600;color:var(--mut);letter-spacing:-.01em}
@@ -261,7 +261,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .sub b.ce{color:var(--eqtx)}
 
 /* — столбики по годам — */
-.cols{flex:1;min-height:0;display:flex;justify-content:space-between;gap:12px;margin-top:14px}
+.cols{flex:1;min-height:0;display:flex;justify-content:space-between;gap:12px;margin-top:22px}
 .col{flex:1;min-width:0;display:grid;grid-template-rows:auto 1fr auto;justify-items:center}
 .col .v{font-family:var(--fN);font-size:11.5px;font-weight:700;color:var(--ink);padding-bottom:6px;white-space:nowrap}
 .col .stack{width:100%;max-width:88px;height:100%;display:flex;flex-direction:column;justify-content:flex-end}
@@ -271,22 +271,22 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .col .base{background:color-mix(in srgb,var(--ink) 11%,transparent)}
 .col .base.top{border-radius:6px 6px 0 0}
 .col .y{font-family:var(--fN);font-size:10px;font-weight:600;color:var(--mut);padding-top:8px}
-.legend{flex:none;display:flex;gap:14px;margin-top:12px;font-family:var(--fN);font-size:9.5px;font-weight:700;color:var(--mut)}
+.legend{flex:none;display:flex;gap:18px;margin-top:16px;font-family:var(--fN);font-size:9.5px;font-weight:700;color:var(--mut)}
 .legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 .legend .b1{background:color-mix(in srgb,var(--ink) 11%,transparent)}
 .legend .b2{background:var(--bond)}
 .legend .b3{background:var(--eq)}
 
 /* — строка фактов — */
-.facts{flex:none;display:flex;gap:26px;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
-.fact{display:flex;flex-direction:column;gap:4px}
+.facts{flex:none;display:flex;gap:38px;margin-top:20px;padding-top:18px;border-top:1px solid var(--line)}
+.fact{display:flex;flex-direction:column;gap:5px}
 .fact .l{font-size:11px;color:var(--mut)}
 .fact .v{font-family:var(--fN);font-size:14.5px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
 .fact .v.g{color:var(--grn)}
 .fact .v.o{color:var(--eqtx)}
 
 /* — кнопки — */
-.cta{flex:none;display:flex;align-items:center;gap:10px;margin-top:14px}
+.cta{flex:none;display:flex;align-items:center;gap:12px;margin-top:22px}
 .btn{height:42px;padding:0 20px;border-radius:10px;background:var(--ink);color:var(--card);display:inline-flex;align-items:center;gap:9px;
   font-size:13px;font-weight:700;letter-spacing:-.005em;white-space:nowrap}
 .sc.dark .btn{background:#F2F6FC;color:#111823}
@@ -303,9 +303,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .cta .sp{flex:1}
 
 /* — список стратегий (подъём) — */
-.strat{flex:1;min-height:0;margin-top:13px;background:var(--bg);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:2px}
+.strat{flex:1;min-height:0;margin-top:20px;background:var(--bg);border-radius:12px;padding:7px;display:flex;flex-direction:column;gap:3px}
 .sc.dark .strat{background:rgba(255,255,255,.045)}
-.srow{flex:1;display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:10px;min-height:0}
+.srow{flex:1;display:flex;align-items:center;gap:14px;padding:9px 14px;border-radius:10px;min-height:0}
 .srow .wf{flex:none;width:3px;align-self:stretch;border-radius:2px;background:linear-gradient(180deg,var(--bond) 0 50%,var(--eq) 50% 100%)}
 .srow .n{flex:1;min-width:0}
 .srow .n b{display:block;font-size:13px;font-weight:600;letter-spacing:-.005em;color:var(--ink)}
@@ -320,6 +320,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .srow .pen{width:28px;height:28px;flex:none;border-radius:9px;background:color-mix(in srgb,var(--ink) 6%,transparent);
   display:grid;place-items:center;color:var(--mut)}
 .srow .pen svg{width:14px;height:14px}
+/* тихая ссылка вместо карточки-тизера: один голос, а не блок */
+.qlink{flex:none;display:flex;align-items:center;gap:8px;margin-top:18px;font-size:12px;color:var(--mut)}
+.qlink b{font-weight:700;color:var(--ink);border-bottom:1px solid var(--line);padding-bottom:1px}
+.qlink svg{width:13px;height:13px;color:var(--dim)}
+.qlink .sp{flex:1}
 .slink{flex:none;display:flex;align-items:center;gap:11px;margin-top:12px;padding:11px 12px;border-radius:12px;background:var(--bg)}
 .sc.dark .slink{background:rgba(255,255,255,.045)}
 .slink .ic{flex:none;width:30px;height:30px;border-radius:9px;background:var(--card);display:grid;place-items:center;color:var(--mut)}
@@ -366,14 +371,14 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .mb.hi b{color:var(--eqtx)}
 
 /* — полка результата во всю ширину (вариант Б) — */
-.shelf{flex:none;display:flex;align-items:flex-end;gap:30px;padding:18px 2px 15px;border-bottom:1px solid var(--line)}
+.shelf{flex:none;display:flex;align-items:flex-end;gap:40px;padding:28px 2px 24px;border-bottom:1px solid var(--line)}
 .shelf .l{min-width:0}
 .shelf .l em{font-style:normal;display:block;font-size:8.5px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
 .shelf .big{display:flex;align-items:baseline;gap:9px;margin-top:6px;font-family:var(--fN);font-size:42px;font-weight:700;letter-spacing:-.05em;line-height:1}
 .shelf .big .ap{font-size:26px;color:var(--dim);font-weight:600}
 .shelf .big .u{font-size:15px;font-weight:600;color:var(--mut);letter-spacing:-.01em}
 .shelf .l .sub{margin-top:9px}
-.shelf .r{margin-left:auto;flex:none;display:flex;gap:26px;padding-bottom:3px}
+.shelf .r{margin-left:auto;flex:none;display:flex;gap:40px;padding-bottom:4px}
 .shelf .rng{margin-left:auto;flex:none;padding-bottom:5px;font-size:10.5px;color:var(--dim);text-align:right;white-space:nowrap}
 
 /* — свёрнутый второй ответ (вариант В) — */
@@ -1221,7 +1226,357 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <div class="note"><i>3</i><span>Обе половины должны считаться <b>всегда</b> — сегодня купонная корзина собирается лениво, по входу в режим. Пересчёт от суммы для обеих одновременно — новая работа.</span></div>
   </div>
 </div>
-<!--SCREENS-->
+<!-- ═══════════════════ Г ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">Г</span><h2>«Мастер» — вкладка ведёт за руку, колонка держит шаги</h2><span class="mk-tag warn">меняет механику</span></div>
+  <div class="mk-sub">Самый радикальный ответ, и единственный, который меняет не раскладку, а <b>жанр</b>. В проекте уже есть готовый язык пошагового мастера — рельса «Мастера ребаланса» (<code>rebalance-wizard.css</code>). Здесь он ставится на «Расчёт»: колонка держит три шага и <b>сводку выбранного</b>, страница показывает один шаг во всю ширину. Второй шаг перестаёт быть списком из шести строк в узкой карточке и становится шестью плитками с собственным исходом у каждой — «эта стратегия даст 1,41 млн, эта 1,52 млн». Это то, чего сегодня нет нигде: сравнить стратегии между собой можно только переключая их по одной.</div>
+  <div class="scroller"><div class="strip2">
+
+    <div>
+      <div class="sc">
+        <div class="bx">
+          <div class="bx-head"><div class="mark sm">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+          <div class="bx-cap">
+            <div class="top"><em>Капитал · все портфели</em></div>
+            <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
+            <div class="day num">+11 640 ₽ за сегодня</div>
+            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
+            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
+          </div>
+          <div class="bx-grid">
+            <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i><span>Портфели</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><span>Академия</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></i><span>Рынок</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span>Тест</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></i><span>Админка</span></div>
+          </div>
+          <div class="bx-hr"></div>
+          <div class="bx-ctx">
+            <div class="grp">Расчёт портфеля</div>
+            <div class="bx-cond">
+              <div class="bx-step done"><span class="n"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Сумма и тип</b><i>1 000 000 ₽ · рост</i></span></div>
+              <div class="bx-step on"><span class="n num">2</span><span><b>Стратегия</b><i>выбрано «Гармония»</i></span></div>
+              <div class="bx-step"><span class="n num">3</span><span><b>Портфель</b><i>состав и покупка</i></span></div>
+            </div>
+            <div class="grp">Сводка</div>
+            <div class="bx-cond">
+              <div class="bx-fld"><span class="k">Сумма</span><span class="v num">1 000 000 ₽</span></div>
+              <div class="bx-fld"><span class="k">Срок</span><span class="v num">3 года</span></div>
+              <div class="bx-fld"><span class="k">Тип</span><span class="v" style="font-family:var(--fU);font-size:12px">Рост капитала</span></div>
+              <div class="bx-fld"><span class="k">Комиссия</span><span class="v num">0,3%</span></div>
+            </div>
+            <div class="bx-again"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg>Начать заново</div>
+          </div>
+          <div class="bx-foot">
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-2 8-2 8h16s-2-1-2-8"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/></svg></span>
+            <span class="sp"></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>
+          </div>
+        </div>
+        <div class="pg">
+          <div class="wh">
+            <div>
+              <em>Шаг 2 из 3</em>
+              <h3>Какую стратегию берём?</h3>
+              <p>Доля акций задаёт и риск, и результат. Под каждой — что она даёт на вашей сумме за 3 года.</p>
+            </div>
+            <div class="prg"><i class="on"></i><i class="on"></i><i></i></div>
+          </div>
+          <div class="tiles">
+            <div class="tile">
+              <div class="t"><b>Депозит</b><i><em>70</em><s>30</s></i></div>
+              <div class="cap">Защита капитала</div>
+              <div class="ln"><svg viewBox="0 0 200 60" preserveAspectRatio="none"><path d="M2 52 L198 30" stroke="#3B7AD1" stroke-width="2"/><path d="M2 52 L198 30 L198 60 L2 60 Z" fill="rgba(59,122,209,.09)" stroke="none"/></svg></div>
+              <div class="out"><b class="num">1,41 млн</b><span>12,1% годовых</span></div>
+            </div>
+            <div class="tile">
+              <div class="t"><b>Баланс</b><i><em>60</em><s>40</s></i></div>
+              <div class="cap">Умеренный риск</div>
+              <div class="ln"><svg viewBox="0 0 200 60" preserveAspectRatio="none"><path d="M2 52 L198 25" stroke="#3B7AD1" stroke-width="2"/><path d="M2 52 L198 25 L198 60 L2 60 Z" fill="rgba(59,122,209,.09)" stroke="none"/></svg></div>
+              <div class="out"><b class="num">1,44 млн</b><span>12,8% годовых</span></div>
+            </div>
+            <div class="tile on">
+              <div class="t"><b>Гармония</b><i><em>50</em><s>50</s></i></div>
+              <div class="cap">Классический баланс</div>
+              <div class="ln"><svg viewBox="0 0 200 60" preserveAspectRatio="none"><path d="M2 52 L198 20" stroke="#3B7AD1" stroke-width="2.4"/><path d="M2 52 L198 20 L198 60 L2 60 Z" fill="rgba(59,122,209,.13)" stroke="none"/><circle cx="198" cy="20" r="3.5" fill="#3B7AD1" stroke="none"/></svg></div>
+              <div class="out"><b class="num">1,46 млн</b><span>13,5% годовых</span></div>
+            </div>
+            <div class="tile">
+              <div class="t"><b>Умеренная</b><i><em>40</em><s>60</s></i></div>
+              <div class="cap">Баланс роста</div>
+              <div class="ln"><svg viewBox="0 0 200 60" preserveAspectRatio="none"><path d="M2 52 L198 15" stroke="#D08A3C" stroke-width="2"/><path d="M2 52 L198 15 L198 60 L2 60 Z" fill="rgba(208,138,60,.10)" stroke="none"/></svg></div>
+              <div class="out"><b class="num">1,49 млн</b><span>14,2% годовых</span></div>
+            </div>
+            <div class="tile">
+              <div class="t"><b>Агрессивная</b><i><em>30</em><s>70</s></i></div>
+              <div class="cap">Максимальный рост</div>
+              <div class="ln"><svg viewBox="0 0 200 60" preserveAspectRatio="none"><path d="M2 52 L198 9" stroke="#D08A3C" stroke-width="2"/><path d="M2 52 L198 9 L198 60 L2 60 Z" fill="rgba(208,138,60,.10)" stroke="none"/></svg></div>
+              <div class="out"><b class="num">1,52 млн</b><span>14,9% годовых</span></div>
+            </div>
+            <div class="tile">
+              <div class="t"><b>Своя</b><i style="color:var(--dim)">задать доли</i></div>
+              <div class="cap">Настроить вручную</div>
+              <div class="ln" style="display:grid;place-items:center">
+                <span class="pen" style="width:34px;height:34px;border-radius:11px"><svg viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span>
+              </div>
+              <div class="out"><b style="font-family:var(--fU);font-size:13px;font-weight:700">Настроить</b><span>любые доли</span></div>
+            </div>
+          </div>
+          <div class="wfoot">
+            <span class="btn ghost">Назад</span>
+            <span class="btn">Дальше — портфель<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+            <span class="sp"></span>
+            <span class="hint">Не уверены? <b style="color:var(--ink)">Тест риск-профиля</b> подберёт за 2 минуты</span>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>Г · шаг 2 «Стратегия»</b>Шесть исходов рядом — то, ради чего сегодня приходится по очереди тыкать шесть строк списка и запоминать числа. Синие линии — там, где облигаций больше половины, охряные — где акций.</div>
+    </div>
+
+    <div>
+      <div class="sc">
+        <div class="bx">
+          <div class="bx-head"><div class="mark sm">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+          <div class="bx-cap">
+            <div class="top"><em>Капитал · все портфели</em></div>
+            <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
+            <div class="day num">+11 640 ₽ за сегодня</div>
+            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
+            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
+          </div>
+          <div class="bx-grid">
+            <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i><span>Портфели</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><span>Академия</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></i><span>Рынок</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span>Тест</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></i><span>Админка</span></div>
+          </div>
+          <div class="bx-hr"></div>
+          <div class="bx-ctx">
+            <div class="grp">Расчёт портфеля</div>
+            <div class="bx-cond">
+              <div class="bx-step done"><span class="n"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Сумма и тип</b><i>1 000 000 ₽ · рост</i></span></div>
+              <div class="bx-step done"><span class="n"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></span><span><b>Стратегия</b><i>«Гармония» · 50 / 50</i></span></div>
+              <div class="bx-step on"><span class="n num">3</span><span><b>Портфель</b><i>состав и покупка</i></span></div>
+            </div>
+            <div class="grp">Сводка</div>
+            <div class="bx-cond">
+              <div class="bx-fld"><span class="k">Через 3 года</span><span class="v num">≈ 1,46 млн ₽</span></div>
+              <div class="bx-fld"><span class="k">Прибыль</span><span class="v num" style="color:var(--grn)">+ 461 380 ₽</span></div>
+              <div class="bx-fld"><span class="k">Доход в месяц</span><span class="v num" style="color:var(--eqtx)">≈ 7 243 ₽</span></div>
+              <div class="bx-fld"><span class="k">Бумаг в портфеле</span><span class="v num">6</span></div>
+            </div>
+            <div class="bx-again"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg>Начать заново</div>
+          </div>
+          <div class="bx-foot">
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-2 8-2 8h16s-2-1-2-8"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/></svg></span>
+            <span class="sp"></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>
+          </div>
+        </div>
+        <div class="pg">
+          <div class="wh">
+            <div>
+              <em>Шаг 3 из 3</em>
+              <h3>Ваш портфель</h3>
+              <p>Шесть бумаг на 1 000 000 ₽ по стратегии «Гармония». Цены — MOEX, 12:04.</p>
+            </div>
+            <div class="prg"><i class="on"></i><i class="on"></i><i class="on"></i></div>
+          </div>
+          <div class="gr g2" style="grid-template-columns:minmax(0,1fr) minmax(0,1.1fr)">
+            <div class="cd">
+              <div class="cd-hd"><h4>Что получится</h4><span class="aside">сценарий 1,32 – 1,61 млн</span></div>
+              <div class="lead"><span class="ap">≈</span><span class="num">1.46</span><span class="u">млн ₽ через 3 года</span></div>
+              <div class="sub">облигации <b class="cb">50%</b> · акции <b class="ce">50%</b> · доходность <b>13,5% годовых</b></div>
+              <div class="cols">
+                <div class="col"><span class="v num">1.00 млн</span><div class="stack"><i class="base top" style="height:61%"></i></div><span class="y num">сегодня</span></div>
+                <div class="col"><span class="v num">1.13 млн</span><div class="stack"><i class="eq" style="height:3%"></i><i class="bo" style="height:4%"></i><i class="base" style="height:61%"></i></div><span class="y num">2027</span></div>
+                <div class="col"><span class="v num">1.29 млн</span><div class="stack"><i class="eq" style="height:7%"></i><i class="bo" style="height:10%"></i><i class="base" style="height:61%"></i></div><span class="y num">2028</span></div>
+                <div class="col"><span class="v num">1.46 млн</span><div class="stack"><i class="eq" style="height:11%"></i><i class="bo" style="height:16%"></i><i class="base" style="height:61%"></i></div><span class="y num">2029</span></div>
+              </div>
+              <div class="legend"><span><i class="b1"></i>вложено</span><span><i class="b2"></i>облигации</span><span><i class="b3"></i>акции</span></div>
+              <div class="facts">
+                <div class="fact"><span class="l">Прибыль за 3 года</span><span class="v g num">+ 461 380 ₽</span></div>
+                <div class="fact"><span class="l">Доход в месяц</span><span class="v o num">≈ 7 243 ₽</span></div>
+              </div>
+            </div>
+            <div class="cd">
+              <div class="cd-hd"><h4>Состав</h4><span class="aside"><i class="d1"></i>облигации 50%<i class="d2"></i>акции 50%</span></div>
+              <div class="mixbar"><i style="width:50%;background:var(--bond)"></i><i style="width:50%;background:var(--eq)"></i></div>
+              <div class="plist">
+                <div class="prow"><i class="dot" style="background:var(--bond)"></i><span class="a"><b>ОФЗ 26238</b><i>погашение 2041 · купон 18,74%</i></span><span class="w num">17%</span><span class="s num">170 000 ₽</span></div>
+                <div class="prow"><i class="dot" style="background:var(--bond)"></i><span class="a"><b>ОФЗ 26240</b><i>погашение 2036 · купон 17,90%</i></span><span class="w num">17%</span><span class="s num">170 000 ₽</span></div>
+                <div class="prow"><i class="dot" style="background:var(--bond)"></i><span class="a"><b>ОФЗ 26233</b><i>погашение 2035 · купон 19,18%</i></span><span class="w num">16%</span><span class="s num">160 000 ₽</span></div>
+                <div class="prow"><i class="dot" style="background:var(--eq)"></i><span class="a"><b>Сбербанк</b><i>SBER · 1-й эшелон</i></span><span class="w num">18%</span><span class="s num">180 000 ₽</span></div>
+                <div class="prow"><i class="dot" style="background:var(--eq)"></i><span class="a"><b>ЛУКОЙЛ</b><i>LKOH · 1-й эшелон</i></span><span class="w num">17%</span><span class="s num">170 000 ₽</span></div>
+                <div class="prow"><i class="dot" style="background:var(--eq)"></i><span class="a"><b>Т-Технологии</b><i>T · 1-й эшелон</i></span><span class="w num">15%</span><span class="s num">150 000 ₽</span></div>
+              </div>
+              <div class="bfoot"><span class="l">Свободный остаток<b class="num">2 480 ₽</b></span><span class="v num">1 000 000 ₽</span></div>
+            </div>
+          </div>
+          <div class="wfoot">
+            <span class="btn ghost">Назад</span>
+            <span class="btn">Создать портфель<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+            <span class="sp"></span>
+            <span class="hint">Портфель появится в разделе «Портфели» — оттуда его можно вести и ребалансировать</span>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>Г · шаг 3 «Портфель»</b>Впервые виден состав до покупки: сегодня список бумаг появляется только после «Создать портфель», уже в другом разделе.</div>
+    </div>
+
+  </div></div>
+  <div class="notes">
+    <div class="note ok"><i>1</i><span><b>Что даёт сверх остальных:</b> сравнение стратегий рядом и состав портфеля <b>до</b> покупки. Пустоты в колонке нет — там шаги и сводка.</span></div>
+    <div class="note no"><i>2</i><span><b>Ломает главное свойство вкладки — мгновенность.</b> Сегодня меняешь сумму и всё пересчитывается на глазах; мастер вставляет между «поменял» и «увидел» две кнопки «Дальше».</span></div>
+    <div class="note no"><i>3</i><span>Самый дорогой: новая машина шагов, новый экран состава, новая рельса в колонке. Купонный режим в три шага не ложится — ему пришлось бы жить по старым правилам, и вкладка стала бы двужанровой.</span></div>
+  </div>
+</div>
+<!-- ═══════════════════ ТЁМНАЯ ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">Д</span><h2>Тёмная тема</h2><span class="mk-tag mute">на примере Б</span></div>
+  <div class="mk-sub">Тёмная — не отдельный вариант, а проверка. Полка результата держится без плиты: число само по себе яркое пятно, фон страницы <code>#0A0E15</code>, карточки <code>#121722</code> — палитра «Верстака». Два цвета данных поднимаются (<code>#6BA4F5</code> и <code>#E8A05A</code>), зелёный остаётся у сайдбара и у прибыли. Проверить при реализации: «Обл./Акц.» в списке стратегий и годы под столбиками — в светлой они уже подняты до AA, в тёмной поднимать надо заново.</div>
+  <div class="scroller"><div class="strip2">
+    <div>
+      <div class="sc dark">
+        <div class="bx">
+          <div class="bx-head"><div class="mark sm">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+          <div class="bx-cap">
+            <div class="top"><em>Капитал · все портфели</em></div>
+            <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
+            <div class="day num">+11 640 ₽ за сегодня</div>
+            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
+            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
+          </div>
+          <div class="bx-grid">
+            <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i><span>Портфели</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><span>Академия</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></i><span>Рынок</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span>Тест</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></i><span>Админка</span></div>
+          </div>
+          <div class="bx-hr"></div>
+          <div class="bx-ctx">
+            <div class="grp">Тип портфеля</div>
+            <div class="bx-sub on"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="15 7 21 7 21 13"/></svg><span class="tx">Рост капитала</span></div>
+            <div class="bx-sub"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg><span class="tx">Ежемесячный доход</span></div>
+            <div class="grp">Условия расчёта</div>
+            <div class="bx-cond">
+              <div class="bx-fsum">
+                <em>Сумма инвестиций</em>
+                <div class="v"><b class="num">1 000 000</b><span class="num">₽</span></div>
+              </div>
+              <div class="bx-fld"><span class="k">Срок</span><span class="bx-stp"><i>−</i><b class="num">3 года</b><i>+</i></span></div>
+              <div class="bx-fld"><span class="k">Комиссия брокера</span><span class="v num">0,3%<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+              <div class="bx-fld"><span class="k">Налог</span><span class="v num">НДФЛ 13%<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+            </div>
+            <div class="grp">Подбор</div>
+            <div class="bx-sub"><svg viewBox="0 0 24 24"><path d="M9.5 17h5"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9V17h-7v-3.1A6 6 0 0 1 12 3z"/></svg><span class="tx">Тест риск-профиля</span><span class="cnt">11</span></div>
+          </div>
+          <div class="bx-foot">
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-2 8-2 8h16s-2-1-2-8"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/></svg></span>
+            <span class="sp"></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>
+          </div>
+        </div>
+        <div class="pg">
+          <div class="shelf">
+            <div class="l">
+              <em>Ваш портфель через 3 года</em>
+              <div class="big"><span class="ap">≈</span><span class="num">1,46</span><span class="u">млн ₽</span></div>
+              <div class="sub">стратегия <b>«Гармония»</b> · облигации <b class="cb">50%</b> · акции <b class="ce">50%</b> · <b>13,5% годовых</b> · сценарий 1,32 – 1,61 млн</div>
+            </div>
+            <div class="r">
+              <div class="fact"><span class="l">Вложено</span><span class="v num">1 000 000 ₽</span></div>
+              <div class="fact"><span class="l">Прибыль за 3 года</span><span class="v g num">+ 461 380 ₽</span></div>
+              <div class="fact"><span class="l">Доход в месяц</span><span class="v o num">≈ 7 243 ₽</span></div>
+            </div>
+          </div>
+          <div class="gr g2">
+            <div class="cd">
+              <div class="cd-hd"><h4>По годам</h4><span class="aside"><i class="d0"></i>вложено<i class="d1"></i>облигации<i class="d2"></i>акции</span></div>
+              <div class="cols">
+                <div class="col"><span class="v num">1.00 млн</span><div class="stack"><i class="base top" style="height:61%"></i></div><span class="y num">сегодня</span></div>
+                <div class="col"><span class="v num">1.13 млн</span><div class="stack"><i class="eq" style="height:3%"></i><i class="bo" style="height:4%"></i><i class="base" style="height:61%"></i></div><span class="y num">2027</span></div>
+                <div class="col"><span class="v num">1.29 млн</span><div class="stack"><i class="eq" style="height:7%"></i><i class="bo" style="height:10%"></i><i class="base" style="height:61%"></i></div><span class="y num">2028</span></div>
+                <div class="col"><span class="v num">1.46 млн</span><div class="stack"><i class="eq" style="height:11%"></i><i class="bo" style="height:16%"></i><i class="base" style="height:61%"></i></div><span class="y num">2029</span></div>
+              </div>
+              <div class="facts" style="padding-top:12px">
+                <div class="fact"><span class="l">Прибыль облигаций</span><span class="v num" style="color:var(--bondtx)">+ 271 200 ₽</span></div>
+                <div class="fact"><span class="l">Прибыль акций</span><span class="v num" style="color:var(--eqtx)">+ 190 180 ₽</span></div>
+              </div>
+            </div>
+            <div class="cd">
+              <div class="cd-hd"><h4>Стратегия</h4><span class="aside">доля акций задаёт риск</span></div>
+              <div class="strat">
+                <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 70%,var(--eq) 70% 100%)"></i><div class="n"><b>Депозит</b><i>Защита капитала</i></div><div class="mix"><em class="b num">Обл. 70%</em><em class="s num">Акц. 30%</em></div></div>
+                <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 60%,var(--eq) 60% 100%)"></i><div class="n"><b>Баланс</b><i>Умеренный риск</i></div><div class="mix"><em class="b num">Обл. 60%</em><em class="s num">Акц. 40%</em></div></div>
+                <div class="srow on"><i class="wf"></i><div class="n"><b>Гармония</b><i>Классический баланс</i></div><div class="mix"><em class="b num">Обл. 50%</em><em class="s num">Акц. 50%</em></div></div>
+                <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 40%,var(--eq) 40% 100%)"></i><div class="n"><b>Умеренная</b><i>Баланс роста</i></div><div class="mix"><em class="b num">Обл. 40%</em><em class="s num">Акц. 60%</em></div></div>
+                <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 30%,var(--eq) 30% 100%)"></i><div class="n"><b>Агрессивная</b><i>Макс. рост</i></div><div class="mix"><em class="b num">Обл. 30%</em><em class="s num">Акц. 70%</em></div></div>
+                <div class="srow"><i class="wf" style="background:color-mix(in srgb,var(--ink) 22%,transparent)"></i><div class="n"><b>Своя</b><i>Настроить вручную</i></div><span class="pen"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="cta">
+            <span class="btn">Создать портфель<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+            <span class="btn ghost">Сохранить расчёт</span>
+            <span class="sp"></span>
+            <span class="hint">Цены акций и облигаций — MOEX, 12:04</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ═══════════════════ СРАВНЕНИЕ ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">•</span><h2>Сравнение по восьми вопросам</h2></div>
+  <table class="map">
+    <tr><th>Вопрос</th><th>А «Строка»</th><th>Б «Пульт»</th><th>В «Два ответа»</th><th>Г «Мастер»</th></tr>
+    <tr><td>Имя вкладки на странице ровно одно?</td><td class="yes">да</td><td class="yes">да, имени нет вовсе</td><td class="yes">да</td><td class="mid">имя шага, не вкладки</td></tr>
+    <tr><td>Экран-вопрос при каждом входе?</td><td class="yes">нет (персист режима)</td><td class="yes">нет</td><td class="yes">нет и не может быть</td><td class="no">есть — шаг 1</td></tr>
+    <tr><td>Сумма в поле зрения работы?</td><td class="yes">слева, первым элементом</td><td class="yes">в колонке, рядом с типом</td><td class="yes">слева, первым элементом</td><td class="mid">только на шаге 1 и в сводке</td></tr>
+    <tr><td>Пустота второго уровня закрыта?</td><td class="no">нет</td><td class="yes">да, условиями</td><td class="no">почти нет</td><td class="yes">да, шагами и сводкой</td></tr>
+    <tr><td>Главное действие живое сразу?</td><td class="yes">да</td><td class="yes">да</td><td class="yes">да, у каждой половины своё</td><td class="mid">«Дальше», не «Создать»</td></tr>
+    <tr><td>Работает в рейке 84px и на мобиле без дубля?</td><td class="yes">да</td><td class="no">нет, дубль обязателен</td><td class="mid">свёрнутую половину класть под низ</td><td class="no">нет, рельса нужна и там</td></tr>
+    <tr><td>Мгновенный пересчёт сохраняется?</td><td class="yes">да</td><td class="yes">да</td><td class="yes">да, для обеих половин</td><td class="no">нет, между шагами кнопки</td></tr>
+    <tr><td>Объём работ</td><td>1 строка + персист режима</td><td>блок в <code>sidebar-ctx.js</code> + перекладка страницы</td><td>новая сетка + вечный счёт обеих половин</td><td>новая машина шагов и экран состава</td></tr>
+  </table>
+</div>
+
+<!-- ═══════════════════ ДАННЫЕ ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">•</span><h2>Поле макета → откуда данные</h2></div>
+  <div class="mk-sub">Ничего не выдумано: почти всё уже считается, вопрос только в том, где это показать.</div>
+  <table class="map">
+    <tr><th>Поле</th><th>Источник</th><th>Есть?</th></tr>
+    <tr><td>Сумма, прогноз, доли, доходность, прибыль</td><td><code>#sumInput</code> + движок <code>calculator-ui.js</code>; прогноз и разбивка прибыли — <code>profitSplit()</code> в <code>calc-r6.js</code></td><td class="yes">да</td></tr>
+    <tr><td>Столбики по годам, сценарный коридор</td><td><code>renderCols/colsSVG</code> (<code>calc-r6.js</code>)</td><td class="yes">да</td></tr>
+    <tr><td>Шесть стратегий с долями</td><td><code>ndBuildWF</code> (<code>calculator-ui.js</code>)</td><td class="yes">да</td></tr>
+    <tr><td>Корзина ОФЗ, купоны по месяцам, ближайшая выплата</td><td>mi5-калькулятор, <code>monthlyIncomeBonds</code> / <code>bondQtyMap</code>, цены и НКД MOEX ISS</td><td class="yes">да</td></tr>
+    <tr><td>Чип «Из портфелей · 1,46 млн»</td><td><code>PF.sbCapModel()</code> (<code>portfolios-tabs.js</code>) — то же число, что в табло колонки</td><td class="yes">да, но во вкладке не используется</td></tr>
+    <tr><td>Персист режима (вариант А и все остальные)</td><td>новый ключ рядом с <code>calc_monthly_v1</code>; сегодня режим сознательно не запоминается</td><td class="no">новое</td></tr>
+    <tr><td>Срок расчёта как поле (сейчас константа <code>YEARS</code>)</td><td>константа в <code>calc-r6.js</code>; чтобы вынести в колонку, нужен параметр и пересчёт</td><td class="no">новое</td></tr>
+    <tr><td>Исход у каждой стратегии сразу (вариант Г)</td><td>шесть прогонов движка вместо одного</td><td class="no">новое</td></tr>
+    <tr><td>Состав портфеля до покупки (вариант Г, шаг 3)</td><td><code>_shoppingListData</code> — уже собирается, но показывается только после «Создать портфель»</td><td class="mid">есть, не показано</td></tr>
+    <tr><td>Оба режима считаются одновременно (вариант В)</td><td>купонная корзина сегодня собирается лениво, по входу в режим</td><td class="no">новое</td></tr>
+  </table>
+</div>
+
+<div class="rec">
+  <h3>Что рекомендую</h3>
+  <p><b>Базой — Б «Пульт».</b> Он единственный закрывает все шесть поломок сразу и делает это тем же ходом, которым только что чинили «Академию»: у раздела пустовал второй уровень — туда уехало то, чему там место. Важно, что уехал <b>ввод, а не результат</b>: живые числа в навигации уже пробовали и отвергли, и этот вариант их не возвращает.</p>
+  <p><b>С двумя прививками.</b> Первая обязательна: строка условий из <b>А</b> должна существовать с первого дня — в рейке 84px и на мобиле второго уровня нет, и без неё сумму станет негде ввести. Вторая по желанию: свёрнутая полоса «второго ответа» из <b>В</b> — 236px, которые заменяют собой весь экран выбора и делают его ненужным навсегда.</p>
+  <p><b>Г «Мастер» — отдельное решение, а не оформление.</b> Он даёт две вещи, которых нет ни у кого: сравнение шести стратегий рядом и состав портфеля до покупки. Но платит за это мгновенностью пересчёта — главным свойством вкладки — и не вмещает купонный режим. Если хочется его достоинств без его цены, обе идеи можно взять внутрь Б: плитки стратегий с исходами вместо списка (шире карточка) и раскрывающийся состав под полкой результата.</p>
+</div>
 </div>
 </body>
 </html>
