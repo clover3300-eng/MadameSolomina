@@ -181,23 +181,34 @@
         return !!(e && (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey ||
             (typeof e.button === 'number' && e.button !== 0)));
     }
-    // Клик по разделу на рейке ВОЗВРАЩАЕТ свёрнутую колонку второго уровня:
-    // нажатие на раздел — это запрос «покажи, что внутри», и отвечать на него
-    // одной сменой контента, оставляя навигацию раздела спрятанной, неправильно.
-    // «Свернуть» остаётся способом убрать колонку с глаз — до следующего захода
-    // в раздел. На мобиле не трогаем: там колонки нет вовсе, а флаг общий.
-    function sbOpenColumnFor(tab) {
-        if (!sbIsDesktop()) return;
-        if (!window.sbCtxHas || !window.sbCtxHas(tab)) return;
-        if (!document.body.classList.contains('sb-collapsed')) return;
-        document.body.classList.remove('sb-collapsed');
-        try { localStorage.setItem('sbCollapsed', '0'); } catch (e) {}
+    // ---- Клик по разделу управляет колонкой второго уровня ----
+    // Чужой раздел: переходим и РАЗВОРАЧИВАЕМ колонку — нажатие на раздел это
+    // запрос «покажи, что внутри», отвечать на него одной сменой контента,
+    // оставляя навигацию раздела спрятанной, неправильно.
+    // Свой (уже активный) раздел: клик работает переключателем колонки —
+    // показать/спрятать. Перехода при этом НЕ делаем: мы уже здесь, а лишний
+    // switchTab перерисовал бы вкладку впустую.
+    // На мобиле не трогаем ничего: колонки там нет, а флаг общий.
+    function sbSectionOf(tab) { return SB_GROUP_OF[tab] || tab; }
+    function sbSetCollapsed(on) {
+        document.body.classList.toggle('sb-collapsed', !!on);
+        try { localStorage.setItem('sbCollapsed', on ? '1' : '0'); } catch (e) {}
         updateCollapseLabel();
+        if (window.sbCtxSync) window.sbCtxSync();
+    }
+    // true — клик обслужен колонкой, переход не нужен
+    function sbColumnClick(tab) {
+        if (!sbIsDesktop() || !window.sbCtxHas || !window.sbCtxHas(tab)) return false;
+        var cur = sbSectionOf(typeof currentTab !== 'undefined' ? currentTab : '');
+        var collapsed = document.body.classList.contains('sb-collapsed');
+        if (cur === tab) { sbSetCollapsed(!collapsed); return true; }
+        if (collapsed) sbSetCollapsed(false);
+        return false;
     }
     window.sbGo = function(e, tab) {
         if (sbModClick(e)) return true;
         if (e) e.preventDefault();
-        sbOpenColumnFor(tab);
+        if (sbColumnClick(tab)) return false;
         if (tab === 'home' && typeof window.goHome === 'function') window.goHome();
         else switchTab(tab);
         return false;
@@ -205,7 +216,7 @@
     window.sbGoParent = function(e, group) {
         if (sbModClick(e)) return true;
         if (e) e.preventDefault();
-        sbOpenColumnFor(group);
+        if (sbColumnClick(group)) return false;
         window.sbNavParent(group, e);
         return false;
     };

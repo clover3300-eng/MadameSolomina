@@ -147,6 +147,11 @@
         try { m = modelFor(tab); } catch (e) { m = null; }
         var collapsed = document.body.classList.contains('sb-collapsed');
         var expect = wide() && !!COL_TITLE[tab];
+        // sb-hascol — «у раздела второй уровень ЕСТЬ» (независимо от того,
+        // свёрнут он или нет). По нему CSS решает, показывать ли кнопку
+        // разворота внизу рейки: на «Главной» и «Тесте» разворачивать нечего,
+        // и кнопка там была бы мёртвой.
+        document.body.classList.toggle('sb-hascol', expect);
         document.body.classList.toggle('sb-ctx', expect && !collapsed);
         if (!m) {
             // раздел с колонкой, но модель ещё не приехала — держим шапку с именем
