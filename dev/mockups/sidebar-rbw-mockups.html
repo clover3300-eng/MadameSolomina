@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Сайдбар · мокапы «в стиле мастера ребаланса»</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+       --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+       --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding:44px 0 90px;-webkit-font-smoothing:antialiased}
+.page{width:1440px;max-width:100%;margin:0 auto;padding:0 20px}
+
+/* ---------- документ ---------- */
+.doc-h{margin-bottom:34px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-acc);margin-bottom:9px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;text-wrap:balance;max-width:1000px}
+.doc-h p{margin-top:12px;font-size:15px;line-height:1.6;color:var(--doc-mut);max-width:880px}
+.verdict{margin-top:20px;display:flex;gap:14px;align-items:flex-start;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid var(--doc-acc);border-radius:14px;padding:16px 20px;max-width:980px}
+.verdict b{font-weight:700;color:var(--doc-ink)}
+.verdict p{margin:0;font-size:14.5px;line-height:1.6;color:var(--doc-quote)}
+.verdict p+p{margin-top:10px}
+
+.mk{margin-top:52px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.warn{background:rgba(217,119,6,.14);color:#c2760a}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-tag.ok{background:rgba(22,163,74,.15);color:#16a34a}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.6;max-width:980px;margin-bottom:18px}
+.notes{margin-top:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 26px}
+.note{display:flex;gap:9px;font-size:13px;line-height:1.5;color:var(--doc-quote)}
+.note i{flex:none;width:18px;height:18px;border-radius:50%;background:var(--doc-ink);color:var(--doc-bg);font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.note.no i{background:#c2760a;color:#fff}
+.note.ok i{background:#16a34a;color:#fff}
+.scroller{overflow-x:auto;padding:4px 0 10px}
+.strip{display:flex;gap:20px;align-items:flex-start;width:max-content}
+.spec-cap{margin-top:10px;font-size:12px;line-height:1.45;color:var(--doc-mut);max-width:280px}
+.spec-cap b{color:var(--doc-ink);font-weight:700;display:block;font-size:12.5px;margin-bottom:2px}
+@media (max-width:1000px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} }
+
+.map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th,.map td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--doc-line);vertical-align:top}
+.map th{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);background:color-mix(in srgb,var(--doc-line) 40%,transparent)}
+.map tr:last-child td{border-bottom:0}
+.map code{font-family:var(--fN);font-size:11.5px;color:var(--doc-acc)}
+.map td b{font-weight:700}
+
+/* ════════ сцена: сайдбар рядом с макетом страницы ════════ */
+.sc{
+  --ink:#101828; --mut:#64748b; --dim:#98a4b4;
+  --line:#e7ecf3; --hair:rgba(16,24,40,.07);
+  --bg:#f4f6fa; --card:#fff;
+  --acc:#4453ef; --grn:#16a34a;
+  --bond:#5f7fa8; --stock:#c9683f;
+  --sbacc:#2F6B4F;
+  display:flex; width:1180px; height:648px; overflow:hidden;
+  border:1px solid var(--doc-line); border-radius:18px;
+  background:var(--bg); color:var(--ink);
+  font-family:var(--fU); -webkit-font-smoothing:antialiased;
+  box-shadow:0 22px 50px -30px rgba(16,24,40,.45);
+}
+.sc.small{width:392px}
+.sc .num{font-family:var(--fN);font-variant-numeric:tabular-nums}
+.sc svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* макет страницы справа — намеренно бледный, он тут только ради пропорций */
+.pg{flex:1;min-width:0;display:flex;flex-direction:column;padding:0 26px}
+.pg-top{display:flex;align-items:center;gap:12px;padding:17px 0 14px}
+.pg-brand{font-size:13.5px;font-weight:300;color:var(--mut)}
+.pg-brand b{font-weight:800;color:var(--ink)}
+.pg-pill{display:inline-flex;align-items:center;gap:7px;background:var(--card);border-radius:999px;padding:7px 14px;font-size:12.5px;font-weight:600;box-shadow:0 4px 14px -8px rgba(16,24,40,.4)}
+.pg-pill svg{width:14px;height:14px;color:var(--mut)}
+.pg-top .sp{flex:1}
+.pg-chip{width:78px;height:28px;border-radius:999px;background:var(--card);box-shadow:0 4px 14px -8px rgba(16,24,40,.4)}
+.pg-chip.rnd{width:28px;border-radius:50%}
+.pg-hero{background:var(--card);border-radius:18px;height:168px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;box-shadow:0 10px 26px -20px rgba(16,24,40,.5)}
+.pg-hero i{width:40px;height:40px;border-radius:12px;background:color-mix(in srgb,var(--acc) 10%,transparent);display:grid;place-items:center;color:var(--acc)}
+.pg-hero i svg{width:19px;height:19px}
+.pg-hero b{font-family:var(--fT);font-weight:400;font-size:19px}
+.pg-hero span{font-size:12px;color:var(--dim)}
+.pg-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-top:11px}
+.pg-kpi{background:var(--card);border-radius:14px;padding:12px 14px;box-shadow:0 10px 26px -22px rgba(16,24,40,.5)}
+.pg-kpi em{font-style:normal;display:block;font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.pg-kpi b{display:block;margin-top:5px;font-family:var(--fN);font-size:17px;font-weight:700;letter-spacing:-.02em}
+.pg-card{margin-top:11px;flex:1;background:var(--card);border-radius:18px;padding:16px 18px;box-shadow:0 10px 26px -22px rgba(16,24,40,.5);min-height:0}
+.pg-card h4{font-family:var(--fT);font-weight:400;font-size:17px}
+.pg-card p{margin-top:4px;font-size:11.5px;color:var(--dim)}
+.pg-rows{margin-top:13px;display:flex;flex-direction:column;gap:8px}
+.pg-row{height:26px;border-radius:8px;background:var(--bg)}
+.pg-row:nth-child(2){width:88%}.pg-row:nth-child(3){width:94%}.pg-row:nth-child(4){width:74%}
+
+/* ════════ Г1 · одна колонка на языке мастера ════════ */
+.g1{flex:none;width:268px;background:var(--card);border-right:1px solid var(--line);
+    padding:22px 20px 18px;display:flex;flex-direction:column;min-height:0}
+.g1-brand{display:flex;align-items:center;gap:11px;margin-bottom:24px}
+.g1-mark{flex:none;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
+    background:linear-gradient(180deg,#232B3B 0%,#141A26 100%);color:#F1F6FB;
+    font-family:var(--fT);font-size:17px}
+.g1-bt{display:flex;flex-direction:column;gap:1px;min-width:0}
+.g1-bt em{font-style:normal;font-family:var(--fN);font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--acc)}
+.g1-bt b{font-family:var(--fT);font-weight:400;font-size:19px;letter-spacing:-.01em;line-height:1.1}
+
+.g1-secs{display:flex;flex-direction:column;gap:1px;min-height:0;overflow-y:auto;scrollbar-width:none}
+.g1-secs::-webkit-scrollbar{display:none}
+.g1-s{position:relative;display:flex;gap:13px;padding:8px 0;cursor:pointer}
+.g1-i{flex:none;width:29px;height:29px;border-radius:50%;display:grid;place-items:center;
+    border:1.5px solid var(--line);background:var(--card);color:var(--dim);position:relative;z-index:2}
+.g1-i svg{width:15px;height:15px}
+.g1-t{padding-top:2px;min-width:0}
+.g1-t b{display:block;font-size:13.5px;font-weight:600;color:var(--dim);line-height:1.22}
+.g1-t em{font-style:normal;display:block;font-size:10.5px;color:var(--dim);opacity:.75;margin-top:1px;line-height:1.3}
+.g1-s:hover .g1-t b{color:var(--mut)}
+.g1-s.on .g1-i{background:var(--sbacc);border-color:var(--sbacc);color:#fff}
+.g1-s.on .g1-t b{color:var(--ink);font-weight:700}
+.g1-s.on .g1-t em{color:var(--mut);opacity:1}
+
+/* второй уровень: вложенность рисует волосяная линия от кружка вниз */
+.g1-subs{position:relative;margin:2px 0 8px;padding-left:42px}
+.g1-subs::before{content:'';position:absolute;left:14px;top:-6px;bottom:14px;width:1.5px;background:var(--line)}
+.g1-sub{position:relative;display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:9px;
+    font-size:12.5px;font-weight:500;color:var(--mut);cursor:pointer;line-height:1.2}
+.g1-sub svg{width:14px;height:14px;flex:none;opacity:.65}
+.g1-sub span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g1-sub u{text-decoration:none;font-family:var(--fN);font-size:10px;font-weight:600;color:var(--dim)}
+.g1-sub:hover{background:var(--bg);color:var(--ink)}
+/* ВЫБОР на белом поле = тонированная пилюля с риской, а не «подъём»:
+   белым по белому подъёма не бывает */
+.g1-sub.on{background:var(--bg);color:var(--ink);font-weight:600}
+.g1-sub.on::before{content:'';position:absolute;left:-28px;width:12px;height:1.5px;background:var(--sbacc)}
+.g1-sub.on svg{opacity:1;color:var(--sbacc)}
+.g1-sub .dot{width:8px;height:8px;border-radius:50%;flex:none;margin:0 3px}
+.g1-grp{padding:12px 10px 5px;display:flex;align-items:center;gap:9px;
+    font-size:9px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+.g1-grp::after{content:'';flex:1;height:1px;background:var(--line)}
+.g1-sub.gh{color:var(--dim);font-weight:600}
+
+/* нижняя карточка контекста — прямой перенос .rbw-ctx */
+.g1-ctx{margin-top:auto;border:1px solid var(--line);border-radius:14px;padding:12px 13px;background:var(--bg)}
+.g1-ctx em{font-style:normal;display:block;font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:7px}
+.g1-cr{display:flex;align-items:center;gap:9px}
+.g1-cr .dot{flex:none;width:9px;height:9px;border-radius:50%}
+.g1-cr b{font-size:13px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g1-drift{font-family:var(--fN);font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px}
+.g1-drift.ok{background:rgba(22,163,74,.13);color:var(--grn)}
+.g1-cv{display:block;margin-top:6px;font-family:var(--fN);font-size:15px;font-weight:700;letter-spacing:-.02em}
+.g1-bar{margin-top:9px;height:6px;border-radius:4px;overflow:hidden;display:flex;background:var(--line)}
+.g1-bar i.st{background:var(--stock)}.g1-bar i.bd{background:var(--bond)}
+.g1-lg{margin-top:6px;display:flex;justify-content:space-between;font-family:var(--fN);font-size:9.5px;font-weight:600;color:var(--mut)}
+.g1-lg .a{color:var(--stock)}.g1-lg .b{color:var(--bond)}
+.g1-foot{margin-top:10px;display:flex;align-items:center;gap:4px}
+.g1-fbtn{flex:1;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:9px;
+    font-size:12px;font-weight:600;color:var(--mut);cursor:pointer}
+.g1-fbtn svg{width:14px;height:14px;opacity:.7}
+.g1-fbtn:hover{background:var(--bg);color:var(--ink)}
+.g1-ficon{flex:none;width:32px;height:32px;display:grid;place-items:center;border-radius:9px;color:var(--dim);cursor:pointer}
+.g1-ficon svg{width:16px;height:16px}
+.g1-ficon:hover{background:var(--bg);color:var(--ink)}
+
+/* ════════ Г2 · рейка 76 + колонка-лист 244 ════════ */
+.g2r{flex:none;width:76px;background:var(--bg);border-right:1px solid var(--line);
+     display:flex;flex-direction:column;align-items:center;padding:16px 0 12px}
+.g2r-mark{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
+     background:linear-gradient(180deg,#232B3B 0%,#141A26 100%);color:#F1F6FB;font-family:var(--fT);font-size:17px;margin-bottom:14px}
+.g2r-i{position:relative;width:60px;padding:8px 0 6px;display:flex;flex-direction:column;align-items:center;gap:5px;
+     border-radius:12px;font-size:9.5px;font-weight:600;text-align:center;color:rgba(31,38,55,.58);cursor:pointer;line-height:1.18}
+.g2r-i svg{width:20px;height:20px}
+.g2r-i:hover{background:rgba(31,38,55,.05);color:rgba(31,38,55,.92)}
+.g2r-i.on{color:var(--sbacc);font-weight:700}
+.g2r-i.on::before{content:'';position:absolute;left:-8px;top:50%;transform:translateY(-50%);width:3px;height:34px;background:var(--sbacc);border-radius:0 3px 3px 0}
+.g2r-i em{font-style:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;max-width:100%;word-break:break-word}
+.g2r-sp{flex:1}
+
+.g2c{flex:none;width:244px;background:var(--card);border-right:1px solid var(--line);
+     display:flex;flex-direction:column;padding:22px 18px 16px;min-height:0}
+.g2c-h{margin-bottom:20px}
+.g2c-h em{font-style:normal;display:block;font-family:var(--fN);font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--acc)}
+.g2c-h b{display:block;margin-top:3px;font-family:var(--fT);font-weight:400;font-size:21px;letter-spacing:-.01em}
+.g2c-h u{text-decoration:none;display:flex;align-items:baseline;gap:8px;margin-top:7px;font-family:var(--fN);font-size:14px;font-weight:700;letter-spacing:-.02em}
+.g2c-h u i{font-style:normal;font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:6px;background:rgba(22,163,74,.13);color:var(--grn)}
+.g2c-l{flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;margin:0 -8px}
+.g2c-l::-webkit-scrollbar{display:none}
+.g2c-it{position:relative;display:flex;align-items:center;gap:10px;padding:8px 10px;margin:0 8px;border-radius:10px;
+     font-size:13px;font-weight:500;color:var(--mut);cursor:pointer;line-height:1.22}
+.g2c-it svg{width:15px;height:15px;flex:none;opacity:.65}
+.g2c-it span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g2c-it u{text-decoration:none;font-family:var(--fN);font-size:10px;font-weight:600;color:var(--dim)}
+.g2c-it:hover{background:var(--bg);color:var(--ink)}
+.g2c-it.on{background:var(--bg);color:var(--ink);font-weight:600}
+.g2c-it.on::before{content:'';position:absolute;left:0;top:9px;bottom:9px;width:2.5px;border-radius:0 3px 3px 0;background:var(--sbacc)}
+.g2c-it.on svg{opacity:1;color:var(--sbacc)}
+.g2c-it .dot{width:8px;height:8px;border-radius:50%;flex:none;margin:0 3px}
+.g2c-it.l3{margin-left:32px;padding-left:12px}
+.g2c-it.l3::after{content:'';position:absolute;left:0;top:8px;bottom:8px;width:1.5px;background:var(--line)}
+.g2c-it.gh{color:var(--dim);font-weight:600}
+.g2c-grp{padding:13px 10px 5px;display:flex;align-items:center;gap:9px;
+     font-size:9px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+.g2c-grp::after{content:'';flex:1;height:1px;background:var(--line)}
+
+/* ════════ образцы состояний ════════ */
+.st-wrap{
+  --ink:#101828;--mut:#64748b;--dim:#98a4b4;--line:#e7ecf3;--bg:#f4f6fa;--card:#fff;
+  --acc:#4453ef;--grn:#16a34a;--bond:#5f7fa8;--stock:#c9683f;--sbacc:#2F6B4F;
+  width:268px;background:var(--card);border:1px solid var(--doc-line);border-radius:16px;
+  padding:14px 16px;color:var(--ink);font-family:var(--fU)
+}
+.st-wrap svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.st-wrap.tint{background:var(--bg)}
+.st-lab{font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;color:var(--doc-dim);margin-bottom:9px}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="doc-h">
+  <div class="doc-kicker">Сайдбар · раунд 3</div>
+  <h1>Сайдбар на языке левой рейки «Мастера ребаланса»</h1>
+  <p>Рейка визарда (<code style="font-family:var(--fN);font-size:13px">.rbw-rail</code>, 274px) —
+  единственное место в продукте, где навигация не «панелька на странице», а корпус: белое поле во всю
+  высоту экрана, воздух 26px, шапка из надстрочника и заголовка Georgia, строки с кружком-иконкой,
+  подписью и пояснением, и карточка контекста, прибитая к низу. Здесь этот язык примерен на главную
+  навигацию: два варианта, разбор состояний и цена вопроса.</p>
+  <div class="verdict">
+    <p><b>Что переносится дословно:</b> воздух и ритм, шапка «надстрочник + Georgia», строка
+    «кружок 29px + имя + пояснение», волосяная линия вложенности от кружка вниз и нижняя карточка
+    контекста <code style="font-family:var(--fN);font-size:12.5px">.rbw-ctx</code> — она превращает
+    мёртвый низ сайдбара в живое число портфеля.</p>
+    <p><b>Что переносить НЕЛЬЗЯ:</b> нумерованные кружки со сплошной линией между ними. В визарде это
+    последовательность («шаг 2 после шага 1»), у разделов последовательности нет — цифры и связующая
+    линия соврали бы. Поэтому кружок несёт иконку, а линия рисуется только там, где есть настоящая
+    вложенность: от активного раздела к его второму уровню.</p>
+    <p><b>И ещё одно следствие:</b> поле колонки становится белым, а на белом «подъём» (белая карточка
+    выбора на тонированном фоне, язык мокапа В3-б) не читается. Выбор переезжает на обратный приём —
+    тонированная пилюля с зелёной риской. Это меняет язык выбора во всём сайдбаре, не только здесь.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════ Г1 ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h">
+    <span class="mk-n">Г1</span>
+    <h2>«Мастер» — одна колонка 268px</h2>
+    <span class="mk-tag">рейка визарда 1в1</span>
+  </div>
+  <p class="mk-sub">Рейка и колонка второго уровня сливаются в один лист, как у визарда. Разделы —
+  строки с кружком-иконкой и пояснением; активный раскрывает свой второй уровень прямо под собой,
+  вложенность держит волосяная линия от кружка. Внизу — карточка портфеля.</p>
+
+  <div class="scroller"><div class="strip">
+  <div class="sc">
+    <div class="g1">
+      <div class="g1-brand">
+        <div class="g1-mark">M</div>
+        <div class="g1-bt"><em>Madame</em><b>Solomi'na</b></div>
+      </div>
+
+      <div class="g1-secs">
+        <div class="g1-s">
+          <div class="g1-i"><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg></div>
+          <div class="g1-t"><b>Главная</b><em>манифест и живая карта</em></div>
+        </div>
+        <div class="g1-s">
+          <div class="g1-i"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></div>
+          <div class="g1-t"><b>Расчёт</b><em>портфель из ОФЗ и акций</em></div>
+        </div>
+
+        <div class="g1-s on">
+          <div class="g1-i"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></div>
+          <div class="g1-t"><b>Портфели</b><em>трекер, сделки, ребаланс</em></div>
+        </div>
+        <div class="g1-subs">
+          <div class="g1-sub on"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Обзор</span></div>
+          <div class="g1-sub"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg><span>Мои портфели</span><u>3</u></div>
+          <div class="g1-sub"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><span>Аналитика</span></div>
+          <div class="g1-sub"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span>Отчёты</span></div>
+          <div class="g1-sub"><svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg><span>Операции</span><u>24</u></div>
+          <div class="g1-sub"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M5 7h14"/><path d="M8 7l-4 7h8z"/><path d="M16 7l-4 7h8z"/></svg><span>Ребаланс</span></div>
+          <div class="g1-sub"><svg viewBox="0 0 24 24"><rect x="3.5" y="8" width="6" height="9" rx="1.5"/><path d="M6.5 4v4M6.5 17v3"/><rect x="14.5" y="5" width="6" height="10" rx="1.5"/><path d="M17.5 3v2M17.5 15v6"/></svg><span>Торговля</span><u>2</u></div>
+
+          <div class="g1-grp"><span>Открытые</span></div>
+          <div class="g1-sub"><span class="dot" style="background:#5f7fa8"></span><span>Пенсия-2045</span><u style="color:#16a34a">+0,9%</u></div>
+          <div class="g1-sub"><span class="dot" style="background:#c9683f"></span><span>Дивидендный</span><u style="color:#dc2626">−0,4%</u></div>
+          <div class="g1-sub gh"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Новый портфель</span></div>
+        </div>
+
+        <div class="g1-s">
+          <div class="g1-i"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+          <div class="g1-t"><b>Академия Ребалансировки</b><em>зачем и как выравнивать</em></div>
+        </div>
+        <div class="g1-s">
+          <div class="g1-i"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+          <div class="g1-t"><b>Рынок</b><em>дашборд и терминал</em></div>
+        </div>
+        <div class="g1-s">
+          <div class="g1-i"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></div>
+          <div class="g1-t"><b>Тест</b><em>портфель на истории</em></div>
+        </div>
+      </div>
+
+      <div class="g1-ctx">
+        <em>Портфели</em>
+        <div class="g1-cr"><span class="dot" style="background:#5f7fa8"></span><b>Все портфели</b><span class="g1-drift ok">+0,8%</span></div>
+        <u class="g1-cv num">4 812 300 ₽</u>
+        <div class="g1-bar"><i class="st" style="width:38%"></i><i class="bd" style="width:62%"></i></div>
+        <div class="g1-lg"><span class="a">Акции 38</span><span class="b">Обл. 62</span></div>
+      </div>
+      <div class="g1-foot">
+        <div class="g1-fbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg>Настройки</div>
+        <div class="g1-ficon"><svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg></div>
+      </div>
+    </div>
+
+    <div class="pg">
+      <div class="pg-top">
+        <div class="pg-brand">Madame <b>Solomi'na</b></div>
+        <div class="pg-pill"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Портфели</div>
+        <div class="sp"></div>
+        <div class="pg-chip"></div><div class="pg-chip rnd"></div>
+      </div>
+      <div class="pg-hero">
+        <i><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i>
+        <b>Обзор портфелей</b><span>карточки, избранное, новости</span>
+      </div>
+      <div class="pg-kpis">
+        <div class="pg-kpi"><em>Ключевая ставка</em><b>21.0%</b></div>
+        <div class="pg-kpi"><em>Ставка по вкладам</em><b>21.5%</b></div>
+        <div class="pg-kpi"><em>Инфляция, год</em><b>9.1%</b></div>
+        <div class="pg-kpi"><em>Доходность ОФЗ</em><b>14.2%</b></div>
+      </div>
+      <div class="pg-card">
+        <h4>Избранное</h4><p>главное по вашим акциям: потенциал аналитиков и свежие новости</p>
+        <div class="pg-rows"><div class="pg-row"></div><div class="pg-row"></div><div class="pg-row"></div><div class="pg-row"></div></div>
+      </div>
+    </div>
+  </div>
+  </div></div>
+
+  <div class="notes">
+    <div class="note ok"><i>1</i><span><b>Длинное имя наконец влезает.</b> «Академия Ребалансировки» из админки в 60px рейки ужималась в две строки с многоточием — здесь она читается целиком.</span></div>
+    <div class="note ok"><i>2</i><span><b>Низ перестаёт пустовать.</b> Карточка <code style="font-family:var(--fN);font-size:12px">.rbw-ctx</code> отдаёт сумму, дневное изменение и раскладку «акции/облигации» — данные уже есть в <code style="font-family:var(--fN);font-size:12px">PF.calcPf</code>.</span></div>
+    <div class="note ok"><i>3</i><span><b>Один клик вместо двух.</b> Второй уровень виден сразу, без кнопки разворота: колонка одна и она всегда открыта.</span></div>
+    <div class="note no"><i>4</i><span><b>268px постоянно.</b> Сегодня без колонки страница получает 76px — здесь узкого состояния нет, кроме полного схлопывания в иконки.</span></div>
+    <div class="note no"><i>5</i><span><b>Разделы уезжают под скролл.</b> Замерено на этом же макете: раскрытый второй уровень «Портфелей» просит <span class="num">628px</span>, а после шапки и карточки контекста остаётся <span class="num">386px</span> — «Рынок» и «Тест» видны только прокруткой. Это возвращает болезнь аккордеона, от которой ушли в В3-б.</span></div>
+    <div class="note no"><i>6</i><span><b>Пояснения — лишние чернила.</b> В визарде их 4 штуки на экран-мастер; в сайдбаре 6 подписей висят перед глазами всегда.</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ Г2 ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h">
+    <span class="mk-n">Г2</span>
+    <h2>«Рейка + лист» — 76 + 244px</h2>
+    <span class="mk-tag ok">рекомендую</span>
+    <span class="mk-tag mute">правится только колонка</span>
+  </div>
+  <p class="mk-sub">Рейка разделов остаётся как есть (один клик до любого раздела, порядок не скачет),
+  а язык визарда получает колонка второго уровня: поля меняются местами — рейка становится
+  тонированной, колонка белым листом, — и снизу приходит карточка контекста. Шапка колонки берёт
+  у визарда «надстрочник + Georgia» и живое число под ними.</p>
+
+  <div class="scroller"><div class="strip">
+  <div class="sc">
+    <div class="g2r">
+      <div class="g2r-mark">M</div>
+      <div class="g2r-i"><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg><em>Главная</em></div>
+      <div class="g2r-i"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><em>Расчёт</em></div>
+      <div class="g2r-i on"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg><em>Портфели</em></div>
+      <div class="g2r-i"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg><em>Академия Ребаланс…</em></div>
+      <div class="g2r-i"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><em>Рынок</em></div>
+      <div class="g2r-i"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg><em>Тест</em></div>
+      <div class="g2r-sp"></div>
+      <div class="g1-ficon"><svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg></div>
+    </div>
+
+    <div class="g2c">
+      <div class="g2c-h">
+        <em>Раздел</em><b>Портфели</b>
+        <u class="num">4 812 300 ₽ <i>+0,8%</i></u>
+      </div>
+      <div class="g2c-l">
+        <div class="g2c-it on"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Обзор</span></div>
+        <div class="g2c-it"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg><span>Мои портфели</span><u>3</u></div>
+        <div class="g2c-it"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><span>Аналитика</span></div>
+        <div class="g2c-it"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span>Отчёты</span></div>
+        <div class="g2c-it"><svg viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg><span>Операции</span><u>24</u></div>
+        <div class="g2c-it"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M5 7h14"/><path d="M8 7l-4 7h8z"/><path d="M16 7l-4 7h8z"/></svg><span>Ребаланс</span></div>
+        <div class="g2c-it"><svg viewBox="0 0 24 24"><rect x="3.5" y="8" width="6" height="9" rx="1.5"/><path d="M6.5 4v4M6.5 17v3"/><rect x="14.5" y="5" width="6" height="10" rx="1.5"/><path d="M17.5 3v2M17.5 15v6"/></svg><span>Торговля</span><u>2</u></div>
+        <div class="g2c-it l3"><span>SBER · лесенка</span></div>
+        <div class="g2c-it l3"><span>Экран 2</span></div>
+
+        <div class="g2c-grp"><span>Открытые портфели</span></div>
+        <div class="g2c-it"><span class="dot" style="background:#5f7fa8"></span><span>Пенсия-2045</span><u style="color:#16a34a">+0,9%</u></div>
+        <div class="g2c-it"><span class="dot" style="background:#c9683f"></span><span>Дивидендный</span><u style="color:#dc2626">−0,4%</u></div>
+        <div class="g2c-it gh"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span>Новый портфель</span></div>
+      </div>
+
+      <div class="g1-ctx" style="margin-top:14px">
+        <em>Все портфели</em>
+        <div class="g1-cr"><span class="dot" style="background:#5f7fa8"></span><b>3 портфеля</b><span class="g1-drift ok">в норме</span></div>
+        <div class="g1-bar"><i class="st" style="width:38%"></i><i class="bd" style="width:62%"></i></div>
+        <div class="g1-lg"><span class="a">Акции 38</span><span class="b">Обл. 62</span></div>
+      </div>
+      <div class="g1-foot">
+        <div class="g1-fbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg>Настройки</div>
+      </div>
+    </div>
+
+    <div class="pg">
+      <div class="pg-top">
+        <div class="pg-brand">Madame <b>Solomi'na</b></div>
+        <div class="pg-pill"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Портфели</div>
+        <div class="sp"></div>
+        <div class="pg-chip"></div><div class="pg-chip rnd"></div>
+      </div>
+      <div class="pg-hero">
+        <i><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i>
+        <b>Обзор портфелей</b><span>карточки, избранное, новости</span>
+      </div>
+      <div class="pg-kpis">
+        <div class="pg-kpi"><em>Ключевая ставка</em><b>21.0%</b></div>
+        <div class="pg-kpi"><em>Ставка по вкладам</em><b>21.5%</b></div>
+        <div class="pg-kpi"><em>Инфляция, год</em><b>9.1%</b></div>
+        <div class="pg-kpi"><em>Доходность ОФЗ</em><b>14.2%</b></div>
+      </div>
+      <div class="pg-card">
+        <h4>Избранное</h4><p>главное по вашим акциям: потенциал аналитиков и свежие новости</p>
+        <div class="pg-rows"><div class="pg-row"></div><div class="pg-row"></div><div class="pg-row"></div><div class="pg-row"></div></div>
+      </div>
+    </div>
+  </div>
+  </div></div>
+
+  <div class="notes">
+    <div class="note ok"><i>1</i><span><b>Разделы стоят на месте.</b> Рейка не двигается от того, что раскрылся второй уровень — главная претензия к Г1 снимается.</span></div>
+    <div class="note ok"><i>2</i><span><b>Правится один файл.</b> Меняется только внутренность <code style="font-family:var(--fN);font-size:12px">#sbCtx</code> и два цвета полей — рейка, разметка и JS остаются.</span></div>
+    <div class="note ok"><i>3</i><span><b>Колонка по-прежнему прячется.</b> Кнопка разворота внизу рейки и клик по своему разделу работают как сейчас — страница возвращается к 76px.</span></div>
+    <div class="note"><i>4</i><span><b>Поля меняются местами.</b> Сегодня рейка белая, колонка тонированная; здесь наоборот. Это заметная смена: белым листом читается активный раздел, а не корпус.</span></div>
+    <div class="note no"><i>5</i><span><b>Пояснений под пунктами нет.</b> В 244px строка «имя + счётчик» и так плотная; вторая строка тут не помещается без роста высоты вдвое.</span></div>
+    <div class="note no"><i>6</i><span><b>+32px к колонке.</b> 212 → 244: воздух визарда без этого не читается, но страница отдаёт ещё 32px.</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════ состояния ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h">
+    <span class="mk-n">С</span>
+    <h2>Анатомия и состояния</h2>
+    <span class="mk-tag mute">образцы в натуральную величину</span>
+  </div>
+  <p class="mk-sub">Слева направо: строка раздела в четырёх состояниях (Г1), пункт второго уровня
+  в четырёх состояниях (Г2) и карточка контекста с двумя видами данных. Всё — в 1:1 к тому,
+  что уйдёт в код.</p>
+
+  <div class="scroller"><div class="strip">
+
+    <div>
+      <div class="st-wrap">
+        <div class="st-lab">Г1 · строка раздела</div>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <div class="g1-s"><div class="g1-i"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="g1-t"><b>Рынок</b><em>дашборд и терминал</em></div></div>
+          <div class="g1-s" style="background:var(--bg);border-radius:10px;margin:0 -8px;padding-left:8px;padding-right:8px"><div class="g1-i"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="g1-t"><b style="color:var(--mut)">Рынок</b><em>ховер</em></div></div>
+          <div class="g1-s on"><div class="g1-i"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div><div class="g1-t"><b>Рынок</b><em>активный</em></div></div>
+          <div class="g1-s"><div class="g1-i"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><div class="g1-t"><b>Академия Ребалансировки</b><em>имя из админки — влезает целиком</em></div></div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>Покой · ховер · активный · длинное имя</b>Кружок 29px, обводка 1.5px; активный заливается зелёным <span class="num">#2F6B4F</span> — тем же, что риска раздела сегодня. Цифр в кружке нет: разделы не последовательность.</div>
+    </div>
+
+    <div>
+      <div class="st-wrap tint">
+        <div class="st-lab">Г2 · пункт второго уровня</div>
+        <div style="background:var(--card);border-radius:12px;padding:8px 4px">
+          <div class="g2c-it"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><span>Аналитика</span></div>
+          <div class="g2c-it" style="background:var(--bg);color:var(--ink)"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><span>Аналитика</span><u>ховер</u></div>
+          <div class="g2c-it on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg><span>Аналитика</span><u>выбран</u></div>
+          <div class="g2c-it l3"><span>SBER · лесенка</span></div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>Покой · ховер · выбран · третий уровень</b>Выбор — тонированная пилюля с зелёной риской слева. «Подъём» (белая карточка на тонированном поле) здесь невозможен: поле само белое.</div>
+    </div>
+
+    <div>
+      <div class="st-wrap">
+        <div class="st-lab">Карточка контекста</div>
+        <div class="g1-ctx" style="margin-top:0">
+          <em>Портфели</em>
+          <div class="g1-cr"><span class="dot" style="background:#5f7fa8"></span><b>Все портфели</b><span class="g1-drift ok">+0,8%</span></div>
+          <u class="g1-cv num">4 812 300 ₽</u>
+          <div class="g1-bar"><i class="st" style="width:38%"></i><i class="bd" style="width:62%"></i></div>
+          <div class="g1-lg"><span class="a">Акции 38</span><span class="b">Обл. 62</span></div>
+        </div>
+        <div class="g1-ctx" style="margin-top:12px">
+          <em>Портфели</em>
+          <div class="g1-cr"><span class="dot" style="background:#98a4b4"></span><b>Пока нет портфелей</b></div>
+          <div style="margin-top:7px;font-size:11px;color:var(--mut);line-height:1.45">Создайте первый — тогда здесь появятся сумма и раскладка.</div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>С данными и без них</b>Числа только там, где есть источник: сумма — <span class="num">PF.calcPf</span>, дневное — <span class="num">PF.dayDelta</span>. Нет вчерашнего снимка — чипа нет, а не ноль.</div>
+    </div>
+
+    <div>
+      <div class="st-wrap tint" style="width:120px;padding:10px">
+        <div class="st-lab">Свёрнуто</div>
+        <div style="background:var(--bg);border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0">
+          <div class="g2r-i"><svg viewBox="0 0 24 24"><path d="M3 9.5L12 3l9 6.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-6h6v6"/></svg><em>Главная</em></div>
+          <div class="g2r-i on"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="13" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg><em>Портфели</em></div>
+          <div class="g2r-i"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><em>Рынок</em></div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>Колонка спрятана</b>Оба варианта схлопываются в ту же рейку 76px, что и сейчас: страница получает всю ширину, кнопка разворота — внизу рейки.</div>
+    </div>
+
+  </div></div>
+</div>
+
+<!-- ═══════════════════ цена ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h">
+    <span class="mk-n">Ц</span>
+    <h2>Что придётся тронуть</h2>
+  </div>
+  <p class="mk-sub">Честная смета по обоим вариантам. Разметка <code style="font-family:var(--fN);font-size:13px">#sbRail</code> /
+  <code style="font-family:var(--fN);font-size:13px">#sbCtx</code> и модель <code style="font-family:var(--fN);font-size:13px">PF.sbSideModel()</code>
+  уже дают всё, что нужно обоим — новых источников данных не заводим.</p>
+
+  <table class="map">
+    <thead><tr><th>Что</th><th>Г1 «Мастер»</th><th>Г2 «Рейка + лист»</th></tr></thead>
+    <tbody>
+      <tr><td><b>css/sidebar-rail.css</b></td><td>переписывается почти целиком: рейка исчезает как отдельный столбец</td><td>правится блок <code>#sbCtx</code> и два цвета полей</td></tr>
+      <tr><td><b>js/sidebar-ctx.js</b></td><td>рендерит и разделы, и второй уровень; нужен режим «раскрыт под активным»</td><td>без изменений, кроме шапки колонки (надстрочник + число)</td></tr>
+      <tr><td><b>js/sidebar.js</b></td><td>смысл <code>sb-collapsed</code> меняется снова: колонка одна</td><td>без изменений</td></tr>
+      <tr><td><b>Мобильная шторка</b></td><td>под угрозой: она держится на <code>#sbRail{display:contents}</code></td><td>не затрагивается (весь код в десктопной медиа)</td></tr>
+      <tr><td><b>Новые данные</b></td><td colspan="2">нет: сумма и раскладка — <code>PF.calcPf</code>, дневное — <code>PF.dayDelta</code>, счётчики — как сейчас</td></tr>
+      <tr><td><b>Язык выбора</b></td><td colspan="2">«подъём» из В3-б уходит: на белом поле выбор — тонированная пилюля с зелёной риской</td></tr>
+    </tbody>
+  </table>
+
+  <div class="notes" style="grid-template-columns:1fr 1fr">
+    <div class="note no"><i>?</i><span><b>Открыто:</b> оставлять ли пояснения под разделами в Г1 — они и есть главный «премиальный» приём визарда, и они же главный источник лишних чернил в чроме.</span></div>
+    <div class="note no"><i>?</i><span><b>Открыто:</b> нужна ли карточка контекста на разделах без портфелей («Рынок», «Тест») — или там низ колонки остаётся пустым.</span></div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
