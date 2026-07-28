@@ -54,6 +54,11 @@ body.dark-mode .rbx-top-lead b { color: #eef2f7; }
     background: #dc2626; flex-shrink: 0;
 }
 body.dark-mode .rbx-top-state i { background: #f87171; }
+/* «Доли держатся плана» — то же место, тот же кегль, но без точки: это не
+   сигнал, а спокойный ответ. Строка не исчезает, иначе кнопка осталась бы в
+   углу одна. */
+.rbx-top-state.calm { color: #a8b1bf; }
+body.dark-mode .rbx-top-state.calm { color: #5f6b7d; }
 /* «Уже есть аккаунт? Войти» — не третий рассказ о продукте, а вторая половина
    того же выбора: одна кнопка в пустом углу читалась сиротой */
 .rbx-top-quiet {
@@ -105,8 +110,10 @@ body.sb-ctx .rbx-acad-btn { display: none; }
        стала короткой (дата погашения убрана из имени), лишняя ширина уходит
        акциям, где эшелонам всегда тесно. */
     grid-template-columns: minmax(300px, 0.95fr) minmax(0, 1.45fr);
-    /* каждый блок — своей высоты: карточки самостоятельные, без общего низа */
-    align-items: start;
+    /* Обе карточки ОДНОЙ ВЫСОТЫ (2026-07-28): списков теперь два, и разная
+       длина делала из ряда ступеньку — короткий блок ОФЗ обрывался посреди
+       акций. Внутри карточка — колонка, подпись прижата к низу (.rbx-foot). */
+    align-items: stretch;
     gap: 16px;
     margin-top: 16px;
 }
@@ -128,7 +135,7 @@ body.dark-mode .rbx-block {
    Georgia, что заголовок манифеста (шрифт в общем списке заголовков
    typography-tokens.css, здесь НЕ хардкодим), тихий моно-счётчик рядом,
    инструменты списка справа, снизу волосяная линия. */
-.rbx-block-cands { padding: 18px 18px 18px; min-width: 0; }
+.rbx-block-cands { padding: 18px 18px 18px; min-width: 0; display: flex; flex-direction: column; }
 .rbx-bh {
     /* Витрина держит четверых: название, счётчик, KPI и инструменты списка.
        В узкой карточке облигаций они не всегда влезают в строку, и вместо
@@ -171,7 +178,7 @@ body.dark-mode .rbx-kpi-in b { color: #34d399; }
    поповером, а не абзацем — постоянный текст спорил бы со списком бумаг, а
    спрашивают об этом один раз. Стоят на высоте подписи под таблицей ОФЗ
    (.rbx-foot), чтобы низ обеих карточек читался одинаково. */
-.rbx-hints { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 12px; }
+.rbx-hints { display: flex; flex-wrap: wrap; gap: 4px; margin-top: auto; padding-top: 12px; }
 .rbx-hint {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 5px 9px; border: 0; border-radius: 7px; cursor: pointer;
@@ -246,6 +253,29 @@ body.dark-mode .rbx-esh-hint:hover { color: #e8edf4; background: rgba(255, 255, 
 }
 .rbx-colhead span { text-align: right; }
 .rbx-colhead .l { text-align: left; }
+/* Кнопка-сортировка В ЗАГОЛОВКЕ КОЛОНКИ. Правило проекта: заголовок и значение
+   колонки — одна ширина, один align, один вес. Поэтому кнопка не приносит с
+   собой свой кегль и разрядку, а наследует стиль ряда заголовков и жмётся к
+   правому краю, как числа под ней. Иконки (нейтральная ↕ и направление ↓)
+   переключает .act/.asc — логика в updateOfzSortUI, её не трогали. */
+.rbx-colhead .rbx-sc {
+    justify-self: stretch;
+    justify-content: flex-end;
+    gap: 5px;
+    padding: 3px 0;
+    font-size: inherit; font-weight: inherit;
+    letter-spacing: inherit; text-transform: inherit;
+    background: none;
+    /* ЦВЕТ НЕ ПЕРЕОПРЕДЕЛЯЕМ. У .rbx-sc свои тона в обеих темах (включая
+       активную колонку), и они верные; попытки перекрасить кнопку под тон ряда
+       (`color: inherit`, явным значением, переменной) в тёмной теме не
+       побеждали — активный заголовок чернел на тёмном фоне. Разница тонов
+       между «Инструмент» и «Доходность» на глаз неразличима, а цена ошибки
+       здесь — нечитаемая строка. */
+}
+.rbx-colhead .rbx-sc:hover { background: none; }
+.rbx-colhead .rbx-sc-ico { width: 11px; height: 11px; }
+.rbx-colhead .rbx-sc-ico svg { width: 11px; height: 11px; }
 body.dark-mode .rbx-colhead { color: #7d8aa0; border-bottom-color: rgba(255, 255, 255, 0.08); }
 
 .rbx-ofz-list { display: flex; flex-direction: column; }
@@ -387,6 +417,7 @@ body.dark-mode .rbx-chart-btn { background: linear-gradient(135deg, #232f40, #10
 .rbx-foot {
     margin-top: 0; padding: 14px 6px 0;
     font-family: 'Inter', sans-serif; font-size: 11px; line-height: 1.5; color: #9aa6b8;
+    margin-top: auto;
 }
 
 /* ──────────────── СЕКЦИЯ АКЦИИ: 4 КОЛОНКИ ЭШЕЛОНОВ ──────────────── */

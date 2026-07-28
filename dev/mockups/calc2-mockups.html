@@ -1,0 +1,1227 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Расчёт · раунд 2 «Под Верстак»</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+       --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+       --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding:44px 0 90px;-webkit-font-smoothing:antialiased}
+.page{width:1440px;max-width:100%;margin:0 auto;padding:0 20px}
+
+/* ---------- документ ---------- */
+.doc-h{margin-bottom:34px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-acc);margin-bottom:9px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;text-wrap:balance;max-width:1020px}
+.doc-h p{margin-top:12px;font-size:15px;line-height:1.6;color:var(--doc-mut);max-width:900px}
+.verdict{margin-top:20px;display:flex;gap:14px;align-items:flex-start;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid var(--doc-acc);border-radius:14px;padding:16px 20px;max-width:1000px}
+.verdict p{margin:0;font-size:14.5px;line-height:1.6;color:var(--doc-quote)}
+.verdict p+p{margin-top:10px}
+.verdict b{font-weight:700;color:var(--doc-ink)}
+.dials{margin-top:16px;display:flex;gap:8px;flex-wrap:wrap}
+.dial{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.03em;padding:5px 10px;border-radius:7px;
+  background:var(--doc-panel);border:1px solid var(--doc-line);color:var(--doc-mut)}
+.dial b{color:var(--doc-ink);font-weight:700}
+
+.mk{margin-top:52px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.warn{background:rgba(217,119,6,.14);color:#c2760a}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-tag.ok{background:rgba(22,163,74,.15);color:#16a34a}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.6;max-width:1010px;margin-bottom:18px}
+.mk-sub b{color:var(--doc-ink);font-weight:700}
+.mk-sub code,.note code,.rec code{font-family:var(--fN);font-size:11.5px;color:var(--doc-acc)}
+.notes{margin-top:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 26px}
+.note{display:flex;gap:9px;font-size:13px;line-height:1.5;color:var(--doc-quote)}
+.note i{flex:none;width:18px;height:18px;border-radius:50%;background:var(--doc-ink);color:var(--doc-bg);font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.note.no i{background:#c2760a;color:#fff}
+.note.ok i{background:#16a34a;color:#fff}
+.note b{font-weight:700;color:var(--doc-ink)}
+.scroller{overflow-x:auto;padding:4px 0 10px}
+.strip2{display:flex;gap:20px;align-items:flex-start;width:max-content}
+.spec-cap{margin-top:10px;font-size:12px;line-height:1.45;color:var(--doc-mut);max-width:340px}
+.spec-cap b{color:var(--doc-ink);font-weight:700;display:block;font-size:12.5px;margin-bottom:2px}
+@media (max-width:1000px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} }
+
+.map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th,.map td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--doc-line);vertical-align:top}
+.map th{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);background:color-mix(in srgb,var(--doc-line) 40%,transparent)}
+.map tr:last-child td{border-bottom:0}
+.map code{font-family:var(--fN);font-size:11.5px;color:var(--doc-acc)}
+.map td b{font-weight:700}
+.map .yes{color:#16a34a;font-weight:700}
+.map .no{color:#c2760a;font-weight:700}
+.map .mid{color:var(--doc-mut);font-weight:700}
+.rec{margin-top:22px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:14px;padding:18px 22px;max-width:1010px}
+.rec h3{font-family:var(--fT);font-weight:400;font-size:20px;margin-bottom:8px}
+.rec p{font-size:14px;line-height:1.65;color:var(--doc-quote)}
+.rec p+p{margin-top:9px}
+.rec b{font-weight:700;color:var(--doc-ink)}
+
+/* ════════════════ СЦЕНА ════════════════ */
+.sc{
+  --ink:#101828; --mut:#5F6C82; --dim:#98a4b4;
+  --line:#e7ecf3; --bg:#f4f6fa; --card:#fff;
+  --grn:#177A4F; --red:#dc2626;
+  --sbacc:#2F6B4F;
+  --bond:#3B7AD1; --bondtx:#2F63AC; --eq:#D08A3C; --eqtx:#96591A;
+  position:relative;
+  display:flex; width:1400px; height:748px; overflow:hidden;
+  border:1px solid var(--doc-line); border-radius:18px;
+  background:var(--bg); color:var(--ink);
+  font-family:var(--fU); -webkit-font-smoothing:antialiased;
+  box-shadow:0 22px 50px -30px rgba(16,24,40,.45);
+}
+.sc.n2{width:690px}
+.sc .num{font-family:var(--fN);font-variant-numeric:tabular-nums}
+.sc svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.sc.dark{
+  --ink:#e9eef8; --mut:#929FB3; --dim:#5e6c84;
+  --line:rgba(255,255,255,.09); --bg:#0a0e15; --card:#121722;
+  --grn:#3FBF87; --red:#f87171;
+  --sbacc:#4FB98C;
+  --bond:#6BA4F5; --bondtx:#8FBBF8; --eq:#E8A05A; --eqtx:#EFBC85;
+}
+
+/* ---------- общие элементы (унаследованы от «Верстака») ---------- */
+.mark{flex:none;width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
+  background:linear-gradient(180deg,#232B3B 0%,#141A26 100%);color:#F1F6FB;
+  font-family:var(--fT);font-size:17px}
+.sc.dark .mark{background:#E9EEF8;color:#0A0E15}
+.mark.sm{width:30px;height:30px;border-radius:10px;font-size:15px}
+.bname{font-family:var(--fT);font-size:16px;font-weight:400;letter-spacing:-.01em;line-height:1.15;white-space:nowrap;color:var(--ink)}
+.bname span{color:var(--mut)}
+.bname b{font-weight:700}
+.circ{flex:none;box-sizing:border-box;border:1.5px solid var(--line);border-radius:50%;
+  background:var(--card);color:var(--dim);display:grid;place-items:center}
+.circ.on{background:var(--sbacc);border-color:var(--sbacc);color:#fff}
+.sc.dark .circ.on{color:#0A0E15}
+.grp{display:flex;align-items:center;gap:9px;padding:12px 10px 5px;font-size:9px;font-weight:800;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+.grp::after{content:'';flex:1;height:1px;background:var(--line)}
+.chg{font-family:var(--fN);font-size:10px;font-weight:700;letter-spacing:-.01em;color:var(--grn)}
+.cnt{font-family:var(--fN);font-size:10px;font-weight:600;color:var(--dim)}
+.sbtn{width:30px;height:30px;flex:none;display:grid;place-items:center;border-radius:9px;color:var(--dim)}
+.sbtn svg{width:16px;height:16px}
+
+/* ════════════════ САЙДБАР «ВЕРСТАК» (как в проде) ════════════════ */
+.bx{flex:none;width:288px;background:var(--card);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;min-height:0}
+.bx-head{padding:18px 18px 0;display:flex;align-items:center;gap:11px}
+.bx-cap{margin:14px 18px 0;padding:12px 14px 11px;border-radius:14px;background:var(--bg)}
+.bx-cap .top{display:flex;align-items:center;gap:8px}
+.bx-cap em{font-style:normal;flex:1;font-size:8.5px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--dim)}
+.bx-cap .v{display:flex;align-items:baseline;gap:8px;margin-top:4px}
+.bx-cap .v b{font-family:var(--fN);font-size:20px;font-weight:700;letter-spacing:-.025em}
+.bx-cap .day{margin-top:2px;font-family:var(--fN);font-size:10.5px;font-weight:600;color:var(--grn)}
+.bx-cap .bar{position:relative;margin-top:10px;height:5px;border-radius:3px;background:var(--line);display:flex}
+.bx-cap .bar i{display:block;height:100%}
+.bx-cap .bar i:first-child{border-radius:3px 0 0 3px}
+.bx-cap .bar i:last-child{border-radius:0 3px 3px 0}
+.bx-cap .tick{position:absolute;top:-3px;bottom:-3px;width:1.5px;border-radius:1px;background:var(--ink)}
+.bx-cap .lg{display:flex;justify-content:space-between;gap:6px;margin-top:6px;font-family:var(--fN);font-size:8.8px;letter-spacing:-.02em;white-space:nowrap;color:var(--dim)}
+.bx-cap .lg b{font-weight:700;color:var(--mut)}
+.bx-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:12px 12px 4px}
+.bx-cell{position:relative;padding:8px 2px 7px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  font-size:10px;font-weight:600;color:var(--mut);text-align:center}
+.bx-cell .circ{width:34px;height:34px;position:relative}
+.bx-cell .circ svg{width:17px;height:17px}
+.bx-cell span{max-width:100%;padding:0 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+.bx-cell.on{background:var(--bg);color:var(--ink);font-weight:700}
+.bx-hr{height:1px;background:var(--line);margin:8px 18px 0}
+.bx-ctx{flex:1;min-height:0;overflow:hidden;padding:4px 12px 0;display:flex;flex-direction:column}
+.bx-ctx .grp{padding:11px 6px 5px}
+.bx-sub{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:9px;font-size:12.5px;font-weight:500;color:var(--mut)}
+.bx-sub svg{width:14px;height:14px;flex:none;opacity:.65}
+.bx-sub .tx{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bx-sub.on{background:var(--bg);color:var(--ink);font-weight:600}
+.bx-sub.on svg{opacity:1;color:var(--sbacc)}
+.bx-foot{flex:none;display:flex;align-items:center;gap:4px;padding:10px 14px 14px;border-top:1px solid var(--line)}
+.bx-foot .sp{flex:1}
+
+/* ── ПУСТОТА второго уровня: то, что у «Расчёта» сегодня ── */
+.bx-void{flex:1;min-height:0;position:relative;margin-top:10px}
+.bx-void::after{
+  content:'≈ 290 px пустоты · у «Расчёта» второй уровень — три пункта';
+  position:absolute;left:20px;right:20px;top:30px;
+  font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--dim);opacity:.55;text-align:center;line-height:1.55}
+.bx-void b{position:absolute;left:18px;right:18px;top:10px;height:1px;background:repeating-linear-gradient(90deg,var(--line) 0 6px,transparent 6px 12px)}
+
+/* ── УСЛОВИЯ РАСЧЁТА В КОЛОНКЕ (вариант Б) ── */
+.bx-cond{padding:0 6px}
+.bx-fsum{margin:2px 4px 4px;padding:9px 11px 10px;border-radius:12px;background:var(--bg)}
+.bx-fsum em{font-style:normal;display:block;font-size:8.5px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--dim)}
+.bx-fsum .v{display:flex;align-items:baseline;gap:5px;margin-top:3px;padding-bottom:4px;border-bottom:1.5px solid var(--bond)}
+.bx-fsum .v b{flex:1;font-family:var(--fN);font-size:19px;font-weight:700;letter-spacing:-.03em}
+.bx-fsum .v span{font-family:var(--fN);font-size:14px;font-weight:700;color:var(--eqtx)}
+.bx-fld{display:flex;align-items:center;gap:9px;padding:6px 10px;border-radius:9px;font-size:12.5px;color:var(--mut)}
+.bx-fld .k{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bx-fld .v{font-family:var(--fN);font-size:12.5px;font-weight:700;color:var(--ink);white-space:nowrap}
+.bx-fld .v svg{width:11px;height:11px;margin-left:4px;vertical-align:-1px;color:var(--dim)}
+.bx-stp{display:flex;align-items:center;gap:3px}
+.bx-stp i{width:21px;height:21px;border-radius:6px;background:var(--bg);display:grid;place-items:center;
+  font-style:normal;font-size:13px;font-weight:700;color:var(--mut);line-height:1}
+.bx-stp b{min-width:52px;text-align:center;font-family:var(--fN);font-size:12px;font-weight:700;color:var(--ink)}
+.bx-note{margin:8px 10px 0;font-size:10.5px;line-height:1.45;color:var(--dim)}
+
+/* ── РЕЛЬСА ШАГОВ (вариант Г) ── */
+.bx-step{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:9px}
+.bx-step .n{flex:none;width:21px;height:21px;border-radius:50%;border:1.5px solid var(--line);background:var(--card);
+  font-family:var(--fN);font-size:10px;font-weight:700;color:var(--dim);display:grid;place-items:center}
+.bx-step .n svg{width:11px;height:11px}
+.bx-step b{display:block;font-size:12.5px;font-weight:500;color:var(--mut);line-height:1.3}
+.bx-step i{display:block;font-style:normal;margin-top:2px;font-family:var(--fN);font-size:10.5px;font-weight:600;color:var(--dim)}
+.bx-step.done .n{background:var(--sbacc);border-color:var(--sbacc);color:#fff}
+.sc.dark .bx-step.done .n{color:#0A0E15}
+.bx-step.done b{color:var(--ink)}
+.bx-step.on{background:var(--bg)}
+.bx-step.on .n{border-color:var(--ink);color:var(--ink)}
+.bx-step.on b{color:var(--ink);font-weight:700}
+.bx-again{margin:auto 10px 4px;display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;color:var(--mut)}
+.bx-again svg{width:13px;height:13px;color:var(--dim)}
+
+/* ════════════════ СТРАНИЦА «РАСЧЁТ» ════════════════ */
+.pg{flex:1;min-width:0;display:flex;flex-direction:column;padding:0 24px 18px;min-height:0}
+
+/* — старая шапка 104px (экраны «как сейчас») — */
+.oh{flex:none;display:flex;align-items:flex-end;gap:34px;padding:20px 2px 16px}
+.oh .l{flex:1;min-width:0}
+.oh h3{font-family:var(--fT);font-weight:400;font-size:26px;line-height:1.1;letter-spacing:-.01em}
+.oh p{margin-top:8px;font-size:12.5px;line-height:1.5;color:var(--mut);max-width:420px}
+.oh .r{flex:none;text-align:right}
+.oh .r em{font-style:normal;display:block;font-size:9px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--mut)}
+.oh .r .s{display:flex;align-items:baseline;justify-content:flex-end;gap:6px;margin-top:5px;padding-bottom:5px;border-bottom:1.5px solid var(--bond)}
+.oh .r .s b{font-family:var(--fN);font-size:29px;font-weight:700;letter-spacing:-.035em}
+.oh .r .s span{font-family:var(--fN);font-size:18px;font-weight:700;color:var(--eqtx)}
+.oh .r i{display:block;font-style:normal;margin-top:6px;font-size:10.5px;color:var(--mut)}
+
+/* — рабочая строка суммы (варианты А · В · дубль Б) — */
+.cxb{flex:none;display:flex;align-items:center;gap:16px;padding:16px 2px 13px;border-bottom:1px solid var(--line)}
+.cxb .fld{flex:none}
+.cxb .fld em{font-style:normal;display:block;font-size:8.5px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+.cxb .fld .v{display:flex;align-items:baseline;gap:6px;margin-top:3px;padding-bottom:4px;border-bottom:1.5px solid var(--bond)}
+.cxb .fld .v b{font-family:var(--fN);font-size:26px;font-weight:700;letter-spacing:-.035em}
+.cxb .fld .v span{font-family:var(--fN);font-size:17px;font-weight:700;color:var(--eqtx)}
+.cxb .chips{display:flex;align-items:center;gap:5px;padding-top:11px}
+.chip{height:27px;padding:0 10px;border-radius:8px;background:var(--bg);display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--fN);font-size:10.5px;font-weight:700;letter-spacing:-.01em;color:var(--mut);white-space:nowrap}
+.chip.on{background:var(--ink);color:var(--card)}
+.chip.wide{font-family:var(--fU);font-size:11px;font-weight:600}
+.chip svg{width:12px;height:12px;color:var(--dim)}
+.chip.on svg{color:inherit;opacity:.7}
+.cxb .sp{flex:1}
+.cxb .src{padding-top:11px;font-size:10.5px;line-height:1.4;color:var(--dim);text-align:right;white-space:nowrap}
+.cxb .src b{font-family:var(--fN);font-weight:700;color:var(--mut)}
+
+/* — общий каркас карточек — */
+.gr{flex:1;min-height:0;display:grid;gap:14px;margin-top:14px}
+.gr.g2{grid-template-columns:minmax(0,1.24fr) minmax(0,1fr)}
+.gr.g3{grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) 236px}
+.gr.g3r{grid-template-columns:236px minmax(0,1.1fr) minmax(0,1fr)}
+.cd{background:var(--card);border-radius:18px;padding:17px 19px;min-width:0;display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 1px 2px rgba(16,24,40,.05),0 18px 34px -24px rgba(16,24,40,.4)}
+.sc.dark .cd{box-shadow:0 1px 2px rgba(0,0,0,.3),0 18px 34px -20px rgba(0,0,0,.6)}
+.cd-hd{flex:none;display:flex;align-items:baseline;gap:10px}
+.cd-hd h4{font-family:var(--fT);font-weight:400;font-size:19px;letter-spacing:-.005em;line-height:1.15}
+.cd-hd .aside{margin-left:auto;font-size:11px;color:var(--mut);white-space:nowrap}
+.cd-hd .aside i{display:inline-block;width:8px;height:8px;border-radius:3px;margin-right:4px;vertical-align:0}
+.cd-hd .aside i.d1{background:var(--bond)}
+.cd-hd .aside i.d2{background:var(--eq);margin-left:10px}
+.cd-hd .aside i.d0{background:color-mix(in srgb,var(--ink) 11%,transparent)}
+
+/* — крупное число + подстрочник — */
+.lead{display:flex;align-items:baseline;gap:8px;margin-top:14px;font-family:var(--fN);font-size:36px;font-weight:700;
+  letter-spacing:-.045em;color:var(--ink);line-height:1}
+.lead .ap{font-size:23px;color:var(--dim);font-weight:600}
+.lead .u{font-size:14px;font-weight:600;color:var(--mut);letter-spacing:-.01em}
+.sub{margin-top:8px;font-family:var(--fN);font-size:11.5px;line-height:1.5;color:var(--mut);letter-spacing:-.01em}
+.sub b{color:var(--ink);font-weight:700}
+.sub b.cb{color:var(--bondtx)}
+.sub b.ce{color:var(--eqtx)}
+
+/* — столбики по годам — */
+.cols{flex:1;min-height:0;display:flex;justify-content:space-between;gap:12px;margin-top:14px}
+.col{flex:1;min-width:0;display:grid;grid-template-rows:auto 1fr auto;justify-items:center}
+.col .v{font-family:var(--fN);font-size:11.5px;font-weight:700;color:var(--ink);padding-bottom:6px;white-space:nowrap}
+.col .stack{width:100%;max-width:88px;height:100%;display:flex;flex-direction:column;justify-content:flex-end}
+.col .stack i{display:block;width:100%}
+.col .eq{background:var(--eq);border-radius:6px 6px 0 0}
+.col .bo{background:var(--bond)}
+.col .base{background:color-mix(in srgb,var(--ink) 11%,transparent)}
+.col .base.top{border-radius:6px 6px 0 0}
+.col .y{font-family:var(--fN);font-size:10px;font-weight:600;color:var(--mut);padding-top:8px}
+.legend{flex:none;display:flex;gap:14px;margin-top:12px;font-family:var(--fN);font-size:9.5px;font-weight:700;color:var(--mut)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.legend .b1{background:color-mix(in srgb,var(--ink) 11%,transparent)}
+.legend .b2{background:var(--bond)}
+.legend .b3{background:var(--eq)}
+
+/* — строка фактов — */
+.facts{flex:none;display:flex;gap:26px;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
+.fact{display:flex;flex-direction:column;gap:4px}
+.fact .l{font-size:11px;color:var(--mut)}
+.fact .v{font-family:var(--fN);font-size:14.5px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+.fact .v.g{color:var(--grn)}
+.fact .v.o{color:var(--eqtx)}
+
+/* — кнопки — */
+.cta{flex:none;display:flex;align-items:center;gap:10px;margin-top:14px}
+.btn{height:42px;padding:0 20px;border-radius:10px;background:var(--ink);color:var(--card);display:inline-flex;align-items:center;gap:9px;
+  font-size:13px;font-weight:700;letter-spacing:-.005em;white-space:nowrap}
+.sc.dark .btn{background:#F2F6FC;color:#111823}
+.btn svg{width:15px;height:15px}
+.btn.ghost{background:var(--bg);color:var(--mut);box-shadow:inset 0 0 0 1px var(--line)}
+.sc.dark .btn.ghost{background:rgba(255,255,255,.06);color:var(--mut);box-shadow:inset 0 0 0 1px var(--line)}
+.btn.lock{background:#E4EAF3;color:#46536A;box-shadow:none}
+.sc.dark .btn.lock{background:rgba(255,255,255,.10);color:#C3CEDE}
+.sel{height:42px;padding:0 13px;border-radius:10px;background:var(--bg);box-shadow:inset 0 0 0 1px var(--line);
+  display:inline-flex;align-items:center;gap:9px;font-size:12px;color:var(--mut);white-space:nowrap}
+.sel b{font-family:var(--fN);font-size:12px;font-weight:700;color:var(--ink)}
+.sel svg{width:13px;height:13px;color:var(--dim)}
+.cta .hint{font-size:11.5px;line-height:1.4;color:var(--dim)}
+.cta .sp{flex:1}
+
+/* — список стратегий (подъём) — */
+.strat{flex:1;min-height:0;margin-top:13px;background:var(--bg);border-radius:12px;padding:6px;display:flex;flex-direction:column;gap:2px}
+.sc.dark .strat{background:rgba(255,255,255,.045)}
+.srow{flex:1;display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:10px;min-height:0}
+.srow .wf{flex:none;width:3px;align-self:stretch;border-radius:2px;background:linear-gradient(180deg,var(--bond) 0 50%,var(--eq) 50% 100%)}
+.srow .n{flex:1;min-width:0}
+.srow .n b{display:block;font-size:13px;font-weight:600;letter-spacing:-.005em;color:var(--ink)}
+.srow .n i{display:block;font-style:normal;font-size:11px;color:var(--mut);margin-top:1px}
+.srow .mix{flex:none;text-align:right}
+.srow .mix em{font-style:normal;display:block;font-family:var(--fN);font-size:11.5px;font-weight:700;letter-spacing:-.02em}
+.srow .mix em.b{color:var(--bondtx)}
+.srow .mix em.s{color:var(--eqtx);margin-top:2px}
+.srow.on{background:var(--card);box-shadow:inset 0 0 0 1px rgba(15,23,42,.07),0 1px 1px rgba(15,23,42,.04),0 10px 20px -14px rgba(24,38,60,.55)}
+.sc.dark .srow.on{background:#1B222E;box-shadow:inset 0 0 0 1px rgba(255,255,255,.10),0 10px 22px -14px rgba(0,0,0,.8)}
+.srow.on .n b{font-weight:700}
+.srow .pen{width:28px;height:28px;flex:none;border-radius:9px;background:color-mix(in srgb,var(--ink) 6%,transparent);
+  display:grid;place-items:center;color:var(--mut)}
+.srow .pen svg{width:14px;height:14px}
+.slink{flex:none;display:flex;align-items:center;gap:11px;margin-top:12px;padding:11px 12px;border-radius:12px;background:var(--bg)}
+.sc.dark .slink{background:rgba(255,255,255,.045)}
+.slink .ic{flex:none;width:30px;height:30px;border-radius:9px;background:var(--card);display:grid;place-items:center;color:var(--mut)}
+.slink .ic svg{width:15px;height:15px}
+.slink .t{flex:1;min-width:0}
+.slink .t b{display:block;font-size:12.5px;font-weight:700}
+.slink .t i{display:block;font-style:normal;margin-top:2px;font-size:11px;color:var(--mut)}
+.slink .go{flex:none;height:31px;padding:0 14px;border-radius:9px;background:var(--ink);color:var(--card);
+  display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700}
+.sc.dark .slink .go{background:#F2F6FC;color:#111823}
+.slink .go svg{width:12px;height:12px}
+
+/* — корзина ОФЗ — */
+.seg{flex:none;display:inline-flex;gap:2px;margin-top:12px;padding:3px;background:var(--bg);border-radius:10px;align-self:flex-start}
+.sc.dark .seg{background:rgba(255,255,255,.045)}
+.seg span{padding:6px 13px;border-radius:8px;font-size:12px;font-weight:600;color:var(--mut)}
+.seg span.on{background:var(--card);color:var(--ink);font-weight:700;box-shadow:0 1px 2px rgba(15,23,42,.08)}
+.sc.dark .seg span.on{background:#1B222E}
+.th{flex:none;display:flex;align-items:center;gap:12px;margin-top:13px;padding-bottom:7px;border-bottom:1px solid var(--line);
+  font-size:8.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--mut)}
+.th .a{flex:1}.th .b{width:70px;text-align:right}.th .c{width:104px;text-align:right}
+.brows{flex:1;min-height:0;display:flex;flex-direction:column}
+.brow{flex:1;display:flex;align-items:center;gap:12px;min-height:0}
+.brow+.brow{border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.brow .a{flex:1;min-width:0}
+.brow .a b{display:block;font-family:var(--fN);font-size:12.5px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+.brow .a i{display:block;font-style:normal;font-size:10.5px;color:var(--mut);margin-top:2px}
+.brow .b{width:70px;text-align:right;font-family:var(--fN);font-size:12px;font-weight:700;color:var(--grn)}
+.stp{width:104px;flex:none;display:flex;align-items:center;justify-content:flex-end;gap:2px}
+.stp .k{width:27px;height:27px;border-radius:8px;background:var(--bg);display:grid;place-items:center;color:var(--mut);font-size:14px;font-weight:700;line-height:1}
+.sc.dark .stp .k{background:rgba(255,255,255,.06)}
+.stp .q{width:44px;text-align:center;font-family:var(--fN);font-size:12.5px;font-weight:700;color:var(--ink)}
+.bfoot{flex:none;display:flex;align-items:center;gap:12px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.bfoot .l{font-size:10.5px;color:var(--mut)}
+.bfoot .l b{display:block;font-family:var(--fN);font-size:12px;color:var(--ink);margin-top:3px}
+.bfoot .v{margin-left:auto;font-family:var(--fN);font-size:16px;font-weight:700;color:var(--eqtx);letter-spacing:-.02em}
+
+/* — купоны по месяцам — */
+.mbars{flex:1;min-height:0;display:flex;align-items:stretch;gap:5px;margin-top:14px}
+.mb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:7px;min-width:0}
+.mb i{width:100%;background:var(--eq);border-radius:5px 5px 0 0;opacity:.42}
+.mb.hi i{opacity:1}
+.mb b{font-family:var(--fN);font-size:8.5px;font-weight:700;letter-spacing:.02em;color:var(--mut)}
+.mb.hi b{color:var(--eqtx)}
+
+/* — полка результата во всю ширину (вариант Б) — */
+.shelf{flex:none;display:flex;align-items:flex-end;gap:30px;padding:18px 2px 15px;border-bottom:1px solid var(--line)}
+.shelf .l{min-width:0}
+.shelf .l em{font-style:normal;display:block;font-size:8.5px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+.shelf .big{display:flex;align-items:baseline;gap:9px;margin-top:6px;font-family:var(--fN);font-size:42px;font-weight:700;letter-spacing:-.05em;line-height:1}
+.shelf .big .ap{font-size:26px;color:var(--dim);font-weight:600}
+.shelf .big .u{font-size:15px;font-weight:600;color:var(--mut);letter-spacing:-.01em}
+.shelf .l .sub{margin-top:9px}
+.shelf .r{margin-left:auto;flex:none;display:flex;gap:26px;padding-bottom:3px}
+.shelf .rng{margin-left:auto;flex:none;padding-bottom:5px;font-size:10.5px;color:var(--dim);text-align:right;white-space:nowrap}
+
+/* — свёрнутый второй ответ (вариант В) — */
+.fold{background:var(--card);border-radius:18px;padding:15px 16px;display:flex;flex-direction:column;min-width:0;overflow:hidden;
+  box-shadow:0 1px 2px rgba(16,24,40,.05),0 18px 34px -24px rgba(16,24,40,.4)}
+.sc.dark .fold{box-shadow:0 1px 2px rgba(0,0,0,.3),0 18px 34px -20px rgba(0,0,0,.6)}
+.fold em{font-style:normal;display:block;font-size:8.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.fold h4{margin-top:6px;font-family:var(--fT);font-weight:400;font-size:17px;line-height:1.15;letter-spacing:-.005em}
+.fold .n{display:flex;align-items:baseline;gap:6px;margin-top:12px;font-family:var(--fN);font-size:25px;font-weight:700;letter-spacing:-.04em;line-height:1}
+.fold .n .ap{font-size:17px;color:var(--dim);font-weight:600}
+.fold .n .u{font-size:11.5px;font-weight:600;color:var(--mut);letter-spacing:-.01em}
+.fold .d{margin-top:7px;font-family:var(--fN);font-size:10.5px;line-height:1.5;color:var(--mut);letter-spacing:-.01em}
+.fold .mini{flex:1;min-height:0;display:flex;align-items:flex-end;gap:3px;margin-top:14px}
+.fold .mini i{flex:1;background:var(--eq);border-radius:3px 3px 0 0;opacity:.4}
+.fold .mini i.hi{opacity:.95}
+.fold .mini.bond i{background:var(--bond)}
+.fold .lnf{margin-top:12px;padding-top:11px;border-top:1px solid var(--line);font-size:10.5px;line-height:1.45;color:var(--mut)}
+.fold .open{margin-top:11px;height:34px;border-radius:10px;background:var(--bg);box-shadow:inset 0 0 0 1px var(--line);
+  display:flex;align-items:center;justify-content:center;gap:8px;font-size:12px;font-weight:700;color:var(--ink)}
+.sc.dark .fold .open{background:rgba(255,255,255,.06)}
+.fold .open svg{width:13px;height:13px;color:var(--mut)}
+
+/* — шаг мастера (вариант Г) — */
+.wh{flex:none;display:flex;align-items:flex-end;gap:20px;padding:18px 2px 13px;border-bottom:1px solid var(--line)}
+.wh em{font-style:normal;display:block;font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.wh h3{margin-top:6px;font-family:var(--fT);font-weight:400;font-size:24px;line-height:1.1;letter-spacing:-.01em}
+.wh p{margin-top:7px;font-size:12px;line-height:1.5;color:var(--mut);max-width:480px}
+.wh .prg{margin-left:auto;flex:none;display:flex;gap:5px;padding-bottom:6px}
+.wh .prg i{width:44px;height:3px;border-radius:2px;background:var(--line)}
+.wh .prg i.on{background:var(--ink)}
+.tiles{flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:1fr 1fr;gap:12px;margin-top:14px}
+.tile{background:var(--card);border-radius:14px;padding:14px 15px;display:flex;flex-direction:column;min-width:0;overflow:hidden;
+  box-shadow:0 1px 2px rgba(16,24,40,.05),0 14px 28px -22px rgba(16,24,40,.4)}
+.sc.dark .tile{box-shadow:0 1px 2px rgba(0,0,0,.3),0 14px 28px -20px rgba(0,0,0,.6)}
+.tile.on{box-shadow:inset 0 0 0 1.5px var(--ink),0 1px 2px rgba(16,24,40,.05),0 14px 28px -22px rgba(16,24,40,.4)}
+.tile .t{display:flex;align-items:baseline;gap:9px}
+.tile .t b{font-size:14px;font-weight:700;letter-spacing:-.005em}
+.tile .t i{font-style:normal;font-size:11px;color:var(--mut);margin-left:auto;white-space:nowrap}
+.tile .t i em{font-style:normal;font-family:var(--fN);font-weight:700;color:var(--bondtx)}
+.tile .t i s{text-decoration:none;font-family:var(--fN);font-weight:700;color:var(--eqtx);margin-left:6px}
+.tile .cap{margin-top:3px;font-size:11px;color:var(--mut)}
+.tile .ln{flex:1;min-height:0;margin-top:10px;position:relative}
+.tile .ln svg{position:absolute;inset:0;width:100%;height:100%}
+.tile .out{margin-top:9px;padding-top:9px;border-top:1px solid var(--line);display:flex;align-items:baseline;gap:7px}
+.tile .out b{font-family:var(--fN);font-size:17px;font-weight:700;letter-spacing:-.03em}
+.tile .out span{font-size:10.5px;color:var(--mut)}
+.wfoot{flex:none;display:flex;align-items:center;gap:12px;margin-top:13px}
+.wfoot .hint{font-size:11.5px;color:var(--mut)}
+.wfoot .sp{flex:1}
+
+/* — состав портфеля (Г, шаг 3) — */
+.mixbar{flex:none;display:flex;height:10px;border-radius:5px;overflow:hidden;margin-top:14px}
+.mixbar i{display:block}
+.plist{flex:1;min-height:0;display:flex;flex-direction:column;margin-top:12px}
+.prow{flex:1;display:flex;align-items:center;gap:12px;min-height:0}
+.prow+.prow{border-top:1px solid color-mix(in srgb,var(--line) 70%,transparent)}
+.prow .dot{flex:none;width:8px;height:8px;border-radius:3px}
+.prow .a{flex:1;min-width:0}
+.prow .a b{display:block;font-size:12.5px;font-weight:700;letter-spacing:-.005em}
+.prow .a i{display:block;font-style:normal;font-size:10.5px;color:var(--mut);margin-top:2px}
+.prow .w{width:56px;text-align:right;font-family:var(--fN);font-size:12px;font-weight:700;color:var(--mut)}
+.prow .s{width:92px;text-align:right;font-family:var(--fN);font-size:12.5px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+</style>
+</head>
+<body>
+<div class="page">
+<div class="doc-h">
+  <div class="doc-kicker">Расчёт · раунд 2 «Под Верстак» · четыре варианта</div>
+  <h1>«Расчёт» после «Верстака»: страница всё ещё сама себя называет, а колонка пустует</h1>
+  <p>Раунд «Пульт» (28 июля, утро) уносил навигацию вкладки в колонку сайдбара, когда та была <b>списком</b> и над страницей ещё стояла шапка сайта. К вечеру того же дня основание поменялось дважды: колонка стала «Верстаком» (табло капитала + разделы сеткой 4×2 + второй уровень под чертой), а <b>шапки сайта на десктопе не стало вовсе</b>. Ниже — разбор того, что от этого сломалось, и четыре разных ответа. Числа во всех сценах сняты с живой вкладки на сумме 1 000 000 ₽.</p>
+  <div class="verdict">
+    <div>
+      <p><b>Главное, что видно на текущем экране.</b> Вкладка называет себя <b>трижды</b>: ячейка «Расчёт» в сетке разделов, пункт «Рост капитала» в колонке и серифный заголовок «Рост капитала за годы» на странице. Третье — дословный повтор второго, и стоит он 104px рабочей высоты. Рядом обратная беда: под тремя пунктами второго уровня у «Расчёта» <b>≈290px пустоты</b> (на большом экране больше), пока карточки на странице скроллятся — в режиме дохода на 84px.</p>
+      <p><b>И экран выбора.</b> Первым, что видит вошедший, стоит полностраничный вопрос «Что для вас важнее сейчас?» с двумя витринами — а в колонке ровно в этот момент висят те же два пункта, и <b>ни один из них не подсвечен</b>: режим не персистится, после каждой перезагрузки колонка снова в состоянии «ничего не выбрано». Страница-вопрос дублирует навигацию и при этом делает её противоречивой.</p>
+      <p><b>Чего варианты не делают.</b> Живой прогноз и суммы в колонку не возвращаются — их уже пробовали в «Пульте» и владелец отверг («спорят с рабочей площадью за внимание»). Там, где в колонку что-то уезжает (вариант Б), уезжает <b>только ввод</b>: сумма, срок, комиссия, налог. И к каждому такому переезду прилагается обязательный дубль на странице — в рейке 84px и на мобиле второго уровня не существует.</p>
+    </div>
+  </div>
+  <div class="dials">
+    <span class="dial">Имён на странице: <b>1</b></span>
+    <span class="dial">Скругления <b>18 / 12 / 10 / 6</b></span>
+    <span class="dial">Синий = <b>облигации</b>, охра = <b>акции</b></span>
+    <span class="dial">Зелёный — <b>только сайдбару</b></span>
+    <span class="dial">Выбор = <b>подъём</b></span>
+    <span class="dial">Сцена <b>1400 × 748</b>, колонка <b>288</b></span>
+  </div>
+</div>
+
+<!-- ═══════════════════ КАК СЕЙЧАС ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">00</span><h2>Как сейчас</h2><span class="mk-tag warn">шесть поломок</span></div>
+  <div class="mk-sub">Слева — рабочий режим «Рост капитала», справа — то, с чего вкладка начинается при каждом заходе. Сцены сняты с живой страницы: <code>public/css/calc-r7.css</code> + <code>js/sidebar-ctx.js → calcModel()</code>.</div>
+  <div class="scroller"><div class="strip2">
+
+    <div>
+      <div class="sc">
+        <!-- САЙДБАР -->
+        <div class="bx">
+          <div class="bx-head"><div class="mark sm">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+          <div class="bx-cap">
+            <div class="top"><em>Капитал · все портфели</em></div>
+            <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
+            <div class="day num">+11 640 ₽ за сегодня</div>
+            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
+            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
+          </div>
+          <div class="bx-grid">
+            <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i><span>Портфели</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><span>Академия</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></i><span>Рынок</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span>Тест</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></i><span>Админка</span></div>
+          </div>
+          <div class="bx-hr"></div>
+          <div class="bx-ctx">
+            <div class="grp">Тип портфеля</div>
+            <div class="bx-sub on"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="15 7 21 7 21 13"/></svg><span class="tx">Рост капитала</span></div>
+            <div class="bx-sub"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg><span class="tx">Ежемесячный доход</span></div>
+            <div class="grp">Подбор</div>
+            <div class="bx-sub"><svg viewBox="0 0 24 24"><path d="M9.5 17h5"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9V17h-7v-3.1A6 6 0 0 1 12 3z"/></svg><span class="tx">Тест риск-профиля</span><span class="cnt">11</span></div>
+            <div class="bx-void"><b></b></div>
+          </div>
+          <div class="bx-foot">
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-2 8-2 8h16s-2-1-2-8"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/></svg></span>
+            <span class="sp"></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>
+          </div>
+        </div>
+        <!-- СТРАНИЦА -->
+        <div class="pg">
+          <div class="oh">
+            <div class="l">
+              <h3>Рост капитала за годы</h3>
+              <p>Стратегия задаёт долю акций. Прогноз пересчитывается сразу.</p>
+            </div>
+            <div class="r">
+              <em>Сумма инвестиций</em>
+              <div class="s"><b class="num">1 000 000</b><span class="num">₽</span></div>
+              <i>цены акций и облигаций по данным MOEX</i>
+            </div>
+          </div>
+          <div class="gr g2">
+            <div class="cd">
+              <div class="cd-hd"><h4>Ваш портфель через 3 года</h4><span class="aside">сценарий 1.32 млн – 1.61 млн</span></div>
+              <div class="lead"><span class="ap">≈</span><span class="num">1.46</span><span class="u">млн ₽ через 3 года</span></div>
+              <div class="sub">облигации <b class="cb">50%</b> · акции <b class="ce">50%</b> · доходность <b>13,5% годовых</b></div>
+              <div class="cols">
+                <div class="col"><span class="v num">1.00 млн</span><div class="stack"><i class="base top" style="height:61%"></i></div><span class="y num">сегодня</span></div>
+                <div class="col"><span class="v num">1.13 млн</span><div class="stack"><i class="eq" style="height:3%"></i><i class="bo" style="height:4%"></i><i class="base" style="height:61%"></i></div><span class="y num">2027</span></div>
+                <div class="col"><span class="v num">1.29 млн</span><div class="stack"><i class="eq" style="height:7%"></i><i class="bo" style="height:10%"></i><i class="base" style="height:61%"></i></div><span class="y num">2028</span></div>
+                <div class="col"><span class="v num">1.46 млн</span><div class="stack"><i class="eq" style="height:11%"></i><i class="bo" style="height:16%"></i><i class="base" style="height:61%"></i></div><span class="y num">2029</span></div>
+              </div>
+              <div class="legend"><span><i class="b1"></i>вложено</span><span><i class="b2"></i>облигации</span><span><i class="b3"></i>акции</span></div>
+              <div class="facts">
+                <div class="fact"><span class="l">Доход в месяц</span><span class="v o num">≈ 7 243 ₽</span></div>
+                <div class="fact"><span class="l">Прибыль за 3 года</span><span class="v g num">+ 461 380 ₽</span></div>
+              </div>
+              <div class="cta">
+                <span class="btn lock">Выберите комиссию</span>
+                <span class="sel">Комиссия брокера <b>Выбрать</b><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+              </div>
+            </div>
+            <div class="cd">
+              <div class="cd-hd"><h4>Стратегия</h4></div>
+              <div class="strat">
+                <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 70%,var(--eq) 70% 100%)"></i><div class="n"><b>Депозит</b><i>Защита капитала</i></div><div class="mix"><em class="b num">Обл. 70%</em><em class="s num">Акц. 30%</em></div></div>
+                <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 60%,var(--eq) 60% 100%)"></i><div class="n"><b>Баланс</b><i>Умеренный риск</i></div><div class="mix"><em class="b num">Обл. 60%</em><em class="s num">Акц. 40%</em></div></div>
+                <div class="srow on"><i class="wf"></i><div class="n"><b>Гармония</b><i>Классический баланс</i></div><div class="mix"><em class="b num">Обл. 50%</em><em class="s num">Акц. 50%</em></div></div>
+                <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 40%,var(--eq) 40% 100%)"></i><div class="n"><b>Умеренная</b><i>Баланс роста</i></div><div class="mix"><em class="b num">Обл. 40%</em><em class="s num">Акц. 60%</em></div></div>
+                <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 30%,var(--eq) 30% 100%)"></i><div class="n"><b>Агрессивная</b><i>Макс. рост</i></div><div class="mix"><em class="b num">Обл. 30%</em><em class="s num">Акц. 70%</em></div></div>
+                <div class="srow"><i class="wf" style="background:color-mix(in srgb,var(--ink) 14%,transparent)"></i><div class="n"><b>Своя</b><i>Настроить вручную</i></div><span class="pen"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span></div>
+              </div>
+              <div class="slink">
+                <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/></svg></span>
+                <span class="t"><b>Не знаете, какую выбрать?</b><i>Подберём за 2 минуты по тесту</i></span>
+                <span class="go">Тест<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>Режим «Рост капитала»</b>Заголовок повторяет подсвеченный пункт колонки. Сумма — единственный ввод вкладки — стоит в дальнем углу подписью 10px. Главное действие («Выберите комиссию») выключено, а живой шаг — селектор комиссии — стоит спутником справа от него.</div>
+    </div>
+
+    <div>
+      <div class="sc">
+        <div class="bx">
+          <div class="bx-head"><div class="mark sm">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+          <div class="bx-cap">
+            <div class="top"><em>Капитал · все портфели</em></div>
+            <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
+            <div class="day num">+11 640 ₽ за сегодня</div>
+            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
+            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
+          </div>
+          <div class="bx-grid">
+            <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i><span>Портфели</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><span>Академия</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></i><span>Рынок</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span>Тест</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></i><span>Админка</span></div>
+          </div>
+          <div class="bx-hr"></div>
+          <div class="bx-ctx">
+            <div class="grp">Тип портфеля</div>
+            <div class="bx-sub"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="15 7 21 7 21 13"/></svg><span class="tx">Рост капитала</span></div>
+            <div class="bx-sub"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg><span class="tx">Ежемесячный доход</span></div>
+            <div class="grp">Подбор</div>
+            <div class="bx-sub"><svg viewBox="0 0 24 24"><path d="M9.5 17h5"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9V17h-7v-3.1A6 6 0 0 1 12 3z"/></svg><span class="tx">Тест риск-профиля</span><span class="cnt">11</span></div>
+            <div class="bx-void"><b></b></div>
+          </div>
+          <div class="bx-foot">
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-2 8-2 8h16s-2-1-2-8"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/></svg></span>
+            <span class="sp"></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>
+          </div>
+        </div>
+        <div class="pg">
+          <div class="oh">
+            <div class="l">
+              <h3>Что для вас важнее сейчас?</h3>
+              <p>Введите сумму: обе карточки посчитают её на реальных ценах MOEX.</p>
+            </div>
+            <div class="r">
+              <em>Сумма инвестиций</em>
+              <div class="s"><b class="num">1 000 000</b><span class="num">₽</span></div>
+              <i>цены и купоны по данным MOEX</i>
+            </div>
+          </div>
+          <div class="gr g2" style="grid-template-columns:1fr 1fr">
+            <div class="cd">
+              <div class="cd-hd"><h4>Нарастить капитал за годы</h4></div>
+              <div class="sub" style="font-family:var(--fU);font-size:12px;line-height:1.5;letter-spacing:0">Не трогаю деньги сейчас — хочу, чтобы через несколько лет их стало заметно больше.</div>
+              <div class="lead" style="margin-top:18px"><span class="ap">≈</span><span class="num">1.46</span><span class="u">млн ₽ через 3 года</span></div>
+              <div class="sub">при стратегии «Гармония» · <b>13,5% годовых</b></div>
+              <div style="flex:1;min-height:0;position:relative;margin-top:16px">
+                <svg viewBox="0 0 400 110" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%">
+                  <path d="M4 96 L396 26" stroke="#3B7AD1" stroke-width="2.4"/>
+                  <path d="M4 96 L396 26 L396 108 L4 108 Z" fill="rgba(59,122,209,.10)" stroke="none"/>
+                  <circle cx="396" cy="26" r="4" fill="#3B7AD1" stroke="none"/>
+                </svg>
+              </div>
+              <div class="legend" style="justify-content:space-between"><span class="num">2026</span><span class="num">2029 · 1.46 млн</span></div>
+              <div class="facts" style="flex-direction:column;gap:10px">
+                <div class="fact" style="flex-direction:row;align-items:center;gap:9px"><span class="l">Облигации и акции по стратегии</span></div>
+                <div class="fact" style="flex-direction:row;align-items:center;gap:9px"><span class="l">Цель — рост, горизонт от 3 лет</span></div>
+              </div>
+              <div class="cta"><span class="btn">Выбрать рост<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span></div>
+            </div>
+            <div class="cd">
+              <div class="cd-hd"><h4>Получать деньги каждый месяц</h4></div>
+              <div class="sub" style="font-family:var(--fU);font-size:12px;line-height:1.5;letter-spacing:0">Пусть капитал приносит выплаты на счёт — как зарплата от вложений.</div>
+              <div class="lead" style="margin-top:18px"><span class="ap">≈</span><span class="num">8 686</span><span class="u">₽ в месяц</span></div>
+              <div class="sub">104 230 ₽ в год · <b>10,4% годовых</b> · после НДФЛ 13%</div>
+              <div class="mbars">
+                <div class="mb"><i style="height:70%"></i><b>ЯНВ</b></div>
+                <div class="mb"><i style="height:66%"></i><b>ФЕВ</b></div>
+                <div class="mb"><i style="height:78%"></i><b>МАР</b></div>
+                <div class="mb"><i style="height:88%"></i><b>АПР</b></div>
+                <div class="mb"><i style="height:62%"></i><b>МАЙ</b></div>
+                <div class="mb"><i style="height:84%"></i><b>ИЮН</b></div>
+                <div class="mb"><i style="height:68%"></i><b>ИЮЛ</b></div>
+                <div class="mb hi"><i style="height:92%"></i><b>АВГ</b></div>
+                <div class="mb"><i style="height:74%"></i><b>СЕН</b></div>
+                <div class="mb"><i style="height:80%"></i><b>ОКТ</b></div>
+                <div class="mb"><i style="height:64%"></i><b>НОЯ</b></div>
+                <div class="mb"><i style="height:86%"></i><b>ДЕК</b></div>
+              </div>
+              <div class="facts" style="flex-direction:column;gap:10px">
+                <div class="fact" style="flex-direction:row;align-items:center;gap:9px"><span class="l">12 выплат в год, 6 выпусков</span></div>
+                <div class="fact" style="flex-direction:row;align-items:center;gap:9px"><span class="l">Минимальный риск</span></div>
+              </div>
+              <div class="cta"><span class="btn ghost">Выбрать доход<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>Первый вход · экран выбора</b>Полоса «Не знаете, что выбрать? · Тест» стоит ещё ниже и на 900px не помещается в кадр. В колонке в этот момент <b>не подсвечен ни один</b> из двух пунктов «Типа портфеля» — состояние, которого в навигации быть не должно.</div>
+    </div>
+
+  </div></div>
+  <div class="notes">
+    <div class="note no"><i>1</i><span><b>Три имени одного экрана.</b> Раздел называет ячейка сетки, режим — пункт колонки, и он же — серифный заголовок страницы. 104px на дословный повтор.</span></div>
+    <div class="note no"><i>2</i><span><b>Экран-вопрос дублирует колонку.</b> Чузер спрашивает то, на что колонка отвечает двумя строками, — и оставляет её без выбранного пункта.</span></div>
+    <div class="note no"><i>3</i><span><b>Сумма в углу.</b> Единственный ввод вкладки стоит справа вверху под капслоком 10px, за 900px от стратегии и от прогноза, которые от неё зависят.</span></div>
+    <div class="note no"><i>4</i><span><b>Колонка пустует.</b> Три пункта и ≈290px пустоты под ними — ровно та же дыра, что была у «Академии» до её раунда.</span></div>
+    <div class="note no"><i>5</i><span><b>Главное действие мертво.</b> «Выберите комиссию» — не кнопка, а инструкция; настоящий шаг стоит спутником справа. До него вкладка не имеет ни одного живого действия.</span></div>
+    <div class="note no"><i>6</i><span><b>Страница не влезает.</b> В режиме дохода карточки выше окна на 84px: высота прибита формулой <code>--cx-card-h + 104px</code>, а 104px были ростом снятой тёмной плиты.</span></div>
+  </div>
+</div>
+<!-- ═══════════════════ А ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">А</span><h2>«Строка» — заголовка нет, вместо него сумма</h2><span class="mk-tag mute">минимальное вмешательство</span></div>
+  <div class="mk-sub">Самый осторожный ответ. Ничего не переезжает, раскладка та же. Уходят две вещи: <b>серифный заголовок-дубль</b> и <b>экран выбора как отдельный экран</b> — режим начинает персиститься (<code>cx_mode_v1</code>), вход в «Расчёт» открывает последний, у нового пользователя «Рост капитала». На месте шапки — <b>рабочая строка</b> 56px: сумма крупно и слева (там, где взгляд начинает страницу), рядом чипы быстрых сумм, включая живую «Из портфелей · 1,46 млн», следом условия расчёта чипами. Комиссия перестаёт быть главным действием и становится тем, чем является, — условием; главная кнопка «Создать портфель» с первой секунды живая. Освободившиеся ≈90px уходят карточкам: режим дохода перестаёт вылезать за окно. Колонка не меняется — <b>пустота под тремя пунктами остаётся</b>, это цена варианта.</div>
+  <div class="scroller"><div class="strip2">
+    <div>
+      <div class="sc">
+        <div class="bx">
+          <div class="bx-head"><div class="mark sm">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+          <div class="bx-cap">
+            <div class="top"><em>Капитал · все портфели</em></div>
+            <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
+            <div class="day num">+11 640 ₽ за сегодня</div>
+            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
+            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
+          </div>
+          <div class="bx-grid">
+            <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i><span>Портфели</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><span>Академия</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></i><span>Рынок</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span>Тест</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></i><span>Админка</span></div>
+          </div>
+          <div class="bx-hr"></div>
+          <div class="bx-ctx">
+            <div class="grp">Тип портфеля</div>
+            <div class="bx-sub on"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="15 7 21 7 21 13"/></svg><span class="tx">Рост капитала</span></div>
+            <div class="bx-sub"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg><span class="tx">Ежемесячный доход</span></div>
+            <div class="grp">Подбор</div>
+            <div class="bx-sub"><svg viewBox="0 0 24 24"><path d="M9.5 17h5"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9V17h-7v-3.1A6 6 0 0 1 12 3z"/></svg><span class="tx">Тест риск-профиля</span><span class="cnt">11</span></div>
+            <div class="bx-void"><b></b></div>
+          </div>
+          <div class="bx-foot">
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-2 8-2 8h16s-2-1-2-8"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/></svg></span>
+            <span class="sp"></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>
+          </div>
+        </div>
+        <div class="pg">
+          <div class="cxb">
+            <div class="fld">
+              <em>Сумма инвестиций</em>
+              <div class="v"><b class="num">1 000 000</b><span class="num">₽</span></div>
+            </div>
+            <div class="chips">
+              <span class="chip">100 тыс</span>
+              <span class="chip">500 тыс</span>
+              <span class="chip on">1 млн</span>
+              <span class="chip wide"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Из портфелей · 1,46 млн</span>
+            </div>
+            <div class="chips" style="margin-left:16px">
+              <span class="chip wide">Срок <b class="num" style="margin-left:2px;color:var(--ink)">3 года</b><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+              <span class="chip wide">Комиссия <b class="num" style="margin-left:2px;color:var(--ink)">0,3%</b><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+            </div>
+            <div class="sp"></div>
+            <div class="src">Цены MOEX · <b>12:04</b></div>
+          </div>
+          <div class="gr g2">
+            <div class="cd">
+              <div class="cd-hd"><h4>Ваш портфель через 3 года</h4><span class="aside">сценарий 1.32 млн – 1.61 млн</span></div>
+              <div class="lead"><span class="ap">≈</span><span class="num">1.46</span><span class="u">млн ₽ через 3 года</span></div>
+              <div class="sub">облигации <b class="cb">50%</b> · акции <b class="ce">50%</b> · доходность <b>13,5% годовых</b></div>
+              <div class="cols">
+                <div class="col"><span class="v num">1.00 млн</span><div class="stack"><i class="base top" style="height:61%"></i></div><span class="y num">сегодня</span></div>
+                <div class="col"><span class="v num">1.13 млн</span><div class="stack"><i class="eq" style="height:3%"></i><i class="bo" style="height:4%"></i><i class="base" style="height:61%"></i></div><span class="y num">2027</span></div>
+                <div class="col"><span class="v num">1.29 млн</span><div class="stack"><i class="eq" style="height:7%"></i><i class="bo" style="height:10%"></i><i class="base" style="height:61%"></i></div><span class="y num">2028</span></div>
+                <div class="col"><span class="v num">1.46 млн</span><div class="stack"><i class="eq" style="height:11%"></i><i class="bo" style="height:16%"></i><i class="base" style="height:61%"></i></div><span class="y num">2029</span></div>
+              </div>
+              <div class="legend"><span><i class="b1"></i>вложено</span><span><i class="b2"></i>облигации</span><span><i class="b3"></i>акции</span></div>
+              <div class="facts">
+                <div class="fact"><span class="l">Доход в месяц</span><span class="v o num">≈ 7 243 ₽</span></div>
+                <div class="fact"><span class="l">Прибыль за 3 года</span><span class="v g num">+ 461 380 ₽</span></div>
+                <div class="fact"><span class="l">Вложено</span><span class="v num">1 000 000 ₽</span></div>
+              </div>
+              <div class="cta">
+                <span class="btn">Создать портфель<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+                <span class="btn ghost">Сохранить расчёт</span>
+              </div>
+            </div>
+            <div class="cd">
+              <div class="cd-hd"><h4>Стратегия</h4><span class="aside"><i class="d1"></i>обл.<i class="d2"></i>акц.</span></div>
+              <div class="strat">
+                <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 70%,var(--eq) 70% 100%)"></i><div class="n"><b>Депозит</b><i>Защита капитала</i></div><div class="mix"><em class="b num">Обл. 70%</em><em class="s num">Акц. 30%</em></div></div>
+                <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 60%,var(--eq) 60% 100%)"></i><div class="n"><b>Баланс</b><i>Умеренный риск</i></div><div class="mix"><em class="b num">Обл. 60%</em><em class="s num">Акц. 40%</em></div></div>
+                <div class="srow on"><i class="wf"></i><div class="n"><b>Гармония</b><i>Классический баланс</i></div><div class="mix"><em class="b num">Обл. 50%</em><em class="s num">Акц. 50%</em></div></div>
+                <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 40%,var(--eq) 40% 100%)"></i><div class="n"><b>Умеренная</b><i>Баланс роста</i></div><div class="mix"><em class="b num">Обл. 40%</em><em class="s num">Акц. 60%</em></div></div>
+                <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 30%,var(--eq) 30% 100%)"></i><div class="n"><b>Агрессивная</b><i>Макс. рост</i></div><div class="mix"><em class="b num">Обл. 30%</em><em class="s num">Акц. 70%</em></div></div>
+                <div class="srow"><i class="wf" style="background:color-mix(in srgb,var(--ink) 14%,transparent)"></i><div class="n"><b>Своя</b><i>Настроить вручную</i></div><span class="pen"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span></div>
+              </div>
+              <div class="slink">
+                <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/></svg></span>
+                <span class="t"><b>Не знаете, какую выбрать?</b><i>Подберём за 2 минуты по тесту</i></span>
+                <span class="go">Тест<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>А · «Строка»</b>Строка суммы читается слева направо как фраза: «1 000 000 ₽ · за 3 года · с комиссией 0,3%». Всё остальное — прежняя вкладка, выросшая вниз на 90px.</div>
+    </div>
+  </div></div>
+  <div class="notes">
+    <div class="note ok"><i>1</i><span><b>Закрывает</b> поломки 1, 2, 3, 5 и 6. Пустота в колонке (4) остаётся нетронутой.</span></div>
+    <div class="note"><i>2</i><span>Персист режима — <b>новое поведение</b>: сегодня <code>calc-mode.js</code> сознательно не запоминает режим и всегда показывает чузер. Экран выбора остаётся живым как страница <b>для нового пользователя</b> (пока ни одного расчёта не было) и по кнопке «Новый расчёт».</span></div>
+    <div class="note"><i>3</i><span>Объём: одна новая строка в разметке + перенос <code>#ndInputHero</code>; чипы сумм и «Из портфелей» — новое (сумма портфелей уже считается в <code>PF.sbCapModel</code>).</span></div>
+  </div>
+</div>
+<!-- ═══════════════════ Б ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">Б</span><h2>«Пульт» — условия расчёта уезжают в колонку</h2><span class="mk-tag">закрывает пустоту</span></div>
+  <div class="mk-sub">Тот же ход, которым только что чинили «Академию»: у раздела пустует второй уровень — значит, туда должно уехать то, чему там место. Здесь это <b>условия расчёта</b>: сумма, срок, комиссия, налог. В колонку уезжает <b>только ввод</b> — живого прогноза и сумм в навигации нет, это уже пробовали в «Пульте» и отвергли. Страница освобождается целиком под ответ: сверху <b>полка результата</b> во всю ширину (число, из чего оно сложилось, три факта), под ней столбики по годам и стратегии, внизу — ряд действий. Своего заголовка у страницы нет вовсе: первое, что она говорит, — «1,46 млн через 3 года», и это честнее любого имени. <b>Цена названа:</b> в рейке 84px и на мобиле второго уровня не существует, поэтому условия обязаны дублироваться строкой над карточками — той самой, что нарисована в варианте А.</div>
+  <div class="scroller"><div class="strip2">
+
+    <div>
+      <div class="sc">
+        <div class="bx">
+          <div class="bx-head"><div class="mark sm">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+          <div class="bx-cap">
+            <div class="top"><em>Капитал · все портфели</em></div>
+            <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
+            <div class="day num">+11 640 ₽ за сегодня</div>
+            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
+            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
+          </div>
+          <div class="bx-grid">
+            <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i><span>Портфели</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><span>Академия</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></i><span>Рынок</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span>Тест</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></i><span>Админка</span></div>
+          </div>
+          <div class="bx-hr"></div>
+          <div class="bx-ctx">
+            <div class="grp">Тип портфеля</div>
+            <div class="bx-sub on"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="15 7 21 7 21 13"/></svg><span class="tx">Рост капитала</span></div>
+            <div class="bx-sub"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg><span class="tx">Ежемесячный доход</span></div>
+            <div class="grp">Условия расчёта</div>
+            <div class="bx-cond">
+              <div class="bx-fsum">
+                <em>Сумма инвестиций</em>
+                <div class="v"><b class="num">1 000 000</b><span class="num">₽</span></div>
+              </div>
+              <div class="bx-fld"><span class="k">Срок</span><span class="bx-stp"><i>−</i><b class="num">3 года</b><i>+</i></span></div>
+              <div class="bx-fld"><span class="k">Комиссия брокера</span><span class="v num">0,3%<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+              <div class="bx-fld"><span class="k">Налог</span><span class="v num">НДФЛ 13%<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+            </div>
+            <div class="grp">Подбор</div>
+            <div class="bx-sub"><svg viewBox="0 0 24 24"><path d="M9.5 17h5"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9V17h-7v-3.1A6 6 0 0 1 12 3z"/></svg><span class="tx">Тест риск-профиля</span><span class="cnt">11</span></div>
+            <div class="bx-note">В рейке 84px и на мобиле второго уровня нет — там те же условия стоят строкой над карточками.</div>
+          </div>
+          <div class="bx-foot">
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-2 8-2 8h16s-2-1-2-8"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/></svg></span>
+            <span class="sp"></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>
+          </div>
+        </div>
+        <div class="pg">
+          <div class="shelf">
+            <div class="l">
+              <em>Ваш портфель через 3 года</em>
+              <div class="big"><span class="ap">≈</span><span class="num">1,46</span><span class="u">млн ₽</span></div>
+              <div class="sub">стратегия <b>«Гармония»</b> · облигации <b class="cb">50%</b> · акции <b class="ce">50%</b> · <b>13,5% годовых</b> · сценарий 1,32 – 1,61 млн</div>
+            </div>
+            <div class="r">
+              <div class="fact"><span class="l">Вложено</span><span class="v num">1 000 000 ₽</span></div>
+              <div class="fact"><span class="l">Прибыль за 3 года</span><span class="v g num">+ 461 380 ₽</span></div>
+              <div class="fact"><span class="l">Доход в месяц</span><span class="v o num">≈ 7 243 ₽</span></div>
+            </div>
+          </div>
+          <div class="gr g2">
+            <div class="cd">
+              <div class="cd-hd"><h4>По годам</h4><span class="aside"><i class="d0"></i>вложено<i class="d1"></i>облигации<i class="d2"></i>акции</span></div>
+              <div class="cols">
+                <div class="col"><span class="v num">1.00 млн</span><div class="stack"><i class="base top" style="height:61%"></i></div><span class="y num">сегодня</span></div>
+                <div class="col"><span class="v num">1.13 млн</span><div class="stack"><i class="eq" style="height:3%"></i><i class="bo" style="height:4%"></i><i class="base" style="height:61%"></i></div><span class="y num">2027</span></div>
+                <div class="col"><span class="v num">1.29 млн</span><div class="stack"><i class="eq" style="height:7%"></i><i class="bo" style="height:10%"></i><i class="base" style="height:61%"></i></div><span class="y num">2028</span></div>
+                <div class="col"><span class="v num">1.46 млн</span><div class="stack"><i class="eq" style="height:11%"></i><i class="bo" style="height:16%"></i><i class="base" style="height:61%"></i></div><span class="y num">2029</span></div>
+              </div>
+              <div class="facts" style="padding-top:12px">
+                <div class="fact"><span class="l">Прибыль облигаций</span><span class="v num" style="color:var(--bondtx)">+ 271 200 ₽</span></div>
+                <div class="fact"><span class="l">Прибыль акций</span><span class="v num" style="color:var(--eqtx)">+ 190 180 ₽</span></div>
+              </div>
+            </div>
+            <div class="cd">
+              <div class="cd-hd"><h4>Стратегия</h4><span class="aside">доля акций задаёт риск</span></div>
+              <div class="strat">
+                <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 70%,var(--eq) 70% 100%)"></i><div class="n"><b>Депозит</b><i>Защита капитала</i></div><div class="mix"><em class="b num">Обл. 70%</em><em class="s num">Акц. 30%</em></div></div>
+                <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 60%,var(--eq) 60% 100%)"></i><div class="n"><b>Баланс</b><i>Умеренный риск</i></div><div class="mix"><em class="b num">Обл. 60%</em><em class="s num">Акц. 40%</em></div></div>
+                <div class="srow on"><i class="wf"></i><div class="n"><b>Гармония</b><i>Классический баланс</i></div><div class="mix"><em class="b num">Обл. 50%</em><em class="s num">Акц. 50%</em></div></div>
+                <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 40%,var(--eq) 40% 100%)"></i><div class="n"><b>Умеренная</b><i>Баланс роста</i></div><div class="mix"><em class="b num">Обл. 40%</em><em class="s num">Акц. 60%</em></div></div>
+                <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 30%,var(--eq) 30% 100%)"></i><div class="n"><b>Агрессивная</b><i>Макс. рост</i></div><div class="mix"><em class="b num">Обл. 30%</em><em class="s num">Акц. 70%</em></div></div>
+                <div class="srow"><i class="wf" style="background:color-mix(in srgb,var(--ink) 14%,transparent)"></i><div class="n"><b>Своя</b><i>Настроить вручную</i></div><span class="pen"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="cta">
+            <span class="btn">Создать портфель<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+            <span class="btn ghost">Сохранить расчёт</span>
+            <span class="sp"></span>
+            <span class="slink" style="margin-top:0;padding:8px 10px">
+              <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/></svg></span>
+              <span class="t"><b>Не знаете, какую стратегию выбрать?</b><i>Тест на 11 вопросов · 2 минуты</i></span>
+              <span class="go">Тест<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+            </span>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>Б · «Пульт» · рост капитала</b>У страницы нет заголовка: первое, что она произносит, — сам ответ. Ряд действий стал подвалом страницы, а не хвостом одной карточки, и полоса теста наконец стоит рядом с кнопками, а не внутри списка стратегий.</div>
+    </div>
+
+    <div>
+      <div class="sc">
+        <div class="bx">
+          <div class="bx-head"><div class="mark sm">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+          <div class="bx-cap">
+            <div class="top"><em>Капитал · все портфели</em></div>
+            <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
+            <div class="day num">+11 640 ₽ за сегодня</div>
+            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
+            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
+          </div>
+          <div class="bx-grid">
+            <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i><span>Портфели</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><span>Академия</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></i><span>Рынок</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span>Тест</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></i><span>Админка</span></div>
+          </div>
+          <div class="bx-hr"></div>
+          <div class="bx-ctx">
+            <div class="grp">Тип портфеля</div>
+            <div class="bx-sub"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="15 7 21 7 21 13"/></svg><span class="tx">Рост капитала</span></div>
+            <div class="bx-sub on"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg><span class="tx">Ежемесячный доход</span></div>
+            <div class="grp">Условия расчёта</div>
+            <div class="bx-cond">
+              <div class="bx-fsum">
+                <em>Сумма инвестиций</em>
+                <div class="v"><b class="num">1 000 000</b><span class="num">₽</span></div>
+              </div>
+              <div class="bx-fld"><span class="k">Налог</span><span class="v num">НДФЛ 13%<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span></div>
+              <div class="bx-fld"><span class="k">Выпусков в корзине</span><span class="v num">6</span></div>
+              <div class="bx-fld"><span class="k">Выплат в год</span><span class="v num">12</span></div>
+            </div>
+            <div class="grp">Готовый расчёт</div>
+            <div class="bx-sub"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="tx">Корзина ОФЗ</span><span class="cnt">6</span></div>
+            <div class="bx-note">Срока и комиссии у купонного режима нет — колонка показывает только те условия, которые в нём есть.</div>
+          </div>
+          <div class="bx-foot">
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-2 8-2 8h16s-2-1-2-8"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/></svg></span>
+            <span class="sp"></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>
+          </div>
+        </div>
+        <div class="pg">
+          <div class="shelf">
+            <div class="l">
+              <em>Купоны приходят каждый месяц</em>
+              <div class="big"><span class="ap">≈</span><span class="num">8 686</span><span class="u">₽ в месяц</span></div>
+              <div class="sub">104 230 ₽ в год · <b>10,4% годовых</b> · после НДФЛ 13% · 6 выпусков ОФЗ, 12 выплат</div>
+            </div>
+            <div class="r">
+              <div class="fact"><span class="l">Вложено</span><span class="v num">1 000 000 ₽</span></div>
+              <div class="fact"><span class="l">Ближайшая выплата</span><span class="v o num">+ 8 168 ₽</span></div>
+              <div class="fact"><span class="l">ОФЗ 26240</span><span class="v num">12 авг</span></div>
+            </div>
+          </div>
+          <div class="gr g2">
+            <div class="cd">
+              <div class="cd-hd"><h4>Корзина ОФЗ</h4><span class="aside">выпуски подобраны по месяцам купона</span></div>
+              <div class="th"><span class="a">Облигация</span><span class="b">Доходность</span><span class="c">Кол-во</span></div>
+              <div class="brows">
+                <div class="brow"><span class="a"><b>ОФЗ 26240</b><i>купоны · фев и авг</i></span><span class="b num">17,90%</span><span class="stp"><span class="k">−</span><span class="q num">269</span><span class="k">+</span></span></div>
+                <div class="brow"><span class="a"><b>ОФЗ 26230</b><i>купоны · мар и сен</i></span><span class="b num">18,03%</span><span class="stp"><span class="k">−</span><span class="q num">273</span><span class="k">+</span></span></div>
+                <div class="brow"><span class="a"><b>ОФЗ 26245</b><i>купоны · апр и окт</i></span><span class="b num">15,55%</span><span class="stp"><span class="k">−</span><span class="q num">188</span><span class="k">+</span></span></div>
+                <div class="brow"><span class="a"><b>ОФЗ 26225</b><i>купоны · май и ноя</i></span><span class="b num">17,73%</span><span class="stp"><span class="k">−</span><span class="q num">251</span><span class="k">+</span></span></div>
+                <div class="brow"><span class="a"><b>ОФЗ 26238</b><i>купоны · июн и дек</i></span><span class="b num">18,74%</span><span class="stp"><span class="k">−</span><span class="q num">305</span><span class="k">+</span></span></div>
+                <div class="brow"><span class="a"><b>ОФЗ 26233</b><i>купоны · янв и июл</i></span><span class="b num">19,18%</span><span class="stp"><span class="k">−</span><span class="q num">293</span><span class="k">+</span></span></div>
+              </div>
+              <div class="bfoot"><span class="l">Свободный остаток<b class="num">4 120 ₽</b></span><span class="v num">1 000 000 ₽</span></div>
+            </div>
+            <div class="cd">
+              <div class="cd-hd"><h4>Выплаты по месяцам</h4><span class="aside">после НДФЛ 13%</span></div>
+              <div class="mbars">
+                <div class="mb hi"><i style="height:92%"></i><b>АВГ</b></div>
+                <div class="mb"><i style="height:74%"></i><b>СЕН</b></div>
+                <div class="mb"><i style="height:80%"></i><b>ОКТ</b></div>
+                <div class="mb"><i style="height:64%"></i><b>НОЯ</b></div>
+                <div class="mb"><i style="height:86%"></i><b>ДЕК</b></div>
+                <div class="mb"><i style="height:70%"></i><b>ЯНВ</b></div>
+                <div class="mb"><i style="height:66%"></i><b>ФЕВ</b></div>
+                <div class="mb"><i style="height:78%"></i><b>МАР</b></div>
+                <div class="mb"><i style="height:88%"></i><b>АПР</b></div>
+                <div class="mb"><i style="height:62%"></i><b>МАЙ</b></div>
+                <div class="mb"><i style="height:84%"></i><b>ИЮН</b></div>
+                <div class="mb"><i style="height:68%"></i><b>ИЮЛ</b></div>
+              </div>
+              <div class="bfoot"><span class="l">Самый тихий месяц<b class="num">май · 6 940 ₽</b></span><span class="v num">104 230 ₽ за год</span></div>
+            </div>
+          </div>
+          <div class="cta">
+            <span class="btn">Создать портфель<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+            <span class="btn ghost">Подробный график выплат</span>
+            <span class="sp"></span>
+            <span class="hint">Купоны и НКД — по данным MOEX, 12:04</span>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>Б · «Пульт» · ежемесячный доход</b>Правая колонка режима перестаёт быть парой «баннер ↔ график в одном слоте» (<code>toggleScheduleView</code>): число уехало в полку, в карточке остались только выплаты. Карточки больше не прибиты формулой <code>--cx-card-h + 104px</code> — высоту задаёт сетка.</div>
+    </div>
+
+  </div></div>
+  <div class="notes">
+    <div class="note ok"><i>1</i><span><b>Закрывает</b> все шесть поломок разом: имя одно, чузера нет, сумма стоит рядом с типом портфеля, колонка занята делом, главная кнопка живая, высоту держит сетка.</span></div>
+    <div class="note no"><i>2</i><span><b>Цена.</b> Условия в колонке — десктопная роскошь. Строка-дубль над карточками (вариант А) обязана существовать <b>с первого дня</b>, иначе в рейке 84px сумму станет негде ввести.</span></div>
+    <div class="note"><i>3</i><span>Прогноз в колонку <b>не возвращается</b>. Полоса классов в табло и число «1,46 млн» сверху — это про портфели, а не про расчёт; смешивать их нельзя.</span></div>
+  </div>
+</div>
+<!-- ═══════════════════ В ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">В</span><h2>«Два ответа» — экран выбора становится рабочим экраном</h2><span class="mk-tag">убирает вопрос совсем</span></div>
+  <div class="mk-sub">Наблюдение, из которого вырос вариант: <b>лучший экран вкладки сегодня — это чузер</b>. Только он показывает оба исхода одной суммы живыми числами («1,46 млн через 3 года» и «8 686 ₽ в месяц») — и именно его выбрасывают первым же кликом, чтобы больше никогда не показать. Здесь он не выбрасывается: обе половины считаются всегда, а пункт колонки решает не «какой экран открыть», а <b>какая половина раскрыта</b>. Раскрытая занимает две карточки и держит рабочие контролы, свёрнутая — узкую полосу 236px с числом и мини-графиком. Вопроса «что для вас важнее» больше нет ни разу: ответ на него виден всегда, и его можно поменять одним кликом, ничего не потеряв.</div>
+  <div class="scroller"><div class="strip2">
+
+    <div>
+      <div class="sc">
+        <div class="bx">
+          <div class="bx-head"><div class="mark sm">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+          <div class="bx-cap">
+            <div class="top"><em>Капитал · все портфели</em></div>
+            <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
+            <div class="day num">+11 640 ₽ за сегодня</div>
+            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
+            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
+          </div>
+          <div class="bx-grid">
+            <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i><span>Портфели</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><span>Академия</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></i><span>Рынок</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span>Тест</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></i><span>Админка</span></div>
+          </div>
+          <div class="bx-hr"></div>
+          <div class="bx-ctx">
+            <div class="grp">Показать крупно</div>
+            <div class="bx-sub on"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="15 7 21 7 21 13"/></svg><span class="tx">Рост капитала</span></div>
+            <div class="bx-sub"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg><span class="tx">Ежемесячный доход</span></div>
+            <div class="grp">Подбор</div>
+            <div class="bx-sub"><svg viewBox="0 0 24 24"><path d="M9.5 17h5"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9V17h-7v-3.1A6 6 0 0 1 12 3z"/></svg><span class="tx">Тест риск-профиля</span><span class="cnt">11</span></div>
+            <div class="bx-note">Пункт не переключает экран, а решает, какая половина раскрыта. Обе считаются от одной суммы и обе видны всегда.</div>
+            <div class="bx-void" style="margin-top:4px"><b></b></div>
+          </div>
+          <div class="bx-foot">
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-2 8-2 8h16s-2-1-2-8"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/></svg></span>
+            <span class="sp"></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>
+          </div>
+        </div>
+        <div class="pg">
+          <div class="cxb">
+            <div class="fld">
+              <em>Сумма инвестиций</em>
+              <div class="v"><b class="num">1 000 000</b><span class="num">₽</span></div>
+            </div>
+            <div class="chips">
+              <span class="chip">100 тыс</span>
+              <span class="chip">500 тыс</span>
+              <span class="chip on">1 млн</span>
+              <span class="chip wide"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Из портфелей · 1,46 млн</span>
+            </div>
+            <div class="chips" style="margin-left:16px">
+              <span class="chip wide">Срок <b class="num" style="margin-left:2px;color:var(--ink)">3 года</b><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+              <span class="chip wide">Комиссия <b class="num" style="margin-left:2px;color:var(--ink)">0,3%</b><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+            </div>
+            <div class="sp"></div>
+            <div class="src">обе половины считаются<br>от одной суммы</div>
+          </div>
+          <div class="gr g3">
+            <div class="cd">
+              <div class="cd-hd"><h4>Рост капитала</h4><span class="aside">через 3 года</span></div>
+              <div class="lead"><span class="ap">≈</span><span class="num">1.46</span><span class="u">млн ₽</span></div>
+              <div class="sub">«Гармония» · обл. <b class="cb">50%</b> · акц. <b class="ce">50%</b> · <b>13,5% годовых</b></div>
+              <div class="cols">
+                <div class="col"><span class="v num">1.00</span><div class="stack"><i class="base top" style="height:61%"></i></div><span class="y num">сегодня</span></div>
+                <div class="col"><span class="v num">1.13</span><div class="stack"><i class="eq" style="height:3%"></i><i class="bo" style="height:4%"></i><i class="base" style="height:61%"></i></div><span class="y num">2027</span></div>
+                <div class="col"><span class="v num">1.29</span><div class="stack"><i class="eq" style="height:7%"></i><i class="bo" style="height:10%"></i><i class="base" style="height:61%"></i></div><span class="y num">2028</span></div>
+                <div class="col"><span class="v num">1.46</span><div class="stack"><i class="eq" style="height:11%"></i><i class="bo" style="height:16%"></i><i class="base" style="height:61%"></i></div><span class="y num">2029</span></div>
+              </div>
+              <div class="legend"><span><i class="b1"></i>вложено</span><span><i class="b2"></i>обл.</span><span><i class="b3"></i>акц.</span></div>
+              <div class="facts">
+                <div class="fact"><span class="l">Прибыль за 3 года</span><span class="v g num">+ 461 380 ₽</span></div>
+              </div>
+              <div class="cta"><span class="btn">Создать портфель<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span></div>
+            </div>
+            <div class="cd">
+              <div class="cd-hd"><h4>Стратегия</h4></div>
+              <div class="strat">
+                <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 70%,var(--eq) 70% 100%)"></i><div class="n"><b>Депозит</b><i>Защита капитала</i></div><div class="mix"><em class="b num">70%</em><em class="s num">30%</em></div></div>
+                <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 60%,var(--eq) 60% 100%)"></i><div class="n"><b>Баланс</b><i>Умеренный риск</i></div><div class="mix"><em class="b num">60%</em><em class="s num">40%</em></div></div>
+                <div class="srow on"><i class="wf"></i><div class="n"><b>Гармония</b><i>Классический баланс</i></div><div class="mix"><em class="b num">50%</em><em class="s num">50%</em></div></div>
+                <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 40%,var(--eq) 40% 100%)"></i><div class="n"><b>Умеренная</b><i>Баланс роста</i></div><div class="mix"><em class="b num">40%</em><em class="s num">60%</em></div></div>
+                <div class="srow"><i class="wf" style="background:linear-gradient(180deg,var(--bond) 0 30%,var(--eq) 30% 100%)"></i><div class="n"><b>Агрессивная</b><i>Макс. рост</i></div><div class="mix"><em class="b num">30%</em><em class="s num">70%</em></div></div>
+                <div class="srow"><i class="wf" style="background:color-mix(in srgb,var(--ink) 14%,transparent)"></i><div class="n"><b>Своя</b><i>Настроить вручную</i></div><span class="pen"><svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span></div>
+              </div>
+              <div class="slink">
+                <span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/></svg></span>
+                <span class="t"><b>Не знаете, какую выбрать?</b><i>Тест · 11 вопросов</i></span>
+                <span class="go">Тест<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>
+              </div>
+            </div>
+            <div class="fold">
+              <em>Второй ответ</em>
+              <h4>Ежемесячный доход</h4>
+              <div class="n"><span class="ap">≈</span><span class="num">8 686</span><span class="u">₽/мес</span></div>
+              <div class="d">104 230 ₽ в год<br>10,4% годовых<br>после НДФЛ 13%</div>
+              <div class="mini">
+                <i style="height:70%"></i><i style="height:66%"></i><i style="height:78%"></i><i style="height:88%"></i>
+                <i style="height:62%"></i><i style="height:84%"></i><i style="height:68%"></i><i class="hi" style="height:92%"></i>
+                <i style="height:74%"></i><i style="height:80%"></i><i style="height:64%"></i><i style="height:86%"></i>
+              </div>
+              <div class="lnf">6 выпусков ОФЗ · 12 выплат в год · ближайшая 12 августа, +8 168 ₽</div>
+              <div class="open">Показать крупно<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>В · фокус на росте</b>Свёрнутая половина стоит 236px и не мешает работать: она не спрашивает, а сообщает — «эта же сумма даёт 8 686 ₽ в месяц». Ровно то, ради чего был нужен чузер.</div>
+    </div>
+
+    <div>
+      <div class="sc">
+        <div class="bx">
+          <div class="bx-head"><div class="mark sm">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+          <div class="bx-cap">
+            <div class="top"><em>Капитал · все портфели</em></div>
+            <div class="v"><b class="num">1 462 380 ₽</b><span class="chg num">+0,8%</span></div>
+            <div class="day num">+11 640 ₽ за сегодня</div>
+            <div class="bar"><i style="width:62%;background:#c9683f"></i><i style="width:38%;background:#5f7fa8"></i><span class="tick" style="left:58%"></span></div>
+            <div class="lg"><span class="num">Акции <b>62</b> · цель 58</span><span class="num">Облигации <b>38</b> · цель 42</span></div>
+          </div>
+          <div class="bx-grid">
+            <div class="bx-cell on"><i class="circ on"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span>Расчёт</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i><span>Портфели</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><span>Академия</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></i><span>Рынок</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span>Тест</span></div>
+            <div class="bx-cell"><i class="circ"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></i><span>Админка</span></div>
+          </div>
+          <div class="bx-hr"></div>
+          <div class="bx-ctx">
+            <div class="grp">Показать крупно</div>
+            <div class="bx-sub"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><polyline points="15 7 21 7 21 13"/></svg><span class="tx">Рост капитала</span></div>
+            <div class="bx-sub on"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></svg><span class="tx">Ежемесячный доход</span></div>
+            <div class="grp">Готовый расчёт</div>
+            <div class="bx-sub"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span class="tx">Корзина ОФЗ</span><span class="cnt">6</span></div>
+            <div class="grp">Подбор</div>
+            <div class="bx-sub"><svg viewBox="0 0 24 24"><path d="M9.5 17h5"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 1 3.5 10.9V17h-7v-3.1A6 6 0 0 1 12 3z"/></svg><span class="tx">Тест риск-профиля</span><span class="cnt">11</span></div>
+            <div class="bx-void" style="margin-top:4px"><b></b></div>
+          </div>
+          <div class="bx-foot">
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-2 8-2 8h16s-2-1-2-8"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/></svg></span>
+            <span class="sp"></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span>
+          </div>
+        </div>
+        <div class="pg">
+          <div class="cxb">
+            <div class="fld">
+              <em>Сумма инвестиций</em>
+              <div class="v"><b class="num">1 000 000</b><span class="num">₽</span></div>
+            </div>
+            <div class="chips">
+              <span class="chip">100 тыс</span>
+              <span class="chip">500 тыс</span>
+              <span class="chip on">1 млн</span>
+              <span class="chip wide"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>Из портфелей · 1,46 млн</span>
+            </div>
+            <div class="chips" style="margin-left:16px">
+              <span class="chip wide">Налог <b class="num" style="margin-left:2px;color:var(--ink)">НДФЛ 13%</b><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span>
+            </div>
+            <div class="sp"></div>
+            <div class="src">Купоны и НКД по данным<br>MOEX · <b>12:04</b></div>
+          </div>
+          <div class="gr g3r">
+            <div class="fold">
+              <em>Второй ответ</em>
+              <h4>Рост капитала</h4>
+              <div class="n"><span class="ap">≈</span><span class="num">1.46</span><span class="u">млн ₽</span></div>
+              <div class="d">через 3 года<br>«Гармония» · 50 / 50<br>13,5% годовых</div>
+              <div class="mini bond">
+                <i style="height:38%"></i><i style="height:46%"></i><i style="height:52%"></i><i style="height:58%"></i>
+                <i style="height:63%"></i><i style="height:70%"></i><i style="height:76%"></i><i style="height:82%"></i>
+                <i style="height:88%"></i><i style="height:92%"></i><i style="height:96%"></i><i class="hi" style="height:100%"></i>
+              </div>
+              <div class="lnf">Прибыль за 3 года +461 380 ₽ · доход в месяц ≈7 243 ₽</div>
+              <div class="open">Показать крупно<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></div>
+            </div>
+            <div class="cd">
+              <div class="cd-hd"><h4>Корзина ОФЗ</h4><span class="aside">6 выпусков</span></div>
+              <div class="th"><span class="a">Облигация</span><span class="b">Доходность</span><span class="c">Кол-во</span></div>
+              <div class="brows">
+                <div class="brow"><span class="a"><b>ОФЗ 26240</b><i>фев и авг</i></span><span class="b num">17,90%</span><span class="stp"><span class="k">−</span><span class="q num">269</span><span class="k">+</span></span></div>
+                <div class="brow"><span class="a"><b>ОФЗ 26230</b><i>мар и сен</i></span><span class="b num">18,03%</span><span class="stp"><span class="k">−</span><span class="q num">273</span><span class="k">+</span></span></div>
+                <div class="brow"><span class="a"><b>ОФЗ 26245</b><i>апр и окт</i></span><span class="b num">15,55%</span><span class="stp"><span class="k">−</span><span class="q num">188</span><span class="k">+</span></span></div>
+                <div class="brow"><span class="a"><b>ОФЗ 26225</b><i>май и ноя</i></span><span class="b num">17,73%</span><span class="stp"><span class="k">−</span><span class="q num">251</span><span class="k">+</span></span></div>
+                <div class="brow"><span class="a"><b>ОФЗ 26238</b><i>июн и дек</i></span><span class="b num">18,74%</span><span class="stp"><span class="k">−</span><span class="q num">305</span><span class="k">+</span></span></div>
+                <div class="brow"><span class="a"><b>ОФЗ 26233</b><i>янв и июл</i></span><span class="b num">19,18%</span><span class="stp"><span class="k">−</span><span class="q num">293</span><span class="k">+</span></span></div>
+              </div>
+              <div class="bfoot"><span class="l">Свободный остаток<b class="num">4 120 ₽</b></span><span class="v num">1 000 000 ₽</span></div>
+            </div>
+            <div class="cd">
+              <div class="cd-hd"><h4>Купоны каждый месяц</h4></div>
+              <div class="lead"><span class="ap">≈</span><span class="num">8 686</span><span class="u">₽ в месяц</span></div>
+              <div class="sub">104 230 ₽ в год · <b>10,4% годовых</b> · после НДФЛ 13%</div>
+              <div class="mbars">
+                <div class="mb hi"><i style="height:92%"></i><b>АВГ</b></div>
+                <div class="mb"><i style="height:74%"></i><b>СЕН</b></div>
+                <div class="mb"><i style="height:80%"></i><b>ОКТ</b></div>
+                <div class="mb"><i style="height:64%"></i><b>НОЯ</b></div>
+                <div class="mb"><i style="height:86%"></i><b>ДЕК</b></div>
+                <div class="mb"><i style="height:70%"></i><b>ЯНВ</b></div>
+                <div class="mb"><i style="height:66%"></i><b>ФЕВ</b></div>
+                <div class="mb"><i style="height:78%"></i><b>МАР</b></div>
+                <div class="mb"><i style="height:88%"></i><b>АПР</b></div>
+                <div class="mb"><i style="height:62%"></i><b>МАЙ</b></div>
+                <div class="mb"><i style="height:84%"></i><b>ИЮН</b></div>
+                <div class="mb"><i style="height:68%"></i><b>ИЮЛ</b></div>
+              </div>
+              <div class="facts">
+                <div class="fact"><span class="l">Ближайшая выплата</span><span class="v o num">+ 8 168 ₽ · 12 авг</span></div>
+              </div>
+              <div class="cta"><span class="btn">Создать портфель<svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>В · фокус на доходе</b>Зеркальная раскладка. Свёрнутая половина всегда стоит с той стороны, откуда пришёл фокус, — страница не перепрыгивает, а сдвигается.</div>
+    </div>
+
+  </div></div>
+  <div class="notes">
+    <div class="note ok"><i>1</i><span><b>Единственный вариант, который убирает вопрос совсем.</b> Ни на первом входе, ни после перезагрузки вкладка ничего не спрашивает: оба ответа уже на экране.</span></div>
+    <div class="note no"><i>2</i><span><b>Цена — ширина.</b> 236px уходит половине, которой сейчас не занимаются. Рабочие карточки сжимаются; на 1280px их станет тесно, свёрнутую придётся класть полосой под ними.</span></div>
+    <div class="note"><i>3</i><span>Обе половины должны считаться <b>всегда</b> — сегодня купонная корзина собирается лениво, по входу в режим. Пересчёт от суммы для обеих одновременно — новая работа.</span></div>
+  </div>
+</div>
+<!--SCREENS-->
+</div>
+</body>
+</html>

@@ -256,7 +256,7 @@
     <link rel="stylesheet" href="css/notifications.css?v=3">
     <link rel="stylesheet" href="css/tab-gates.css?v=4">
     <link rel="stylesheet" href="css/admin.css?v=13">
-    <link rel="stylesheet" href="css/rebalance-r6.css?v=16">
+    <link rel="stylesheet" href="css/rebalance-r6.css?v=21">
     <link rel="stylesheet" href="css/typography-tokens.css?v=15">
     <link rel="stylesheet" href="css/portfolios-r7.css?v=72">
     <link rel="stylesheet" href="css/broker.css?v=66">
@@ -1880,8 +1880,14 @@
         <section class="rbx-block rbx-block-cands rbx-cands-ofz">
             <div class="rbx-bh">
                 <span class="t">Облигации</span><span class="cnt" id="ofzCount">—</span>
-                <span class="rbx-kpi-in">в среднем <b id="rbxOfzAvg">—</b></span>
-            <div class="rbx-sort" id="rbxToolsOfz" role="group" aria-label="Сортировка списка">
+            </div>
+            <!-- Сортировка живёт В ЗАГОЛОВКАХ КОЛОНОК, а не отдельным рядом в шапке
+                 блока: там она повторяла слова «Доходность» и «Цена», которые уже
+                 подписывают эти же колонки строкой ниже. Классы и id прежние —
+                 setOfzSort/updateOfzSortUI (js/rebalance.js) не менялись. -->
+            <div class="rbx-colhead" role="row">
+                <span></span>
+                <span class="l">Инструмент</span>
                 <button type="button" class="rbx-sc act desc" id="ofzSortYield" onclick="setOfzSort('yield')" title="Сортировать по доходности">
                     Доходность
                     <i class="rbx-sc-ico">
@@ -1896,13 +1902,6 @@
                         <svg class="ic-dir" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M6 13l6 6 6-6"/></svg>
                     </i>
                 </button>
-            </div>
-            </div>
-            <div class="rbx-colhead">
-                <span></span>
-                <span class="l">Инструмент</span>
-                <span>Доходность</span>
-                <span>Цена</span>
                 <span></span>
             </div>
             <div id="ofz-aurora-list" class="rbx-ofz-list">
@@ -2741,7 +2740,7 @@
 <script src="js/core.js?v=15" defer></script>
 <script src="js/calculator-ui.js?v=5" defer></script>
 <script src="js/data.js?v=11" defer></script>
-<script src="js/rebalance.js?v=14" defer></script>
+<script src="js/rebalance.js?v=15" defer></script>
 <script src="js/company.js?v=2" defer></script>
 <script src="js/portfolio.js?v=17" defer></script>
 <script src="js/init.js?v=7" defer></script>
@@ -2777,7 +2776,7 @@
 <script src="js/corner-stack.js?v=2" defer></script>
 <!-- Статичный фон-мозаика остальных вкладок: не смотрит на window.supa,
      порядок относительно облака не важен -->
-<script src="js/site-bg.js?v=11" defer></script>
+<script src="js/site-bg.js?v=12" defer></script>
 
 <!-- Облако: конфиг + клиент ДО home-register/profile-menu (они смотрят window.supa),
      notifications (звоночек) — после profile-menu (встаёт рядом с аватаром),

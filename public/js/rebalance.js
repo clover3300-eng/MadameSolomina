@@ -138,13 +138,20 @@ function rbxTopSync() {
     let leadHtml, actHtml;
     if (rbxAuthed()) {
         leadHtml = RBX_LEAD_BASE + '. <b>Из них мастер и соберёт сделку для ваших портфелей.</b>';
+        // Статус говорит ПОВОД, а не только тревогу: без дрейфа строка не
+        // исчезает, иначе кнопка оставалась бы в углу одна. Числа — из того же
+        // порога PF.DRIFT_THR, что зажигает бейдж раздела в колонке.
         const n = rbxDriftCount();
         const status = n > 0
             ? '<span class="rbx-top-state"><i></i>' + n + ' ' +
               rbxPlural(n, 'портфель просит', 'портфеля просят', 'портфелей просят') + ' ребаланса</span>'
-            : '';
+            : '<span class="rbx-top-state calm">Доли держатся плана</span>';
+        // Пара к главной кнопке — как «Войти» у гостя: тихий контрол, ведущий
+        // туда, где видно, ЧТО именно разъехалось. Одна кнопка в пустом углу
+        // читалась сиротой в обоих состояниях.
         actHtml = RBX_ACAD_BTN + status +
-            '<button type="button" class="rbx-top-btn" onclick="rbxGoWizard()">' +
+            '<button type="button" class="rbx-top-quiet" onclick="rbxGoPorts()"><b>Мои портфели</b></button>' +
+            '<button type="button" class="rbx-top-btn big" onclick="rbxGoWizard()">' +
             '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">' +
             '<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>' +
             '<polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>Провести ребалансировку</button>';
@@ -180,12 +187,15 @@ function rbxGoRegister() {
 // Мастер ребаланса — подвкладка «Портфелей» (ключ 'rebal', НЕ 'rebalance').
 // Модуль ленивый: switchTab поднимет цепочку, но pfxGoTab появится только после
 // неё — поэтому переход подвкладки ждём колбэка ensurePortfoliosJs.
-function rbxGoWizard() {
+function rbxGoWizard() { rbxGoPf('rebal'); }
+// «Мои портфели» — там видно, что именно разъехалось по долям
+function rbxGoPorts() { rbxGoPf('ports'); }
+function rbxGoPf(sub) {
     if (window.switchTab) window.switchTab('portfolios');
     if (window.ensurePortfoliosJs) {
-        window.ensurePortfoliosJs(function () { if (window.pfxGoTab) window.pfxGoTab('rebal'); });
+        window.ensurePortfoliosJs(function () { if (window.pfxGoTab) window.pfxGoTab(sub); });
     } else if (window.pfxGoTab) {
-        window.pfxGoTab('rebal');
+        window.pfxGoTab(sub);
     }
 }
 
