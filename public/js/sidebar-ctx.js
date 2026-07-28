@@ -455,6 +455,7 @@
         { id: 'cap',   name: 'Капитал',           desc: 'Стоимость всех портфелей, день и линия дня' },
         { id: 'drift', name: 'Доли и дрейф',      desc: 'Акции против облигаций и расхождение с целью' },
         { id: 'next',  name: 'Ближайшая выплата', desc: 'Дата, бумага и сумма купона или дивиденда' },
+        { id: 'calm',  name: 'Календарь выплат',  desc: 'Месяц сеткой: в какие дни придут купоны и дивиденды' },
         { id: 'idx',   name: 'Рынок сейчас',      desc: 'IMOEX, доллар и биткойн' },
         { id: 'rates', name: 'Ставки рынка',      desc: 'Ключевая, вклады, инфляция и ОФЗ 10 лет' },
         { id: 'note',  name: 'Заметка',           desc: 'Свой текст под рукой на любой вкладке' }
@@ -562,6 +563,52 @@
         return card('nextgo', 'Открыть «Портфели»', h);
     }
 
+    // ---- Календарь выплат · месяц ----
+    // Своя, узкая редакция месячной сетки: у виджета «Портфелей» (pfcmCardHtml)
+    // есть стрелки месяцев, раскрытие дня и цвета портфелей — в 224px это не
+    // живёт. Здесь только текущий месяц: где выплата — заливка дня, под сеткой
+    // сумма месяца. Подробности по клику на «Портфелях», как у остальных.
+    // Свою навигацию по месяцам не заводим ПРИНЦИПИАЛЬНО: pfcmOffset — состояние
+    // дашборда, и колонка, листающая чужой календарь, разошлась бы с ним.
+    var CAL_DOW = ['П', 'В', 'С', 'Ч', 'П', 'С', 'В'];
+    var CAL_MON = ['январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
+        'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь'];
+    // в подсказке дня месяц стоит при числе — там нужен родительный падеж
+    // («15 июля», а не «15 июль»); заголовку виджета годится именительный
+    var CAL_MON_G = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+        'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    function calmHtml() {
+        var evs = null;
+        try { evs = PF.collectUpcomingPayouts ? PF.collectUpcomingPayouts() : null; } catch (e) { evs = null; }
+        if (!evs) return null;
+        var now = new Date(), y = now.getFullYear(), m = now.getMonth();
+        var sum = 0, byDay = {};
+        evs.forEach(function (e) {
+            if (e.date.getFullYear() !== y || e.date.getMonth() !== m) return;
+            byDay[e.date.getDate()] = (byDay[e.date.getDate()] || 0) + e.amount;
+            sum += e.amount;
+        });
+        var first = new Date(y, m, 1), days = new Date(y, m + 1, 0).getDate();
+        var lead = (first.getDay() + 6) % 7;              // getDay: Вс=0 → неделя с понедельника
+        var cells = '';
+        for (var i = 0; i < lead; i++) cells += '<i class="off"></i>';
+        for (var d = 1; d <= days; d++) {
+            var cls = byDay[d] ? 'pay' : '';
+            if (d === now.getDate()) cls += (cls ? ' ' : '') + 'now';
+            // подсказка называет сумму дня: в клетку 26px её не написать
+            cells += '<i' + (cls ? ' class="' + cls + '"' : '') +
+                (byDay[d] ? ' title="' + esc(d + ' ' + CAL_MON_G[m] + ' · ' + rub(byDay[d])) + '"' : '') +
+                '>' + d + '</i>';
+        }
+        var h = '<div class="sbw-h"><span class="sbw-l">Выплаты · ' + esc(CAL_MON[m]) + '</span></div>' +
+            '<div class="sbw-cal-dow">' + CAL_DOW.map(function (x) { return '<i>' + x + '</i>'; }).join('') + '</div>' +
+            '<div class="sbw-cal">' + cells + '</div>' +
+            (sum > 0
+                ? '<div class="sbw-say">За месяц ' + esc(rub(sum)) + '</div>'
+                : '<div class="sbw-say mut">В этом месяце выплат нет</div>');
+        return card('nextgo', 'Открыть «Портфели»', h);
+    }
+
     // ---- Рынок сейчас ----
     // Значения берём из скрытых узлов дашборда — тех же, что кормят виджет
     // «Рынок сейчас» на «Портфелях». Своего запроса слот не делает: колонка
@@ -618,9 +665,12 @@
 
     // Общая оболочка нажимаемого виджета: как у табло, вся площадь — одна мишень.
     function card(act, title, inner) {
+        // Шеврон — свой класс, а не .sbcap-go из табло: тот рассчитан на РЯД
+        // (flex-элемент рядом с линией дня) и в блочном потоке терял размеры —
+        // svg с height:100% растягивал карточку на две сотни пикселей.
         return '<button type="button" class="sbw-card sbw-go" data-act="' + esc(act) + '" data-key=""' +
             ' title="' + esc(title) + '">' + inner +
-            '<span class="sbcap-go" aria-hidden="true">' + svg(IC.chevr) + '</span></button>';
+            '<span class="sbw-goic" aria-hidden="true">' + svg(IC.chevr) + '</span></button>';
     }
 
     // Ховер-хром блока: одна кнопка «сменить виджет» (PFD_OWN_CHROME — язык
@@ -666,6 +716,7 @@
         }
         if (slotId === 'drift') return driftHtml();
         if (slotId === 'next') return nextHtml();
+        if (slotId === 'calm') return calmHtml();
         return '';
     }
     function slotHtml(m) {
@@ -677,14 +728,14 @@
             ' aria-expanded="' + (slotPopOpen ? 'true' : 'false') + '">' + svg(IC_DOTS) + '</button>' +
             (slotPopOpen ? slotPopHtml() : '') + '</div>';
     }
-    // Поле заметки под курсором или фокусом перерисовывать нельзя: пропала бы
-    // каретка, а вместе с ней и несохранённый хвост строки.
+    // Перерисовку блокирует ТОЛЬКО правка заметки: пропала бы каретка, а вместе
+    // с ней и несохранённый хвост строки. Раньше здесь стояло «любой фокус
+    // внутри #sbCap» — и выбор виджета не срабатывал вовсе: клик по пункту
+    // списка фокусирует свою же кнопку, блок считался занятым, и пересборка,
+    // которая должна была поставить новый виджет, молча пропускалась.
     function slotBusy() {
-        var host = document.getElementById('sbCap');
-        if (!host) return false;
-        if (slotPopOpen) return false;                       // список сам себя не перерисовывает
         var a = document.activeElement;
-        return !!(a && a !== document.body && host.contains(a));
+        return !!(a && a.classList && a.classList.contains('sbw-note'));
     }
 
     // В СВЁРНУТОЙ РЕЙКЕ КАПИТАЛА НЕТ. Чип «1,46 млн / +0,8%» из мокапа Б+3 был

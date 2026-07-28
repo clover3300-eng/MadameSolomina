@@ -339,7 +339,22 @@
         font: inherit;
         text-align: left;
     }
-    .sbw-go { cursor: pointer; transition: background 0.15s ease; }
+    .sbw-go { position: relative; cursor: pointer; transition: background 0.15s ease; }
+    /* признак «вся карточка нажимается» — в правом нижнем углу, чтобы не
+       спорить с кнопкой смены виджета в правом верхнем */
+    .sbw-goic {
+        position: absolute;
+        right: 11px; bottom: 11px;
+        width: 11px; height: 11px;
+        color: var(--sbr-dim);
+    }
+    .sbw-goic svg {
+        display: block;
+        width: 100%; height: 100%;
+        fill: none; stroke: currentColor; stroke-width: 2;
+        stroke-linecap: round; stroke-linejoin: round;
+    }
+    .sbw-go:hover .sbw-goic { color: var(--sbr-mut); }
     .sbw-go:hover { background: color-mix(in srgb, var(--sbr-sel) 8%, var(--sbr-page)); }
     .sbw-go:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 2px; }
     .sbw-h { display: flex; align-items: center; gap: 8px; padding-right: 20px; }
@@ -423,6 +438,46 @@
         font-size: 9.5px;
         color: var(--sbr-dim);
     }
+
+    /* ---- «Календарь выплат · месяц»: сетка 7×N в ширину колонки ----
+       Клетка ~26px: в неё влезает только число, поэтому сумма дня живёт в
+       подсказке, а сумма месяца — строкой под сеткой. */
+    .sbw-cal-dow,
+    .sbw-cal {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 2px;
+    }
+    .sbw-cal-dow { margin-top: 8px; }
+    .sbw-cal-dow i {
+        font-style: normal;
+        font-size: 8.5px;
+        font-weight: 700;
+        text-align: center;
+        color: var(--sbr-dim);
+    }
+    .sbw-cal { margin-top: 3px; }
+    .sbw-cal i {
+        display: grid;
+        place-items: center;
+        height: 20px;
+        border-radius: 6px;
+        font-family: var(--font-num, 'JetBrains Mono', monospace);
+        font-style: normal;
+        font-size: 9.5px;
+        font-weight: 600;
+        color: var(--sbr-dim);
+    }
+    .sbw-cal i.off { visibility: hidden; }
+    /* день с выплатой — заливка тем же зелёным, что и активный раздел */
+    .sbw-cal i.pay {
+        background: var(--sbr-sel);
+        color: var(--sbr-sel-ic);
+        font-weight: 700;
+    }
+    /* сегодня — обводка, а не заливка: иначе спорило бы с днём выплаты */
+    .sbw-cal i.now { box-shadow: inset 0 0 0 1.5px var(--sbr-dim); color: var(--sbr-ink); }
+    .sbw-cal i.pay.now { box-shadow: inset 0 0 0 1.5px var(--sbr-ink); }
 
     /* ---- «Рынок сейчас» и «Ставки»: строка = подпись + значение ---- */
     .sbw-irows { margin-top: 7px; display: flex; flex-direction: column; gap: 5px; }
