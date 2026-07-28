@@ -1394,10 +1394,11 @@
                 '<span class="pfd-rs-b"></span>' +
                 '<span class="pfd-rs"></span>' +
             '</div>';
-            // тема виджета: тёмная плашка или «стекло» (полупрозрачная поверхность с бликом,
-            // как у плиток тепловой карты) — см. .pfd-thm-* в portfolios-r7.css
-            var thmV = (PF.dashCfg.thm || {})[b.id];
-            var thmCls = thmV === 'dark' ? ' pfd-thm-dark' : thmV === 'glass' ? ' pfd-thm-glass' : '';
+            // тема виджета: ВСЕГДА «стекло» (полупрозрачная поверхность с бликом, как у
+            // плиток тепловой карты) — см. .pfd-thm-* в portfolios-r7.css. Выбор расцветки
+            // убран из пикера и поповера настроек, поэтому сохранённые старые значения
+            // (PF.dashCfg.thm) не читаем — они лежат нетронутыми на случай возврата выбора.
+            var thmCls = ' pfd-thm-glass';
             return '<div class="pfd-item' + hsetClass + thmCls + (b.defHidden ? ' pfd-rmable' : '') + '" data-pfd="' + esc(b.id) + '" style="' + style + '">' +
                 chrome +
                 '<div class="pfd-body">' + html + '</div>' +
@@ -2111,15 +2112,8 @@
         return h === 300 ? 's' : h === 560 ? 'l' : '';
     }
     function pfdCfgHtml(id) {
-        var thm = (PF.dashCfg.thm || {})[id];
-        thm = thm === 'dark' ? 'dark' : thm === 'glass' ? 'glass' : 'light';
         var size = pfdCfgSizeOf(id);
         var a = jsArg(id);
-        function thmBtn(v, label) {
-            return '<button type="button" class="pfdcfg-thm' + (thm === v ? ' on' : '') + '" onclick="pfdCfgSetThm(\'' + a + '\',\'' + v + '\')">' +
-                '<span class="pfdcfg-sw pfdcfg-sw-' + v + '"><i></i><em></em></span>' +
-                '<span class="pfdcfg-thm-n">' + label + '</span></button>';
-        }
         function segBtn(fn, v, cur, label, title) {
             return '<button type="button" class="pfdcfg-seg-b' + (cur === v ? ' on' : '') + '"' + (title ? ' title="' + title + '"' : '') +
                 ' onclick="' + fn + '(\'' + a + '\',\'' + v + '\')">' + label + '</button>';
@@ -2144,8 +2138,7 @@
                 '<div class="pfdcfg-head-t"><span class="pfdcfg-k">Настройки виджета</span><b class="pfdcfg-t">' + esc(pfdCfgName(id)) + '</b></div>' +
                 '<button type="button" class="pfdcfg-x" onclick="pfdCfgClose()" aria-label="Закрыть">' + PFDCFG_X_SVG + '</button>' +
             '</div>' +
-            '<div class="pfdcfg-lbl">Тема</div>' +
-            '<div class="pfdcfg-thms">' + thmBtn('light', 'Светлая') + thmBtn('dark', 'Тёмная') + thmBtn('glass', 'Стекло') + '</div>' +
+            // выбора темы здесь нет: все виджеты стеклянные (см. pfdItemsHtml)
             '<div class="pfdcfg-lbl">Высота</div>' +
             '<div class="pfdcfg-seg">' +
                 segBtn('pfdCfgSetSize', 's', size, 'S', 'Компактный · 300 px') +
@@ -3046,7 +3039,9 @@
     // тёмный список, не перебивая опции друг другу.
     var pfl2SelIds = ['cap'];
     var pfl2OptMap = {};
-    function pfl2DefOpts() { return { size: 'm', theme: 'light', view: 'line', period: '30' }; }
+    // тема по умолчанию — «стекло»: выбор расцветки из интерфейса убран (см. pfl2SetHtml
+    // и pfdCfgHtml), все виджеты добавляются и живут стеклянными
+    function pfl2DefOpts() { return { size: 'm', theme: 'glass', view: 'line', period: '30' }; }
     function pfl2OptsOf(id) {
         if (!id) return pfl2DefOpts();
         if (!pfl2OptMap[id]) pfl2OptMap[id] = pfl2DefOpts();
@@ -3410,15 +3405,14 @@
         var curSel = '<label class="pfl2-lbl">Валюта</label>' +
             '<select class="pfl2-select" disabled title="Пока только рубль"><option>₽ Рубль</option></select>';
         var viewSeg = '<label class="pfl2-lbl">Вид графика</label>' + seg('view', [['line', PFD_ICO_CAP], ['bars', PFD_ICO_KPI]]);
-        // «Стекло» — полупрозрачная поверхность с диагональным бликом, как у плиток тепловой
-        // карты в «Рынке»: сквозь виджет просвечивает фон страницы
-        var themeSeg = '<label class="pfl2-lbl">Тема</label>' + seg('theme', [['light', 'Светлая'], ['dark', 'Тёмная'], ['glass', 'Стекло']]);
-        var sizeSeg = '<label class="pfl2-lbl">Высота виджета</label>' + seg('size', [['s', 'S'], ['m', 'M'], ['l', 'L']]);
+        // Выбора темы нет: все виджеты — «стекло» (полупрозрачная поверхность с диагональным
+        // бликом, как у плиток тепловой карты в «Рынке»), см. pfl2DefOpts
+        var sizeSeg ='<label class="pfl2-lbl">Высота виджета</label>' + seg('size', [['s', 'S'], ['m', 'M'], ['l', 'L']]);
         // подпись, что настройки — этого виджета: в пачке выбранных их несколько,
-        // и «Тема/Высота» без имени читались бы как общие для всех
+        // и «Высота» без имени читалась бы как общая для всех
         return '<div class="pfl2-set-t">Настройки · ' + esc(w.name) + '</div>' +
             (w.chart ? periodSel + curSel + viewSeg : '') +
-            themeSeg + sizeSeg +
+            sizeSeg +
             '<div class="pfl2-set-hint">Настройки — у каждого виджета свои. Размеры и место всегда можно поменять позже — просто перетащите виджет или потяните за кромку.</div>';
     }
     function pfl2SizeLabel(id) { var s = pfl2OptsOf(id).size; return s === 's' ? 'Компактный' : s === 'l' ? 'Большой' : 'Средний размер'; }

@@ -236,6 +236,87 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .nG .bdg{top:1px;right:1px}
 .nG-cap{padding:0 20px 2px;font-size:9px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
 
+/* ════════════════ Д · ЦИФЕРБЛАТЫ И ИСКРЫ ════════════════ */
+.nD{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:12px 12px 6px}
+.nD .cell{position:relative;padding:9px 4px 8px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:7px;
+  font-size:11px;font-weight:600;color:var(--mut);text-align:center}
+.nD .cell .circ{width:34px;height:34px;position:relative}
+.nD .cell .circ svg.ic{width:17px;height:17px}
+.nD .cell span{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+.nD .cell.on{background:var(--bg);color:var(--ink);font-weight:700}
+/* кольцо-циферблат: свой svg поверх кружка, 42px против 34 — дуга идёт СНАРУЖИ,
+   иконку не трогает. Дуга = доля от предела, замкнулась = предел достигнут. */
+.nD .ring{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;transform:rotate(-90deg)}
+.nD .ring circle{fill:none;stroke-width:2.4;stroke-linecap:round}
+.nD .ring .trk{stroke:var(--line)}
+.nD .ring .arc{stroke:#c2760a}
+.sc.dark .nD .ring .arc{stroke:#e0a33e}
+.nD .ring .arc.pos{stroke:var(--grn)}
+/* искра: знак дня без шкалы — там, где у величины нет предела и кольцо соврало бы */
+.nD .spark{position:absolute;right:1px;bottom:1px;width:8px;height:8px;border-radius:50%;
+  background:var(--grn);border:2px solid var(--card)}
+.nD .spark.neg{background:var(--red)}
+.nD .cell.on .spark{border-color:var(--bg)}
+
+/* ════════════════ Е · БЕНТО: ГЛАВНЫЙ РАЗДЕЛ КРУПНЕЕ ════════════════ */
+.nE{display:grid;grid-template-columns:repeat(3,1fr);grid-auto-rows:auto;gap:4px;padding:12px 12px 6px}
+.nE .big{grid-column:span 2;grid-row:span 2;position:relative;border-radius:14px;background:var(--bg);
+  padding:11px 12px 10px;display:flex;flex-direction:column;gap:2px;text-align:left}
+.nE .big .hd{display:flex;align-items:center;gap:8px}
+.nE .big .circ{width:28px;height:28px}
+.nE .big .circ svg{width:14px;height:14px}
+.nE .big .nm{font-size:12.5px;font-weight:700;color:var(--ink)}
+.nE .big .vl{margin-top:5px;font-family:var(--fN);font-size:16px;font-weight:700;letter-spacing:-.025em;color:var(--ink)}
+.nE .big .sub{font-family:var(--fN);font-size:10px;font-weight:600;color:var(--grn)}
+.nE .big .sub.neg{color:var(--red)}
+.nE .big .spk{margin-top:auto;height:18px;width:100%;color:var(--grn);display:block}
+.nE .cell{position:relative;padding:8px 3px 7px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:5px;
+  font-size:10.5px;font-weight:600;color:var(--mut);text-align:center}
+.nE .cell .circ{width:30px;height:30px;position:relative}
+.nE .cell .circ svg{width:15px;height:15px}
+.nE .cell .nm{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15}
+.nE .cell .vl{font-family:var(--fN);font-size:9.5px;font-weight:700;color:var(--dim);line-height:1}
+.nE .cell .vl.warn{color:#c2760a}
+.sc.dark .nE .cell .vl.warn{color:#e0a33e}
+.nE .cell .vl.pos{color:var(--grn)}
+.nE .cell.on{background:var(--bg);color:var(--ink);font-weight:700}
+
+/* ════════════════ Ж · ДВА ЭТАЖА: СЕГМЕНТ + СТРОКИ ════════════════ */
+.nJ{padding:12px 12px 6px}
+.nJ .seg{display:flex;gap:2px;padding:2px;border-radius:11px;background:var(--bg)}
+.nJ .seg b{flex:1;min-width:0;padding:6px 4px;border-radius:9px;text-align:center;
+  font-size:10.5px;font-weight:700;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nJ .seg b.on{background:var(--card);color:var(--ink);box-shadow:0 2px 8px -4px rgba(16,24,40,.45)}
+.sc.dark .nJ .seg b.on{box-shadow:none;background:#1B2434}
+.nJ .seg b .mk{display:inline-block;width:5px;height:5px;border-radius:50%;background:#c2760a;margin-left:5px;vertical-align:middle}
+.nJ .list{margin-top:6px;display:flex;flex-direction:column;gap:1px}
+.nJ .row{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:10px;font-size:12.5px;font-weight:600;color:var(--mut)}
+.nJ .row svg{width:16px;height:16px;flex:none;opacity:.7}
+.nJ .row .tx{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nJ .row .vl{font-family:var(--fN);font-size:10.5px;font-weight:700;color:var(--dim)}
+.nJ .row .vl.warn{color:#c2760a}
+.sc.dark .nJ .row .vl.warn{color:#e0a33e}
+.nJ .row .vl.pos{color:var(--grn)}
+.nJ .row.on{background:var(--bg);color:var(--ink)}
+.nJ .row.on svg{opacity:1;color:var(--sbacc)}
+
+/* ════════════════ З · ПОЛОСА СО СТРОКОЙ-СТАТУСОМ ════════════════ */
+.nZ{padding:12px 12px 6px}
+.nZ .strip2{display:flex;align-items:center;gap:2px}
+.nZ .cell{position:relative;flex:1;min-width:0;height:38px;border-radius:11px;display:grid;place-items:center;color:var(--dim)}
+.nZ .cell svg{width:18px;height:18px}
+.nZ .cell.on{background:var(--sbacc);color:#fff}
+.sc.dark .nZ .cell.on{color:#0A0E15}
+.nZ .cell.hov{background:var(--bg);color:var(--ink)}
+.nZ .cell .dotm{position:absolute;top:5px;right:7px;width:6px;height:6px;border-radius:50%;background:#c2760a}
+.nZ .st{display:flex;align-items:baseline;gap:8px;padding:8px 4px 0}
+.nZ .st b{font-size:12px;font-weight:700;color:var(--ink)}
+.nZ .st .vl{font-family:var(--fN);font-size:10.5px;font-weight:700;color:var(--dim)}
+.nZ .st .vl.warn{color:#c2760a}
+.sc.dark .nZ .st .vl.warn{color:#e0a33e}
+.nZ .st .vl.pos{color:var(--grn)}
+.nZ .st .hint{margin-left:auto;font-size:10px;color:var(--dim)}
+
 /* мелочи */
 .rec{margin-top:22px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:14px;padding:18px 22px;max-width:1020px}
 .rec h3{font-family:var(--fT);font-weight:400;font-size:20px;margin-bottom:8px}
