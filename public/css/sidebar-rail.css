@@ -976,39 +976,70 @@
     .sbc-chg.neg { color: #DC2626; }
     body.dark-mode .sbc-chg { color: #34D399; }
     body.dark-mode .sbc-chg.neg { color: #F87171; }
-    .sbc-x,
-    .sbc-eye {
+    /* ---- кластер действий строки-портфеля: глаз (скрыть) + крестик (закрыть) ----
+       Две отдельные иконки в конце строки читались как случайно оброненные глифы.
+       Здесь они — ОДИН контрол: под курсором за ними всплывает пилюля цвета поля
+       колонки с волосяной рамкой, как у остальных кнопок рейки, и мягко въезжает.
+       Кластер встаёт РОВНО НА МЕСТО суммы (её и дневное изменение hover прячет,
+       см. ниже): 46px кластера против ~46px суммы — правый край и имя портфеля
+       остаются на месте. В покое кластера НЕТ в потоке вовсе (display:none, а не
+       нулевая ширина): иначе он тащил бы за собой 9px зазора строки. */
+    .sbc-acts {
+        display: none;
         margin-left: auto;
         flex: none;
-        width: 18px; height: 18px;
-        display: none;
-        place-items: center;
-        border-radius: 6px;
-        color: var(--sbr-dim);
+        align-items: center;
+        gap: 2px;
+        border-radius: 9px;
     }
-    /* Правило строки: auto-отступ держит ТОЛЬКО первый прижатый вправо элемент,
-       остальные встают вплотную за ним (тот же приём, что у .sbc-val + .sbc-chg) —
-       иначе свободное место делится между ними и кнопки разъезжаются по строке. */
-    .sbc-val ~ .sbc-eye,
-    .sbc-chg ~ .sbc-eye,
-    .sbc-n ~ .sbc-eye { margin-left: 4px; }
-    .sbc-eye ~ .sbc-x { margin-left: 2px; }
+    @keyframes sbcActIn { from { opacity: 0; transform: translateX(4px); } to { opacity: 1; transform: none; } }
+    .sbc-it:hover .sbc-acts {
+        display: flex;
+        padding: 2px;
+        background: var(--sbr-card);
+        box-shadow: 0 0 0 1px var(--sbr-line), 0 1px 2px rgba(16, 24, 40, 0.05);
+    }
+    .sbc-it:hover .sbc-acts:not(.has-off) { animation: sbcActIn 0.16s ease both; }
+    body.dark-mode .sbc-it:hover .sbc-acts { box-shadow: 0 0 0 1px var(--sbr-line); }
+    /* Скрытый портфель: кластер виден ВСЕГДА, но без подложки — в нём одна
+       янтарная метка, и белая пилюля вокруг неё была бы вторым хромом подряд.
+       Крестик до наведения не показываем: закрывать вкладку никто не просил. */
+    .sbc-acts.has-off { display: flex; }
+    .sbc-acts.has-off .sbc-x { display: none; }
+    .sbc-it:hover .sbc-acts.has-off .sbc-x { display: grid; }
+    .sbc-x,
+    .sbc-eye {
+        flex: none;
+        width: 19px; height: 19px;
+        display: grid;
+        place-items: center;
+        border-radius: 7px;
+        color: var(--sbr-dim);
+        transition: background 0.13s ease, color 0.13s ease;
+    }
     .sbc-x svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
     .sbc-eye svg {
         width: 12.5px; height: 12.5px;
         fill: none; stroke: currentColor; stroke-width: 1.9;
         stroke-linecap: round; stroke-linejoin: round;
     }
-    .sbc-x:hover, .sbc-eye:hover { background: var(--sbr-line); color: var(--sbr-ink); }
-    /* скрытый портфель: глаз ГОРИТ янтарным и виден ВСЕГДА — тот же сигнал, что
-       точка на кнопке «Видимость» в шапке. Иначе скрытый портфель молча тонет
-       в списке приглушённой строкой, и про него забывают насовсем. */
-    .sbc-eye.off { display: grid; color: #D97706; }
-    .sbc-eye.off:hover { background: var(--sbr-line); color: #B45309; }
-    body.dark-mode .sbc-eye.off { color: #F59E0B; }
-    body.dark-mode .sbc-eye.off:hover { color: #FBBF24; }
-    .sbc-it:hover .sbc-x, .sbc-it:hover .sbc-eye { display: grid; }
-    .sbc-it:hover .sbc-chg { display: none; }
+    .sbc-x:hover { background: var(--sbr-line); color: var(--sbr-ink); }
+    /* глаз тонируется янтарём уже под курсором — цвет действия виден до клика */
+    .sbc-eye:hover { background: rgba(217, 119, 6, 0.13); color: #B45309; }
+    /* Скрытый портфель: глаз остаётся на виду янтарной пилюлей — это уже не
+       кнопка «по наведению», а МЕТКА состояния (тем же кликом портфель и
+       возвращают). Тот же сигнал, что янтарная точка на кнопке «Видимость» в
+       шапке: иначе скрытый портфель молча тонет приглушённой строкой. */
+    .sbc-eye.off { background: rgba(217, 119, 6, 0.13); color: #B45309; }
+    .sbc-eye.off:hover { background: rgba(217, 119, 6, 0.22); color: #92400E; }
+    body.dark-mode .sbc-eye:hover,
+    body.dark-mode .sbc-eye.off { background: rgba(245, 158, 11, 0.16); color: #FBBF24; }
+    body.dark-mode .sbc-eye.off:hover { background: rgba(245, 158, 11, 0.26); color: #FCD34D; }
+    /* сумма и дневное изменение уступают место кластеру: показываем ЛИБО состояние
+       портфеля, ЛИБО действия над ним — вместе они не помещаются в 288px без того,
+       чтобы срезать имя до двух букв */
+    .sbc-it:hover .sbc-chg,
+    .sbc-it:hover .sbc-val { display: none; }
     .sbc-it.gh { color: var(--sbr-dim); font-weight: 600; }
     .sbc-it.dim .sbc-tx { opacity: 0.6; }
     /* «Ещё: …» — свёрнутый хвост длинного списка. Тише пунктов: это не пункт,

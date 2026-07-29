@@ -225,18 +225,26 @@
         if (it.val) right += '<span class="sbc-val">' + esc(it.val) + '</span>';
         if (it.chg) right += '<span class="sbc-chg' + (it.chg.neg ? ' neg' : '') + '">' + esc(it.chg.tx) + '</span>';
         else if (it.n != null) right += '<span class="sbc-n">' + esc(it.n) + '</span>';
-        // глаз стоит ЛЕВЕЕ крестика: скрытие обратимо, закрытие вкладки — нет,
-        // и опасное действие честнее держать крайним
+        // Действия строки живут ОДНИМ кластером .sbc-acts: под курсором он
+        // всплывает пилюлей цвета поля колонки и встаёт НА МЕСТО суммы (css прячет
+        // .sbc-val/.sbc-chg на hover) — правый край не дёргается, а две иконки
+        // читаются как один контрол, а не как пара случайных глифов.
+        // Глаз стоит ЛЕВЕЕ крестика: скрытие обратимо, закрытие вкладки — нет,
+        // и необратимое действие честнее держать крайним.
+        var acts = '';
         if (it.hide) {
             var hTitle = it.hide.off ? 'Показать портфель на «Обзоре»' : 'Скрыть портфель с «Обзора» — капитал останется в сводке';
-            right += '<span class="sbc-eye' + (it.hide.off ? ' off' : '') + '" role="button" tabindex="0" data-act="' +
+            acts += '<span class="sbc-eye' + (it.hide.off ? ' off' : '') + '" role="button" tabindex="0" data-act="' +
                 esc(it.hide.act) + '" data-key="' + esc(it.hide.key) + '" title="' + esc(hTitle) +
                 '" aria-label="' + esc(hTitle) + '">' + (it.hide.off ? EYEOFF_SVG : EYE_SVG) + '</span>';
         }
         if (it.close) {
-            right += '<span class="sbc-x" role="button" tabindex="0" data-act="' + esc(it.close.act) + '" data-key="' +
+            acts += '<span class="sbc-x" role="button" tabindex="0" data-act="' + esc(it.close.act) + '" data-key="' +
                 esc(it.close.key) + '" title="Закрыть вкладку" aria-label="Закрыть вкладку">' + X_SVG + '</span>';
         }
+        // .has-off — у скрытого портфеля глаз виден ВСЕГДА, и кластеру нельзя
+        // схлопываться в ноль ширины: он и есть метка состояния
+        if (acts) right += '<span class="sbc-acts' + (it.hide && it.hide.off ? ' has-off' : '') + '">' + acts + '</span>';
         return '<button type="button" class="' + cls + '" data-act="' + esc(it.act) + '" data-key="' + esc(it.key) + '"' +
             (it.on ? ' aria-current="page"' : '') + (it.title ? ' title="' + esc(it.title) + '"' : '') + '>' +
             (it.dot ? '<span class="sbc-dot" style="background:' + esc(it.dot) + '"></span>' : '') +
@@ -246,11 +254,13 @@
     }
     // ---- свёртка длинного списка ----
     // «Портфели» отдают семь разделов подряд, и низ колонки они забирают
-    // целиком. Прячем ВТОРОСТЕПЕННЫЕ — те, за которыми ходят реже всего
-    // (мокап Б оставляет на виду Обзор · Мои портфели · Аналитика · Операции ·
-    // Торговля). Прятать «последние N» было бы проще, но «Торговля» стоит в
-    // списке последней, и её как раз открывают чаще всего.
-    var SECONDARY = { reports: 1, rebal: 1 };
+    // целиком. Прячем ВТОРОСТЕПЕННЫЕ — те, за которыми ходят реже всего.
+    // 2026-07-29 (просьба владельца): на виду четыре рабочих шага —
+    // Обзор · Мои портфели · Ребаланс · Торговля, в «Ещё» уезжают Аналитика,
+    // Отчёты и Операции (их открывают эпизодически, а не каждый день).
+    // Прятать «последние N» было бы проще, но «Торговля» стоит в списке
+    // последней, и её как раз открывают чаще всего.
+    var SECONDARY = { analytics: 1, reports: 1, ops: 1 };
     // Раскрытие ЗАПОМИНАЕТСЯ (раунд 4): кто ходит в «Отчёты» каждый день,
     // раскрывает список один раз. Ключ зеркалится в облако как позиция UI
     // (см. WATCH в js/cloud-sync.js) — на втором устройстве список тот же.
