@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Сайдбар · навигация в полный голос (раунд 6, редакция 5)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+       --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+       --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding:44px 0 90px;-webkit-font-smoothing:antialiased}
+.page{width:1400px;max-width:100%;margin:0 auto;padding:0 20px}
+
+.doc-h{margin-bottom:34px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-acc);margin-bottom:9px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;text-wrap:balance;max-width:1020px}
+.doc-h p{margin-top:12px;font-size:15px;line-height:1.6;color:var(--doc-mut);max-width:920px}
+.verdict{margin-top:20px;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid var(--doc-acc);border-radius:14px;padding:16px 20px;max-width:1020px}
+.verdict p{margin:0;font-size:14.5px;line-height:1.6;color:var(--doc-quote)}
+.verdict p+p{margin-top:10px}
+.verdict b{font-weight:700;color:var(--doc-ink)}
+.verdict code{font-family:var(--fN);font-size:12px;color:var(--doc-acc)}
+
+.mk{margin-top:52px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.ok{background:rgba(22,163,74,.15);color:#16a34a}
+.mk-tag.no{background:rgba(194,118,10,.16);color:#c2760a}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.6;max-width:1020px;margin-bottom:18px}
+.mk-sub b{color:var(--doc-ink);font-weight:700}
+.mk-sub code,.map code,.rec code,.notes code,.spec-cap code,.zc code{font-family:var(--fN);font-size:12px;color:var(--doc-acc)}
+.scroller{overflow-x:auto;padding:4px 0 10px}
+.strip{display:flex;gap:20px;align-items:flex-start;width:max-content}
+.spec-cap{margin-top:10px;font-size:12px;line-height:1.45;color:var(--doc-mut);max-width:290px}
+.spec-cap.wide{max-width:620px}
+.spec-cap b{color:var(--doc-ink);font-weight:700;display:block;font-size:12.5px;margin-bottom:2px}
+.spec-cap .was{color:#c2760a;font-weight:700}
+.spec-cap .now{color:#16a34a;font-weight:700}
+.notes{margin-top:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 26px}
+.note{display:flex;gap:9px;font-size:13px;line-height:1.5;color:var(--doc-quote)}
+.note i{flex:none;width:18px;height:18px;border-radius:50%;background:var(--doc-ink);color:var(--doc-bg);font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.note.ok i{background:#16a34a;color:#fff}
+.note.no i{background:#c2760a;color:#fff}
+.note b{font-weight:700;color:var(--doc-ink)}
+@media (max-width:1000px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} }
+
+.map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th,.map td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--doc-line);vertical-align:top}
+.map th{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);background:color-mix(in srgb,var(--doc-line) 40%,transparent)}
+.map tr:last-child td{border-bottom:0}
+.map td b{font-weight:700;color:var(--doc-ink)}
+.map .was{color:var(--doc-mut)}
+.map .now{color:var(--doc-ink);font-weight:600}
+.map .n{font-family:var(--fN);font-size:11.5px;font-weight:700;color:var(--doc-dim)}
+
+.zoom{margin-top:20px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+@media (max-width:1000px){ .zoom{grid-template-columns:1fr} }
+.zc{background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:14px;padding:16px 18px 18px}
+.zc h4{font-family:var(--fT);font-weight:400;font-size:18px;margin-bottom:3px}
+.zc .lead{font-size:12.5px;line-height:1.5;color:var(--doc-mut);margin-bottom:12px}
+.zc .why{margin-top:12px;font-size:12.5px;line-height:1.55;color:var(--doc-quote)}
+.zc .why b{font-weight:700;color:var(--doc-ink)}
+
+.rec{margin-top:22px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:14px;padding:18px 22px;max-width:1020px}
+.rec h3{font-family:var(--fT);font-weight:400;font-size:20px;margin-bottom:8px}
+.rec p{font-size:14px;line-height:1.65;color:var(--doc-quote)}
+.rec p+p{margin-top:9px}
+.rec b{font-weight:700;color:var(--doc-ink)}
+.rec ul{margin:9px 0 0 18px;font-size:14px;line-height:1.65;color:var(--doc-quote)}
+.rec li+li{margin-top:5px}
+
+/* ════════════════ СЦЕНА ════════════════ */
+.sc{
+  --ink:#101828; --mut:#64748b; --dim:#98a4b4;
+  --line:#e7ecf3; --bg:#f4f6fa; --card:#fff;
+  --acc:#4453ef; --grn:#16a34a; --red:#dc2626; --amb:#C2760A;
+  --sbacc:#2F6B4F;
+  position:relative;
+  display:flex; width:1180px; height:860px; overflow:hidden;
+  border:1px solid var(--doc-line); border-radius:18px;
+  background:var(--bg); color:var(--ink);
+  font-family:var(--fU); -webkit-font-smoothing:antialiased;
+  box-shadow:0 22px 50px -30px rgba(16,24,40,.45);
+}
+.sc.solo{width:290px;height:860px}
+.sc.nav{width:290px;height:auto;box-shadow:none;border-radius:14px;border:1px solid var(--doc-line)}
+.sc .num{font-family:var(--fN);font-variant-numeric:tabular-nums}
+.sc svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+.pg{flex:1;min-width:0;display:flex;flex-direction:column;padding:0 30px}
+.pg-top{display:flex;align-items:center;gap:11px;padding:20px 0 16px}
+.pg-crumb{font-size:12.5px;color:var(--dim);white-space:nowrap}
+.pg-crumb b{color:var(--ink);font-weight:600}
+.pg-top .sp{flex:1}
+.pg-chip{height:28px;min-width:28px;padding:0 12px;border-radius:999px;background:var(--card);display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;color:var(--mut);box-shadow:0 4px 14px -8px rgba(16,24,40,.4)}
+.pg-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.pg-kpi{background:var(--card);border-radius:16px;padding:18px 20px;box-shadow:0 10px 26px -22px rgba(16,24,40,.5)}
+.pg-kpi em{font-style:normal;display:block;font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.pg-kpi b{display:block;margin-top:8px;font-family:var(--fN);font-size:19px;font-weight:700;letter-spacing:-.02em}
+.pg-card{margin-top:14px;flex:1;background:var(--card);border-radius:18px;padding:22px 24px;box-shadow:0 10px 26px -22px rgba(16,24,40,.5);min-height:0;display:flex;flex-direction:column}
+.pg-card h4{font-family:var(--fT);font-weight:400;font-size:18px}
+.pg-card p{margin-top:5px;font-size:11.5px;color:var(--dim)}
+.pg-rows{margin-top:20px;display:flex;flex-direction:column;gap:12px}
+.pg-row{height:28px;border-radius:8px;background:var(--bg)}
+.pg-row:nth-child(2){width:88%}.pg-row:nth-child(3){width:94%}.pg-row:nth-child(4){width:74%}.pg-row:nth-child(5){width:81%}.pg-row:nth-child(6){width:90%}
+
+/* ════════════════ КОЛОНКА ════════════════ */
+.bx{flex:none;width:288px;background:var(--card);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;min-height:0}
+.sc.solo .bx,.sc.nav .bx{border-right:0}
+.bx-head{padding:18px 18px 0;display:flex;align-items:center;gap:11px}
+.mark{flex:none;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;
+  background:linear-gradient(180deg,#232B3B 0%,#141A26 100%);color:#F1F6FB;font-family:var(--fT);font-size:15px}
+.bname{flex:1;font-family:var(--fT);font-size:16px;font-weight:400;letter-spacing:-.01em;line-height:1.15;white-space:nowrap;color:var(--ink)}
+.bname span{color:var(--mut)}
+.bname b{font-weight:700}
+.sbtn{width:30px;height:30px;flex:none;display:grid;place-items:center;border-radius:9px;color:var(--dim)}
+.sbtn svg{width:16px;height:16px}
+
+.cap{margin:22px 18px 0;position:relative}
+.cap em{font-style:normal;display:block;font-size:8.5px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--dim)}
+.cap .v{display:flex;align-items:baseline;gap:8px;margin-top:5px}
+.cap .v b{font-family:var(--fN);font-size:21px;font-weight:700;letter-spacing:-.025em}
+.cap .chg{font-family:var(--fN);font-size:10px;font-weight:700;color:var(--grn)}
+.cap .day{margin-top:3px;font-family:var(--fN);font-size:10.5px;font-weight:600;color:var(--grn)}
+.cap .spk{margin-top:11px;height:24px;width:100%;color:var(--grn);display:block}
+
+/* ══════════ ПЕРВЫЙ УРОВЕНЬ В ПОЛНЫЙ ГОЛОС ══════════ */
+/* Строка 44px, иконка 20px в круге 30px, имя 14,5px/600 тоном ink.
+   Разделы — самый крупный текст колонки после капитала. */
+.lv1{display:flex;flex-direction:column;gap:1px;padding:26px 8px 0}
+.lv1 .it{position:relative;display:flex;align-items:center;gap:12px;height:44px;padding:0 10px;border-radius:12px;
+  font-size:14.5px;font-weight:600;letter-spacing:-.005em;color:var(--ink);transition:background .15s ease}
+.lv1 .ic{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;
+  background:transparent;color:var(--mut);transition:background .15s ease,color .15s ease}
+.lv1 .ic svg{width:20px;height:20px}
+.lv1 .it .tx{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lv1 .it.hov{background:color-mix(in srgb,var(--bg) 55%,transparent)}
+.lv1 .it.hov .ic{background:var(--bg)}
+/* активный раздел: пилюля на всю строку + залитый кружок + 700 */
+.lv1 .it.on{background:var(--bg);font-weight:700}
+.lv1 .it.on .ic{background:var(--sbacc);color:#fff}
+.lv1 .bdg{position:absolute;left:31px;top:5px;min-width:15px;height:15px;padding:0 3px;border-radius:8px;
+  background:var(--amb);color:#fff;font-family:var(--fN);font-size:9px;font-weight:700;
+  display:grid;place-items:center;border:2px solid var(--card)}
+.lv1 .it.on .bdg{border-color:var(--bg)}
+/* вариант с риской у края — показан отдельной колонкой */
+.lv1.bar .it.on::before{content:'';position:absolute;left:-8px;top:11px;bottom:11px;width:3px;border-radius:0 3px 3px 0;background:var(--sbacc)}
+
+/* прежний вариант 36px — для сравнения */
+.lv1.sm{padding:18px 8px 0;gap:0}
+.lv1.sm .it{height:36px;font-size:13px;gap:11px}
+.lv1.sm .ic{width:26px;height:26px}
+.lv1.sm .ic svg{width:16px;height:16px}
+.lv1.sm .bdg{left:29px;top:2px}
+
+.bx-hr{height:1px;background:var(--line);margin:16px 18px 0}
+.bx-hr.sm{margin:14px 18px 0}
+
+/* ══════════ ВТОРОЙ УРОВЕНЬ — заметно тише ══════════ */
+.bx-ctx{flex:1;min-height:0;overflow:hidden;padding:6px 8px 0;display:flex;flex-direction:column}
+.lv2{padding-left:12px}
+.grp{display:flex;align-items:center;gap:9px;padding:20px 10px 6px;font-size:9px;font-weight:800;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+.row{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;border-radius:9px;font-size:12.5px;font-weight:500;color:var(--mut)}
+.row svg{width:14px;height:14px;flex:none;opacity:.6}
+.row .tx{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row.on{background:var(--bg);color:var(--ink);font-weight:600}
+.row.on svg{opacity:1;color:var(--sbacc)}
+.row.gh{color:var(--dim);font-weight:600}
+.row.more{color:var(--dim)}
+.dot{width:8px;height:8px;border-radius:50%;flex:none;margin:0 3.5px}
+.num-new{font-family:var(--fN);font-size:10.5px;font-weight:600;color:var(--mut)}
+
+.bx-foot{flex:none;display:flex;align-items:center;gap:4px;padding:12px 18px 16px;border-top:1px solid var(--line)}
+.bx-foot .sp{flex:1}
+.bx-foot .ava{width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--bg);color:var(--mut)}
+.bx-foot .ava svg{width:15px;height:15px}
+
+.hnote{margin:10px 12px 0;padding:7px 10px;border-radius:9px;background:color-mix(in srgb,var(--acc) 8%,transparent);
+  font-family:var(--fN);font-size:10px;font-weight:700;color:var(--acc);text-align:center}
+
+/* линейка масштаба */
+.scale{display:flex;align-items:center;gap:10px;margin-top:12px}
+.scale .bar{display:block;flex:none;height:10px;border-radius:3px;background:var(--doc-acc);opacity:.25}
+.scale .bar.on{opacity:.75}
+.scale span{font-family:var(--fN);font-size:10.5px;font-weight:700;color:var(--doc-mut)}
+
+.tally{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
+.tally i{font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;
+  background:color-mix(in srgb,var(--doc-mut) 13%,transparent);color:var(--doc-mut)}
+.tally i.b{background:rgba(194,118,10,.15);color:#c2760a}
+.tally i.a{background:rgba(22,163,74,.15);color:#16a34a}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="doc-h">
+  <div class="doc-kicker">Сайдбар · навигация · раунд 6 · редакция 5</div>
+  <h1>Строки были правильной формой, но не той величины: разделы стояли вровень с подпунктами и звучали как подпункты</h1>
+  <p>В прошлой редакции я поставила всю колонку в один шаг 36px — и это оказалось ошибкой ровно наоборот прежней. Единый шаг хорош для одного уровня; для двух он стирает разницу между «куда я иду» и «что там внутри». Разделы получили тот же кегль, тот же рост и почти тот же вес, что подвкладки, и перестали быть навигацией.</p>
+  <div class="verdict">
+    <p><b>Что меняем.</b> Первый уровень поднимается в ранге: строка <b>36 → 44px</b>, имя <b>13 → 14,5px</b> тоном <code>--sbr-ink</code>, иконка <b>16 → 20px</b> в круге 30px. Второй уровень одновременно <b>опускается</b>: строка 36 → 34px, имя 13 → 12,5px тоном <code>--sbr-mut</code>. Между уровнями появляется настоящая разница масштаба — 44 против 34 и 14,5 против 12,5, — а не только вес и отступ.</p>
+    <p><b>Маркер активного тоже в полный голос.</b> Раздел, в котором вы находитесь, получает пилюлю на всю строку И залитый зелёный кружок И начертание 700 — три сигнала на самом важном элементе колонки. Подвкладка остаётся при одной пилюле. Ховер — пилюля вполсилы, как и был.</p>
+    <p><b>Цена.</b> Первый уровень 196 → 238px, второй, наоборот, ужимается на 10px. Итог по колонке — плюс 32px против прошлой редакции и плюс 56px против доведённой сетки. В колонке 1000px это по-прежнему оставляет около 170px воздуха внизу.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════ ГЛАВНЫЙ ЭКРАН ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">1</span><h2>Колонка</h2><span class="mk-tag ok">итог</span></div>
+  <div class="mk-sub">«Портфели» на «Обзоре», курсор на «Рынке». Разделы — самый крупный текст колонки после капитала; подвкладки заметно тише и сдвинуты на 12px.</div>
+  <div class="scroller"><div class="strip">
+    <div>
+      <div class="sc">
+        <div class="bx">
+          <div class="bx-head">
+            <div class="mark">M</div>
+            <div class="bname"><span>Madame </span><b>Solomi'na</b></div>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg></span>
+          </div>
+
+          <div class="cap">
+            <em>Капитал · все портфели</em>
+            <div class="v"><b class="num">304 962 ₽</b><span class="chg num">+0,4%</span></div>
+            <div class="day num">+1 214 ₽ за сегодня</div>
+            <svg class="spk" viewBox="0 0 200 24" preserveAspectRatio="none"><path d="M0 18 L20 17 L40 19 L60 14 L80 16 L100 11 L120 13 L140 9 L160 11 L180 7 L200 6" stroke-width="1.6" vector-effect="non-scaling-stroke"/></svg>
+          </div>
+
+          <div class="lv1">
+            <div class="it on"><i class="ic"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i><span class="tx">Портфели</span></div>
+            <div class="it"><i class="ic"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><b class="bdg num">1</b><span class="tx">Академия</span></div>
+            <div class="it hov"><i class="ic"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></i><span class="tx">Рынок</span></div>
+            <div class="it"><i class="ic"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span class="tx">Расчёт</span></div>
+            <div class="it"><i class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span class="tx">Тест</span></div>
+          </div>
+          <div class="bx-hr"></div>
+
+          <div class="bx-ctx">
+            <div class="lv2">
+              <div class="row on" style="margin-top:10px"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="tx">Обзор</span></div>
+              <div class="row"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M2 13h20"/></svg><span class="tx">Мои портфели</span><span class="num-new">3</span></div>
+              <div class="row"><svg viewBox="0 0 24 24"><path d="M12 3v18M7 8l5-5 5 5M17 16l-5 5-5-5"/></svg><span class="tx">Ребаланс</span></div>
+              <div class="row"><svg viewBox="0 0 24 24"><rect x="3.5" y="8" width="6" height="9" rx="1.5"/><path d="M6.5 4v4M6.5 17v3"/><rect x="14.5" y="5" width="6" height="10" rx="1.5"/><path d="M17.5 3v2M17.5 15v6"/></svg><span class="tx">Торговля</span></div>
+              <div class="row more"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg><span class="tx">Ещё 3 раздела</span></div>
+              <div class="grp"><span>Открытые портфели</span></div>
+              <div class="row"><i class="dot" style="background:#4453ef"></i><span class="tx">Основной</span><span class="num-new">51 098 ₽</span></div>
+              <div class="row"><i class="dot" style="background:#7c5cff"></i><span class="tx">Долгосрочный</span><span class="num-new">235 480 ₽</span></div>
+              <div class="row"><i class="dot" style="background:#e0a33e"></i><span class="tx">Спекулятивный</span><span class="num-new">18 384 ₽</span></div>
+              <div class="row gh"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg><span class="tx">Новый портфель</span></div>
+            </div>
+          </div>
+
+          <div class="bx-foot">
+            <span class="ava"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
+            <span class="sp"></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg></span>
+            <span class="sbtn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg></span>
+          </div>
+        </div>
+
+        <div class="pg">
+          <div class="pg-top"><span class="pg-crumb"><b>Портфели</b> · Обзор</span><span class="sp"></span><span class="pg-chip">Виджеты</span><span class="pg-chip">Раскладки</span></div>
+          <div class="pg-kpis">
+            <div class="pg-kpi"><em>Суммарный капитал</em><b class="num">304 962 ₽</b></div>
+            <div class="pg-kpi"><em>За сегодня</em><b class="num" style="color:var(--grn)">+1 214 ₽</b></div>
+            <div class="pg-kpi"><em>Ближайшая выплата</em><b class="num">+17 102 ₽</b></div>
+          </div>
+          <div class="pg-card"><h4>График капитала</h4><p>стоимость всех портфелей</p>
+            <div class="pg-rows"><div class="pg-row"></div><div class="pg-row"></div><div class="pg-row"></div><div class="pg-row"></div><div class="pg-row"></div><div class="pg-row"></div></div>
+          </div>
+          <div style="height:20px"></div>
+        </div>
+      </div>
+      <div class="spec-cap wide"><b class="now">Итог</b>Разделы читаются первыми: 14,5px тоном чернил против 12,5px приглушённых у подвкладок. Активные «Портфели» помечены трижды — пилюлей, залитым кружком и начертанием. Подвкладки ушли на полтона вниз и на 12px вправо. Между двумя уровнями теперь есть разница величины, а не только веса.</div>
+      <div class="scale"><span>раздел 44px</span><i class="bar on" style="width:88px"></i><span>подвкладка 34px</span><i class="bar" style="width:68px"></i></div>
+    </div>
+  </div></div>
+</div>
+
+<!-- ═══════════════════ ТРИ ВЕЛИЧИНЫ ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">2</span><h2>Величина первого уровня: три состояния</h2></div>
+  <div class="mk-sub">Одно и то же содержимое, разная только величина первого уровня. Слева — прошлая редакция, посередине — предлагаемая, справа — она же с риской у края экрана вместо пилюли.</div>
+  <div class="scroller"><div class="strip">
+
+    <div>
+      <div class="sc nav">
+        <div class="bx">
+          <div class="lv1 sm">
+            <div class="it on"><i class="ic"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i><span class="tx">Портфели</span></div>
+            <div class="it"><i class="ic"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><b class="bdg num">1</b><span class="tx">Академия</span></div>
+            <div class="it"><i class="ic"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></i><span class="tx">Рынок</span></div>
+            <div class="it"><i class="ic"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span class="tx">Расчёт</span></div>
+            <div class="it"><i class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span class="tx">Тест</span></div>
+          </div>
+          <div class="hnote">строка 36px · имя 13px · 196px</div>
+          <div class="bx-hr sm"></div>
+          <div class="bx-ctx" style="flex:none;padding-bottom:14px">
+            <div class="lv2">
+              <div class="row on" style="margin-top:10px;height:36px;font-size:13px"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="tx">Обзор</span></div>
+              <div class="row" style="height:36px;font-size:13px"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M2 13h20"/></svg><span class="tx">Мои портфели</span><span class="num-new">3</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b class="was">Прошлая редакция</b>Единый шаг 36px на оба уровня. Форма верная, ранг — нет: раздел и подпункт одного роста и почти одного кегля (13 против 13). Навигация звучит как оглавление.</div>
+    </div>
+
+    <div>
+      <div class="sc nav">
+        <div class="bx">
+          <div class="lv1">
+            <div class="it on"><i class="ic"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i><span class="tx">Портфели</span></div>
+            <div class="it"><i class="ic"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><b class="bdg num">1</b><span class="tx">Академия</span></div>
+            <div class="it"><i class="ic"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></i><span class="tx">Рынок</span></div>
+            <div class="it"><i class="ic"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span class="tx">Расчёт</span></div>
+            <div class="it"><i class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span class="tx">Тест</span></div>
+          </div>
+          <div class="hnote">строка 44px · имя 14,5px · 238px</div>
+          <div class="bx-hr"></div>
+          <div class="bx-ctx" style="flex:none;padding-bottom:14px">
+            <div class="lv2">
+              <div class="row on" style="margin-top:10px"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="tx">Обзор</span></div>
+              <div class="row"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M2 13h20"/></svg><span class="tx">Мои портфели</span><span class="num-new">3</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b class="now">Предлагаемая</b>44 против 34, 14,5 против 12,5, чернила против приглушённого. Раздел виден раньше подпункта, и это видно с расстояния, а не при сравнении.</div>
+    </div>
+
+    <div>
+      <div class="sc nav">
+        <div class="bx">
+          <div class="lv1 bar">
+            <div class="it on" style="background:transparent"><i class="ic"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i><span class="tx">Портфели</span></div>
+            <div class="it"><i class="ic"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><b class="bdg num">1</b><span class="tx">Академия</span></div>
+            <div class="it"><i class="ic"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></i><span class="tx">Рынок</span></div>
+            <div class="it"><i class="ic"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span class="tx">Расчёт</span></div>
+            <div class="it"><i class="ic"><svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg></i><span class="tx">Тест</span></div>
+          </div>
+          <div class="hnote">та же величина, маркер — риска</div>
+          <div class="bx-hr"></div>
+          <div class="bx-ctx" style="flex:none;padding-bottom:14px">
+            <div class="lv2">
+              <div class="row on" style="margin-top:10px"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span class="tx">Обзор</span></div>
+              <div class="row"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M2 13h20"/></svg><span class="tx">Мои портфели</span><span class="num-new">3</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="spec-cap"><b>Тот же размер, другой маркер</b>Вместо пилюли — риска 3px у самого края колонки, как в рейке до раунда 3. Тише пилюли и не спорит с активной подвкладкой, но зелёного в колонке становится два сорта: риска и кружок. Показываю на выбор, сама рекомендую пилюлю.</div>
+    </div>
+
+  </div></div>
+</div>
+
+<!-- ═══════════════════ РАЗБОР ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">3</span><h2>Как устроен ранг</h2></div>
+  <div class="zoom">
+    <div class="zc">
+      <h4>Разница величины, а не только веса</h4>
+      <div class="lead">Уровни должны отличаться тем, что видно с расстояния.</div>
+      <div class="why">Вес и цвет читаются, только когда две строки рядом и есть с чем сравнить. Величина читается сразу. Поэтому разделы получают <b>и рост (44 против 34), и кегль (14,5 против 12,5), и тон (<code>--sbr-ink</code> против <code>--sbr-mut</code>), и иконку (20 против 14)</b> — четыре шкалы в одну сторону. Имя раздела становится вторым по величине текстом колонки: крупнее только число капитала.</div>
+    </div>
+    <div class="zc">
+      <h4>Три сигнала на активном разделе</h4>
+      <div class="lead">Самый важный элемент колонки помечен избыточно — и это правильно.</div>
+      <div class="why">Пилюля <code>--sbr-page</code> на всю строку, залитый зелёный кружок, начертание 700. Раньше я снимала «лишние» маркеры ради тишины; здесь тишина не нужна: «где я нахожусь» — единственный вопрос, на который навигация обязана отвечать мгновенно. У подвкладки маркер остаётся один — пилюля, и спорить ей теперь не с чем: у раздела маркер втрое заметнее.</div>
+    </div>
+    <div class="zc">
+      <h4>Второй уровень идёт вниз, а не только вправо</h4>
+      <div class="lead">Иерархию делают обе стороны, а не одна.</div>
+      <div class="why">Подвкладки ужимаются с 36 до 34px и с 13 до 12,5px, тон — <code>--sbr-mut</code>. Отступ 12px остаётся. Так первый уровень растёт на 42px, а второй возвращает 10px — итоговая прибавка к колонке 32px, а не 42. Портфели в «Открытых портфелях» идут тем же кеглем, что подвкладки: они и есть третий сорт строк.</div>
+    </div>
+    <div class="zc">
+      <h4>Что это стоит по высоте</h4>
+      <div class="lead">Сравнение по всем редакциям, пять разделов.</div>
+      <div class="why">Сетка в проде — <b>160px</b>. Доведённая сетка — <b>182px</b>. Строки 36px — <b>196px</b>. Строки 44px — <b>238px</b>. При колонке 1000px и капитале без плашки полная связка «шапка + капитал + оба уровня + подвал» занимает около 830px, то есть внизу остаётся ~170px воздуха. При семи разделах (админ плюс своя вкладка) первый уровень станет 326px — воздух уйдёт, но прокрутка по-прежнему не понадобится.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ ТАБЛИЦА ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">4</span><h2>Было → стало против прошлой редакции</h2></div>
+  <table class="map">
+    <tr><th style="width:180px">Что</th><th style="width:280px">Редакция 4 (единый шаг)</th><th style="width:280px">Редакция 5</th><th>Зачем</th></tr>
+    <tr><td><b>Строка раздела</b><div class="n">.sb-item</div></td><td class="was">36px, радиус 10px</td><td class="now">44px, радиус 12px, зазор между строками 1px</td><td>Раздел перестаёт быть ростом с подпункт.</td></tr>
+    <tr><td><b>Имя раздела</b><div class="n">.sb-label</div></td><td class="was">13px / 600 / <code>--sbr-ink</code></td><td class="now">14,5px / 600 / <code>--sbr-ink</code>, активный 700</td><td>Второй по величине текст колонки после капитала.</td></tr>
+    <tr><td><b>Иконка раздела</b><div class="n">.sb-item &gt; svg</div></td><td class="was">16px в круге 26px</td><td class="now">20px в круге 30px</td><td>Иконка догоняет кегль имени.</td></tr>
+    <tr><td><b>Маркер активного раздела</b><div class="n">.sb-item.active</div></td><td class="was">Только залитый кружок.</td><td class="now">Пилюля <code>--sbr-page</code> + залитый кружок + 700.</td><td>«Где я» должно читаться мгновенно, а не при сравнении.</td></tr>
+    <tr><td><b>Строка подвкладки</b><div class="n">.sbc-it</div></td><td class="was">36px, 13px / 500</td><td class="now">34px, 12,5px / 500, тон <code>--sbr-mut</code></td><td>Второй уровень идёт вниз навстречу первому.</td></tr>
+    <tr><td><b>Высота первого уровня</b><div class="n">пять разделов</div></td><td class="was">196px</td><td class="now">238px</td><td>+42px первому уровню, −10px второму, +32px колонке.</td></tr>
+    <tr><td><b>Отступ второго уровня</b><div class="n">#sbCtx</div></td><td class="was">12px</td><td class="now">12px, без изменений</td><td>Отступ работал и работает; величина — то, чего не хватало.</td></tr>
+  </table>
+</div>
+
+<!-- ═══════════════════ ГРАНИЦЫ ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">5</span><h2>Границы и вопросы</h2><span class="mk-tag mute">границы</span></div>
+  <div class="rec">
+    <h3>В силе</h3>
+    <p>Разделы строками (редакция 4) и всё из «Воздуха»: капитал без плашки, иконки второго уровня, промежутки 22px, «Ещё N разделов», заголовок-дубль снят, линии-хвосты сняты, починка линии дня, единый вес чисел. Разделы по-прежнему не двигаются при смене активного — второй уровень остаётся в своём блоке под чертой.</p>
+    <h3 style="margin-top:16px">Не трогаем</h3>
+    <ul>
+      <li><b>Порядок разделов</b> и состав — как решено 29 июля.</li>
+      <li><b>Рейка 84px</b> — там остаются плитки столбиком, строка в 84px не помещается.</li>
+      <li><b>Мобильная шторка</b>, янтарный тон метки, порог <code>PF.DRIFT_THR</code>.</li>
+    </ul>
+    <h3 style="margin-top:16px">Решить</h3>
+    <ul>
+      <li><b>44px — та величина или ещё крупнее?</b> Следующая ступень — 48px и имя 15px; тогда первый уровень займёт 258px, и при семи разделах воздуха внизу не останется совсем.</li>
+      <li><b>Пилюля или риска</b> у активного раздела. Показаны обе, рекомендую пилюлю: риска добавляет второй сорт зелёного.</li>
+      <li><b>Иконки разделов.</b> На 20px разница между «Рынком», «Расчётом» и «Тестом» стала заметнее — три глифа из пяти всё ещё графики. Перерисовка знаков напрашивается, но это отдельная работа.</li>
+    </ul>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
