@@ -576,7 +576,11 @@
     .sbcap-v { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
     .sbcap-n {
         font-family: var(--font-num, 'JetBrains Mono', monospace);
-        font-size: 20px;
+        /* 24 вместо 20: капитал — главный объект блока, а при 20px короткое
+           число занимало треть карточки и висело в её левом верхнем углу.
+           Самое длинное реальное значение («19 476 834 ₽») просит 173px при
+           внутренней ширине карточки 244 — запас есть. */
+        font-size: 24px;
         font-weight: 700;
         letter-spacing: -0.025em;
         color: var(--sbr-ink);
@@ -654,6 +658,9 @@
         stroke-linejoin: round;
         vector-effect: non-scaling-stroke;
     }
+    /* Шеврон стоит на строке заголовка справа — как .sbw-goic у остальных
+       шести виджетов слота. Внизу, в ряду линии, он оставлял пустым правый
+       верхний угол карточки. */
     .sbcap-go {
         flex: none;
         margin-left: auto;
@@ -1079,9 +1086,11 @@
     .sbc-acts {
         display: none;
         position: absolute;
-        /* 8 = 10 паддинга строки минус 2 собственных: правый край иконки
-           встаёт РОВНО на правый край колонки сумм, а не на 2px дальше */
-        right: 8px;
+        /* ВЫРАВНИВАЕМ ГЛИФ, А НЕ КОРОБКУ. Совпадение рамок давало видимый
+           перекос: глиф 12px сидит по центру мишени 19px, то есть на 3,5px
+           внутри неё, плюс 2px паддинга пилюли — крестик обрывался на 5,5px
+           раньше правого края колонки сумм. 4px возвращают его на место. */
+        right: 4px;
         top: 50%;
         transform: translateY(-50%);
         flex: none;
@@ -1111,10 +1120,13 @@
         color: var(--sbr-dim);
         transition: background 0.13s ease, color 0.13s ease;
     }
-    .sbc-x svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
+    /* ОДИН КАЛИБР У ОБОИХ ГЛИФОВ. Глаз был 12,5px штрихом 1,9, крестик — 11px
+       штрихом 2,4: в одной пилюле они читались разновеликими, и кластер
+       выглядел собранным наспех. Теперь оба 12px и одного веса. */
+    .sbc-x svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; }
     .sbc-eye svg {
-        width: 12.5px; height: 12.5px;
-        fill: none; stroke: currentColor; stroke-width: 1.9;
+        width: 12px; height: 12px;
+        fill: none; stroke: currentColor; stroke-width: 2.2;
         stroke-linecap: round; stroke-linejoin: round;
     }
     .sbc-x:hover { background: var(--sbr-line); color: var(--sbr-ink); }
