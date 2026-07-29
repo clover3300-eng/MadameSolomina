@@ -343,17 +343,18 @@
         box-sizing: border-box;
         width: 100%;
         margin: 0;
-        /* 10px по бокам: 8 у #sbCap + 10 = левый край текста на 18px, общий для
-           марки, разделов, подвкладок и подвала */
-        padding: 12px 10px 11px;
+        /* 14px по бокам: у карточки есть видимый край, и текст внутри отсчитывается
+           от него, а не от общей сетки колонки — крупное число перестаёт
+           упираться в кромку панели */
+        padding: 12px 14px 11px;
         border: 0;
         border-radius: 14px;
-        /* ПЛАШКИ В ПОКОЕ НЕТ (раунд 6). Серый прямоугольник --sbr-page — та же
-           заливка, что у активного раздела и активной подвкладки: в 288px
-           колонки получалось три сорта «выделенного», из которых два не
-           означали выбор. Теперь заливка приходит по наведению: в покое это
-           текст, под курсором — кнопка, а --sbr-page снова значит «выбрано». */
-        background: transparent;
+        /* ПЛАШКА ВПОЛСИЛЫ. Совсем без неё крупное число упиралось в край
+           колонки и висело в воздухе — блоку нужен дом. Но и полный --sbr-page
+           брать нельзя: это тон ВЫБОРА, им залиты активный раздел и активная
+           подвкладка. Берём его половину — виджет читается контейнером, выбор
+           остаётся сильнее его вдвое. */
+        background: color-mix(in srgb, var(--sbr-page) 62%, var(--sbr-card));
         font: inherit;
         text-align: left;
         transition: background 0.15s ease;
@@ -369,7 +370,7 @@
        не бывает. */
     .sbw-goic {
         position: absolute;
-        right: 9px; top: 13px;   /* карточка ужалась по бокам с 14 до 10px */
+        right: 13px; top: 13px;
         width: 11px; height: 11px;
         color: var(--sbr-dim);
         transition: opacity 0.15s ease;
@@ -549,11 +550,11 @@
         box-sizing: border-box;
         width: 100%;
         margin: 0;
-        padding: 12px 10px 11px;
+        padding: 12px 14px 11px;
         border: 0;
         border-radius: 14px;
-        /* плашки в покое нет — см. .sbw-card выше */
-        background: transparent;
+        /* плашка вполсилы — см. .sbw-card выше */
+        background: color-mix(in srgb, var(--sbr-page) 62%, var(--sbr-card));
         font: inherit;
         text-align: left;
         cursor: pointer;
@@ -629,20 +630,21 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        margin-top: 10px;
-        height: 24.3px;
+        margin-top: 9px;
+        /* 24,3 держали ради полосы классов, которой давно нет; 19px хватает
+           форме дня и не даёт линии стать вторым по величине объектом блока */
+        height: 19px;
     }
-    .sbcap-spark {
-        flex: 1 1 auto;
-        min-width: 0;
-        height: 100%;
-        color: #16A34A;
-    }
-    .sbcap-spark.neg { color: #DC2626; }
-    body.dark-mode .sbcap-spark { color: #34D399; }
-    body.dark-mode .sbcap-spark.neg { color: #F87171; }
-    /* ровный день: у линии нет знака, значит нет и цвета знака (см. sparkHtml) */
+    /* ЛИНИЯ ПРИГЛУШЕНА, А НЕ ОКРАШЕНА ЗНАКОМ. Раньше она повторяла зелёный или
+       красный дня — и вместе со строкой дня и чипом процента давала три цветных
+       пятна подряд в верхнем углу. Знак дня называет строка словами и цветом,
+       линия отвечает за форму: тон --sbr-dim, чтобы она читалась фоном числа,
+       а не третьим сообщением о том же. */
+    .sbcap-spark,
+    .sbcap-spark.neg,
     .sbcap-spark.flat,
+    body.dark-mode .sbcap-spark,
+    body.dark-mode .sbcap-spark.neg,
     body.dark-mode .sbcap-spark.flat { color: var(--sbr-dim); }
     .sbcap-spark polyline {
         fill: none;
@@ -704,7 +706,7 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        padding: 11px 10px;     /* тот же левый край 18px, что у остальных блоков */
+        padding: 11px 12px;
     }
     .sbcap-plus {
         flex: none;
@@ -853,15 +855,11 @@
        Избыточность здесь намеренная: «где я нахожусь» — единственный вопрос, на
        который навигация обязана отвечать мгновенно, а не при сравнении. У
        подвкладки маркер остаётся один (пилюля), и спорить ему больше не с чем. */
-    /* Пилюля выбранного ТОНИРОВАНА акцентом, а не просто цветом страницы: на
-       белом поле #F4F6FA почти не видно, и всю работу делал кружок. Девять
-       процентов зелёного связывают пилюлю с кружком внутри неё, и «где я»
-       читается, пока чернила остаются редкостью. Ховер при этом нейтрален —
-       два состояния различаются не силой, а родом. */
+    /* Пилюля выбранного — ЧИСТЫЙ цвет страницы. Тонировать её зеленью пробовали
+       (9% акцента, чтобы связать с кружком внутри) — владелец отказал: зелёного
+       в колонке достаточно одного, в кружке. Не возвращать. */
     #sbNav .sb-item.active,
-    body.dark-mode #sbNav .sb-item.active {
-        background: color-mix(in srgb, var(--sbr-sel) 9%, var(--sbr-page));
-    }
+    body.dark-mode #sbNav .sb-item.active { background: var(--sbr-page); }
     #sbNav .sb-item.active > svg {
         background: var(--sbr-sel);
         border-color: var(--sbr-sel);
@@ -994,9 +992,9 @@
     /* ВЫБОР = тонированная пилюля цвета страницы. Отвод-риска к линии
        вложенности снят вместе с самой линией: подвешивать не к чему. */
     .sbc-it.on {
-        /* тот же тонированный тон, что у активного раздела, только тише: два
-           уровня говорят о выборе одним языком */
-        background: color-mix(in srgb, var(--sbr-sel) 7%, var(--sbr-page));
+        /* чистый цвет страницы, как и у активного раздела — зелень из пилюль
+           снята по просьбе владельца */
+        background: var(--sbr-page);
         color: var(--sbr-ink);
         font-weight: 600;
         box-shadow: none;
@@ -1020,6 +1018,9 @@
         margin-left: auto;
         flex: none;
         font-family: var(--font-num, 'JetBrains Mono', monospace);
+        /* табличные цифры: «405 307 ₽» и «18 233 322 ₽» встают в одну колонку,
+           и правый край перестаёт зависеть от того, какие цифры в числе */
+        font-variant-numeric: tabular-nums;
         font-size: 10.5px;
         font-weight: 600;
         color: var(--sbr-mut);
@@ -1028,6 +1029,25 @@
     /* точке дано ровно то же место 15px, что и глифу строки: имена всех строк
        второго уровня стоят на одной вертикали */
     .sbc-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; margin: 0 3.5px; }
+    /* СКРЫТЫЙ ПОРТФЕЛЬ: та же точка того же цвета, но выросшая в кружок с
+       перечёркнутым глазом. Метка стоит слева, где и так была единственная
+       графика строки, и ничего не отнимает у числа справа. Слот прежний —
+       15px, поэтому имена всех строк перечня по-прежнему на одной вертикали. */
+    .sbc-dot.off {
+        width: 15px; height: 15px;
+        margin: 0 0;
+        display: grid;
+        place-items: center;
+        color: #fff;
+    }
+    .sbc-dot.off svg {
+        width: 9px; height: 9px;
+        fill: none; stroke: currentColor; stroke-width: 2.6;
+        stroke-linecap: round; stroke-linejoin: round;
+    }
+    /* приглушённое имя скрытого портфеля остаётся (класс dim у строки), но сама
+       метка не бледнеет: состояние должно читаться, а не прятаться вместе с ним */
+    .sbc-it.dim .sbc-dot.off { opacity: 1; }
     /* дневное изменение — единственное цветное число в навигации; по наведению
        уступает место крестику (данных нет — просто пусто, ничего не выдумываем) */
     .sbc-chg {
@@ -1050,9 +1070,20 @@
        см. ниже): 46px кластера против ~46px суммы — правый край и имя портфеля
        остаются на месте. В покое кластера НЕТ в потоке вовсе (display:none, а не
        нулевая ширина): иначе он тащил бы за собой 9px зазора строки. */
+    /* Кластер стоит АБСОЛЮТОМ у правого края, а место под него держит
+       .sbc-it.acts своим padding-right. Раньше он жил в потоке и появлялся по
+       ховеру (display:none в покое), но у скрытого портфеля глаз виден ВСЕГДА —
+       и тогда он отжимал сумму влево, ломая колонку чисел ровно на тех строках,
+       где и так было тесно. Теперь правый край суммы одинаков у всех строк
+       перечня, а кластер ничего не двигает ни в покое, ни под курсором. */
     .sbc-acts {
         display: none;
-        margin-left: auto;
+        position: absolute;
+        /* 8 = 10 паддинга строки минус 2 собственных: правый край иконки
+           встаёт РОВНО на правый край колонки сумм, а не на 2px дальше */
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
         flex: none;
         align-items: center;
         gap: 2px;
@@ -1065,14 +1096,11 @@
         background: var(--sbr-card);
         box-shadow: 0 0 0 1px var(--sbr-line), 0 1px 2px rgba(16, 24, 40, 0.05);
     }
-    .sbc-it:hover .sbc-acts:not(.has-off) { animation: sbcActIn 0.16s ease both; }
+    .sbc-it:hover .sbc-acts { animation: sbcActIn 0.16s ease both; }
     body.dark-mode .sbc-it:hover .sbc-acts { box-shadow: 0 0 0 1px var(--sbr-line); }
-    /* Скрытый портфель: кластер виден ВСЕГДА, но без подложки — в нём одна
-       янтарная метка, и белая пилюля вокруг неё была бы вторым хромом подряд.
-       Крестик до наведения не показываем: закрывать вкладку никто не просил. */
-    .sbc-acts.has-off { display: flex; }
-    .sbc-acts.has-off .sbc-x { display: none; }
-    .sbc-it:hover .sbc-acts.has-off .sbc-x { display: grid; }
+    /* .has-off больше не нужен: постоянной метки справа нет, о скрытости
+       говорит точка слева (.sbc-dot.off). Кластер одинаков у всех строк —
+       появляется по наведению и уходит вместе с ним. */
     .sbc-x,
     .sbc-eye {
         flex: none;
