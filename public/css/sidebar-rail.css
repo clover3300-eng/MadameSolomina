@@ -401,7 +401,7 @@
         text-transform: uppercase;
         color: var(--sbr-dim);
     }
-    .sbw-v { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+    .sbw-v { display: flex; align-items: baseline; justify-content: flex-end; gap: 8px; margin-top: 4px; }
     .sbw-big {
         font-family: var(--font-num, 'JetBrains Mono', monospace);
         font-size: 19px;
@@ -412,6 +412,7 @@
     .sbw-n { font-family: var(--font-num, 'JetBrains Mono', monospace); font-weight: 700; color: var(--sbr-mut); }
     .sbw-say {
         margin-top: 6px;
+        text-align: right;
         font-family: var(--font-num, 'JetBrains Mono', monospace);
         font-size: 10.5px;
         font-weight: 600;
@@ -573,7 +574,12 @@
         text-transform: uppercase;
         color: var(--sbr-dim);
     }
-    .sbcap-v { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+    /* ЗНАЧЕНИЕ У ПРАВОГО КРАЯ. Подпись слева, число справа — так же, как в
+       «Ставках» и «Рынке сейчас», где значение всегда прижато к правому краю
+       карточки. Слева число висело в углу, а справа оставалась пустая половина
+       блока, которую нечем занять. Строка дня идёт за числом, чтобы правый край
+       у всего блока был один. */
+    .sbcap-v { display: flex; align-items: baseline; justify-content: flex-end; gap: 8px; margin-top: 4px; }
     .sbcap-n {
         font-family: var(--font-num, 'JetBrains Mono', monospace);
         /* 24 вместо 20: капитал — главный объект блока, а при 20px короткое
@@ -601,6 +607,7 @@
        разметке, выбирает CSS: JS о настройке приватности ничего не знает. */
     .sbcap-day {
         margin-top: 2px;
+        text-align: right;
         font-family: var(--font-num, 'JetBrains Mono', monospace);
         font-size: 10.5px;
         font-weight: 600;
@@ -1098,7 +1105,14 @@
         gap: 2px;
         border-radius: 9px;
     }
-    @keyframes sbcActIn { from { opacity: 0; transform: translateX(4px); } to { opacity: 1; transform: none; } }
+    /* КАДРЫ ОБЯЗАНЫ НЕСТИ И ЦЕНТРОВКУ. Кластер стоит на top:50% и поднимается
+       обратно через translateY(-50%); анимация с fill-mode:both дописывает
+       СВОЙ transform в конце («none») и центровку стирала — пилюля съезжала на
+       половину своей высоты вниз и вылезала из строки. Оба кадра держат -50%. */
+    @keyframes sbcActIn {
+        from { opacity: 0; transform: translate(4px, -50%); }
+        to   { opacity: 1; transform: translateY(-50%); }
+    }
     .sbc-it:hover .sbc-acts {
         display: flex;
         padding: 2px;
