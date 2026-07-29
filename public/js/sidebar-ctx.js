@@ -904,6 +904,30 @@
         if (nav.nextSibling !== host) nav.parentNode.insertBefore(host, nav.nextSibling);
     }
 
+    // ---------- возврат фокуса после пересборки списка ----------
+    // Список пересобирается целиком, и фокус приходится ставить программно.
+    // Chrome считает такой фокус «как с клавиатуры» и рисует :focus-visible —
+    // после клика мышью по глазу строка так и оставалась обведённой зелёным.
+    // Помним, был ли последним указатель, и на один заход гасим обводку меткой;
+    // снимаем метку по уходу фокуса и по первой же клавише, чтобы клавиатурная
+    // навигация обводку не потеряла.
+    var pointerAt = 0;
+    document.addEventListener('pointerdown', function () { pointerAt = Date.now(); }, true);
+    function refocus(el) {
+        var byPointer = Date.now() - pointerAt < 700;
+        if (byPointer) {
+            el.classList.add('nofv');
+            var off = function () {
+                el.classList.remove('nofv');
+                el.removeEventListener('blur', off);
+                document.removeEventListener('keydown', off, true);
+            };
+            el.addEventListener('blur', off);
+            document.addEventListener('keydown', off, true);
+        }
+        el.focus();
+    }
+
     // ---------- рендер ----------
     // Своп только при изменении HTML: фоновый тик котировок пересобирает модель
     // каждую секунду, а живой :hover и фокус в колонке рвать нельзя.
@@ -936,7 +960,7 @@
             host.__sbcHtml = html;
             if (keepKey) {
                 var back = host.querySelector('.sbc-it[data-key="' + (window.CSS && CSS.escape ? CSS.escape(keepKey) : keepKey) + '"]');
-                if (back) { try { back.focus(); } catch (e) {} }
+                if (back) { try { refocus(back); } catch (e) {} }
             }
         }
         placeCtx(host);
