@@ -73,9 +73,14 @@
     //  покупки; поля l.side/l.fee зарезервированы под будущий ввод продаж и
     //  комиссии — сейчас side='buy', fee=0). Стиль повторяет «Календарь выплат».
     // ====================================================================
+    // 2026-07-29: своего скрытия у журнала больше нет — тумблер жил только в меню
+    // «Видимость», а оно стало про портфели. Флаг оставлен свойством PF (его читает
+    // каркас рендера и tradesHtml), но всегда false; прежнее значение из localStorage
+    // не читаем и ключ подчищаем — иначе тот, кто скрыл журнал вчера, остался бы без
+    // него навсегда: своей кнопки у карточки нет, а вернуть было бы нечем.
     var TRADES_HIDDEN_KEY = 'pf_trades_hidden_v1';
     PF.tradesHidden = false;
-    try { PF.tradesHidden = localStorage.getItem(TRADES_HIDDEN_KEY) === '1'; } catch (e) {}
+    try { if (localStorage.getItem(TRADES_HIDDEN_KEY) !== null) localStorage.removeItem(TRADES_HIDDEN_KEY); } catch (e) {}
     var tradesFull = false;     // общий шеврон блока: свёрнуто → 3 последние операции
     var tradeYearOpen = {};     // year → true/false, переопределяет дефолт (последний год открыт)
     var tradeSel = null;        // фильтр портфелей: null = все, иначе { pid:true }
@@ -366,34 +371,10 @@
         if (cands.every(function (p) { return tradeSel[p.id]; }) || cands.every(function (p) { return !tradeSel[p.id]; })) tradeSel = null;
         reRenderKeepTradeMenu();
     };
-    // тумблер видимости блока «История сделок» из меню «Видимость» (попап оставляем открытым)
-    window.pfToggleTradesHidden = function (ev) {
-        if (ev) ev.stopPropagation();
-        PF.tradesHidden = !PF.tradesHidden;
-        try { localStorage.setItem(TRADES_HIDDEN_KEY, PF.tradesHidden ? '1' : '0'); } catch (e) {}
-        var keepOpen = !!(dq('pfImp-eye') && dq('pfImp-eye').classList.contains('open'));
-        PF.renderSmooth(keepOpen ? function () {
-            var m = dq('pfImp-eye');
-            if (m) { m.classList.add('open'); if (PF.placeImpMenu) PF.placeImpMenu(m); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
-        } : null);
-        toast(PF.tradesHidden ? 'История сделок скрыта' : 'История сделок показана');
-    };
-    // тумблер видимости ИЗНАЧАЛЬНОЙ секции (Календарь/Ставки/Избранное/Сводка) из меню
-    // «Видимость» — попап оставляем открытым, как у «Истории сделок»
-    window.pfdToggleSection = function (id, ev) {
-        if (ev) ev.stopPropagation();
-        var wasHidden = !!(PF.dashCfg.hidden || {})[id];
-        pfdPushUndo();
-        PF.dashCfg.hidden[id] = wasHidden ? 0 : 1;
-        saveDashCfg();
-        var keepOpen = !!(dq('pfImp-eye') && dq('pfImp-eye').classList.contains('open'));
-        PF.pfdWantRender = true;   // явная правка конструктора — не глушим рендер
-        PF.renderSmooth(keepOpen ? function () {
-            var m = dq('pfImp-eye');
-            if (m) { m.classList.add('open'); if (PF.placeImpMenu) PF.placeImpMenu(m); setTimeout(function () { document.addEventListener('click', pfImpOutside); }, 0); }
-        } : null);
-        toast(wasHidden ? 'Блок показан' : 'Блок скрыт');
-    };
+    // Тумблеры pfToggleTradesHidden / pfdToggleSection (скрыть «Историю сделок» и
+    // изначальные секции из меню «Видимость») удалены 2026-07-29 вместе с самой
+    // группой «Секции страницы»: у виджета остался ОДИН путь — корзина на карточке,
+    // возврат из пикера «Виджет» (см. eyeWrapHtml в js/portfolios.js).
 
     // ====================================================================
     //  КАРТОЧКА РЕБАЛАНСИРОВКИ (R5) — модалка поверх контента (в <body>)

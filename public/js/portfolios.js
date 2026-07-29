@@ -62,7 +62,7 @@
     var FILTER_SVG = PF.FILTER_SVG, PFCM_WD = PF.PFCM_WD, calPfCandidates = PF.calPfCandidates, collectUpcomingPayouts = PF.collectUpcomingPayouts, daysUntilText = PF.daysUntilText, nextCouponDate = PF.nextCouponDate;
     var paymentCalendarHtml = PF.paymentCalendarHtml, pfcmCardHtml = PF.pfcmCardHtml, pfwDivsHtml = PF.pfwDivsHtml;
     // импорт подвкладок (portfolios-tabs.js, загружен до нас):
-    var PFX_TABS = PF.PFX_TABS, pfxActivateTab = PF.pfxActivateTab, pfxApplyCorner = PF.pfxApplyCorner, pfxBgRowHtml = PF.pfxBgRowHtml, pfxCornerRowHtml = PF.pfxCornerRowHtml, pfxDrawerSync = PF.pfxDrawerSync;
+    var PFX_TABS = PF.PFX_TABS, pfxActivateTab = PF.pfxActivateTab, pfxBgRowHtml = PF.pfxBgRowHtml, pfxDrawerSync = PF.pfxDrawerSync;
     var pfxDropPfTab = PF.pfxDropPfTab, pfxFabSeen = PF.pfxFabSeen, pfxFabSync = PF.pfxFabSync, pfxFlashBlock = PF.pfxFlashBlock, pfxGoOverviewFor = PF.pfxGoOverviewFor;
     var pfxOpenPfTabs = PF.pfxOpenPfTabs, pfxPanelWrap = PF.pfxPanelWrap, pfxSaveOpenTabs = PF.pfxSaveOpenTabs, pfxSeedLayout = PF.pfxSeedLayout, pfxSetCardHtml = PF.pfxSetCardHtml, pfxSyncPath = PF.pfxSyncPath;
     var pfxTabPortsHtml = PF.pfxTabPortsHtml, pfxVisRowsHtml = PF.pfxVisRowsHtml, pfxWide = PF.pfxWide;
@@ -183,9 +183,8 @@
             // noBonds=true → «Ставки рынка» вместо календаря (и в ячейке, и внизу колонки —
             // без большого бокса, см. ratesStackHtml); иначе — обычный «Календарь выплат»
             var cellCard = noBonds ? ratesStackHtml(needCell, calSpan) : paymentCalendarHtml(needCell, calSpan);
-            // ---- R7: радиус карточек из настроек + первичная раскладка-референс ----
+            // ---- первичная раскладка-референс (радиус карточек — один, из CSS) ----
             pfxSyncCfg();      // R8: PF.dashCfg = конфиг активной подвкладки
-            pfxApplyCorner();
             pfxSeedLayout();
             // R8: у КАЖДОЙ подвкладки свой дашборд-конструктор (pfdBodyHtml с её
             // конфигом), «Обзор» дополнительно умеет классический вид.
@@ -564,9 +563,9 @@
         // шапку оставляем пустой; кнопки ниже — МОБИЛЬНЫЙ верхний ряд (mobile.css)
         if (pfdPanelActive()) return '';
         return '<button class="d3-quick" onclick="pfAddPortfolio()">' + PLUS_SVG + '<span>Добавить портфель</span></button>' +
-            // «Видимость» показываем при 2+ портфелях, при наличии сделок ИЛИ когда включена
-            // своя раскладка (тогда в меню — тумблеры скрытых изначальных секций)
-            (PF.store.items.length > 1 || hasAnyTrades() || PF.dashCfg.on ? eyeWrapHtml() : '') +
+            // «Видимость» — ТОЛЬКО про портфели (2026-07-29), поэтому и показываем её
+            // только при 2+ портфелях: скрывать единственный смысла нет
+            (PF.store.items.length > 1 ? eyeWrapHtml() : '') +
             // Вход в настройку раскладки («Раскладка») переехал в шапку страницы рядом с
             // названием раздела — кнопка #pfLayoutBtn (index.html + updateLayoutBtn/pfLayoutToggle).
             backupWrapHtml();
@@ -582,9 +581,14 @@
         pfWGatesFetch();     // и видимость виджетов каталога (тот же троттлинг)
     }
 
-    // ---- «Видимость»: попап управления скрытием карточек (инфраструктура «Импорта») ----
+    // ---- «Видимость»: попап управления скрытием ПОРТФЕЛЕЙ (инфраструктура «Импорта») ----
     // Клик по строке прячет/возвращает карточку; попап при этом остаётся открытым, чтобы
     // можно было переключить несколько портфелей подряд (см. pfToggleHidden).
+    // 2026-07-29: группа «Секции страницы» (тумблеры Календаря/Избранного/Ставок/Сводки
+    // и «Истории сделок») отсюда УБРАНА. Скрытий стало три штуки на разные сущности, и
+    // в них путались: у виджета теперь ОДИН путь — корзина на самой карточке, вернуть из
+    // пикера «Добавить виджет». Скрывать умеет только портфель — здесь и глазом в колонке
+    // сайдбара (js/sidebar-ctx.js, act 'pf-hide').
     function eyeWrapHtml() {
         var vis = visibleItems().length, total = PF.store.items.length;
         var multi = total > 1;
@@ -613,44 +617,13 @@
             '</button>';
         }).join('')) : '';
         var pfGroup = multi ? '<div class="pf-impgrp">Какие портфели показывать</div>' + pfRows +
-            '<div class="pf-eyenote">Скрытые карточки не показываются в сетке и в календаре выплат, но их капитал по-прежнему учитывается в общей сводке. Открытая вкладка портфеля при скрытии не закрывается.</div>' : '';
-        // ---- группа «Секции страницы» — тумблеры видимости блоков ----
-        // При включённой своей раскладке (PF.dashCfg.on) сюда попадают скрытые/показанные
-        // ИЗНАЧАЛЬНЫЕ блоки, которые МОЖНО скрыть глазом на самой карточке: «Календарь
-        // выплат», «Избранное», «Ставки рынка» и «Сводка». Виджеты возвращаются из
-        // «Конструктор → Добавить блок». Плюс всегда — «История сделок».
-        var dashSecRows = '';
-        if (PF.dashCfg.on) {
-            var hasVisHold = PF.store.items.some(function (p) { return !p.hidden && (p.holdings || []).length > 0; });
-            var noBondsV = hasVisHold && !calPfCandidates().length;
-            var secs = [
-                { id: 'cal', name: noBondsV ? 'Ставки' : 'Календарь выплат', sub: noBondsV ? 'ставки денежного рынка' : 'ближайшие купоны и дивиденды', on: true },
-                { id: 'fav', name: 'Избранное', sub: 'потенциал и новости по тикерам', on: true },
-                { id: 'rates', name: 'Ставки рынка', sub: 'ключевая ставка, вклады, инфляция', on: !noBondsV },
-                { id: 'sum', name: 'Сводка', sub: 'суммарный капитал по портфелям', on: PF.store.items.length >= 2 }
-            ];
-            dashSecRows = secs.filter(function (s) { return s.on; }).map(function (s) {
-                var hid = !!(PF.dashCfg.hidden || {})[s.id];
-                return '<button class="pf-impitem pf-eyeitem' + (hid ? ' off-eye' : '') + '" onclick="pfdToggleSection(\'' + s.id + '\',event)">' +
-                    '<span class="pf-eyedot" style="background:#5B7C99"></span>' +
-                    '<span class="pf-impbody"><b>' + esc(s.name) + '</b><i>' + esc(hid ? 'скрыт' : s.sub) + '</i></span>' +
-                    '<span class="pf-eyestate">' + (hid ? EYEOFF_SVG : EYE_SVG) + '</span></button>';
-            }).join('');
-        }
-        var tradesRow = hasAnyTrades()
-            ? '<button class="pf-impitem pf-eyeitem' + (PF.tradesHidden ? ' off-eye' : '') + '" onclick="pfToggleTradesHidden(event)">' +
-                '<span class="pf-eyedot" style="background:#5B7C99"></span>' +
-                '<span class="pf-impbody"><b>История сделок</b><i>' + (PF.tradesHidden ? 'скрыта' : 'журнал покупок и продаж') + '</i></span>' +
-                '<span class="pf-eyestate">' + (PF.tradesHidden ? EYEOFF_SVG : EYE_SVG) + '</span></button>'
-            : '';
-        var secInner = dashSecRows + tradesRow;
-        var secGroup = secInner ? '<div class="pf-impgrp">Секции страницы</div>' + secInner : '';
+            '<div class="pf-eyenote">Скрытые карточки не показываются в сетке и в календаре выплат, но их капитал по-прежнему учитывается в общей сводке. Открытая вкладка портфеля при скрытии не закрывается. Виджеты здесь не прячутся — их убирает корзина на самой карточке.</div>' : '';
         // .has-off — янтарная точка «часть портфелей скрыта»: счётчик «2/3» тонет
         // среди подписей, а скрытый портфель без сигнала легко забыть насовсем
         return '<div class="pf-impwrap">' +
             '<button class="d3-quick ghost pf-impbtn' + (multi && vis < total ? ' has-off' : '') + '" onclick="pfToggleImp(event,\'eye\')" data-tip="Видимость' + (multi && vis < total ? ' · ' + vis + '/' + total : '') + '">' + EYE_SVG + '<span>Видимость</span>' +
                 (multi && vis < total ? '<i class="pf-eyecnt">' + vis + '/' + total + '</i>' : '') + CHEV_SVG + '</button>' +
-            '<div class="pf-impmenu" id="pfImp-eye">' + pfGroup + secGroup + '</div></div>';
+            '<div class="pf-impmenu" id="pfImp-eye">' + pfGroup + '</div></div>';
     }
     // Esc закрывает попапы «Импорт»/«Видимость»/«Бэкап»: клик-вне у них был всегда
     // (pfImpOutside), а клавиатуры не было — в панели действий это заметно

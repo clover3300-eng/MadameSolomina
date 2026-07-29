@@ -976,7 +976,8 @@
     .sbc-chg.neg { color: #DC2626; }
     body.dark-mode .sbc-chg { color: #34D399; }
     body.dark-mode .sbc-chg.neg { color: #F87171; }
-    .sbc-x {
+    .sbc-x,
+    .sbc-eye {
         margin-left: auto;
         flex: none;
         width: 18px; height: 18px;
@@ -985,9 +986,28 @@
         border-radius: 6px;
         color: var(--sbr-dim);
     }
+    /* Правило строки: auto-отступ держит ТОЛЬКО первый прижатый вправо элемент,
+       остальные встают вплотную за ним (тот же приём, что у .sbc-val + .sbc-chg) —
+       иначе свободное место делится между ними и кнопки разъезжаются по строке. */
+    .sbc-val ~ .sbc-eye,
+    .sbc-chg ~ .sbc-eye,
+    .sbc-n ~ .sbc-eye { margin-left: 4px; }
+    .sbc-eye ~ .sbc-x { margin-left: 2px; }
     .sbc-x svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; }
-    .sbc-x:hover { background: var(--sbr-line); color: var(--sbr-ink); }
-    .sbc-it:hover .sbc-x { display: grid; }
+    .sbc-eye svg {
+        width: 12.5px; height: 12.5px;
+        fill: none; stroke: currentColor; stroke-width: 1.9;
+        stroke-linecap: round; stroke-linejoin: round;
+    }
+    .sbc-x:hover, .sbc-eye:hover { background: var(--sbr-line); color: var(--sbr-ink); }
+    /* скрытый портфель: глаз ГОРИТ янтарным и виден ВСЕГДА — тот же сигнал, что
+       точка на кнопке «Видимость» в шапке. Иначе скрытый портфель молча тонет
+       в списке приглушённой строкой, и про него забывают насовсем. */
+    .sbc-eye.off { display: grid; color: #D97706; }
+    .sbc-eye.off:hover { background: var(--sbr-line); color: #B45309; }
+    body.dark-mode .sbc-eye.off { color: #F59E0B; }
+    body.dark-mode .sbc-eye.off:hover { color: #FBBF24; }
+    .sbc-it:hover .sbc-x, .sbc-it:hover .sbc-eye { display: grid; }
     .sbc-it:hover .sbc-chg { display: none; }
     .sbc-it.gh { color: var(--sbr-dim); font-weight: 600; }
     .sbc-it.dim .sbc-tx { opacity: 0.6; }

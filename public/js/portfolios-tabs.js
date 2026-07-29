@@ -361,6 +361,10 @@
                 // строкой: колонка обязана показывать состояние, а не оглавление
                 val: c.value > 0 ? fmtRub(c.value) : null,
                 chg: pfxSideDay(p, c.value),
+                // всплывающий глаз (js/sidebar-ctx.js, act 'pf-hide'): скрытие портфеля
+                // осталось единственным в проекте, и держать его только в меню «Видимость»
+                // в шапке — далеко от самого портфеля
+                hide: { act: 'pf-hide', key: p.id, off: !!p.hidden },
                 close: { act: 'pf-close', key: p.id }
             };
         });
@@ -724,47 +728,13 @@
     // ниже): столбик #cornerStack и панель действий #pfActBar. Вместе с героем
     // ушёл и livePatchers.hero — точечно обновлять стало нечего.
 
-    // ---- скругление карточек: CSS-переменная --pfr на панели, персист в pf_dash_v1 ----
-    // R8: настройка ГЛОБАЛЬНАЯ (одна на все подвкладки) — живёт в конфиге «Обзора»,
-    // какая бы подвкладка ни была активна
-    // ЕДИНЫЙ источник правды: настройка глобальная и живёт в конфиге «Обзора».
-    // Читать её из PF.dashCfg нельзя — на подвкладке это конфиг ЭТОЙ подвкладки,
-    // где ключа corner нет вовсе. Из-за такого расхождения виджет «Отображение
-    // карточек» выглядел неработающим: подсветка всегда падала на 'std', а клик по
-    // реально выбранному варианту гасился ранним выходом (oc.corner === v).
-    function pfxCornerCur() { return (pfTabCfgs.overview || PF.dashCfg).corner || 'std'; }
-    function pfxCornerPx() {
-        var c = pfxCornerCur();
-        return c === 'main' ? '14px' : c === 'lg' ? '28px' : '20px';
-    }
-    function pfxApplyCorner() {
-        var el = document.getElementById('panel-portfolios');
-        if (el) el.style.setProperty('--pfr', pfxCornerPx());
-    }
-    window.pfxSetCorner = function (v) {
-        var oc = pfTabCfgs.overview || PF.dashCfg;
-        if (['std', 'main', 'lg'].indexOf(v) < 0 || oc.corner === v) return;
-        oc.corner = v;
-        if (oc === PF.dashCfg) saveDashCfg();
-        else try { localStorage.setItem(DASH_KEY, JSON.stringify(oc)); } catch (e) {}
-        pfxApplyCorner();
-        PF.renderNoAnim();
-        try { updateLayoutBtn(); } catch (e) {}
-    };
-    function pfxCornerRowHtml(big) {
-        var cur = pfxCornerCur();   // не PF.dashCfg — см. pfxCornerCur
-        var opts = [
-            ['std', 'Мягкие', '20px', 'по умолчанию'],
-            ['main', 'Как на Главной', '14px', 'как карточка входа'],
-            ['lg', 'Крупные', '28px', 'как раньше']
-        ];
-        return '<div class="pfx-corner-row' + (big ? ' big' : '') + '">' + opts.map(function (o) {
-            return '<button type="button" class="pfx-corner' + (cur === o[0] ? ' on' : '') + '" onclick="pfxSetCorner(\'' + o[0] + '\')" title="Скругление ' + o[2] + '">' +
-                '<span class="pfx-corner-pv" style="border-radius:' + Math.round(parseInt(o[2], 10) * 0.55) + 'px"></span>' +
-                '<span class="pfx-corner-tx"><b>' + o[1] + '</b><i>' + o[2] + (big ? ' · ' + o[3] : '') + '</i></span>' +
-            '</button>';
-        }).join('') + '</div>';
-    }
+    // ---- скругление карточек: ОДНО на весь проект, 14px «как на Главной» ----
+    // 2026-07-29: выбор из трёх вариантов (виджет «Отображение карточек» + строка в
+    // поповере раскладки) снят по просьбе владельца — радиус карточки входа Главной
+    // стал единственным. Переменная --pfr жива: на ней держатся десятки правил
+    // (css/portfolios-r7.css) и обнуление в полноэкранной торговле (css/broker.css);
+    // значение теперь задаёт САМ CSS (#panel-portfolios), инлайна из JS больше нет.
+    // Ключ corner в старых конфигах не читается и не пишется — он молча отмирает.
 
     // ---- фон страницы: варианты живут в js/site-bg.js (список + персист + классы на body) ----
     // Настройка ГЛОБАЛЬНАЯ и общесайтовая — тот же фон на всех вкладках, не только здесь.
@@ -1183,9 +1153,9 @@
         }
         PF.setBench(pid, on);   // сам перерисует график, когда серия придёт
     };
-    // R8: только видимость ПОРТФЕЛЕЙ (глобальная). Тумблеры секций отсюда убраны:
-    // видимость блоков теперь пер-вкладочная и управляется корзиной/глазом на самих
-    // виджетах и меню «Видимость» в герое — а этот виджет может жить на любой подвкладке.
+    // R8: только видимость ПОРТФЕЛЕЙ (глобальная). Тумблеров секций тут не было и
+    // не будет: виджет убирают корзиной на его же карточке, а возвращают из пикера —
+    // скрытие осталось одно и только у портфеля (см. eyeWrapHtml в portfolios.js).
     function pfxVisRowsHtml() {
         var rows = '<div class="pf-impgrp">Портфели</div>';
         PF.store.items.forEach(function (p) {
@@ -1195,7 +1165,7 @@
                 '<span class="pf-impbody"><b>' + esc(p.name) + '</b><i>' + fmtRub(c.value) + (off ? ' · скрыт' : '') + '</i></span>' +
                 '<span class="pf-eyestate">' + (off ? PF.EYEOFF_SVG : PF.EYE_SVG) + '</span></button>';
         });
-        rows += '<div class="pf-eyenote">Скрытые портфели не показываются в списках и календаре, но их капитал учитывается в сводке. Видимость виджетов настраивается на каждой подвкладке: корзина на блоке и меню «Видимость» в шапке.</div>';
+        rows += '<div class="pf-eyenote">Скрытые портфели не показываются в списках и календаре, но их капитал учитывается в сводке. Виджеты здесь не прячутся: лишний убирает корзина на его карточке, вернуть — кнопкой «Виджет».</div>';
         return '<div class="pfx-setlist">' + rows + '</div>';
     }
     function pfxSetCardHtml(title, sub, inner) {
@@ -1214,8 +1184,8 @@
     // Состояние шторки настроек (PF.openMenu, PF.pfSetDrawerOn, PF.editHold,
     // PF.addOpen, PF.colorsOpen, PF.delArm, PF.menuJustOpened) объявлено в
     // каркасе рендера свойствами PF — алиасы на него запрещены.
-    PF.PFX_TABS = PFX_TABS; PF.pfxActivateTab = pfxActivateTab; PF.pfxApplyCorner = pfxApplyCorner; PF.pfxBgRowHtml = pfxBgRowHtml;
-    PF.pfxCornerRowHtml = pfxCornerRowHtml; PF.pfxDrawerSync = pfxDrawerSync; PF.pfxDropPfTab = pfxDropPfTab; PF.pfxFabSeen = pfxFabSeen;
+    PF.PFX_TABS = PFX_TABS; PF.pfxActivateTab = pfxActivateTab; PF.pfxBgRowHtml = pfxBgRowHtml;
+    PF.pfxDrawerSync = pfxDrawerSync; PF.pfxDropPfTab = pfxDropPfTab; PF.pfxFabSeen = pfxFabSeen;
     PF.pfxFabSync = pfxFabSync; PF.pfxFlashBlock = pfxFlashBlock; PF.pfxGoOverviewFor = pfxGoOverviewFor;
     PF.pfxOpenPfTabs = pfxOpenPfTabs; PF.pfxPanelWrap = pfxPanelWrap; PF.pfxSaveOpenTabs = pfxSaveOpenTabs; PF.pfxSeedLayout = pfxSeedLayout;
     PF.pfxSetCardHtml = pfxSetCardHtml; PF.pfxSyncPath = pfxSyncPath; PF.pfxTabPortsHtml = pfxTabPortsHtml;

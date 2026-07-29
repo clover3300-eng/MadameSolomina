@@ -63,6 +63,11 @@
         'market-bonds':   '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>'
     };
     var X_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    // Глаз портфеля — всплывает по наведению на строку, слева от крестика. После
+    // 2026-07-29 скрытие в проекте ОДНО и только у портфеля (виджеты удаляются
+    // корзиной), и колонка — второе его место рядом с меню «Видимость» в шапке.
+    var EYE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1.6 12S5.3 5.5 12 5.5 22.4 12 22.4 12 18.7 18.5 12 18.5 1.6 12 1.6 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+    var EYEOFF_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.9 5.8A9.6 9.6 0 0 1 12 5.5c6.7 0 10.4 6.5 10.4 6.5a18 18 0 0 1-3.3 4.2M6.2 7.8A18 18 0 0 0 1.6 12S5.3 18.5 12 18.5c1.9 0 3.5-.5 4.9-1.2"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><line x1="3" y1="3" x2="21" y2="21"/></svg>';
 
     // ---------- модели ----------
     // «Расчёт» / «Рынок»: зеркало собственных .sb-sub — единственный источник
@@ -220,6 +225,14 @@
         if (it.val) right += '<span class="sbc-val">' + esc(it.val) + '</span>';
         if (it.chg) right += '<span class="sbc-chg' + (it.chg.neg ? ' neg' : '') + '">' + esc(it.chg.tx) + '</span>';
         else if (it.n != null) right += '<span class="sbc-n">' + esc(it.n) + '</span>';
+        // глаз стоит ЛЕВЕЕ крестика: скрытие обратимо, закрытие вкладки — нет,
+        // и опасное действие честнее держать крайним
+        if (it.hide) {
+            var hTitle = it.hide.off ? 'Показать портфель на «Обзоре»' : 'Скрыть портфель с «Обзора» — капитал останется в сводке';
+            right += '<span class="sbc-eye' + (it.hide.off ? ' off' : '') + '" role="button" tabindex="0" data-act="' +
+                esc(it.hide.act) + '" data-key="' + esc(it.hide.key) + '" title="' + esc(hTitle) +
+                '" aria-label="' + esc(hTitle) + '">' + (it.hide.off ? EYEOFF_SVG : EYE_SVG) + '</span>';
+        }
         if (it.close) {
             right += '<span class="sbc-x" role="button" tabindex="0" data-act="' + esc(it.close.act) + '" data-key="' +
                 esc(it.close.key) + '" title="Закрыть вкладку" aria-label="Закрыть вкладку">' + X_SVG + '</span>';
@@ -948,6 +961,16 @@
         if (act === 'pfx') { if (window.pfxGoTab) window.pfxGoTab(key); return; }
         if (act === 'trading') { if (window.pfxGoTrading) window.pfxGoTrading(); return; }
         if (act === 'pf') { if (window.pfxOpenPf) window.pfxOpenPf(key); return; }
+        // скрыть/вернуть портфель прямо из колонки. Строка НЕ пропадает (скрытый
+        // портфель остаётся приглушённым пунктом, cls 'dim'), поэтому вернуть его
+        // можно тем же кликом — искать меню «Видимость» в шапке не надо.
+        // pfToggleHidden сам перерисовывает вкладку, но колонку освежаем явно:
+        // на чужой вкладке (виджеты «Портфелей» живут везде) её ре-рендер не позовут.
+        if (act === 'pf-hide') {
+            if (window.pfToggleHidden) window.pfToggleHidden(key, e);
+            sbCtxSync();
+            return;
+        }
         if (act === 'pf-close') { if (window.pfxClosePfTab) window.pfxClosePfTab(key, e); return; }
         if (act === 'pf-new') { if (window.pfAddPortfolio) window.pfAddPortfolio(); return; }
     }

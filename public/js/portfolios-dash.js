@@ -100,9 +100,9 @@
                 hidden: c.hidden || {}, col: c.col || {}, notes: notes,
                 allocPf: c.allocPf || 'all',                    // выбранный портфель в «Распределении активов»
                 thm: (c.thm && typeof c.thm === 'object') ? c.thm : {},   // per-виджет тема ('dark') из пикера
-                corner: (c.corner === 'main' || c.corner === 'lg') ? c.corner : 'std',   // скругление карточек
+                // ключа corner здесь больше нет: скругление одно на весь проект (14px)
                 saved: c.saved || null };                       // снимок сохранённой раскладки (для «Вернуть сохранённую»)
-        } catch (e) { return { on: true, order: [], span: {}, h: {}, hm: {}, hidden: {}, col: {}, notes: [], allocPf: 'all', thm: {}, corner: 'std', saved: null }; }
+        } catch (e) { return { on: true, order: [], span: {}, h: {}, hm: {}, hidden: {}, col: {}, notes: [], allocPf: 'all', thm: {}, saved: null }; }
     }
     // R9.4: ручной known-список (pfdKnownIds) УДАЛЁН — он молча стирал из конфига
     // любой виджет, который забыли в него дописать (мина для каждого нового
@@ -154,7 +154,7 @@
         try { var o = JSON.parse(localStorage.getItem(DASH_TABS_KEY) || 'null'); return (o && typeof o === 'object') ? o : {}; }
         catch (e) { return {}; }
     })();
-    // конфиг подвкладки: без corner (глобальный, живёт в overview-конфиге) и без on
+    // конфиг подвкладки: без on
     // (подвкладки всегда живут сеткой — «классического» вида у них нет)
     function normTabCfg(c) {
         c = c || {};
@@ -231,7 +231,7 @@
         analytics: [['cap', 1, 8], ['alloc', 9, 4], ['yield', 1, 4], ['movers', 5, 4], ['conc', 9, 4], ['assets', 1, 8], ['idx', 9, 4]],
         reports: [['reports', 1, 6], ['snaps', 7, 6]],
         ops: [['trades', 1, 12]],
-        settings: [['set:corner', 1, 6], ['set:bg', 7, 6], ['set:vis', 1, 6], ['set:layout', 7, 6], ['reports', 1, 6]],
+        settings: [['set:bg', 1, 6], ['set:vis', 7, 6], ['set:layout', 1, 6], ['reports', 7, 6]],
         // «Торговля» (2026-07-19): график — ГЛАВНЫЙ, слева вверху и с заданной
         // высотой; стакан и заявка рядом справа, вплотную друг к другу (клик по
         // цене в стакане кладёт её в тикет — разносить их по краям экрана нельзя);
@@ -575,14 +575,14 @@
             movers: { l: 'Лидеры', h: 2 }, idx: { l: 'Рынок', h: 2 }, passive: { l: 'Доход', h: 2 },
             conc: { l: 'Диверс.', h: 2 }, plist: { l: 'Портфели', h: 2.6 }, pstruct: { l: 'Структура', h: 2.4 },
             psum: { l: 'Сводные', h: 2.4 }, pdetail: { l: 'Составы', h: 3 }, reports: { l: 'Отчёты', h: 2.4 },
-            'set:corner': { l: 'Вид', h: 2 }, 'set:vis': { l: 'Видимость', h: 2 }, 'set:layout': { l: 'Раскладки', h: 2 },
+            'set:vis': { l: 'Видимость', h: 2 }, 'set:layout': { l: 'Раскладки', h: 2 },
             'set:bg': { l: 'Фон', h: 2 }
         };
         var DEFSPAN = { fav: 4, cal: 8, sum: 4, panel: 12, rates: 12, trades: 12,
             'kpi:cap': 4, 'kpi:day': 4, 'kpi:next': 4, cap: 6, cap2: 6, heat: 6, news: 6, alloc: 4,
             divs: 4, calm: 4, assets: 4, ops: 4, yield: 4, snaps: 6, movers: 4, idx: 4, passive: 4, conc: 4,
             plist: 12, pstruct: 6, psum: 6, pdetail: 12, reports: 6,
-            'set:corner': 6, 'set:vis': 6, 'set:layout': 6, 'set:bg': 6 };
+            'set:vis': 6, 'set:layout': 6, 'set:bg': 6 };
         function meta(id) {
             if (id.indexOf('pf:') === 0) { var m = /pf:#?(\d+)/.exec(id); return { l: 'П' + ((m ? +m[1] : 0) + 1), h: 3, cls: 'pf' }; }
             if (id.indexOf('note:') === 0) return { l: 'Заметка', h: 1.5, cls: 'note' };
@@ -962,9 +962,10 @@
         blocks.push({ id: 'psum', name: 'Сводные показатели', htmlFn: PF.pfwPsumHtml, span: 6, defHidden: true });
         blocks.push({ id: 'pdetail', name: 'Составы портфелей', htmlFn: PF.pfxTabPortsHtml, span: 12, defHidden: true });
         blocks.push({ id: 'reports', name: 'Отчёты и экспорт', htmlFn: PF.pfwReportsHtml, span: 6, defHidden: true });
-        blocks.push({ id: 'set:corner', name: 'Отображение карточек', htmlFn: function () { return PF.pfxSetCardHtml('Отображение карточек', 'скругление углов виджетов и карточек', PF.pfxCornerRowHtml(true)); }, span: 6, defHidden: true });
+        // виджета «Отображение карточек» (set:corner) больше нет: скругление одно на
+        // весь проект — 14px, как у карточки входа Главной (см. portfolios-tabs.js)
         blocks.push({ id: 'set:bg', name: 'Фон страницы', htmlFn: function () { return PF.pfxSetCardHtml('Фон страницы', 'общая подложка сайта под карточками', PF.pfxBgRowHtml(true)); }, span: 6, defHidden: true });
-        blocks.push({ id: 'set:vis', name: 'Видимость', htmlFn: function () { return PF.pfxSetCardHtml('Видимость', 'какие портфели и секции показывать', PF.pfxVisRowsHtml()); }, span: 6, defHidden: true });
+        blocks.push({ id: 'set:vis', name: 'Видимость', htmlFn: function () { return PF.pfxSetCardHtml('Видимость', 'какие портфели показывать', PF.pfxVisRowsHtml()); }, span: 6, defHidden: true });
         blocks.push({ id: 'set:layout', name: 'Раскладки', htmlFn: pfwLayoutCardHtml, span: 6, defHidden: true });
         // каждая заметка — свой блок note:<id> (мультизаметки, «+» плодит новые)
         (PF.dashCfg.notes || []).forEach(function (nt) {
@@ -1419,19 +1420,19 @@
             // PFD_PANEL_TALL ≈ натуральной высоте колонки — ниже него панель = компактная полоса
             // (сжимается плавно до ~84px), выше = герой-колонка (переход без «залипания»/наезда).
             if (isPanel && h >= PFD_PANEL_TALL) hsetClass += ' pfd-ptall';
-            // Кнопка «скрыть/удалить» блока:
+            // Кнопка УДАЛЕНИЯ блока (2026-07-29 глаз-«скрыть» у виджетов снят — путь
+            // остался один: корзина здесь, возврат из пикера «Виджет»):
             //  • заметка / портфель — СВОЯ кнопка уже есть в шапке карточки (pfnt-trash / глаз .pfc-act),
-            //    в chrome не дублируем;
+            //    в chrome не дублируем; глаз портфеля — единственное оставшееся «скрыть»;
             //  • ВИДЖЕТ (defHidden: KPI/график/карта/новости) — УДАЛИТЬ (корзина .pfd-cardrm ВНУТРИ
             //    карточки, как у заметки, по hover), вернётся из «Конструктор → Добавить блок»;
-            //  • «Календарь выплат»/«Сводка» — СКРЫТЬ глазом .pfc-act В ШАПКЕ карточки (.pfd-eye,
-            //    правый-верхний угол напротив заголовка, ТОЧНО как у портфеля, виден всегда),
-            //    вернуть — через меню «Видимость» в шапке;
-            //  • «Избранное» — свой глаз ВНУТРИ шапки, рядом с инфо-иконкой, по hover
+            //  • «Календарь выплат»/«Сводка» — та же корзина, но угловым оверлеем .pfd-eye
+            //    (правый-верхний угол напротив заголовка): своей шапки-хрома у них нет;
+            //  • «Избранное» — своя пара «настройки+корзина» ВНУТРИ шапки, рядом с инфо-иконкой
             //    (см. favHtml/showHide) — угловой оверлей там наезжал на «+» → терминал;
-            //  • «Ставки рынка» — свой глаз в последней плитке, по hover (см. PF.ratesHtml);
-            //  • «История сделок» — своего on-card глаза НЕТ (правый угол шапки занят .pft-toggle);
-            //    скрыть/показать — из меню «Видимость».
+            //  • «Ставки рынка» — та же пара в последней плитке (см. PF.ratesHtml);
+            //  • «История сделок» — своей кнопки НЕТ (правый угол шапки занят .pft-toggle):
+            //    блок живёт, пока есть операции.
             var hideBtn = '';
             if (b.isNote || b.id.indexOf('pf:') === 0 || pfdOwnChrome(b.id)) {
                 // R9.2: plist/pdetail/терминал рисуют кнопки блока САМИ — внутри своей
@@ -1449,12 +1450,13 @@
                 hideBtn = '<button class="pfd-cardcfg" title="Настройки виджета" aria-label="Настройки виджета" onclick="pfdCfgOpen(\'' + jsArg(b.id) + '\', event)">' + PFDCFG_GEAR_SVG + '</button>' +
                     '<button class="pfd-cardrm" title="Удалить виджет (вернуть — «Добавить блок» в Конструкторе)" aria-label="Удалить виджет" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + PF.NOTE_TRASH_SVG + '</button>';
             } else if (b.id === 'cal' || b.id === 'sum') {
-                // глаз-скрытие — ТОЧНО как в карточке портфеля (.pfc-act), в правом-верхнем углу
-                // напротив заголовка, видимый постоянно (не в зазоре-бирке). Исключение: когда
-                // блок cal показывает «Ставки рынка» (noBonds) — заголовка нет, а глаз сидит в
-                // последней плитке (см. PF.ratesStackHtml), угловой оверлей не нужен.
+                // корзина в оверлее .pfd-eye — на месте прежнего глаза (правый-верхний угол
+                // напротив заголовка, как у карточки портфеля). Иконка и слово изменились
+                // вместе с механикой: блок теперь УДАЛЯЮТ, а не прячут. Исключение: когда
+                // блок cal показывает «Ставки рынка» (noBonds) — заголовка нет, а кнопка
+                // сидит в последней плитке (см. PF.ratesStackHtml), оверлей не нужен.
                 if (!(b.id === 'cal' && noBonds)) {
-                    hideBtn = '<span class="pfd-eye"><button class="pfc-act" title="Скрыть блок (вернуть — «Видимость» в шапке)" aria-label="Скрыть блок" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + PF.EYEOFF_SVG + '</button></span>';
+                    hideBtn = '<span class="pfd-eye"><button class="pfc-act" title="Удалить виджет (вернуть — кнопка «Виджет» в шапке)" aria-label="Удалить виджет" onclick="pfdHideBlock(\'' + jsArg(b.id) + '\')">' + PF.NOTE_TRASH_SVG + '</button></span>';
                 }
             }
             // «живой» chrome у КАЖДОГО блока сетки: НЕВИДИМАЯ полоса-хват по ВЕРХНЕЙ ГРАНИ
@@ -1746,9 +1748,8 @@
             (admin ? '<button type="button" class="pfl-cfg-item add" onclick="pfSaveAsPreset()" title="Сделать текущую раскладку общим пресетом">' + PFD_PLUS_SVG +
                 '<span><b>Сохранить как пресет</b><i>появится у всех пользователей</i></span></button>' : '');
 
-        // ---- отображение карточек: скругление углов виджетов (R7) + фон страницы ----
-        html += '<div class="pfl-cfg-sep"></div><div class="pfl-cfg-h">Отображение карточек</div>' + PF.pfxCornerRowHtml(false) +
-            '<div class="pfl-cfg-h">Фон страницы</div>' + PF.pfxBgRowHtml(false);
+        // ---- отображение: фон страницы (скругление карточек больше не настраивается) ----
+        html += '<div class="pfl-cfg-sep"></div><div class="pfl-cfg-h">Фон страницы</div>' + PF.pfxBgRowHtml(false);
         return html;
     }
     window.pfLayoutCfgPopHtml = pfLayoutCfgPopHtml;
@@ -1956,7 +1957,7 @@
             c = { order: std.order, span: std.span, h: {}, hidden: Object.assign({}, std.hidden || {}), col: std.col, allocPf: PF.dashCfg.allocPf || 'all' };
         }
         // R8: конфиг МУТИРУЕМ (PF.dashCfg — общий объект с pfTabCfgs, пересоздание оторвало
-        // бы его от реестра вкладок); corner/notes/saved остаются как были
+        // бы его от реестра вкладок); notes/saved остаются как были
         PF.dashCfg.on = true;
         delete PF.dashCfg.cleared;
         PF.dashCfg.order = c.order; PF.dashCfg.span = c.span; PF.dashCfg.h = c.h; PF.dashCfg.hm = {};
@@ -2148,6 +2149,33 @@
                 try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { try { el.scrollIntoView(); } catch (e2) {} }
                 el.classList.add('pfd-flash');
                 setTimeout(function () { try { el.classList.remove('pfd-flash'); } catch (e) {} }, 1500);
+                return;
+            }
+            if (tries++ < 45) requestAnimationFrame(poll);
+        })();
+    }
+    // Прокрутка к ПАЧКЕ добавленных блоков (пикер умеет добавлять сразу несколько):
+    // подсвечиваем все, а ведём к самому ВЕРХНЕМУ из них — пакер раскладывает сетку
+    // сам, и «первый выбранный» запросто оказывается ниже соседа по пачке. Ждём,
+    // пока в DOM окажутся ВСЕ: иначе подсветится половина, а прокрутка уедет не туда.
+    function pfdScrollToBlocks(ids) {
+        ids = (ids || []).filter(Boolean);
+        if (!ids.length) return;
+        if (ids.length === 1) { pfdScrollToBlock(ids[0]); return; }
+        var tries = 0;
+        (function poll() {
+            var els = ids.map(function (id) {
+                return document.querySelector('#pfWrap .pfd-item[data-pfd="' + id + '"]');
+            }).filter(Boolean);
+            if (els.length === ids.length) {
+                var top = els.slice().sort(function (a, b) {
+                    return a.getBoundingClientRect().top - b.getBoundingClientRect().top;
+                })[0];
+                try { top.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) { try { top.scrollIntoView(); } catch (e2) {} }
+                els.forEach(function (el) {
+                    el.classList.add('pfd-flash');
+                    setTimeout(function () { try { el.classList.remove('pfd-flash'); } catch (e) {} }, 1500);
+                });
                 return;
             }
             if (tries++ < 45) requestAnimationFrame(poll);
@@ -3072,8 +3100,7 @@
             { id: 'psum', name: 'Сводные показатели', desc: 'Общая стоимость, доходность, вложения и число активов', cats: ['over', 'profit'] },
             { id: 'pdetail', name: 'Составы портфелей', desc: 'Полные таблицы бумаг каждого портфеля с показателями', cats: ['assets'] },
             { id: 'reports', name: 'Отчёты и экспорт', desc: 'Excel-выгрузки, бэкап и импорт данных', cats: ['other'] },
-            { id: 'set:corner', name: 'Отображение карточек', desc: 'Настройка скругления углов виджетов', cats: ['other'] },
-            { id: 'set:vis', name: 'Видимость', desc: 'Какие портфели и секции показывать', cats: ['other'] },
+            { id: 'set:vis', name: 'Видимость', desc: 'Какие портфели показывать на «Обзоре» и в календаре', cats: ['other'] },
             { id: 'set:layout', name: 'Раскладки', desc: 'Вход в панель раскладок и сохранение вида', cats: ['other'] },
             { id: 'set:bg', name: 'Фон страницы', desc: 'Общая подложка сайта: мозаика, шалфейный, градиент и другие', cats: ['other'] }
         ];
@@ -3377,12 +3404,6 @@
                 '<span class="dm-row"><em>Excel · Журнал операций</em><b>→</b></span>' +
                 '<span class="dm-row"><em>Бэкап JSON</em><b>→</b></span></div>';
         }
-        if (id === 'set:corner') {
-            return '<div class="dm-chips">' +
-                '<span class="dm-chip"><i>Мягкие</i><b>20px</b></span>' +
-                '<span class="dm-chip"><i>Главная</i><b>14px</b></span>' +
-                '<span class="dm-chip"><i>Крупные</i><b>28px</b></span></div>';
-        }
         if (id === 'set:vis') {
             return '<div class="dm-rows">' +
                 '<span class="dm-row"><em>Основной</em><b>👁</b></span>' +
@@ -3574,10 +3595,12 @@
         // те же МЯГКИЕ пресеты, что в поповере настроек: S — потолок, L — пол
         var hMap = { s: PFD_H_S, l: PFD_H_L }, mMap = { s: 'max', l: 'min' };
         PF.dashCfg.hm = PF.dashCfg.hm || {};
-        var added = [], skipped = 0, notes = 0;
+        // added — «обычные» виджеты, extra — плодящие (заметка/слот/график): их id
+        // рождаются внутри своих функций, но подкрутка нужна к ним ровно так же
+        var added = [], extra = [], skipped = 0, notes = 0;
         pfdPushUndo();
         pfl2SelIds.forEach(function (id) {
-            if (id === '__note') { pfdAddNote(true); notes++; return; }
+            if (id === '__note') { var nid = pfdAddNote(true); if (nid) extra.push(nid); notes++; return; }
             // «Ещё одна бумага» заводит ПАРУ блоков нового слота — своим путём
             // (ему нужен свободный номер и место рядом с прошлым стаканом)
             if (id === '__trade') { if (window.pftAddSlot && window.pftAddSlot(true)) notes++; return; }
@@ -3605,13 +3628,16 @@
         });
         saveDashCfg();
         pfl2SelIds = []; pfl2Sel = null;
-        pfdRerender();
         var n = added.length + notes;
+        // Добавили — пикер закрывается САМ (2026-07-29): карточка занимает верх сетки
+        // и закрывала собой ровно то, что только что положили. pfLayoutClose сам
+        // перерисовывает сетку, поэтому отдельный pfdRerender не нужен.
+        if (n) window.pfLayoutClose(); else pfdRerender();
         if (!n) toast(skipped === 1 ? 'Виджет уже на дашборде' : 'Все выбранные виджеты уже на дашборде');
         else {
-            // к одиночному добавлению подкручиваем — к пачке нет: она может лечь в разные
-            // концы сетки, и прыжок к «первому попавшемуся» дезориентирует
-            if (n === 1 && added.length) pfdScrollToBlock(added[0]);
+            // подкручиваем к ЛЮБОМУ добавлению — и к одиночному, и к пачке: раньше
+            // пачка молча ложилась где-то ниже, и её приходилось искать глазами
+            pfdScrollToBlocks(added.concat(extra));
             toast(n === 1 ? 'Блок добавлен на дашборд'
                 : 'Добавлено ' + n + ' ' + PF.plural(n, 'виджет', 'виджета', 'виджетов') +
                   (skipped ? ' · ' + skipped + ' уже ' + PF.plural(skipped, 'был', 'было', 'было') + ' на дашборде' : ''));

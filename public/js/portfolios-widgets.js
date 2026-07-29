@@ -45,7 +45,8 @@
         });
     }
     // batch=true — заметка добавляется в составе пачки из пикера: снимок undo, сохранение,
-    // ре-рендер и подкрутку делает вызывающий один раз на всю пачку (см. pfl2Add)
+    // ре-рендер и подкрутку делает вызывающий один раз на всю пачку (см. pfl2Add), а
+    // id нового блока возвращаем — пачке он нужен, чтобы подкрутить и к заметке тоже
     window.pfdAddNote = function (batch) {
         pfdFlushNotes();
         if (!batch) pfdPushUndo();
@@ -59,7 +60,7 @@
         for (var i = 0; i < ord.length; i++) if (ord[i].indexOf('note:') === 0) lastNoteIdx = i;
         if (lastNoteIdx >= 0) ord.splice(lastNoteIdx + 1, 0, 'note:' + id); else ord.push('note:' + id);
         PF.dashCfg.order = ord;
-        if (batch) return;
+        if (batch) return 'note:' + id;
         saveDashCfg();
         pfdRerender();
         pfdScrollToBlock('note:' + id);
@@ -1908,13 +1909,13 @@
     // соседей. asCell=true → занимает свободную ЯЧЕЙКУ сетки (растягивается на высоту
     // соседних карточек через align-items:stretch); asCell=false → узкая колонка под
     // сеткой (чётное число портфелей).
-    // hideId (напр. 'cal') — на дашборде даёт глаз-скрытие блока прямо в ПОСЛЕДНЕЙ плитке
+    // hideId (напр. 'cal') — на дашборде даёт корзину блока прямо в ПОСЛЕДНЕЙ плитке
     // (заголовок «Ставки рынка» убран по просьбе — плитки самоописательны, а отдельная шапка
-    // ради глаза была лишней). Классический путь вызывается без hideId — плитки без глаза.
+    // ради кнопки была лишней). Классический путь вызывается без hideId — плитки без кнопки.
     function ratesStackHtml(asCell, span, withHead, hideId) {
         var tiles = rateTiles();
         var eye = hideId
-            ? '<button class="pfc-act pf-ratestile-eye" title="Скрыть блок (вернуть — «Видимость» в шапке)" aria-label="Скрыть блок ставок" onclick="pfdHideBlock(\'' + jsArg(hideId) + '\')">' + PF.EYEOFF_SVG + '</button>'
+            ? '<button class="pfc-act pf-ratestile-eye" title="Удалить виджет (вернуть — кнопка «Виджет» в шапке)" aria-label="Удалить виджет «Ставки»" onclick="pfdHideBlock(\'' + jsArg(hideId) + '\')">' + PF.NOTE_TRASH_SVG + '</button>'
             : '';
         var grid = '<div class="drt-grid pf-ratesstack-grid">' + tiles.map(function (t, i) {
             return rateTileHtml(t, i === tiles.length - 1 ? eye : '');
