@@ -330,6 +330,11 @@
     /* ---- общее тело виджета: тот же прямоугольник, что у табло ---- */
     .sbw-card {
         display: block;
+        /* border-box ОБЯЗАТЕЛЕН: у <div> (виджеты «Ставки» и «Заметка» — не
+           кнопки) width:100% + паддинги 14px давали 254px в колонке 226 —
+           карточка вылезала за правый край и обрезалась панелью. У <button>
+           этого не было видно: у кнопок border-box стоит по умолчанию. */
+        box-sizing: border-box;
         width: 100%;
         margin: 0;
         padding: 12px 14px 11px;
@@ -340,14 +345,21 @@
         text-align: left;
     }
     .sbw-go { position: relative; cursor: pointer; transition: background 0.15s ease; }
-    /* признак «вся карточка нажимается» — в правом нижнем углу, чтобы не
-       спорить с кнопкой смены виджета в правом верхнем */
+    /* Признак «вся карточка нажимается» — на строке заголовка, у правого края.
+       Внизу он стоять не может: правый нижний угол занимает ПОСЛЕДНЯЯ строка
+       данных, и шеврон ложился поверх неё («+0,26%» у BTC, «купон» у выплаты,
+       «За месяц 3 380 ₽» у календаря) — читалось это как обрезанный край.
+       С кнопкой смены виджета шеврон не спорит, а МЕНЯЕТСЯ: в покое видно, куда
+       ведёт карточка, под курсором — чем её заменить. Двух иконок в одном углу
+       не бывает. */
     .sbw-goic {
         position: absolute;
-        right: 11px; bottom: 11px;
+        right: 13px; top: 13px;
         width: 11px; height: 11px;
         color: var(--sbr-dim);
+        transition: opacity 0.15s ease;
     }
+    .sbw:hover .sbw-goic { opacity: 0; }
     .sbw-goic svg {
         display: block;
         width: 100%; height: 100%;
@@ -357,10 +369,16 @@
     .sbw-go:hover .sbw-goic { color: var(--sbr-mut); }
     .sbw-go:hover { background: color-mix(in srgb, var(--sbr-sel) 8%, var(--sbr-page)); }
     .sbw-go:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 2px; }
+    /* справа на строке заголовка живут шеврон и кнопка смены — место под них
+       резервирует сам заголовок, поэтому длинное имя обрывается многоточием,
+       а не уезжает под иконку */
     .sbw-h { display: flex; align-items: center; gap: 8px; padding-right: 20px; }
     .sbw-l {
         flex: 1 1 auto;
         min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
         font-size: 8.5px;
         font-weight: 800;
         letter-spacing: 0.11em;
