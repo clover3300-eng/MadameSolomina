@@ -49,36 +49,11 @@
     }
     window.sbTitleSync = sbTitleSync;
 
-    // ЧИСЛО КОЛОНОК СЕТКИ — из числа ВИДИМЫХ разделов, а не из разметки:
-    // «Админка» появляется по роли (gateNav в js/admin.js), а tab-gates умеет
-    // добавлять свои вкладки и прятать штатные. Пять-шесть ложатся в три
-    // колонки (3+2 и 3+3), семь и больше — в четыре; ряды всегда полные.
-    // Ширины и высоты держит css/sidebar-rail.css по признаку data-cols.
-    function sbNavColsSync() {
-        var nav = document.getElementById('sbNav');
-        if (!nav) return;
-        var n = 0;
-        nav.querySelectorAll('.sb-item[data-tab]').forEach(function (it) {
-            if (it.hidden || (it.style && it.style.display === 'none')) return;
-            n++;
-        });
-        var cols = (n > 0 && n <= 6) ? '3' : '4';
-        if (nav.getAttribute('data-cols') !== cols) nav.setAttribute('data-cols', cols);
-    }
-    window.sbNavColsSync = sbNavColsSync;
-    // Состав сетки меняют чужие модули (роль admin, переименование и свои
-    // вкладки из админки), и звать их всех сюда пришлось бы руками. Наблюдатель
-    // ловит и добавление ячейки, и её скрытие через style/hidden; пересчёт
-    // стоит один проход по шести узлам и меняет атрибут только при разнице,
-    // так что собственных мутаций он не порождает.
-    (function watchNav() {
-        var nav = document.getElementById('sbNav');
-        if (!nav || typeof MutationObserver !== 'function') return;
-        new MutationObserver(sbNavColsSync).observe(nav, {
-            childList: true, subtree: true, attributes: true,
-            attributeFilter: ['style', 'hidden', 'class']
-        });
-    })();
+    // СЕТКИ РАЗДЕЛОВ БОЛЬШЕ НЕТ (раунд 6): разделы стоят строками, и число
+    // колонок считать не от чего. Вместе с ней удалены sbNavColsSync(), признак
+    // data-cols и MutationObserver, следивший за составом ради пересчёта колонок:
+    // строка не зависит от того, сколько разделов видно, поэтому наблюдать за
+    // «Админкой» по роли и за своими вкладками из админки больше незачем.
 
     // Умолчание — РАЗВЁРНУТО: колонка и есть навигация раздела, прятать её по
     // умолчанию значило бы прятать второй уровень. Явный выбор пользователя
@@ -90,7 +65,6 @@
         } catch (e) {}
         sbRailSync();
         sbTitleSync();
-        sbNavColsSync();
         if (window.sbPersonalSync) window.sbPersonalSync();
         if (window.updateCollapseLabel) window.updateCollapseLabel();
         if (window.sbCtxSync) window.sbCtxSync();
@@ -283,13 +257,11 @@
         if (!ctx || !document.body.classList.contains('sb-ctx')) return [];
         return Array.prototype.filter.call(ctx.querySelectorAll('.sbc-it'), sbVisible);
     }
-    // сколько ячеек в первом ряду: у сетки 4, у рейки 1 — считаем по offsetTop
-    function sbPerRow(cells) {
-        if (cells.length < 2) return 1;
-        var top = cells[0].offsetTop, n = 0;
-        for (var i = 0; i < cells.length; i++) { if (cells[i].offsetTop !== top) break; n++; }
-        return n || 1;
-    }
+    // РЯД — ВСЕГДА ОДНА СТРОКА (раунд 6). Прежний sbPerRow() считал ячейки в
+    // первом ряду по offsetTop, потому что разделы стояли сеткой 3–4 в ряд, а в
+    // рейке — столбиком. Теперь и в колонке, и в рейке это список: вверх-вниз
+    // ходят по одному пункту, влево-вправо делают то же самое (в списке им
+    // больше нечего значить, а отнимать привычный ход не за что).
     function sbFocus(el) { if (el) { try { el.focus(); } catch (e) {} } }
     function onSbKey(e) {
         if (!sbIsDesktop() || !NAVKEYS[e.key]) return;
@@ -303,7 +275,7 @@
         var cells = inNav ? sbNavCells() : sbCtxCells();
         var i = cells.indexOf(t.closest(inNav ? '.sb-item' : '.sbc-it'));
         if (i < 0) return;
-        var per = inNav ? sbPerRow(cells) : 1;
+        var per = 1;
         var to = null, other;
         if (e.key === 'Home') to = cells[0];
         else if (e.key === 'End') to = cells[cells.length - 1];
@@ -311,7 +283,7 @@
         else if (e.key === 'ArrowLeft') to = cells[Math.max(i - 1, 0)];
         else if (e.key === 'ArrowDown') {
             if (inNav && i + per >= cells.length) {
-                // из последнего ряда сетки — в первый пункт второго уровня
+                // с последнего раздела — в первый пункт второго уровня
                 other = sbCtxCells();
                 to = other.length ? other[0] : cells[cells.length - 1];
             } else to = cells[Math.min(i + per, cells.length - 1)];

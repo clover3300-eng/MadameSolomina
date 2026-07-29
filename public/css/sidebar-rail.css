@@ -9,12 +9,12 @@
        в одну строку;
      • КАПИТАЛ и день по всем портфелям (#sbCap) — единственные числа
        навигации; модель их и раньше считала, а колонка выбрасывала;
-     • разделы — СЕТКА (#sbNav): все на виду и НИКОГДА не двигаются,
-       ~160px вместо 320. Колонок столько, сколько нужно для полных
-       рядов: пять-шесть разделов ⇒ три, семь и больше ⇒ четыре
-       (признак data-cols, sbNavColsSync в js/sidebar.js);
-     • под волосяной чертой — второй уровень активного раздела (#sbCtx),
-       у «Портфелей» шесть строк и «Ещё»;
+     • разделы — СТРОКИ 44px (#sbNav): все на виду и НИКОГДА не двигаются.
+       Сетка плиток снята в раунде 6: её брали ради экономии высоты, но в
+       разреженной колонке экономии не осталось, а второй язык навигации
+       (плитки поперёк над списком вдоль) остался;
+     • под волосяной чертой — второй уровень активного раздела (#sbCtx)
+       строками 34px с отступом 12px, у «Портфелей» шесть строк и «Ещё»;
      • подвал: ряд личного — аватар кабинета, звоночек, шестерёнка «Настроек»
        раздела и лупа поиска (поле раскрывается поверх ряда).
 
@@ -22,9 +22,9 @@
      • аватара, имени, звоночка и переключателя темы в подвале — кабинет,
        уведомления и тема остаются там, где живут (решение владельца:
        колонка про деньги и разделы, а не про кабинет);
-     • вложенности «второй уровень под своим разделом» — в сетке у строки
-       нет «своего» кружка, под который её можно подвесить, поэтому линии
-       вложенности и отвода-риски у выбранного пункта сняты;
+     • линии вложенности и отвода-риски у выбранного пункта — вложенность
+       второго уровня несёт ОТСТУП 12px, единственное место в колонке, где
+       левый край намеренно не 18px;
      • нижней карточки контекста .rbw-ctx из визарда — в сайдбаре это
        второй «Обзор» под навигацией, а низ колонки она забирала целиком.
 
@@ -239,7 +239,13 @@
     #sbCap {
         display: block;
         flex: 0 0 auto;
-        margin: 15px 18px 0;
+        /* 22px сверху вместо 15: четыре блока колонки перестают склеиваться в
+           один, и делает это воздух, а не новая линия.
+           По бокам 8px, а не 18: плашки в покое нет, и левый край держит уже
+           не она, а внутренний паддинг карточки (8 + 10 = те же 18, что у марки,
+           разделов и подвала). Заливка по наведению при этом отбита от края
+           колонки ровно так же, как пилюли разделов и подвкладок. */
+        margin: 22px 8px 0;
         font-family: var(--font-ui, 'Inter', sans-serif);
     }
     #sbCap:empty { display: none; }
@@ -337,14 +343,23 @@
         box-sizing: border-box;
         width: 100%;
         margin: 0;
-        padding: 12px 14px 11px;
+        /* 10px по бокам: 8 у #sbCap + 10 = левый край текста на 18px, общий для
+           марки, разделов, подвкладок и подвала */
+        padding: 12px 10px 11px;
         border: 0;
         border-radius: 14px;
-        background: var(--sbr-page);
+        /* ПЛАШКИ В ПОКОЕ НЕТ (раунд 6). Серый прямоугольник --sbr-page — та же
+           заливка, что у активного раздела и активной подвкладки: в 288px
+           колонки получалось три сорта «выделенного», из которых два не
+           означали выбор. Теперь заливка приходит по наведению: в покое это
+           текст, под курсором — кнопка, а --sbr-page снова значит «выбрано». */
+        background: transparent;
         font: inherit;
         text-align: left;
+        transition: background 0.15s ease;
     }
     .sbw-go { position: relative; cursor: pointer; transition: background 0.15s ease; }
+    .sbw:hover .sbw-card { background: var(--sbr-page); }
     /* Признак «вся карточка нажимается» — на строке заголовка, у правого края.
        Внизу он стоять не может: правый нижний угол занимает ПОСЛЕДНЯЯ строка
        данных, и шеврон ложился поверх неё («+0,26%» у BTC, «купон» у выплаты,
@@ -354,7 +369,7 @@
        не бывает. */
     .sbw-goic {
         position: absolute;
-        right: 13px; top: 13px;
+        right: 9px; top: 13px;   /* карточка ужалась по бокам с 14 до 10px */
         width: 11px; height: 11px;
         color: var(--sbr-dim);
         transition: opacity 0.15s ease;
@@ -531,12 +546,14 @@
 
     .sbcap-btn {
         display: block;
+        box-sizing: border-box;
         width: 100%;
         margin: 0;
-        padding: 12px 14px 11px;
+        padding: 12px 10px 11px;
         border: 0;
         border-radius: 14px;
-        background: var(--sbr-page);
+        /* плашки в покое нет — см. .sbw-card выше */
+        background: transparent;
         font: inherit;
         text-align: left;
         cursor: pointer;
@@ -624,6 +641,9 @@
     .sbcap-spark.neg { color: #DC2626; }
     body.dark-mode .sbcap-spark { color: #34D399; }
     body.dark-mode .sbcap-spark.neg { color: #F87171; }
+    /* ровный день: у линии нет знака, значит нет и цвета знака (см. sparkHtml) */
+    .sbcap-spark.flat,
+    body.dark-mode .sbcap-spark.flat { color: var(--sbr-dim); }
     .sbcap-spark polyline {
         fill: none;
         stroke: currentColor;
@@ -684,7 +704,7 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        padding: 11px 12px;
+        padding: 11px 10px;     /* тот же левый край 18px, что у остальных блоков */
     }
     .sbcap-plus {
         flex: none;
@@ -717,35 +737,32 @@
     }
     .sbcap-empty:hover .sbcap-plus { border-color: var(--sbr-sel); color: var(--sbr-sel); }
 
-    /* ---------- Разделы: сетка 4 в ряд ----------
-       Сетка, а не список: семь разделов занимают две строки (~150px) вместо
-       семи (~320px), и — главное — НЕ ДВИГАЮТСЯ при смене активного, потому
-       что второй уровень больше не раскрывается между ними.
-       .sb-group отдаёт своего .sb-parent прямо в сетку (display:contents):
-       иначе «Расчёт» и «Рынок» были бы вложены в лишнюю ячейку-обёртку. */
+    /* ---------- Разделы: СТРОКИ, а не сетка (раунд 6, редакции 4–5) ----------
+       Сетку плиток брали в раунде 3 ради одного — семь разделов занимали
+       списком ~320px, а сеткой 150px. В разреженной колонке (шаг строки 34px,
+       промежутки 22px) доведённая сетка сама выросла до 182px, а пять разделов
+       строками занимают 238px: экономии не осталось, осталась только плата
+       вторым языком навигации — плитки поперёк над списком вдоль.
+       Строка выигрывает не только языком: имя раздела получает 190px вместо 78
+       (в ячейке «Академия Ребалансировки» жила только в подсказке), мишень
+       становится 252×44 вместо 86×74, а справа появляется место под счётчик.
+       ГЛАВНОЕ ТРЕБОВАНИЕ РАУНДА 3 СОБЛЮДЕНО: разделы НЕ ДВИГАЮТСЯ при смене
+       активного — второй уровень по-прежнему живёт своим блоком #sbCtx под
+       чертой, а не раскрывается аккордеоном между разделами. Дело было не в
+       сетке, а в том, где стоит второй уровень.
+       .sb-group по-прежнему display:contents — иначе «Расчёт» и «Рынок» ушли бы
+       в лишнюю обёртку и выпали из общего шага. */
     #sbNav {
         position: relative;
         flex: 0 0 auto;
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        align-items: start;
-        gap: 2px;
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
         overflow: visible;
-        padding: 14px 12px 10px;
+        padding: 26px 8px 16px;
     }
-    /* КОЛОНОК СТОЛЬКО, СКОЛЬКО НУЖНО ДЛЯ ПОЛНЫХ РЯДОВ (доведение 2026-07-29).
-       Разделов пять, а колонок было жёстко четыре — второй ряд состоял из
-       одной ячейки, и справа зияла пустая половина: обрыв читался поломкой,
-       а не сеткой. Пять-шесть ложатся в три (3+2 и 3+3), семь и больше —
-       в четыре. Признак ставит sbNavColsSync() в js/sidebar.js, считая
-       ВИДИМЫЕ ячейки: «Админка» приходит по роли, а tab-gates умеет добавлять
-       свои вкладки — число нельзя зашивать ни в разметку, ни сюда.
-       Ширина ячейки при этом растёт с 65 до 86px, то есть подпись получает
-       78px вместо 57 — и ни одного лишнего пикселя высоты (те же два ряда). */
-    #sbNav[data-cols="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     #sbNav .sb-group { display: contents; }
-    /* волосяная черта между сеткой и вторым уровнем — только когда второй
-       уровень есть; абсолютная, чтобы не стать ячейкой сетки */
+    /* волосяная черта между уровнями — только когда второй уровень есть */
     body.sb-ctx #sbNav::after {
         content: '';
         position: absolute;
@@ -754,49 +771,60 @@
         background: var(--sbr-line);
     }
 
-    /* ячейка раздела: кружок 34px + подпись 9,5px */
+    /* СТРОКА РАЗДЕЛА В ПОЛНЫЙ ГОЛОС (редакция 5): 44px, имя 14,5px тоном чернил,
+       иконка 20px в круге 30px. Разделы и подвкладки одно время стояли в едином
+       шаге 36px — и уровни перестали различаться: единый шаг хорош для одного
+       уровня, для двух он стирает разницу между «куда я иду» и «что там внутри».
+       Ранг несут ЧЕТЫРЕ шкалы разом — рост (44 против 34), кегль (14,5 против
+       12,5), тон (--sbr-ink против --sbr-mut) и иконка (20 против 14): вес и
+       цвет читаются только при сравнении двух строк, величина — с расстояния.
+       Имя раздела становится вторым по величине текстом колонки: крупнее только
+       число капитала. */
     #sbNav .sb-item,
     body.dark-mode #sbNav .sb-item {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         flex-wrap: nowrap;
         align-items: center;
         justify-content: flex-start;
-        gap: 6px;
+        gap: 12px;
         width: auto;
         min-width: 0;
-        padding: 8px 2px 7px;
+        height: 44px;
+        padding: 0 10px;
         border-radius: 12px;
         background: transparent;
-        color: var(--sbr-mut);
+        color: var(--sbr-ink);
         font-family: var(--font-ui, 'Inter', sans-serif);
-        font-size: 10px;
+        font-size: 14.5px;
         font-weight: 600;
-        letter-spacing: 0;
-        text-align: center;
+        letter-spacing: -0.005em;
+        text-align: left;
     }
-    /* кружок делает сама иконка: padding+border+radius на <svg> работают,
-       viewBox масштабируется внутрь content-box */
+    /* Кружок делает сама иконка: padding+radius на <svg> работают, viewBox
+       масштабируется внутрь content-box. ОБВОДКИ БОЛЬШЕ НЕТ — пять колец подряд
+       несли значение только у одного; кружок рисуется заливкой и только у
+       активного раздела. */
     #sbNav .sb-item > svg {
         flex: none;
         box-sizing: border-box;
-        width: 34px; height: 34px;
-        padding: 8px;
-        border: 1.5px solid var(--sbr-line);
+        width: 30px; height: 30px;
+        padding: 5px;
+        border: 0;
         border-radius: 50%;
-        background: var(--sbr-card);
-        color: var(--sbr-dim);
+        background: transparent;
+        color: var(--sbr-mut);
     }
-    /* Подпись в 64px ячейки. Имя вкладки МОЖНО ПЕРЕИМЕНОВАТЬ из админки
-       (js/tab-gates.js), и «Академия Ребалансировки» не влезет ни в какую
-       ячейку — честное многоточие в одну строку, полное имя даёт подсказка
-       (sbTitleSync держит title равным тексту подписи). */
+    /* Имя раздела в 190px строки. Переименование из админки (js/tab-gates.js)
+       больше не ломает подпись: «Академия Ребалансировки» помещается целиком —
+       в ячейке сетки ей доставалось 78px и она жила только в подсказке.
+       Многоточие и sbTitleSync оставлены на случай ещё более длинных имён. */
     #sbNav .sb-label {
-        flex: none;
+        flex: 1 1 auto;
         display: block;
         max-width: 100%;
         min-width: 0;
-        padding: 0 2px;
+        padding: 0;
         opacity: 1 !important;          /* фейд подписей был механикой peek */
         line-height: 1.2;
         white-space: nowrap;
@@ -804,20 +832,19 @@
         text-overflow: ellipsis;
         color: inherit;
     }
-    /* риска активного раздела была языком рейки; здесь маркер — сам кружок */
+    /* риска активного раздела была языком рейки; здесь маркер — пилюля и кружок */
     #sbNav .sb-item::before { display: none; }
-    /* ХОВЕР ДЕРЖИТ ВСЮ ЯЧЕЙКУ (доведение 2026-07-29). Раньше подсвечивался
-       только кружок, хотя нажимается ячейка целиком: мишень выглядела меньше,
-       чем есть. Пилюля вполсилы — тот же тон, что у активной, но прозрачнее:
-       ховер и выбор встают в один ряд «полсилы → сила». */
+    /* Ховер держит всю строку (решение 29.07 про размер мишени в силе). */
     #sbNav .sb-item:hover,
     body.dark-mode #sbNav .sb-item:hover {
         background: color-mix(in srgb, var(--sbr-page) 55%, transparent);
         color: var(--sbr-ink);
     }
-    #sbNav .sb-item:hover > svg { border-color: var(--sbr-dim); background: var(--sbr-page); color: var(--sbr-ink); }
-    /* Активная ячейка — пилюля того же тона, что у активной подвкладки и табло:
-       три уровня выделения в колонке говорят на одном языке (раунд 4). */
+    #sbNav .sb-item:hover > svg { background: var(--sbr-page); color: var(--sbr-ink); }
+    /* АКТИВНЫЙ РАЗДЕЛ ПОМЕЧЕН ТРИЖДЫ — пилюлей, залитым кружком и начертанием.
+       Избыточность здесь намеренная: «где я нахожусь» — единственный вопрос, на
+       который навигация обязана отвечать мгновенно, а не при сравнении. У
+       подвкладки маркер остаётся один (пилюля), и спорить ему больше не с чем. */
     #sbNav .sb-item.active,
     body.dark-mode #sbNav .sb-item.active { background: var(--sbr-page); }
     #sbNav .sb-item.active > svg {
@@ -826,8 +853,8 @@
         color: var(--sbr-sel-ic);
     }
     #sbNav .sb-item.active .sb-label { color: var(--sbr-ink); font-weight: 700; }
-    #sbNav .sb-item.active { color: var(--sbr-ink); }
-    /* КЛАВИАТУРА: по сетке ходят стрелки (onSbKey в js/sidebar.js), и фокус
+    #sbNav .sb-item.active { color: var(--sbr-ink); font-weight: 700; }
+    /* КЛАВИАТУРА: по колонке ходят стрелки (onSbKey в js/sidebar.js), и фокус
        обязан быть виден — иначе ход есть, а где ты стоишь, непонятно. Обводка
        та же, что у второго уровня и табло: один язык выделения на всю колонку. */
     #sbNav .sb-item:focus-visible {
@@ -840,16 +867,16 @@
 
     /* Бейдж на кружке (дрейф долей за порогом у «Ребаланса»). Кружок —
        .sb-item > svg, у <svg> потомков-элементов разметки нет, поэтому метка
-       живёт отдельным узлом и позиционируется от ячейки. */
+       живёт отдельным узлом и позиционируется от строки. */
     #sbNav .sb-item { position: relative; }
     #sbNav .sb-badge {
         display: block;            /* базовое правило выше гасит метку на мобиле */
         position: absolute;
-        /* якорь — правый верхний угол кружка. У <svg> нет потомков-элементов,
-           поэтому метку кладём в ячейку и считаем от её центра: кружок 34px ⇒
-           правый край на 50% + 17, метка шириной 15 начинается на 50% + 6 */
-        top: 5px; left: 50%;
-        margin-left: 6px;
+        /* якорь — правый верхний угол кружка. В строке кружок стоит слева и на
+           месте: 10px паддинга + 30px кружка = правый край на 40, метка шириной
+           15 начинается на 31. От центра ячейки считать больше нечего — сетки
+           с её 50% нет. */
+        top: 5px; left: 31px;
         min-width: 15px; height: 15px;
         padding: 0 3px;
         box-sizing: border-box;
@@ -886,28 +913,38 @@
         overflow-x: hidden;
         scrollbar-width: none;
         margin: 0;
-        padding: 0 12px 6px;
+        /* 8 + 10 у строки = левый край текста на 18px, как у марки, капитала и
+           подвала; вложенность добавляет к этому 12px в .sbc-list */
+        padding: 6px 8px 6px;
         font-family: var(--font-ui, 'Inter', sans-serif);
         color: var(--sbr-ink);
     }
     #sbCtx::-webkit-scrollbar { display: none; }
     body.sb-ctx #sbCtx { display: block; }
     /* шапка блока не рендерится (имя раздела пишет первая .sbc-grp),
-       подвал уехал в #sbRailFoot — см. js/sidebar-ctx.js */
+       подвал уехал в #sbRailFoot — см. js/sidebar-ctx.js.
+       ВЛОЖЕННОСТЬ НЕСЁТ ОТСТУП (раунд 6): 12px вправо — единственное место,
+       где левый край колонки намеренно не 18px. Линию вложенности не
+       возвращаем: она была снята вместе с переездом в сетку, и без неё
+       отступ читается спокойнее. */
     #sbCtx .sbc-list {
         overflow: visible;
-        padding: 0;
+        padding: 0 0 0 12px;
         -webkit-mask-image: none;
     }
 
+    /* Строка второго уровня ТИШЕ строки раздела по всем шкалам сразу: 34 против
+       44px, 12,5 против 14,5px, --sbr-mut против --sbr-ink, глиф 14 против 20.
+       Иначе уровни различались бы только весом, а вес виден лишь при сравнении. */
     .sbc-it {
         position: relative;
         display: flex;
         align-items: center;
-        gap: 9px;
+        gap: 10px;
         width: 100%;
         margin: 0;
-        padding: 7px 10px;
+        height: 34px;
+        padding: 0 10px;
         border: 0;
         border-radius: 9px;
         background: transparent;
@@ -927,7 +964,10 @@
         width: 14px; height: 14px; flex: none;
         fill: none; stroke: currentColor; stroke-width: 1.8;
         stroke-linecap: round; stroke-linejoin: round;
-        opacity: 0.65;
+        /* .6 вместо .65: в шаге 34px между глифами 20px воздуха вместо 12, и
+           частокола, из-за которого иконки однажды предлагалось снять совсем,
+           больше нет — виноват был шаг, а не глиф */
+        opacity: 0.6;
     }
     .sbc-tx { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .sbc-it:hover { background: var(--sbr-page); color: var(--sbr-ink); }
@@ -942,26 +982,24 @@
     .sbc-it.on > svg { opacity: 1; color: var(--sbr-sel); }
     .sbc-it:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: -2px; }
 
-    /* счётчик — справка, не акцент */
-    .sbc-n {
-        margin-left: auto;
-        flex: none;
-        font-family: var(--font-num, 'JetBrains Mono', monospace);
-        font-size: 10px;
-        font-weight: 600;
-        color: var(--sbr-dim);
-    }
-    /* сумма портфеля: раньше уходила только в title подсказки */
+    /* СЧЁТЧИК И СУММА — ОДНИМ ГОЛОСОМ. Стояли в одной колонке справа, но разным
+       кеглем, весом и тоном (10/600/dim против 10,5/500/mut) и читались двумя
+       сортами данных. Правило проекта: одна колонка — одна ширина, выключка и
+       вес. Цветным в навигации остаётся только .sbc-chg, и именно потому, что
+       оно там единственное. */
+    .sbc-n,
     .sbc-val {
         margin-left: auto;
         flex: none;
         font-family: var(--font-num, 'JetBrains Mono', monospace);
         font-size: 10.5px;
-        font-weight: 500;
+        font-weight: 600;
         color: var(--sbr-mut);
     }
     .sbc-val + .sbc-chg { margin-left: 6px; }
-    .sbc-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; margin: 0 3px; }
+    /* точке дано ровно то же место 15px, что и глифу строки: имена всех строк
+       второго уровня стоят на одной вертикали */
+    .sbc-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; margin: 0 3.5px; }
     /* дневное изменение — единственное цветное число в навигации; по наведению
        уступает место крестику (данных нет — просто пусто, ничего не выдумываем) */
     .sbc-chg {
@@ -1048,19 +1086,20 @@
     .sbc-it.more > svg { transition: transform 0.16s ease; }
     .sbc-it.more.open > svg { transform: rotate(180deg); }
 
-    /* подпись группы держит волосяную линию */
+    /* Подпись группы — ТОЛЬКО ТЕКСТ. Линия-хвост до правого края снята: вместе
+       с чертой под разделами она давала три горизонтали на 90px, а отделять
+       группу и так умеет отступ сверху (20px против 6 снизу). */
     .sbc-grp {
         display: flex;
         align-items: center;
         gap: 9px;
-        padding: 12px 10px 5px;
+        padding: 20px 10px 6px;
         font-size: 9px;
         font-weight: 800;
         letter-spacing: 0.13em;
         text-transform: uppercase;
         color: var(--sbr-dim);
     }
-    .sbc-grp::after { content: ''; flex: 1; height: 1px; background: var(--sbr-line); }
 
     /* третий уровень — экраны «Торговли»: вложенность даёт отступ, не заливка */
     .sbc-it.lvl3 {
@@ -1208,7 +1247,9 @@
         width: auto;
         margin-top: auto;
         flex: 0 0 auto;
-        padding: 10px 16px 14px;
+        /* 18px по бокам — тот же левый край, что у марки, капитала и разделов;
+           16 давало аватару собственную кромку */
+        padding: 12px 18px 16px;
         border-top: 1px solid var(--sbr-line);
     }
     #sbRailFoot .sbf-main { display: flex; align-items: center; gap: 4px; }
@@ -1392,7 +1433,9 @@
         padding: 6px 4px 10px;
     }
     body.sb-rail #sbNav::after { display: none; }
-    body.sb-rail #sbNav .sb-badge { top: 6px; margin-left: 10px; }
+    /* В рейке ячейка снова вертикальная и кружок стоит по центру — значит и
+       якорь метки снова центр, а не левый край строки (см. базовое правило). */
+    body.sb-rail #sbNav .sb-badge { top: 6px; left: 50%; margin-left: 10px; }
     body.sb-rail #sbNav .sb-item,
     body.dark-mode.sb-rail #sbNav .sb-item {
         flex-direction: column;
@@ -1401,6 +1444,10 @@
         justify-content: center;
         gap: 7px;
         width: 76px;
+        /* height:auto ОБЯЗАТЕЛЕН: в развёрнутой колонке строка раздела ростом
+           44px, и без сброса рейка унаследовала бы её высоту вместе с подписью
+           под кружком — ячейка не влезла бы в собственный рост. */
+        height: auto;
         padding: 7px 0 8px;
         border-radius: 14px;
         font-size: 11px;

@@ -283,15 +283,27 @@
         return { show: show, hid: hid };
     }
     function moreHtml(hid) {
-        // Строка НАЗЫВАЕТ скрытое, а не прячет его за глухим «Ещё»: сколько бы
-        // имён ни влезло, информационный след остаётся, а счётчик справа держит
-        // точное число — его многоточие не съест.
-        var tx = moreOpen ? 'Свернуть' : ('Ещё · ' + hid.map(function (it) { return it.tx; }).join(', '));
+        // Строка НАЗЫВАЕТ скрытое — но только пока имена в неё помещаются.
+        // Правило раунда 4 («перечисляем всегда, счётчик держит точное число»)
+        // работает на одном-двух именах и физически не работает на трёх: в 226px
+        // строки «Ещё · Аналитика, Отчёты, Операции» обрывается ровно там, где
+        // перечисление должно было помочь, и обрывок ещё и дублируется счётчиком.
+        // С трёх имён строка считает, а перечисление уходит в подсказку.
+        var names = hid.map(function (it) { return it.tx; });
+        var many = names.length > 2;
+        var tx = moreOpen ? 'Свернуть'
+            : (many ? ('Ещё ' + names.length + ' ' + plural(names.length, 'раздел', 'раздела', 'разделов'))
+                    : ('Ещё · ' + names.join(', ')));
         return '<button type="button" class="sbc-it more' + (moreOpen ? ' open' : '') + '" data-act="ctxmore" data-key=""' +
+            ' title="' + esc(moreOpen ? 'Свернуть' : names.join(', ')) + '"' +
             ' aria-expanded="' + (moreOpen ? 'true' : 'false') + '">' + svg(IC.chev) +
             '<span class="sbc-tx">' + esc(tx) + '</span>' +
-            (moreOpen ? '' : '<span class="sbc-n">' + hid.length + '</span>') + '</button>';
+            (moreOpen || many ? '' : '<span class="sbc-n">' + names.length + '</span>') + '</button>';
     }
+    // склонение берём у общего plural(n, one, few, many) ниже по файлу — своя
+    // одноимённая функция молча перебила бы его объявлением (оба всплывают в
+    // одну область видимости, и выигрывает последнее): строка выдавала
+    // «Ещё 3 undefined»
     // Шапки-карточки у блока нет: раздел называет ПЕРВЫЙ заголовок группы.
     // Модельные cap/chip остаются — их отдаёт PF.sbSideModel, но капитал теперь
     // рисует свой узел #sbCap (он виден на любой вкладке, а не только здесь).
@@ -305,6 +317,13 @@
                 // «Разделы» — служебное имя группы; вслух блок называется именем
                 // раздела, а его могли переименовать из админки (js/tab-gates.js)
                 if (!lab || lab === 'Разделы') lab = tabName(SEC_OF[tab] || tab) || m.title || '';
+                // ИМЯ РАЗДЕЛА НЕ ЗВУЧИТ ДВАЖДЫ (раунд 6): строка «Портфели» стоит
+                // прямо над чертой, и заголовок «ПОРТФЕЛИ» под чертой был её эхом
+                // на расстоянии 40px. Сверяем с тем же источником, из которого
+                // берётся подпись строки, и молчим на совпадении. Заголовки,
+                // которые не дубль («Тип портфеля», «Готовый расчёт», «Открытые
+                // портфели»), остаются на месте.
+                if (lab && norm(lab) === norm(secName(SEC_OF[tab] || tab))) lab = '';
                 var sp = splitMore(items);
                 items = sp.show;
                 if (sp.hid.length) tailHtml = moreHtml(sp.hid);
@@ -329,6 +348,17 @@
             if (window.tabGates && window.tabGates.titleOf) return window.tabGates.titleOf(tab) || '';
         } catch (e) {}
         return '';
+    }
+    // сравнение имён для проверки на дубль: регистр и лишние пробелы не в счёт
+    function norm(s) { return String(s || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+    // ИМЯ РАЗДЕЛА ТАК, КАК ЕГО ВИДНО В КОЛОНКЕ. tabGates.titleOf отвечает пустой
+    // строкой, пока список вкладок не подтянулся (а для части разделов — всегда),
+    // поэтому спрашиваем сначала саму строку навигации: её подпись переименование
+    // из админки правит, и именно с ней заголовок группы рискует срифмоваться.
+    function secName(tab) {
+        var it = document.querySelector('#sbNav .sb-item[data-tab="' + tab + '"] .sb-label');
+        var tx = it ? it.textContent.trim() : '';
+        return tx || tabName(tab);
     }
     // ---------- подвал ----------
     // «Настройки» раздела живут ВНИЗУ колонки, а не в конце списка: список
@@ -375,7 +405,24 @@
         try { s = JSON.parse(localStorage.getItem(SERIES_KEY) || 'null'); } catch (e) {}
         if (!s || s.d !== today() || !Array.isArray(s.v)) s = { d: today(), v: [], t: 0 };
         var now = Date.now();
-        if (total > 0 && (now - (s.t || 0) >= SERIES_MIN_MS)) {
+        // ТОЧКУ ПИШЕМ ТОЛЬКО НА ЖИВЫХ ЦЕНАХ. Прежнее условие total > 0 брало
+        // капитал в любой момент, включая тот, когда котировки части бумаг ещё
+        // не пришли, — и в ряд попадало заниженное число. Одна такая точка
+        // задавала масштаб линии на весь день (в проде это выглядело обвалом на
+        // 14%, которого не было).
+        // СМОТРИМ НА PF.quotesOkTs, А НЕ ЗОВЁМ PF.quotesFresh(): вопреки имени
+        // это не предикат, а СЕТТЕР — он штампует quotesOkTs и возвращает
+        // undefined. Вызов и соврал бы про свежесть, и сам бы её подделал,
+        // погасив метку «Цены на 14:32» у табло.
+        // Порог тот же, что у метки возраста цен (STALE_MS в portfolios-tabs.js):
+        // пока цены моложе пяти минут, точка идёт в ряд.
+        var fresh = true;
+        try {
+            if (window.PF && typeof PF.quotesOkTs === 'number') {
+                fresh = PF.quotesOkTs > 0 && (now - PF.quotesOkTs) < 5 * 60000;
+            }
+        } catch (e) {}
+        if (total > 0 && fresh && (now - (s.t || 0) >= SERIES_MIN_MS)) {
             s.v.push(Math.round(total));
             if (s.v.length > SERIES_MAX) s.v = s.v.slice(-SERIES_MAX);
             s.t = now;
@@ -383,20 +430,39 @@
         }
         return s.v;
     }
+    // Второй рубеж — уже при отрисовке: ряды за прошлые дни писались без гарда
+    // выше, да и «свежие» цены могут прийти неполным батчем. Точки дальше 3% от
+    // медианы в линию не идут; медиана, а не среднее, — чтобы сам выброс не
+    // сдвинул порог, за которым его ловят.
+    function clean(v) {
+        if (!v || v.length < 3) return v || [];
+        var sorted = v.slice().sort(function (a, b) { return a - b; });
+        var med = sorted[Math.floor(sorted.length / 2)];
+        if (!med) return v;
+        var ok = v.filter(function (n) { return Math.abs(n - med) / med <= 0.03; });
+        return ok.length >= 3 ? ok : v;
+    }
     // Линия во всю ширину табло: viewBox тянется по ширине (preserveAspectRatio
     // none), поэтому толщина штриха задана vector-effect, а не расчётом.
     function sparkHtml(v, neg) {
+        v = clean(v);
         if (!v || v.length < 3) return '';
         var min = Math.min.apply(null, v), max = Math.max.apply(null, v);
         var span = max - min;
+        // ПОЛ РАЗМАХА. Нормировка по min/max сама по себе честна только там, где
+        // размах что-то значит: при дрожании капитала на сотые доли процента она
+        // растягивает шум на всю высоту, и спокойный день читается качкой. Меньше
+        // 0,15% капитала — считаем день ровным: линия по центру и приглушённым
+        // тоном (класс flat), а не зелёным или красным, потому что знака у неё
+        // в этом случае нет.
+        var flat = !(span > 0) || (max > 0 && span / max < 0.0015);
         var W = 200, H = 24;
         var pts = v.map(function (n, i) {
             var x = v.length > 1 ? (i / (v.length - 1) * W) : 0;
-            // плоский день — линия ровно посередине, а не по верхнему краю
-            var y = span > 0 ? (H - (n - min) / span * H) : H / 2;
+            var y = flat ? H / 2 : (H - (n - min) / span * H);
             return x.toFixed(1) + ',' + y.toFixed(1);
         }).join(' ');
-        return '<svg class="sbcap-spark' + (neg ? ' neg' : '') + '" viewBox="0 0 ' + W + ' ' + H +
+        return '<svg class="sbcap-spark' + (flat ? ' flat' : (neg ? ' neg' : '')) + '" viewBox="0 0 ' + W + ' ' + H +
             '" preserveAspectRatio="none" aria-hidden="true"><polyline points="' + pts + '"/></svg>';
     }
     // Табло: капитал, день в рублях и процентах, линия дня. Клик ведёт на
