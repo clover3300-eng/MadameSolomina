@@ -4824,6 +4824,7 @@
         var s = S(n);
         // реплей: биржа и связь настоящего мира не при чём — плёнка сама решает
         if (RP && s.uid === RP.uid) {
+            if (RP.load) return 'Собираем плёнку…';
             return RP.done ? 'Неделя закончилась — итог на экране' : '';
         }
         var l = linkState(s).state;
@@ -4881,6 +4882,12 @@
     // (s.kind + s.price — слот, как в раунде 1: цена на глазах). Строка цены
     // теперь на всех ступенях — сессионный scnLim остался запасным каналом
     function scnLimPx(s) {
+        // В РЕПЛЕЕ ЛИМИТОК НЕТ: исполнение всегда по цене плёнки. Иначе старая
+        // лимитная цена слота (осталась от живого терминала и переживает
+        // перезагрузку в saveSlots) молча считала бы сделку тренажёра по
+        // числу из настоящего — ровно ловушка sxPrice, но хуже: расходились
+        // и итог, и «Купить на …» (владелец 2026-07-29 «расчёты неправильные»)
+        if (RP && s && s.uid === RP.uid) return 0;
         if (s.kind === 'limit' && +s.price > 0) return +s.price;
         return scnLim > 0 ? scnLim : 0;
     }
@@ -5152,7 +5159,10 @@
     // Кнопка гаснет С ПРИЧИНОЙ, не серым молчанием (экран 09): недостача —
     // прямо в кнопке, как сумма списания в счастливом пути. Итог списания —
     // ТОЛЬКО в кнопке, с копейками (fmtKop): закон раунда 1.
-    function scnCtaHtml(n) {
+    // состояние кнопки отдельно от разметки: тик сцены ПРАВИТ живую кнопку,
+    // а не пересобирает её (см. scnCtaPatch) — иначе на быстрой плёнке реплея
+    // узел умирал между нажатием и отпусканием (владелец 2026-07-29)
+    function scnCtaState(n) {
         var s = S(n), buy = s.side !== 'sell';
         var c = scnCalc(n);
         var blk = scnSubmitBlock(n);
@@ -5163,7 +5173,7 @@
         var can = !!(c && c.lots) && !blk && !(short > 0) && !sellOver;
         var label, note = 'Комиссия ' + feeTxt() + ' % уже включена';
         if (blk) {
-            label = esc(blk);
+            label = blk;
             if (blk.indexOf('Биржа закрыта') === 0) note = 'Черновик переживёт ночь в тикете — утром цена будет свежей';
         } else if (short > 0) {
             label = 'Не хватает ' + fmtRub(short);
@@ -5184,9 +5194,28 @@
             label = (buy ? 'Купить в реплее на ' : 'Продать в реплее на ') + fmtKop(c.total);
             note = 'Деньги виртуальные · комиссия ' + feeTxt() + ' % как настоящая';
         } else label = (buy ? 'Купить на ' : 'Продать на ') + fmtKop(c.total);
-        return '<button type="button" class="cta' + (buy ? '' : ' sell') + (can ? '' : ' dis') + '" ' +
-            (can ? '' : 'disabled ') + 'onclick="pftSxGo()">' + label + '</button>' +
-            '<div class="fee">' + note + '</div>';
+        return { label: label, note: note, can: can, sell: !buy };
+    }
+    function scnCtaHtml(n) {
+        var v = scnCtaState(n);
+        return '<button type="button" class="cta' + (v.sell ? ' sell' : '') + (v.can ? '' : ' dis') + '" ' +
+            (v.can ? '' : 'disabled ') + 'onclick="pftSxGo()">' + esc(v.label) + '</button>' +
+            '<div class="fee">' + esc(v.note) + '</div>';
+    }
+    // тик сцены: правим ЖИВУЮ кнопку — текст, класс, disabled. Узел переживает
+    // любую частоту тиков, ховер не сбрасывается, нажатие не теряется
+    function scnCtaPatch(n) {
+        var box = dq('btScnCta');
+        if (!box) return;
+        var btn = box.querySelector('.cta'), fee = box.querySelector('.fee');
+        if (!btn || !fee) { scnSet('btScnCta', scnCtaHtml(n)); return; }
+        var v = scnCtaState(n);
+        if (btn.textContent !== v.label) btn.textContent = v.label;
+        if (fee.textContent !== v.note) fee.textContent = v.note;
+        btn.classList.toggle('sell', v.sell);
+        btn.classList.toggle('dis', !v.can);
+        if (btn.disabled !== !v.can) btn.disabled = !v.can;
+        box.__btHtml = null;   // следующий полный scnSet не должен считать себя лишним
     }
     // «что нужно знать» — развёрнуто прямо в тикете: новичок по ссылкам не ходит
     function scnKnowHtml(n) {
@@ -5194,8 +5223,10 @@
         var last = sxPrice(s);
         var px = last > 0 ? fmtPx(last, s) + ' ₽' : '—';
         // первая строка обязана видеть лимитку (владелец 2026-07-23: тикет с
-        // лимиткой говорил «по рыночной цене» — враньё), lim — цена слота
-        var lim = s.kind === 'limit' && +s.price > 0 ? fmtPx(+s.price, s) + ' ₽' : '';
+        // лимиткой говорил «по рыночной цене» — враньё). Спрашиваем scnLimPx,
+        // а не слот: в реплее лимиток нет, и старая цена слота тут врала бы
+        var limPx = scnLimPx(s);
+        var lim = limPx > 0 ? fmtPx(limPx, s) + ' ₽' : '';
         // три факта с иконками (владелец 2026-07-24): цена / комиссия / отмена(налог).
         // Первый факт видит лимитку; жирным — числа. ✕ живёт ВНУТРИ (тик сцены
         // scnSet btScnKnow переписывает содержимое — вынесенная наружу ссылка
@@ -5444,14 +5475,31 @@
     // скрыто, счёт виртуальный. Тот же тикет и та же кнопка — тренируется рука.
     // Состояние живёт ТОЛЬКО в сессии (никакого localStorage: тренировка — не
     // данные); выход одной кнопкой возвращает живую сцену нетронутой.
-    var RP = null;   // {uid, rows[{t,v}], i, speed, playing, timer, money, qty, cost, fills, label, done}
+    // RP = {uid, rows[{t,o,h,l,v}], i0, i, speed, playing, timer, money, qty,
+    //       cost, real, feeSum, fills[], label, done, intro, hide, lot, aci}
+    // Деньги считаются одним инвариантом: money + cost = RP_START + real,
+    // где cost — полный расход на удерживаемые бумаги (с комиссией и НКД).
+    // Отсюда счёт = money + qty×цена = RP_START + зафиксированное + бумажное.
+    var RP = null;
     var RP_START = 1000000;
     var RP_SPEED = { 1: 1400, 5: 320, 20: 80, 50: 32 };
+    var rpBusy = 0;             // плёнка уже грузится — второй клик не нужен
     function rpPx() { return RP ? RP.rows[Math.min(RP.i, RP.rows.length - 1)].v : 0; }
     window.pftScReplay = function () {
         var n = sxSlot(), s = S(n);
         if (!s.uid || !s.meta) { toast('Сначала выберите бумагу — реплей идёт по ней', true); return; }
-        rpHalt();
+        if (rpBusy) return;
+        rpBusy = 1;
+        // ТЕКУЩУЮ ПЛЁНКУ НЕ УБИВАЕМ: раньше rpHalt() шёл до загрузки, и когда
+        // новая неделя не приходила, сцена оставалась с мёртвым RP=null под
+        // живой вуалью — «в реплей не войти снова» (владелец 2026-07-29).
+        // Сейчас старая плёнка просто встаёт на паузу и ждёт исхода.
+        if (RP) {
+            if (RP.timer) clearInterval(RP.timer);
+            RP.timer = null; RP.playing = false; RP.load = 1;
+            scnSet('btScnRpDone', rpOverHtml());
+            rpBarPatch();
+        }
         // случайная неделя: 60–560 дней назад, от понедельника; пятиминутки
         // брокер отдаёт максимум сутками — неделя собирается пятью запросами
         var back = 60 + Math.floor(Math.random() * 500);
@@ -5461,49 +5509,76 @@
         var days = [];
         for (var k = 0; k < 5; k++) days.push(new Date(d0.getTime() + k * 86400000));
         toast('Собираем плёнку недели…');
-        var uid = s.uid, bk = bondK(s), q2n = A().q2n;
+        var uid = s.uid, bk = bondK(s), q2n = A().q2n, lastErr = null;
         var chain = Promise.resolve([]);
         days.forEach(function (day) {
             chain = chain.then(function (acc) {
+                // interactive — НЕ false: после перезагрузки страницы токен под
+                // PIN/биометрией заперт, а тихий отказ выглядел как «плёнки нет»
+                // и реплей не открывался вообще (владелец 2026-07-29). Спросить
+                // PIN тут законно: реплей — действие пользователя, не пуллер.
+                // Модалка одна на все пять запросов (single-flight getToken).
                 return A().call('GetCandles', {
                     instrumentId: uid,
                     from: day.toISOString(),
                     to: new Date(day.getTime() + 86400000).toISOString(),
                     interval: 'CANDLE_INTERVAL_5_MIN'
-                }, { interactive: false }).then(function (d) {
+                }).then(function (d) {
                     return acc.concat(((d && d.candles) || []).map(function (c) {
                         // полный OHLC: плёнка рисуется свечами (владелец 2026-07-24)
                         return { t: Date.parse(c.time), v: q2n(c.close) * bk,
                                  o: q2n(c.open) * bk, h: q2n(c.high) * bk, l: q2n(c.low) * bk };
                     }).filter(function (x) { return x.t && x.v > 0; }));
-                }, function () { return acc; });
+                }, function (e) { lastErr = e; return acc; });
             });
         });
         chain.then(function (rows) {
-            if (S(sxSlot()).uid !== uid) return;   // бумагу уже сменили
+            rpBusy = 0;
+            if (S(sxSlot()).uid !== uid) { rpLoadFail(''); return; }   // бумагу уже сменили
             if (rows.length < 60) {
-                toast('За выпавшую неделю плёнки не нашлось — попробуйте ещё раз', true);
+                rpLoadFail(lastErr && lastErr.locked
+                    ? 'Брокер заперт — введите PIN и нажмите «Реплей» ещё раз'
+                    : (lastErr && lastErr.message)
+                        ? 'Брокер не отдал плёнку: ' + lastErr.message
+                        : 'За выпавшую неделю плёнки не нашлось — нажмите «Реплей» ещё раз');
                 return;
             }
+            if (RP && RP.timer) clearInterval(RP.timer);
             scnKDispose();   // движок свечей в реплее не участвует
             var lbl = days[0].toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) + ' — ' +
                 days[4].toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
             // старт — с интро-карточки на паузе (владелец 2026-07-24: «не понял,
             // что даёт режим» — тренажёр обязан представиться до первой свечи)
             rows.sort(function (a, b) { return a.t - b.t; });   // страховка порядка
-            RP = { uid: uid, rows: rows, i: Math.min(24, rows.length - 1), speed: 5, playing: false,
-                   timer: null, money: RP_START, qty: 0, cost: 0, fills: [], label: lbl,
-                   done: false, intro: true };
+            var i0 = Math.min(24, rows.length - 1);
+            RP = { uid: uid, rows: rows, i0: i0, i: i0, speed: 5, playing: false,
+                   timer: null, money: RP_START, qty: 0, cost: 0, real: 0, feeSum: 0,
+                   fills: [], label: lbl, done: false, intro: true, hide: 0, load: 0,
+                   // лот и НКД замораживаем: «просто держал» считается ими и
+                   // после того, как слот сцены уедет на другую бумагу
+                   lot: (s.meta && s.meta.lot) || 1, aci: aciOf(s) };
             rpBuckets();   // сетка получасовых свечей плёнки — один раз
             rpRun();
             if (PF.renderNoAnim) PF.renderNoAnim();
-        });
+        }, function (e) { rpBusy = 0; rpLoadFail((e && e.message) || 'Плёнка не загрузилась'); });
     };
-    // интро и итог живут в одном узле-вуали (btScnRpDone)
+    // плёнка не пришла: старая (если была) оживает на паузе, сцена цела
+    function rpLoadFail(msg) {
+        rpBusy = 0;
+        if (RP) {
+            RP.load = 0;
+            scnSet('btScnRpDone', rpOverHtml());
+            rpRun();
+            rpBarPatch();
+        }
+        if (msg) toast(msg, true);
+    }
+    // интро, «грузим» и итог живут в одном узле-вуали (btScnRpDone)
     window.pftScRpGo = function () {
         if (!RP) return;
         RP.intro = false; RP.playing = true;
         scnSet('btScnRpDone', rpOverHtml());
+        rpRun();
         rpBarPatch();
     };
     function rpHalt() {
@@ -5516,14 +5591,29 @@
     };
     window.pftScRpAgain = function () {
         if (!RP) return;
-        RP.i = Math.min(24, RP.rows.length - 1);
-        RP.money = RP_START; RP.qty = 0; RP.cost = 0; RP.fills = [];
-        RP.done = false; RP.playing = true; RP.intro = false;
+        RP.i = RP.i0;
+        RP.money = RP_START; RP.qty = 0; RP.cost = 0; RP.real = 0; RP.feeSum = 0;
+        RP.fills = [];
+        RP.done = false; RP.playing = true; RP.intro = false; RP.hide = 0; RP.load = 0;
         rpRun();
         if (PF.renderNoAnim) PF.renderNoAnim();
     };
+    // итог убирается с глаз и возвращается кнопкой планки: после недели надо
+    // дать посмотреть на график со своими сделками (владелец 2026-07-29)
+    window.pftScRpChart = function () {
+        if (!RP) return;
+        RP.hide = 1;
+        scnSet('btScnRpDone', rpOverHtml());
+        rpBarPatch();
+    };
+    window.pftScRpTotal = function () {
+        if (!RP || !RP.done) return;
+        RP.hide = 0;
+        scnSet('btScnRpDone', rpOverHtml());
+        rpBarPatch();
+    };
     window.pftScRpPlay = function () {
-        if (!RP || RP.done) return;
+        if (!RP || RP.done || RP.load) return;
         RP.playing = !RP.playing;
         RP.lastT = 0;   // после паузы догон не должен глотать плёнку скачком
         rpBarPatch();
@@ -5541,7 +5631,7 @@
         RP.timer = setInterval(rpStep, RP_SPEED[RP.speed] || 320);
     }
     function rpStep() {
-        if (!RP || !RP.playing || RP.done) return;
+        if (!RP || !RP.playing || RP.done || RP.load) return;
         if (!sceneLive() || document.visibilityState !== 'visible') { RP.lastT = 0; return; }   // плёнка ждёт зрителя
         // темп — по настенным часам: браузер душит таймеры фоновых вкладок до
         // секунды, без догона ×50 полз бы как ×1 (найдено на прогоне 2026-07-24)
@@ -5550,33 +5640,47 @@
         if (RP.lastT) n = Math.max(1, Math.min(60, Math.round((now - RP.lastT) / ms)));
         RP.lastT = now;
         RP.i += n;
+        var end = 0;
         if (RP.i >= RP.rows.length - 1) {
             RP.i = RP.rows.length - 1;
-            RP.done = true; RP.playing = false;
+            RP.done = true; RP.playing = false; end = 1;
             scnSet('btScnRpDone', rpOverHtml());
         }
-        var s = S(sxSlot());
-        scnSet('btScnChart', rpChartHtml(s));
-        scnSet('btScnPrice', scnPriceHtml(s));
-        scnSet('btScnFresh', scnFreshInner());
-        scnTicketBits();
+        // планка живёт КАЖДЫЙ кадр (её узлы правятся точечно и клики не ест),
+        // холст и тикет — не чаще 8 раз в секунду: на ×50 пересборка свечей и
+        // кнопки «Купить» каждые 32 мс и тормозила, и съедала нажатия
+        if (end || now - (rpStep._paint || 0) >= 120) {
+            rpStep._paint = now;
+            var s = S(sxSlot());
+            scnSet('btScnChart', rpChartHtml(s));
+            scnSet('btScnPrice', scnPriceHtml(s));
+            scnSet('btScnFresh', scnFreshInner());
+            scnTicketBits();
+        }
         rpBarPatch();
     }
     // покупка/продажа в реплее: исполняется мгновенно по цене плёнки, деньги
     // виртуальные — но комиссия и лотность считаются как настоящие (scnCalc)
     function rpTrade(n, c, buy) {
         if (!RP || RP.done) return;
+        var real = 0;
         if (buy) {
             RP.money -= c.total;
-            RP.cost += c.px * c.qty;
+            // база позиции — ПОЛНЫЙ расход (цена + НКД + комиссия): иначе
+            // зафиксированный результат врал на комиссию каждой сделки
+            RP.cost += c.total;
             RP.qty += c.qty;
         } else {
+            var q = Math.min(c.qty, RP.qty);
+            var base = RP.qty > 0 ? RP.cost / RP.qty * q : 0;
             RP.money += c.total;
-            var avg = RP.qty > 0 ? RP.cost / RP.qty : c.px;
-            RP.cost = Math.max(0, RP.cost - avg * c.qty);
+            real = c.total - base;          // выручка за вычетом комиссии минус база
+            RP.real += real;
+            RP.cost = Math.max(0, RP.cost - base);
             RP.qty = Math.max(0, RP.qty - c.qty);
         }
-        RP.fills.push({ i: RP.i, px: c.px, qty: c.qty, buy: buy });
+        RP.feeSum += c.fee || 0;
+        RP.fills.push({ i: RP.i, t: RP.rows[RP.i].t, px: c.px, qty: c.qty, buy: buy, real: real });
         simpleSum = '';
         var inp = dq('btSxSum'); if (inp) inp.value = '';
         rpFlash(buy, c, S(n));
@@ -5607,11 +5711,51 @@
     }
     // итог: свой результат против «просто держал бумагу всю неделю»
     function rpEquity() { return RP ? RP.money + RP.qty * rpPx() : 0; }
-    // вуаль поверх сцены: интро при входе, итог в конце недели
+    // бумажный результат открытой позиции: рынок минус полный расход на неё
+    function rpUnreal() { return RP ? RP.qty * rpPx() - RP.cost : 0; }
+    // «просто держал бумагу всю неделю» — ЧЕСТНО, теми же деньгами и лотами:
+    // на старте плёнки все виртуальные деньги ушли в бумагу целыми лотами с
+    // настоящей комиссией, позиция дожила до текущей свечи. Раньше сравнивали
+    // с ростом цены от rows[0] — то есть от свечи за два часа ДО того, как
+    // человеку дали торговать; расхождение с его результатом было ложным
+    // (владелец 2026-07-29)
+    function rpHoldEquity() {
+        if (!RP) return RP_START;
+        var px0 = RP.rows[RP.i0].v, px1 = rpPx();
+        var fee = feePct() / 100, lot = RP.lot || 1, aci = RP.aci || 0;
+        var perOne = (px0 + aci) * (1 + fee);
+        if (!(perOne > 0) || !(px1 > 0)) return RP_START;
+        var lots = Math.floor(RP_START / (perOne * lot));
+        if (lots < 1) return RP_START;
+        var qty = lots * lot, out = (px0 + aci) * qty;
+        out += out * fee;
+        return RP_START - out + qty * px1;
+    }
+    function rpBuys() {
+        var b = 0;
+        (RP ? RP.fills : []).forEach(function (f) { if (f.buy) b++; });
+        return b;
+    }
+    function rpSign(v) { return v >= 0 ? '+' : '−'; }
+    function rpRubTxt(v) { return rpSign(v) + fmtRub(Math.abs(v)); }
+    function rpPctTxt(v) {
+        return rpSign(v) + Math.abs(v).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' %';
+    }
+    // вуаль поверх сцены: интро при входе, «грузим» при смене недели, итог в конце
     function rpOverHtml() {
         if (!RP) return '';
+        if (RP.load) return rpLoadHtml();
         if (RP.intro) return rpIntroHtml();
         return rpDoneHtml();
+    }
+    function rpLoadHtml() {
+        return '<div class="rp-veil"></div><div class="rp-done">' +
+            '<h4>Собираем плёнку…</h4>' +
+            '<p>Брокер отдаёт пятиминутки сутками — неделя приходит пятью запросами. ' +
+            'Если токен под PIN, брокер спросит его один раз.</p>' +
+            '<div class="rp-row">' +
+            '<button type="button" class="ub gh" onclick="pftScRpExit()">Выйти</button>' +
+            '</div></div>';
     }
     function rpIntroHtml() {
         return '<div class="rp-veil"></div><div class="rp-done rp-hello">' +
@@ -5631,21 +5775,50 @@
             '<button type="button" class="ub gh" onclick="pftScRpExit()">Выйти</button>' +
             '</div></div>';
     }
+    // Итог недели — ДЕНЬГАМИ (владелец 2026-07-29: «нужно показывать сумму в
+    // рублях»). Разложен так, чтобы сходилось арифметически на глазах:
+    // 1 000 000 + зафиксировано + бумажное = счёт. Комиссии названы отдельно —
+    // они уже сидят в обеих строках, это не четвёртое слагаемое.
     function rpDoneHtml() {
-        if (!RP || !RP.done) return '';
-        var res = (rpEquity() / RP_START - 1) * 100;
-        var hold = (RP.rows[RP.rows.length - 1].v / RP.rows[0].v - 1) * 100;
-        function pctTxt(v) {
-            return (v >= 0 ? '+' : '−') + Math.abs(v).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' %';
+        if (!RP || !RP.done || RP.hide) return '';
+        var s = S(sxSlot());
+        var eq = rpEquity(), pnl = eq - RP_START;
+        var res = pnl / RP_START * 100;
+        var hEq = rpHoldEquity(), hPnl = hEq - RP_START, hold = hPnl / RP_START * 100;
+        var diff = pnl - hPnl;
+        var nb = rpBuys(), ns = RP.fills.length - nb;
+        var un = rpUnreal();
+        function row(lab, val, cls, sub) {
+            return '<div class="rp-tr"><span>' + lab + (sub ? '<em>' + sub + '</em>' : '') +
+                '</span><b' + (cls ? ' class="' + cls + '"' : '') + '>' + val + '</b></div>';
         }
-        return '<div class="rp-veil"></div><div class="rp-done">' +
+        var trades = RP.fills.length
+            ? row('Сделок', RP.fills.length.toLocaleString('ru-RU'), '',
+                  nb + ' ' + PF.plural(nb, 'покупка', 'покупки', 'покупок') + ' · ' +
+                  ns + ' ' + PF.plural(ns, 'продажа', 'продажи', 'продаж')) +
+              row('Зафиксировано продажами', rpRubTxt(RP.real), RP.real >= 0 ? 'g' : 'r') +
+              (RP.qty > 0
+                  ? row('Осталось в бумаге', rpRubTxt(un), un >= 0 ? 'g' : 'r',
+                        RP.qty.toLocaleString('ru-RU') + ' ' + unitWord(s, RP.qty) +
+                        ' по ' + fmtPx(rpPx(), s) + ' ₽')
+                  : '') +
+              row('Комиссия брокера', fmtKop(RP.feeSum), '', 'настоящая ставка ' + feeTxt() + ' %')
+            : '<div class="rp-tr rp-none"><span>Сделок не было — плёнка просто прошла мимо</span></div>';
+        return '<div class="rp-veil"></div><div class="rp-done rp-fin">' +
             '<h4>Неделя пройдена</h4>' +
-            '<p>' + RP.fills.length + ' ' + PF.plural(RP.fills.length, 'сделка', 'сделки', 'сделок') +
-            ' · ваш результат <b class="' + (res >= 0 ? 'g' : 'r') + '">' + pctTxt(res) + '</b><br>' +
-            'если бы просто держали бумагу — <b>' + pctTxt(hold) + '</b><br>' +
-            '<em>комиссии учтены как настоящие · деньги виртуальные</em></p>' +
+            '<div class="rp-big"><span>Счёт стал</span><b>' + fmtRub(eq) + '</b>' +
+                '<u class="' + (pnl >= 0 ? 'g' : 'r') + '">' + rpRubTxt(pnl) + ' · ' + rpPctTxt(res) + '</u>' +
+                '<em>было ' + fmtRub(RP_START) + '</em></div>' +
+            '<div class="rp-tbl">' + trades +
+                row('Просто держали бы бумагу', rpRubTxt(hPnl), hPnl >= 0 ? 'g' : 'r',
+                    rpPctTxt(hold) + ' · все деньги в бумагу на старте плёнки') +
+                row(diff >= 0 ? 'Торговля выиграла' : 'Торговля проиграла', rpRubTxt(diff),
+                    diff >= 0 ? 'g' : 'r', 'ваш результат минус «просто держал»') +
+            '</div>' +
+            '<p><em>деньги виртуальные · комиссия и лоты считались как настоящие</em></p>' +
             '<div class="rp-row">' +
-            '<button type="button" class="ub pri" onclick="pftScRpAgain()">Ещё раз эту неделю</button>' +
+            '<button type="button" class="ub pri" onclick="pftScRpChart()">Посмотреть график</button>' +
+            '<button type="button" class="ub gh" onclick="pftScRpAgain()">Ещё раз эту неделю</button>' +
             '<button type="button" class="ub gh" onclick="pftScReplay()">Другая неделя</button>' +
             '<button type="button" class="ub gh" onclick="pftScRpExit()">Выйти</button>' +
             '</div></div>';
@@ -5715,18 +5888,45 @@
                 '" height="' + hh.toFixed(1) + '" class="rp-cnd ' + (up ? 'g' : 'r') + '"/>';
         });
         var nowX = XB(rpBucketX(rows[i].t));
-        var marks = '';
-        RP.fills.forEach(function (f) {
-            marks += '<circle cx="' + XB(rpBucketX(rows[f.i].t)).toFixed(1) + '" cy="' + Y(f.px).toFixed(1) +
+        // ЦЕНОВАЯ ОСЬ: сетка + подписи справа (владелец 2026-07-29 «на графике
+        // нет цен»). Текст — обычными span поверх холста, а не в svg: холст
+        // растянут preserveAspectRatio="none" и буквы в нём поехали бы
+        var grid = '', axp = '';
+        PF.niceTicks(min, max, 4).forEach(function (v) {
+            var yp = (max - v) / span * 100;
+            if (yp < 4 || yp > 96) return;
+            grid += '<line x1="0" y1="' + Y(v).toFixed(1) + '" x2="' + W + '" y2="' + Y(v).toFixed(1) +
+                '" class="rp-grid"/>';
+            axp += '<span class="rp-axp" style="top:' + yp.toFixed(1) + '%">' + fmtPx(v, s) + '</span>';
+        });
+        var marks = '', mtags = '';
+        RP.fills.forEach(function (f, fi) {
+            var fx = XB(rpBucketX(rows[f.i].t)), fy = Y(f.px);
+            marks += '<circle cx="' + fx.toFixed(1) + '" cy="' + fy.toFixed(1) +
                 '" r="5" class="rp-fill ' + (f.buy ? 'g' : 'r') + '"/>';
+            // ценники своих сделок — у последних шести: дальше холст зарастает
+            if (fi < RP.fills.length - 6) return;
+            mtags += '<span class="rp-ftag' + (f.buy ? '' : ' s') + '" style="left:' +
+                Math.min(88, fx / W * 100).toFixed(1) + '%;top:' +
+                Math.min(94, Math.max(3, fy / H * 100)).toFixed(1) + '%">' +
+                (f.buy ? '+' : '−') + f.qty.toLocaleString('ru-RU') + ' × ' + fmtPx(f.px, s) + '</span>';
         });
         var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" role="img" ' +
-            'aria-label="Плёнка реплея">' +
+            'aria-label="Плёнка реплея">' + grid +
             '<line x1="' + nowX.toFixed(1) + '" y1="0" x2="' + nowX.toFixed(1) + '" y2="' + H + '" class="rp-now"/>' +
             cnds + marks +
         '</svg>';
         var ptag = '<span class="ptag" style="top:' +
             Math.min(97, Math.max(2, (max - rpPx()) / span * 100)).toFixed(1) + '%">' + fmtPx(rpPx(), s) + '</span>';
+        // средняя цена открытой позиции — линией: видно, в плюсе она или в минусе
+        var avgTag = '';
+        if (RP.qty > 0 && RP.cost > 0) {
+            var avg = RP.cost / RP.qty, ay = (max - avg) / span * 100;
+            if (ay > 1 && ay < 99) {
+                avgTag = '<span class="rp-avgl" style="top:' + ay.toFixed(1) + '%"></span>' +
+                    '<span class="rp-avgt" style="top:' + ay.toFixed(1) + '%">ваша средняя ' + fmtPx(avg, s) + '</span>';
+            }
+        }
         var voidNote = i < rows.length - 6
             ? '<span class="rp-void" style="left:' + Math.min(86, nowX / W * 100 + 4).toFixed(1) + '%">' +
               'будущее скрыто — свечи приходят в темпе плёнки</span>'
@@ -5736,33 +5936,80 @@
             var idx = Math.round(k4 * (rows.length - 1) / 4);
             dts += '<span>' + new Date(rows[idx].t).toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric' }) + '</span>';
         }
-        return '<div class="bts-canvas">' + svg + ptag + voidNote + '</div><div class="ax-dates">' + dts + '</div>';
+        return '<div class="bts-canvas">' + svg + axp + avgTag + mtags + ptag + voidNote +
+            '</div><div class="ax-dates">' + dts + '</div>';
     }
     // плёнка-бар: play/пауза, скорость, прогресс, выход — низ сцены вместо
     // полосы позиций (позиции и счёт в реплее — виртуальные, живой брокер спит)
+    function rpPct() {
+        if (!RP) return 0;
+        var full = Math.max(1, RP.rows.length - 1 - RP.i0);
+        return Math.max(0, Math.min(100, Math.round((RP.i - RP.i0) / full * 100)));
+    }
     function rpBarHtml() {
         if (!RP) return '';
-        var pct = Math.round(RP.i / (RP.rows.length - 1) * 100);
         function sp(k) {
-            return '<span class="' + (RP.speed === k ? 'on' : '') + '" role="button" tabindex="0" ' +
-                'onclick="pftScRpSpeed(' + k + ')">×' + k + '</span>';
+            return '<span class="' + (RP.speed === k ? 'on' : '') + '" data-sp="' + k + '" ' +
+                'role="button" tabindex="0" onclick="pftScRpSpeed(' + k + ')">×' + k + '</span>';
         }
-        // результат — онлайн, деньгами И процентом (владелец 2026-07-24)
         var pnlRub = rpEquity() - RP_START;
-        var pnl = pnlRub / RP_START * 100;
-        var sgn = pnlRub >= 0 ? '+' : '−';
-        return '<button type="button" class="rp-play" onclick="pftScRpPlay()" ' +
+        return '<button type="button" class="rp-play" id="btScnRpPlay" onclick="pftScRpPlay()" ' +
                 'aria-label="' + (RP.playing ? 'Пауза' : 'Дальше') + '">' + (RP.playing ? '❚❚' : '▶') + '</button>' +
-            '<span class="rp-sp">' + sp(1) + sp(5) + sp(20) + sp(50) + '</span>' +
-            '<span class="rp-tl"><i style="width:' + pct + '%"></i></span>' +
-            '<span class="rp-info">счёт <b>' + fmtRub(rpEquity()) + '</b>' +
-                '<u class="rp-res ' + (pnlRub >= 0 ? 'g' : 'r') + '">' + sgn + fmtRub(Math.abs(pnlRub)) +
-                ' · ' + sgn + Math.abs(pnl).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' %</u></span>' +
+            '<span class="rp-sp" id="btScnRpSp">' + sp(1) + sp(5) + sp(20) + sp(50) + '</span>' +
+            '<span class="rp-tl"><i id="btScnRpTl" style="width:' + rpPct() + '%"></i></span>' +
+            // счётчик сделок прямо на планке (владелец 2026-07-29)
+            '<span class="rp-info">сделок <b id="btScnRpN">' + RP.fills.length + '</b>' +
+                '<span class="rp-gap"></span>счёт <b id="btScnRpEq">' + fmtRub(rpEquity()) + '</b>' +
+                '<u class="rp-res ' + (pnlRub >= 0 ? 'g' : 'r') + '" id="btScnRpPnl">' + rpBarPnlTxt() + '</u></span>' +
+            (RP.done ? '<button type="button" class="rp-tot" onclick="pftScRpTotal()">итог недели</button>' : '') +
             '<span class="rp-dt">' + esc(RP.label) + '</span>' +
             '<button type="button" class="rp-exit" onclick="pftScRpExit()">выйти из реплея</button>';
     }
+    // результат — онлайн, деньгами И процентом (владелец 2026-07-24)
+    function rpBarPnlTxt() {
+        var pnlRub = rpEquity() - RP_START;
+        return rpRubTxt(pnlRub) + ' · ' + rpPctTxt(pnlRub / RP_START * 100);
+    }
+    // ПЛАНКА ПРАВИТСЯ ТОЧЕЧНО, а не innerHTML: пересборка каждый кадр убивала
+    // клики по паузе и скоростям на ×20/×50 (владелец 2026-07-29). Полная
+    // сборка — только когда меняется состав планки (появилась кнопка «итог»).
     function rpBarPatch() {
-        scnSet('btScnRp', rpBarHtml());
+        var bar = dq('btScnRp');
+        if (!bar) return;
+        var sig = RP ? (RP.done ? 'done' : 'run') : 'off';
+        if (bar.__rpSig !== sig) {
+            bar.__rpSig = sig;
+            bar.__btHtml = null;
+            bar.innerHTML = rpBarHtml();
+        }
+        if (!RP) return;
+        var pl = dq('btScnRpPlay');
+        if (pl) {
+            var g = RP.playing ? '❚❚' : '▶';
+            if (pl.textContent !== g) {
+                pl.textContent = g;
+                pl.setAttribute('aria-label', RP.playing ? 'Пауза' : 'Дальше');
+            }
+        }
+        var sp = dq('btScnRpSp');
+        if (sp) [].forEach.call(sp.children, function (el) {
+            el.classList.toggle('on', +el.getAttribute('data-sp') === RP.speed);
+        });
+        var tl = dq('btScnRpTl');
+        if (tl) tl.style.width = rpPct() + '%';
+        rpTxt('btScnRpN', String(RP.fills.length));
+        rpTxt('btScnRpEq', fmtRub(rpEquity()));
+        var pnlEl = dq('btScnRpPnl');
+        if (pnlEl) {
+            rpTxt('btScnRpPnl', rpBarPnlTxt());
+            var up = rpEquity() - RP_START >= 0;
+            pnlEl.classList.toggle('g', up);
+            pnlEl.classList.toggle('r', !up);
+        }
+    }
+    function rpTxt(id, v) {
+        var el = dq(id);
+        if (el && el.textContent !== v) el.textContent = v;
     }
 
     // ---- полоса избранного (раунд 3): рейка на F, бумаги на цифрах 1–9 ----
@@ -7308,6 +7555,14 @@
         // сегментом Рынок/Лимит справа, крупное значение (лимит редактируется
         // тем же #btScnLimIn), рыночная цена тихим призраком #btScnPxNow
         var s = S(n);
+        // в реплее лимиток нет (scnLimPx их гасит) — строка обязана это
+        // ГОВОРИТЬ: раньше она показывала старую лимитку из настоящего, пока
+        // сделка шла по цене плёнки (владелец 2026-07-29)
+        if (RP && s.uid === RP.uid) {
+            return '<div class="lab">Цена</div><div class="big"><span class="big-v">По цене плёнки</span>' +
+                '<span class="gh" id="btScnPxNow">' +
+                (rpPx() > 0 ? 'сейчас ' + fmtPx(rpPx(), s) + ' ₽' : '') + '</span></div>';
+        }
         var lim = s.kind === 'limit' && +s.price > 0;
         var last = sxPrice(s);
         var seg = '<span class="seg2">' +
@@ -7927,16 +8182,51 @@
     };
 
     // ---- точечные перерисовки сцены ----
+    // Клик — это mousedown И mouseup по ОДНОМУ узлу. Перерисовка innerHTML
+    // между ними клик съедает: узел под пальцем умирает, mouseup приходит в
+    // новый, события click не будет. На быстрых скоростях реплея сцена
+    // перерисовывалась каждые 32–80 мс, и кнопки «пауза», «×20» и «Купить»
+    // просто переставали нажиматься (владелец 2026-07-29). Пока палец нажат,
+    // перерисовку узла под ним откладываем до отпускания.
+    var scnHoldEl = null, scnHoldAt = 0, scnHoldQ = null;
+    function scnHoldFlush() {
+        scnHoldEl = null;
+        var q = scnHoldQ; scnHoldQ = null;
+        if (q) Object.keys(q).forEach(function (id) { scnSet(id, q[id]); });
+    }
+    document.addEventListener('pointerdown', function (e) {
+        scnHoldEl = (e.target && e.target.nodeType === 1) ? e.target : null;
+        scnHoldAt = Date.now();
+    }, true);
+    // отпускание — через таймаут: click рассылается ТЕМ ЖЕ тактом, что mouseup,
+    // и досрочная пересборка снова убила бы его
+    function scnHoldUp() { setTimeout(scnHoldFlush, 0); }
+    document.addEventListener('pointerup', scnHoldUp, true);
+    document.addEventListener('pointercancel', scnHoldUp, true);
     function scnSet(id, html) {
         var el = dq(id);
-        if (el && el.__btHtml !== html) { el.__btHtml = html; el.innerHTML = html; }
+        if (!el || el.__btHtml === html) return;
+        // страховка от залипшего hold (палец отпустили вне окна — pointerup не пришёл)
+        if (scnHoldEl && (!scnHoldEl.isConnected || Date.now() - scnHoldAt > 2000)) scnHoldEl = null;
+        if (scnHoldEl && el.contains(scnHoldEl)) {
+            if (!scnHoldQ) scnHoldQ = {};
+            scnHoldQ[id] = html;
+            return;
+        }
+        el.__btHtml = html; el.innerHTML = html;
     }
     // тик данных: цена, факты, график, тикет и чипы — точечно, поле ввода не трогаем
     function sxTick() {
         if (!sceneLive()) return;
         var n = sxSlot(), s = S(n);
-        // бумагу сцены сменили под живым реплеем — плёнка честно выключается
-        if (RP && s.uid !== RP.uid) rpHalt();
+        // бумагу сцены сменили под живым реплеем — плёнка честно выключается.
+        // ВМЕСТЕ СО СЦЕНОЙ: без пересборки на экране оставался хром реплея над
+        // мёртвым RP=null, и «Реплей» уже некуда было нажимать (владелец 2026-07-29)
+        if (RP && s.uid !== RP.uid) {
+            rpHalt();
+            if (PF.renderNoAnim) PF.renderNoAnim();
+            return;
+        }
         if (s.meta) {
             scnSet('btScnFresh', scnFreshInner());
             scnTicketBits();
@@ -7986,7 +8276,7 @@
         scnSet('btScnSlider', scnSliderInner(n)); // доля от свободного — за суммой
         scnSet('btScnSum', scnSumHtml(n));        // квитанция «Итог» (≈ акции + комиссия + средняя + останется)
         scnSet('btScnWarn', scnWarnHtml(n));
-        scnSet('btScnCta', scnCtaHtml(n));
+        scnCtaPatch(n);
         // поле краснеет вместе с недостачей (мокап 08, состояние «не хватает»)
         var fld = dq('btScnFld');
         if (fld) fld.classList.toggle('err', scnShortfall(n) > 0);
@@ -7994,7 +8284,7 @@
         var now = dq('btScnPxNow');
         if (now) {
             var s = S(n), last = sxPrice(s);
-            var lim = s.kind === 'limit' && +s.price > 0;
+            var lim = !(RP && s.uid === RP.uid) && s.kind === 'limit' && +s.price > 0;
             var t = last > 0 ? 'сейчас ' + fmtPx(last, s) + (lim ? '' : ' ₽') : '';
             if (now.textContent !== t) now.textContent = t;
         }

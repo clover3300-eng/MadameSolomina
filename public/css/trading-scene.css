@@ -722,9 +722,15 @@
     padding: 4px 8px; cursor: pointer; user-select: none;
 }
 .bts .rp-sp span.on { background: color-mix(in srgb, var(--amb) 16%, transparent); color: var(--amb); }
-.bts .rp-tl { flex: 1; position: relative; height: 6px; border-radius: 99px; background: var(--hair); overflow: hidden; }
+.bts .rp-tl { flex: 1; min-width: 40px; position: relative; height: 6px; border-radius: 99px; background: var(--hair); overflow: hidden; }
 .bts .rp-tl i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; background: var(--amb); transition: width 0.2s linear; }
-.bts .rp-info { flex: none; display: inline-flex; align-items: center; gap: 8px; font: 400 11.5px var(--font-ui); color: var(--mut); white-space: nowrap; }
+.bts .rp-info { flex: none; display: inline-flex; align-items: center; gap: 6px; font: 400 11.5px var(--font-ui); color: var(--mut); white-space: nowrap; }
+.bts .rp-gap { width: 1px; height: 13px; background: var(--hair); margin: 0 4px; }
+.bts .rp-tot {
+    flex: none; border: 1px solid var(--amb); background: none; border-radius: 9px;
+    font: 700 10.5px var(--font-ui); color: var(--amb); cursor: pointer;
+    padding: 5px 10px; white-space: nowrap;
+}
 .bts .rp-info b { font: 600 12px var(--font-num); color: var(--ink); }
 .bts .rp-info u { text-decoration: none; font: 600 11px var(--font-num); }
 .bts .rp-info u.g { color: var(--grn); }
@@ -753,6 +759,30 @@
 .bts .rp-fill { stroke-width: 2.5; fill: var(--card); }
 .bts .rp-fill.g { stroke: var(--grn); }
 .bts .rp-fill.r { stroke: var(--red); }
+/* ценовая ось плёнки: сетка + подписи справа (владелец 2026-07-29 «нет цен») */
+.bts .rp-grid { stroke: var(--hair); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.bts .rp-axp {
+    position: absolute; right: 0; transform: translateY(-50%); z-index: 5;
+    font: 400 9.5px var(--font-num); color: var(--dim);
+    background: var(--card); padding: 0 4px; border-radius: 4px;
+}
+/* средняя открытой позиции — своей линией с подписью слева */
+.bts .rp-avgl {
+    position: absolute; left: 0; right: 0; height: 0; z-index: 5;
+    border-top: 1px dashed color-mix(in srgb, var(--acc) 55%, transparent);
+}
+.bts .rp-avgt {
+    position: absolute; left: 0; transform: translateY(-50%); z-index: 6;
+    font: 600 9.5px var(--font-num); color: var(--acc);
+    background: var(--card); padding: 1px 5px; border-radius: 5px;
+}
+/* ценники своих сделок на холсте */
+.bts .rp-ftag {
+    position: absolute; transform: translate(-50%, -170%); z-index: 6; white-space: nowrap;
+    font: 700 9.5px var(--font-num); color: var(--grn); padding: 1px 5px; border-radius: 5px;
+    background: color-mix(in srgb, var(--grn) 12%, var(--card));
+}
+.bts .rp-ftag.s { color: var(--red); background: color-mix(in srgb, var(--red) 12%, var(--card)); }
 /* квитанция сделки плёнки — крупная карточка над холстом (тост снизу
    владелец 2026-07-24 назвал невидимым) */
 .bts .rp-flash {
@@ -803,7 +833,36 @@
     font: 700 10.5px var(--font-num); color: var(--amb);
     background: color-mix(in srgb, var(--amb) 14%, transparent);
 }
-.bts .rp-row { display: flex; gap: 8px; justify-content: center; margin-top: 14px; }
+/* итог недели ДЕНЬГАМИ: крупный счёт + разбор сделок строками */
+.bts .rp-fin { width: 470px; text-align: left; }
+.bts .rp-fin h4 { text-align: center; }
+.bts .rp-big {
+    display: grid; grid-template-columns: 1fr auto; align-items: baseline;
+    gap: 2px 10px; margin: 14px 0 4px; padding-bottom: 12px; border-bottom: 1px solid var(--hair);
+}
+.bts .rp-big span { font: 400 12px var(--font-ui); color: var(--mut); }
+.bts .rp-big b { grid-row: 2; font: 700 26px var(--font-num); color: var(--ink); }
+.bts .rp-big u {
+    grid-row: 2; grid-column: 2; text-decoration: none; justify-self: end;
+    font: 700 12px var(--font-num); border-radius: 8px; padding: 4px 9px;
+}
+.bts .rp-big u.g { color: var(--grn); background: color-mix(in srgb, var(--grn) 12%, transparent); }
+.bts .rp-big u.r { color: var(--red); background: color-mix(in srgb, var(--red) 10%, transparent); }
+.bts .rp-big em { grid-row: 1; grid-column: 2; justify-self: end; font: 400 10.5px var(--font-num); font-style: normal; color: var(--dim); }
+.bts .rp-tbl { display: flex; flex-direction: column; margin: 4px 0 2px; }
+.bts .rp-tr {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+    padding: 7px 0; border-bottom: 1px solid var(--hair);
+}
+.bts .rp-tr:last-child { border-bottom: 0; }
+.bts .rp-tr > span { font: 400 12px var(--font-ui); color: var(--mut); }
+.bts .rp-tr em { display: block; font: 400 10.5px var(--font-ui); font-style: normal; color: var(--dim); margin-top: 1px; }
+.bts .rp-tr b { flex: none; font: 700 12.5px var(--font-num); color: var(--ink); }
+.bts .rp-tr b.g { color: var(--grn); }
+.bts .rp-tr b.r { color: var(--red); }
+.bts .rp-none > span { color: var(--dim); }
+.bts .rp-fin p { text-align: center; margin-top: 10px; }
+.bts .rp-row { display: flex; gap: 8px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
 .bts .ub { font: 700 11.5px var(--font-ui); border-radius: 10px; padding: 9px 14px; cursor: pointer; }
 .bts .ub.pri { background: var(--acc); color: #fff; border: 0; }
 .bts .ub.gh { border: 1px solid var(--line); background: none; color: var(--mut); }
