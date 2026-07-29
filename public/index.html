@@ -266,7 +266,7 @@
     <!-- Сайдбар «Подъём»: рейка 76px + колонка второго уровня (мокап В3-б).
          Идёт ПОСЛЕ site-layout.css — перебивает и его базовые правила рейки,
          и блок body.dark-mode (рейка светлая в обеих темах), но ДО mobile.css -->
-    <link rel="stylesheet" href="css/sidebar-rail.css?v=40">
+    <link rel="stylesheet" href="css/sidebar-rail.css?v=43">
     <!-- Мобильный слой (≤1023px) — всегда ПОСЛЕДНИЙ, перебивает всё -->
     <link rel="stylesheet" href="css/mobile.css?v=28">
     
@@ -394,7 +394,30 @@
              js/sidebar-ctx.js из PF.sbCapModel(). Пока «Портфели» не загружены
              лениво (#pfLazySrc), источника нет — узел остаётся пустым и не
              занимает места (#sbCap:empty). Числа не выдумываем. -->
-        <div id="sbCap" aria-live="polite"></div>
+        <!-- КОМАНДНАЯ СТРОКА. Верх колонки занимал слот на шесть виджетов —
+             плитка дашборда, пересаженная в навигацию. Снят целиком: наверху
+             сайдбара имеют право стоять навигация, вход или события, а витрина
+             данных дублировала страницу (капитал стоял ещё и в KPI-карточке, и
+             в «Сводных показателях»). Место отдано ВХОДУ.
+             Своей реализации поиска здесь нет: это ВТОРОЕ поле той же палитры
+             (js/top-search.js) — oninput/onkeydown зовут её обработчики, а
+             результаты рисуются в общий #searchResults. Раньше это же поле жило
+             в подвале и раскрывалось лупой поверх аватара; лупа снята, поле
+             стоит открытым — самая частая вещь в терминале больше не спрятана
+             в дальнем углу. В рейке 84px поля нет, там его заменяет кнопка. -->
+        <div id="sbCmd">
+            <button type="button" id="sbCmdBtn" onclick="sbSearchToggle(event)" title="Поиск" aria-label="Поиск">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </button>
+            <div id="sbSearchField">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="sbSearchInput" placeholder="Бумага, портфель, действие…"
+                       autocomplete="off" aria-label="Поиск по бумагам"
+                       onfocus="sbSearchOpen()"
+                       oninput="handleTopSearchInput(event)" onkeydown="handleTopSearchKeydown(event)">
+                <span id="sbCmdKey" aria-hidden="true">⌘K</span>
+            </div>
+        </div>
         <div id="sbNav">
             <!-- Пункты — настоящие ссылки: Cmd/Ctrl/средний клик открывает раздел в новой
                  вкладке браузера (SPA-фолбэк вернёт index.html, route-hash восстановит),
@@ -475,25 +498,17 @@
             </div>
             <!-- ЛИЧНОЕ: аватар кабинета и звоночек ПЕРЕЕЗЖАЮТ сюда из шапки сайта
                  физически (sbPersonalSync в js/sidebar.js) — на «Главной» шапка
-                 остаётся и они возвращаются в неё. Поиск — лупа справа: по клику
-                 поле раскрывается ПОВЕРХ аватара и звоночка, не двигая их. -->
+                 остаётся и они возвращаются в неё. Лупы здесь БОЛЬШЕ НЕТ: поиск
+                 переехал наверх колонки открытым полем (#sbCmd), и второй вход в
+                 ту же палитру был бы дублем. -->
             <div id="sbPersonal">
                 <div id="sbPersonalSlot"></div>
-                <div id="sbSearchField">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    <input type="text" id="sbSearchInput" placeholder="Тикер, название или ISIN"
-                           autocomplete="off" tabindex="-1" aria-label="Поиск по бумагам"
-                           oninput="handleTopSearchInput(event)" onkeydown="handleTopSearchKeydown(event)">
-                </div>
-                <!-- «Настройки» раздела: шестерёнка рядом с лупой (было широкой
+                <!-- «Настройки» раздела: шестерёнка у правого края (было широкой
                      строкой в верхнем ряду подвала). data-act/data-key и видимость
                      ставит footSync в js/sidebar-ctx.js — у разных разделов свои
                      настройки, а у большинства их нет вовсе. -->
                 <button type="button" id="sbSettingsBtn" hidden title="Настройки" aria-label="Настройки">
                     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg>
-                </button>
-                <button type="button" id="sbSearchBtn" onclick="sbSearchToggle(event)" title="Поиск" aria-label="Поиск" aria-expanded="false">
-                    <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 </button>
             </div>
         </div>
@@ -2761,10 +2776,10 @@
 <script src="js/calc-r6.js?v=11" defer></script>
 <script src="js/calc-r7.js?v=1" defer></script>
 <script src="js/dashboard.js?v=6" defer></script>
-<script src="js/sidebar.js?v=20" defer></script>
+<script src="js/sidebar.js?v=21" defer></script>
 <!-- Колонка второго уровня: строго ПОСЛЕ sidebar.js (пользуется sbNavSub и
      дёргается из его sbSyncActive) -->
-<script src="js/sidebar-ctx.js?v=29" defer></script>
+<script src="js/sidebar-ctx.js?v=30" defer></script>
 <script src="js/stock-terminal.js?v=13" defer></script>
 <script src="js/bond-terminal.js?v=10" defer></script>
 <script src="js/table-tooltip.js?v=1" defer></script>
@@ -2795,7 +2810,7 @@
 <script src="js/notifications.js?v=4" defer></script>
 <script src="js/tab-gates.js?v=6" defer></script>
 <script src="js/sums-privacy.js?v=4" defer></script>
-<script src="js/cloud-sync.js?v=14" defer></script>
+<script src="js/cloud-sync.js?v=15" defer></script>
 <script src="js/admin.js?v=14" defer></script>
 <script src="js/route-hash.js?v=5" defer></script>
 </body>

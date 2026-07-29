@@ -41,10 +41,12 @@
    (см. css/mobile.css, он идёт последним в каскаде).
    ===================================================================== */
 
-/* Блок капитала, колонка второго уровня и подвал рейки существуют в разметке
+/* Командная строка, колонка второго уровня и подвал рейки существуют в разметке
    всегда, но на мобиле их нет: шторка видит прежнюю плоскую структуру —
-   #sbRail отдаёт своих детей родителю через display:contents */
-#sbCap, #sbCtx, #sbRailFoot { display: none; }
+   #sbRail отдаёт своих детей родителю через display:contents.
+   ЛОВУШКА ПРОЕКТА: это базовое правило гасит узел НАСМЕРТЬ — внутри десктопной
+   медиа мало задать позицию, надо вернуть и display (#sbCmd делает это сам). */
+#sbCmd, #sbCtx, #sbRailFoot { display: none; }
 #sbRail { display: contents; }
 /* свёртка — понятие только десктопное: в мобильной шторке колонка не сужается,
    а закрывается крестиком #sbCloseBtn */
@@ -231,527 +233,77 @@
     #sbHead .sb-logo-mark:active { transform: translateY(0); }
     #sbHead .sb-logo-mark:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 2px; }
 
-    /* ---------- ТАБЛО: капитал, день, доли (мокап Б+1) ----------
-       Наполняет js/sidebar-ctx.js из PF.sbCapModel(). Пока «Портфели» не
-       загружены лениво (#pfLazySrc), источника нет — узел пуст и не
-       занимает места: :empty гасит его целиком. Ничего не выдумываем.
-       Табло — кнопка: клик ведёт на «Обзор», где капитал разобран по полочкам. */
-    #sbCap {
-        display: block;
+    /* ---------- КОМАНДНАЯ СТРОКА (#sbCmd) ----------
+       На этом месте были табло капитала и слот на шесть виджетов — снято
+       целиком: витрина данных наверху навигации дублировала страницу и говорила
+       чужим языком. Теперь здесь ВХОД: то же поле палитры (js/top-search.js),
+       что раньше пряталось лупой в подвале, стоит открытым.
+       Поле — не карточка: заливка --sbr-page та же, что у пилюли выбора, но
+       здесь она означает «сюда можно писать», а не «вы здесь», и спорить ей не
+       с кем: пилюль в этом месте колонки нет. */
+    #sbCmd {
+        display: block;            /* базовое правило выше гасит узел на мобиле */
+        position: relative;
         flex: 0 0 auto;
-        /* 22px сверху вместо 15: четыре блока колонки перестают склеиваться в
-           один, и делает это воздух, а не новая линия.
-           По бокам 8px, а не 18: плашки в покое нет, и левый край держит уже
-           не она, а внутренний паддинг карточки (8 + 10 = те же 18, что у марки,
-           разделов и подвала). Заливка по наведению при этом отбита от края
-           колонки ровно так же, как пилюли разделов и подвкладок. */
-        margin: 22px 8px 0;
+        margin: 20px 8px 0;
         font-family: var(--font-ui, 'Inter', sans-serif);
     }
-    #sbCap:empty { display: none; }
-
-    /* ============ СЛОТ ВИДЖЕТА КОЛОНКИ (2026-07-29) ============
-       Верх колонки перестал принадлежать одному табло: тот же прямоугольник
-       занимает любой из шести виджетов (js/sidebar-ctx.js, SLOTS). Набор узкий
-       и сделан ПОД 252px — виджеты конструктора «Портфелей» рассчитаны на 4–12
-       колонок сетки и здесь читались бы обрубками.
-       Смена — ховер-хром блока (кнопка «⋯» в правом верхнем углу, язык
-       PFD_OWN_CHROME конструктора), список раскрывается тут же под кнопкой.
-       Кнопка лежит СНАРУЖИ тела виджета: тело чаще всего само <button>. */
-    .sbw { position: relative; }
-    .sbw-pick {
-        position: absolute;
-        top: 6px; right: 6px;
-        width: 22px; height: 22px;
-        display: grid;
-        place-items: center;
-        padding: 0;
-        border: 0;
-        border-radius: 7px;
-        background: transparent;
-        color: var(--sbr-dim);
-        cursor: pointer;
-        opacity: 0;
-        transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
-    }
-    .sbw-pick svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; }
-    /* хром появляется по наведению на блок — и ВСЕГДА виден с клавиатуры */
-    .sbw:hover .sbw-pick,
-    .sbw-pick:focus,
-    .sbw-pick:focus-visible,
-    .sbw-pick[aria-expanded="true"] { opacity: 1; }
-    .sbw-pick:hover { background: var(--sbr-card); color: var(--sbr-ink); }
-    .sbw-pick:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 1px; }
-
-    /* список выбора: раскрывается под блоком, ширина колонки — наружу не лезет
-       (у #sbPanel overflow:hidden, всплывающее меню было бы срезано) */
-    .sbw-pop {
-        position: absolute;
-        z-index: 12;
-        top: calc(100% + 6px); left: 0; right: 0;
-        padding: 6px;
-        border: 1px solid var(--sbr-line);
-        border-radius: 13px;
-        background: var(--sbr-card);
-        box-shadow: 0 18px 38px -22px rgba(16, 24, 40, 0.55);
-    }
-    body.dark-mode .sbw-pop { box-shadow: 0 18px 38px -20px rgba(0, 0, 0, 0.7); }
-    .sbw-pop-h {
-        padding: 5px 8px 6px;
-        font-size: 8.5px;
-        font-weight: 800;
-        letter-spacing: 0.11em;
-        text-transform: uppercase;
-        color: var(--sbr-dim);
-    }
-    .sbw-opt {
+    /* кнопка живёт только в рейке 84px — там полю негде развернуться */
+    #sbCmdBtn { display: none; }
+    #sbSearchField {
         display: flex;
         align-items: center;
-        gap: 8px;
-        width: 100%;
-        padding: 7px 8px;
-        border: 0;
-        border-radius: 9px;
-        background: transparent;
-        font: inherit;
-        text-align: left;
-        cursor: pointer;
-    }
-    .sbw-opt:hover { background: var(--sbr-page); }
-    .sbw-opt:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: -2px; }
-    .sbw-opt.on { background: var(--sbr-page); }
-    .sbw-opt-tx { flex: 1 1 auto; min-width: 0; }
-    .sbw-opt-tx b { display: block; font-size: 12.5px; font-weight: 600; color: var(--sbr-ink); }
-    .sbw-opt-tx i {
-        display: block;
-        margin-top: 1px;
-        font-style: normal;
-        font-size: 10.5px;
-        line-height: 1.3;
-        color: var(--sbr-dim);
-    }
-    .sbw-opt-on { flex: none; color: var(--sbr-sel); display: grid; place-items: center; }
-    .sbw-opt-on svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2.4; }
-
-    /* ---- общее тело виджета: тот же прямоугольник, что у табло ---- */
-    .sbw-card {
-        display: block;
-        /* border-box ОБЯЗАТЕЛЕН: у <div> (виджеты «Ставки» и «Заметка» — не
-           кнопки) width:100% + паддинги 14px давали 254px в колонке 226 —
-           карточка вылезала за правый край и обрезалась панелью. У <button>
-           этого не было видно: у кнопок border-box стоит по умолчанию. */
+        gap: 9px;
         box-sizing: border-box;
         width: 100%;
-        margin: 0;
-        /* 14px по бокам: у карточки есть видимый край, и текст внутри отсчитывается
-           от него, а не от общей сетки колонки — крупное число перестаёт
-           упираться в кромку панели */
-        padding: 12px 14px 11px;
-        border: 0;
-        border-radius: 14px;
-        /* ПЛАШКА ВПОЛСИЛЫ. Совсем без неё крупное число упиралось в край
-           колонки и висело в воздухе — блоку нужен дом. Но и полный --sbr-page
-           брать нельзя: это тон ВЫБОРА, им залиты активный раздел и активная
-           подвкладка. Берём его половину — виджет читается контейнером, выбор
-           остаётся сильнее его вдвое. */
-        background: color-mix(in srgb, var(--sbr-page) 62%, var(--sbr-card));
-        font: inherit;
-        text-align: left;
-        transition: background 0.15s ease;
-    }
-    .sbw-go { position: relative; cursor: pointer; transition: background 0.15s ease; }
-    .sbw:hover .sbw-card { background: var(--sbr-page); }
-    /* Признак «вся карточка нажимается» — на строке заголовка, у правого края.
-       Внизу он стоять не может: правый нижний угол занимает ПОСЛЕДНЯЯ строка
-       данных, и шеврон ложился поверх неё («+0,26%» у BTC, «купон» у выплаты,
-       «За месяц 3 380 ₽» у календаря) — читалось это как обрезанный край.
-       С кнопкой смены виджета шеврон не спорит, а МЕНЯЕТСЯ: в покое видно, куда
-       ведёт карточка, под курсором — чем её заменить. Двух иконок в одном углу
-       не бывает. */
-    .sbw-goic {
-        position: absolute;
-        right: 13px; top: 13px;
-        width: 11px; height: 11px;
+        height: 38px;
+        padding: 0 12px;
+        border-radius: 11px;
+        background: var(--sbr-page);
         color: var(--sbr-dim);
-        transition: opacity 0.15s ease;
+        transition: box-shadow 0.15s ease, background 0.15s ease;
     }
-    .sbw:hover .sbw-goic { opacity: 0; }
-    .sbw-goic svg {
-        display: block;
-        width: 100%; height: 100%;
+    #sbCmd:hover #sbSearchField { background: color-mix(in srgb, var(--sbr-sel) 6%, var(--sbr-page)); }
+    /* палитра развёрнута — поле держит фокусную рамку, пока она открыта */
+    #sbCmd.on #sbSearchField {
+        background: var(--sbr-card);
+        box-shadow: inset 0 0 0 1.5px var(--sbr-sel);
+    }
+    #sbSearchField > svg {
+        flex: none;
+        width: 15px; height: 15px;
         fill: none; stroke: currentColor; stroke-width: 2;
         stroke-linecap: round; stroke-linejoin: round;
     }
-    .sbw-go:hover .sbw-goic { color: var(--sbr-mut); }
-    .sbw-go:hover { background: color-mix(in srgb, var(--sbr-sel) 8%, var(--sbr-page)); }
-    .sbw-go:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 2px; }
-    /* справа на строке заголовка живут шеврон и кнопка смены — место под них
-       резервирует сам заголовок, поэтому длинное имя обрывается многоточием,
-       а не уезжает под иконку */
-    .sbw-h { display: flex; align-items: center; gap: 8px; padding-right: 20px; }
-    .sbw-l {
+    #sbCmd.on #sbSearchField > svg { color: var(--sbr-sel); }
+    #sbSearchInput {
         flex: 1 1 auto;
         min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        font-size: 8.5px;
-        font-weight: 800;
-        letter-spacing: 0.11em;
-        text-transform: uppercase;
-        color: var(--sbr-dim);
-    }
-    .sbw-v { display: flex; align-items: baseline; justify-content: flex-end; gap: 8px; margin-top: 4px; }
-    .sbw-big {
-        font-family: var(--font-num, 'JetBrains Mono', monospace);
-        font-size: 19px;
-        font-weight: 700;
-        letter-spacing: -0.025em;
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        font-family: inherit;
+        font-size: 12.5px;
+        font-weight: 500;
         color: var(--sbr-ink);
+        outline: none;
     }
-    .sbw-n { font-family: var(--font-num, 'JetBrains Mono', monospace); font-weight: 700; color: var(--sbr-mut); }
-    .sbw-say {
-        margin-top: 6px;
-        text-align: right;
+    #sbSearchInput::placeholder { color: var(--sbr-dim); }
+    /* Подсказка горячей клавиши. Пропадает, как только в поле пишут: сообщать
+       «нажми ⌘K» тому, кто уже внутри поля, незачем. */
+    #sbCmdKey {
+        flex: none;
+        padding: 2px 6px;
+        border-radius: 6px;
+        background: var(--sbr-card);
+        box-shadow: 0 0 0 1px var(--sbr-line);
         font-family: var(--font-num, 'JetBrains Mono', monospace);
-        font-size: 10.5px;
-        font-weight: 600;
+        font-size: 9.5px;
+        font-weight: 700;
         color: var(--sbr-mut);
     }
-    .sbw-say.warn { color: #C2760A; }
-    body.dark-mode .sbw-say.warn { color: #E0A33E; }
-    .sbw-say.mut { color: var(--sbr-dim); font-weight: 500; }
-    .sbw-mut {
-        padding: 12px 14px;
-        border-radius: 14px;
-        background: var(--sbr-page);
-        font-size: 11.5px;
-        line-height: 1.4;
-        color: var(--sbr-dim);
-    }
-    .sbw-row { display: flex; align-items: baseline; gap: 8px; margin-top: 7px; }
-    .sbw-tk {
-        flex: 1 1 auto;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--sbr-ink);
-    }
-    .sbw-kind { flex: none; font-size: 10px; color: var(--sbr-dim); }
-
-    /* ---- «Доли и дрейф»: полоса классов с насечкой цели ----
-       Она была в табло и снята в пользу линии дня (2026-07-28). Здесь это
-       отдельный виджет — выбор пользователя, а не возврат снятого решения.
-       Цвета классов те же, что на «Расчёте»: оранжевый — акции, синий — облигации. */
-    .sbw-bar {
-        position: relative;
-        display: flex;
-        margin-top: 10px;
-        height: 5px;
-        border-radius: 3px;
-        background: var(--sbr-line);
-        overflow: hidden;
-    }
-    .sbw-bar i { display: block; height: 100%; }
-    .sbw-bar i.st { background: #C9683F; }
-    .sbw-bar i.bd { flex: 1 1 auto; background: #5F7FA8; }
-    .sbw-tick {
-        position: absolute;
-        top: -2px; bottom: -2px;
-        width: 1.5px;
-        border-radius: 1px;
-        background: var(--sbr-ink);
-    }
-    .sbw-lg {
-        display: flex;
-        justify-content: space-between;
-        gap: 8px;
-        margin-top: 6px;
-        font-size: 9.5px;
-        color: var(--sbr-dim);
-    }
-
-    /* ---- «Календарь выплат · месяц»: сетка 7×N в ширину колонки ----
-       Клетка ~26px: в неё влезает только число, поэтому сумма дня живёт в
-       подсказке, а сумма месяца — строкой под сеткой. */
-    .sbw-cal-dow,
-    .sbw-cal {
-        display: grid;
-        grid-template-columns: repeat(7, minmax(0, 1fr));
-        gap: 2px;
-    }
-    .sbw-cal-dow { margin-top: 8px; }
-    .sbw-cal-dow i {
-        font-style: normal;
-        font-size: 8.5px;
-        font-weight: 700;
-        text-align: center;
-        color: var(--sbr-dim);
-    }
-    .sbw-cal { margin-top: 3px; }
-    .sbw-cal i {
-        display: grid;
-        place-items: center;
-        height: 20px;
-        border-radius: 6px;
-        font-family: var(--font-num, 'JetBrains Mono', monospace);
-        font-style: normal;
-        font-size: 9.5px;
-        font-weight: 600;
-        color: var(--sbr-dim);
-    }
-    .sbw-cal i.off { visibility: hidden; }
-    /* день с выплатой — заливка тем же зелёным, что и активный раздел */
-    .sbw-cal i.pay {
-        background: var(--sbr-sel);
-        color: var(--sbr-sel-ic);
-        font-weight: 700;
-    }
-    /* сегодня — обводка, а не заливка: иначе спорило бы с днём выплаты */
-    .sbw-cal i.now { box-shadow: inset 0 0 0 1.5px var(--sbr-dim); color: var(--sbr-ink); }
-    .sbw-cal i.pay.now { box-shadow: inset 0 0 0 1.5px var(--sbr-ink); }
-
-    /* ---- «Рынок сейчас» и «Ставки»: строка = подпись + значение ---- */
-    .sbw-irows { margin-top: 7px; display: flex; flex-direction: column; gap: 5px; }
-    .sbw-irow { display: flex; align-items: baseline; gap: 8px; }
-    .sbw-it { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-        font-size: 11.5px; color: var(--sbr-mut); }
-    .sbw-iv { flex: none; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12px;
-        font-weight: 700; color: var(--sbr-ink); }
-    .sbw-ic { flex: none; min-width: 42px; text-align: right;
-        font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 10px; font-weight: 700; color: #16A34A; }
-    .sbw-ic.neg { color: #DC2626; }
-    body.dark-mode .sbw-ic { color: #34D399; }
-    body.dark-mode .sbw-ic.neg { color: #F87171; }
-
-    /* ---- «Заметка»: единственный виджет, в который пишут ---- */
-    .sbw-notecard { padding-bottom: 10px; }
-    .sbw-note {
-        display: block;
-        width: 100%;
-        margin-top: 7px;
-        padding: 0;
-        border: 0;
-        background: transparent;
-        resize: none;
-        font-family: var(--font-ui, 'Inter', sans-serif);
-        font-size: 12.5px;
-        line-height: 1.45;
-        color: var(--sbr-ink);
-    }
-    .sbw-note::placeholder { color: var(--sbr-dim); }
-    .sbw-note:focus { outline: none; }
-    .sbw-notecard:focus-within { box-shadow: inset 0 0 0 2px var(--sbr-sel); border-radius: 14px; }
-
-    .sbcap-btn {
-        display: block;
-        box-sizing: border-box;
-        width: 100%;
-        margin: 0;
-        padding: 12px 14px 11px;
-        border: 0;
-        border-radius: 14px;
-        /* плашка вполсилы — см. .sbw-card выше */
-        background: color-mix(in srgb, var(--sbr-page) 62%, var(--sbr-card));
-        font: inherit;
-        text-align: left;
-        cursor: pointer;
-        -webkit-tap-highlight-color: transparent;
-        transition: background 0.15s ease;
-    }
-    .sbcap-btn:hover { background: color-mix(in srgb, var(--sbr-sel) 8%, var(--sbr-page)); }
-    .sbcap-btn:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 2px; }
-    .sbcap-top { display: flex; align-items: center; gap: 8px; }
-    .sbcap-l {
-        flex: 1 1 auto;
-        min-width: 0;
-        font-size: 8.5px;
-        font-weight: 800;
-        letter-spacing: 0.11em;
-        text-transform: uppercase;
-        color: var(--sbr-dim);
-    }
-    /* ЗНАЧЕНИЕ У ПРАВОГО КРАЯ. Подпись слева, число справа — так же, как в
-       «Ставках» и «Рынке сейчас», где значение всегда прижато к правому краю
-       карточки. Слева число висело в углу, а справа оставалась пустая половина
-       блока, которую нечем занять. Строка дня идёт за числом, чтобы правый край
-       у всего блока был один. */
-    .sbcap-v { display: flex; align-items: baseline; justify-content: flex-end; gap: 8px; margin-top: 4px; }
-    .sbcap-n {
-        font-family: var(--font-num, 'JetBrains Mono', monospace);
-        /* 24 вместо 20: капитал — главный объект блока, а при 20px короткое
-           число занимало треть карточки и висело в её левом верхнем углу.
-           Самое длинное реальное значение («19 476 834 ₽») просит 173px при
-           внутренней ширине карточки 244 — запас есть. */
-        font-size: 24px;
-        font-weight: 700;
-        letter-spacing: -0.025em;
-        color: var(--sbr-ink);
-    }
-    .sbcap-d {
-        font-family: var(--font-num, 'JetBrains Mono', monospace);
-        font-size: 11px;
-        font-weight: 700;
-        color: #16A34A;
-    }
-    .sbcap-d.neg { color: #DC2626; }
-    body.dark-mode .sbcap-d { color: #34D399; }
-    body.dark-mode .sbcap-d.neg { color: #F87171; }
-
-    /* Строка дня: рубли + спарклайн. Под «Скрывать суммы» рубли не размываются,
-       а уступают место процентам — размытая «•• ••• ₽ за сегодня» читалась бы
-       сломанной строкой, а не защищённой (мокап Б+2б). Обе редакции лежат в
-       разметке, выбирает CSS: JS о настройке приватности ничего не знает. */
-    .sbcap-day {
-        margin-top: 2px;
-        text-align: right;
-        font-family: var(--font-num, 'JetBrains Mono', monospace);
-        font-size: 10.5px;
-        font-weight: 600;
-        color: #16A34A;
-    }
-    .sbcap-day.neg { color: #DC2626; }
-    body.dark-mode .sbcap-day { color: #34D399; }
-    body.dark-mode .sbcap-day.neg { color: #F87171; }
-    /* Первый день: снимка нет — ни дня, ни спарклайна, ни прочерков. Одна
-       спокойная подпись вместо «0,0%», который читался бы данными. */
-    .sbcap-day.mut,
-    body.dark-mode .sbcap-day.mut {
-        font-family: var(--font-ui, 'Inter', sans-serif);
-        font-size: 10px;
-        font-weight: 500;
-        line-height: 1.3;
-        color: var(--sbr-dim);
-    }
-    .sbcap-pct { display: none; }
-    body.sums-hidden .sbcap-rub { display: none; }
-    body.sums-hidden .sbcap-pct { display: inline; }
-    /* ЛИНИЯ ДНЯ. Заняла место полосы классов с насечкой цели (2026-07-28) и
-       держит РОВНО её высоту: 10 отступа + 5 полосы + 6 + 13,3 строки легенды
-       (JetBrains 9,5px) = 34,3px — отсюда и дробная высота ряда. Табло не
-       поехало ни на пиксель, а колонка перестала быть вторым местом, где живут
-       доли акций и облигаций.
-       Цвет — знак дня, тот же зелёный/красный, что у процента и рублей.
-       Шеврон не кнопка: вся пилюля .sbcap-btn и так ведёт на «Обзор», он лишь
-       делает это видимым (мишень 11px в навигации была бы промахом). */
-    .sbcap-spk {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-top: 9px;
-        /* 24,3 держали ради полосы классов, которой давно нет; 19px хватает
-           форме дня и не даёт линии стать вторым по величине объектом блока */
-        height: 19px;
-    }
-    /* ЛИНИЯ ПРИГЛУШЕНА, А НЕ ОКРАШЕНА ЗНАКОМ. Раньше она повторяла зелёный или
-       красный дня — и вместе со строкой дня и чипом процента давала три цветных
-       пятна подряд в верхнем углу. Знак дня называет строка словами и цветом,
-       линия отвечает за форму: тон --sbr-dim, чтобы она читалась фоном числа,
-       а не третьим сообщением о том же. */
-    .sbcap-spark,
-    .sbcap-spark.neg,
-    .sbcap-spark.flat,
-    body.dark-mode .sbcap-spark,
-    body.dark-mode .sbcap-spark.neg,
-    body.dark-mode .sbcap-spark.flat { color: var(--sbr-dim); }
-    .sbcap-spark polyline {
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 1.6;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        vector-effect: non-scaling-stroke;
-    }
-    /* Шеврон стоит на строке заголовка справа — как .sbw-goic у остальных
-       шести виджетов слота. Внизу, в ряду линии, он оставлял пустым правый
-       верхний угол карточки. */
-    .sbcap-go {
-        flex: none;
-        margin-left: auto;
-        width: 11px; height: 11px;
-        color: var(--sbr-dim);
-    }
-    .sbcap-go svg {
-        display: block;
-        width: 100%; height: 100%;
-        fill: none; stroke: currentColor; stroke-width: 2;
-        stroke-linecap: round; stroke-linejoin: round;
-    }
-    .sbcap-btn:hover .sbcap-go { color: var(--sbr-mut); }
-
-    /* ---------- ВОЗРАСТ ЦЕН ----------
-       Метка появляется, только когда котировки перестали приходить (модель
-       отдаёт m.stale — см. PF.sbCapModel). Числа при этом ПРИГЛУШАЮТСЯ: они не
-       врут, но и выдавать себя за «сейчас» больше не вправе. Приглушение через
-       opacity, а не сменой цвета: зелёный/красный дня несут знак, и перекрасить
-       их в серый значило бы отнять смысл, а не свежесть. */
-    .sbcap-stale {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        margin-top: 8px;
-        padding-top: 7px;
-        border-top: 1px solid var(--sbr-line);
-        font-family: var(--font-ui, 'Inter', sans-serif);
-        font-size: 9.5px;
-        font-weight: 600;
-        line-height: 1.2;
-        color: var(--sbr-dim);
-    }
-    .sbcap-stale svg {
-        flex: none;
-        width: 11px; height: 11px;
-        fill: none; stroke: currentColor; stroke-width: 2;
-        stroke-linecap: round; stroke-linejoin: round;
-    }
-    .sbcap-btn.stale .sbcap-v,
-    .sbcap-btn.stale .sbcap-day,
-    .sbcap-btn.stale .sbcap-spk { opacity: 0.55; }
-
-    /* ---------- ПУСТОЕ ТАБЛО ----------
-       Та же пилюля того же тона: пустое состояние — это состояние колонки, а не
-       её отсутствие. Раньше здесь схлопывался #sbCap:empty, и между именем
-       продукта и сеткой разделов зияла дыра — у нового пользователя верх колонки
-       читался сломанным, а не пустым. */
-    .sbcap-empty {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 11px 12px;
-    }
-    .sbcap-plus {
-        flex: none;
-        display: grid;
-        place-items: center;
-        box-sizing: border-box;
-        width: 30px; height: 30px;
-        border: 1.5px dashed var(--sbr-line);
-        border-radius: 50%;
-        color: var(--sbr-dim);
-    }
-    .sbcap-plus svg {
-        width: 14px; height: 14px;
-        fill: none; stroke: currentColor; stroke-width: 2.2;
-        stroke-linecap: round; stroke-linejoin: round;
-    }
-    .sbcap-etx { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-    .sbcap-etx b {
-        font-family: var(--font-ui, 'Inter', sans-serif);
-        font-size: 12.5px;
-        font-weight: 700;
-        color: var(--sbr-ink);
-    }
-    .sbcap-etx i {
-        font-family: var(--font-ui, 'Inter', sans-serif);
-        font-size: 10px;
-        font-style: normal;
-        font-weight: 500;
-        color: var(--sbr-dim);
-    }
-    .sbcap-empty:hover .sbcap-plus { border-color: var(--sbr-sel); color: var(--sbr-sel); }
+    #sbCmd.on #sbCmdKey { display: none; }
 
     /* ---------- Разделы: СТРОКИ, а не сетка (раунд 6, редакции 4–5) ----------
        Сетку плиток брали в раунде 3 ради одного — семь разделов занимали
@@ -1256,7 +808,7 @@
         line-height: 1.32;
         color: var(--sbr-ink);
     }
-    /* вход в шторку — карточка в языке табло капитала (.sbcap-btn): тот же фон,
+    /* вход в шторку — карточка в прежнем языке табло капитала: тот же фон,
        тот же радиус. Тихую строку с шевроном можно было вовсе не заметить, а
        это единственный вход в академию, пока колонка развёрнута. */
     .sbc-acad {
@@ -1392,80 +944,13 @@
     #sbSettingsBtn:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 2px; }
     /* открытые «Настройки» помечаются так же, как активная подвкладка списка */
     #sbSettingsBtn.on { background: var(--sbr-page); color: var(--sbr-sel); }
-    /* лупа стоит последней; когда шестерёнка есть, отступ слева держит она */
-    #sbPersonal:has(#sbSettingsBtn:not([hidden])) #sbSearchBtn { margin-left: 0; }
-    #sbSearchBtn {
-        flex: none;
-        width: 30px; height: 30px;
-        display: grid;
-        place-items: center;
-        margin-left: auto;
-        padding: 0;
-        border: 0;
-        border-radius: 9px;
-        background: transparent;
-        color: var(--sbr-dim);
-        cursor: pointer;
-        transition: background 0.15s ease, color 0.15s ease;
-    }
-    #sbSearchBtn svg {
-        width: 16px; height: 16px;
-        fill: none; stroke: currentColor; stroke-width: 1.9;
-        stroke-linecap: round; stroke-linejoin: round;
-    }
-    #sbSearchBtn:hover { background: var(--sbr-page); color: var(--sbr-ink); }
-    #sbSearchBtn:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 2px; }
-    #sbPersonal.open #sbSearchBtn { background: var(--sbr-page); color: var(--sbr-ink); }
+    /* ЛУПЫ И РАСКРЫВАЮЩЕГОСЯ ПОЛЯ В ПОДВАЛЕ БОЛЬШЕ НЕТ. Поиск переехал наверх
+       колонки открытым полем (#sbCmd выше), и второй вход в ту же палитру был бы
+       дублем. Вместе с лупой ушла вся механика раскрытия clip-path'ом поверх
+       аватара и правила #sbPersonal.open. Шестерёнка «Настроек» осталась и
+       встала к правому краю сама — теперь ей никто не мешает.
+*/
 
-    /* Поле поиска: тонированная пилюля цвета страницы — тот же тон, которым в
-       колонке помечен выбор. Раскрывается справа налево, от лупы. */
-    #sbSearchField {
-        position: absolute;
-        left: 0; top: 50%;
-        transform: translateY(-50%);
-        right: 34px;
-        display: flex;
-        align-items: center;
-        gap: 7px;
-        height: 30px;
-        padding: 0 10px;
-        border-radius: 9px;
-        background: var(--sbr-page);
-        opacity: 0;
-        pointer-events: none;
-        clip-path: inset(0 0 0 100% round 9px);
-        transition: clip-path 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.16s ease;
-    }
-    #sbPersonal.open #sbSearchField {
-        opacity: 1;
-        pointer-events: auto;
-        clip-path: inset(0 0 0 0 round 9px);
-    }
-    #sbSearchField > svg {
-        flex: none;
-        width: 14px; height: 14px;
-        fill: none; stroke: currentColor; stroke-width: 2;
-        stroke-linecap: round; stroke-linejoin: round;
-        color: var(--sbr-dim);
-    }
-    #sbSearchInput {
-        flex: 1 1 auto;
-        min-width: 0;
-        border: 0;
-        outline: none;
-        background: transparent;
-        font-family: var(--font-ui, 'Inter', sans-serif);
-        font-size: 12px;
-        color: var(--sbr-ink);
-    }
-    #sbSearchInput::placeholder { color: var(--sbr-dim); }
-    /* аватар, звоночек и шестерёнка уступают место полю, но остаются на местах */
-    #sbPersonal.open #sbPersonalSlot,
-    #sbPersonal.open #sbSettingsBtn {
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.14s ease;
-    }
     .sbc-btn {
         width: 32px; height: 32px;
         flex: none;
@@ -1627,13 +1112,38 @@
         order: 1;
     }
     body.sb-rail #sbPersonalSlot { flex-direction: column; gap: 4px; flex: none; }
-    body.sb-rail #sbSearchBtn { margin-left: 0; width: 36px; height: 36px; }
+    /* В РЕЙКЕ 84px КОМАНДНАЯ СТРОКА СВОРАЧИВАЕТСЯ В КНОПКУ. Полю нужна ширина,
+       а рейка её как раз и не даёт: кнопка сперва разворачивает колонку и уже
+       в ней открывает палитру (sbSearchToggle в js/sidebar.js). */
+    body.sb-rail #sbCmd { margin: 12px 0 0; display: grid; place-items: center; }
     body.sb-rail #sbSearchField { display: none; }
+    body.sb-rail #sbCmdBtn {
+        display: grid;
+        place-items: center;
+        box-sizing: border-box;
+        width: 36px; height: 36px;
+        padding: 0;
+        border: 1.5px solid var(--sbr-line);
+        border-radius: 50%;
+        background: var(--sbr-card);
+        color: var(--sbr-dim);
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+    body.sb-rail #sbCmdBtn svg {
+        width: 17px; height: 17px;
+        fill: none; stroke: currentColor; stroke-width: 1.9;
+        stroke-linecap: round; stroke-linejoin: round;
+    }
+    body.sb-rail #sbCmdBtn:hover { border-color: var(--sbr-dim); background: var(--sbr-page); color: var(--sbr-ink); }
+    body.sb-rail #sbCmdBtn:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 2px; }
     body.sb-rail #sbPersonalSlot #topProfileBtn,
     body.sb-rail #sbPersonalSlot #nfBell { width: 36px; height: 36px; min-width: 36px; }
     /* На «Главной» шапка сайта жива и личное живёт в ней — ряд в подвале пуст,
        и лупа рядом с пустотой была бы вторым поиском на одном экране */
     body.tab-home #sbPersonal { display: none; }
+    /* На «Главной» поиск живёт в шапке сайта — второй в рейке был бы дублем */
+    body.tab-home #sbCmd { display: none; }
 
     /* «Главная» (экран «Добро пожаловать») — рейка остаётся компактной парящей
        карточкой по содержимому, ровно как была: сплошная полоса во весь экран
@@ -1675,16 +1185,10 @@
         background: linear-gradient(180deg, #232B3B 0%, #141A26 100%);
         color: #F1F6FB;
     }
-    /* зелёный/красный тёмной темы подняты под тёмное поле — на белом они блёклые */
-    body.dark-mode.tab-home .sbcap-d,
-    body.dark-mode.tab-home .sbcap-day,
-    body.dark-mode.tab-home .sbcap-spark,
+    /* зелёный/красный тёмной темы подняты под тёмное поле — на белом они блёклые.
+       Правила табло (.sbcap-*) ушли вместе с ним; остался знак дня у строк. */
     body.dark-mode.tab-home .sbc-chg { color: #16A34A; }
-    body.dark-mode.tab-home .sbcap-d.neg,
-    body.dark-mode.tab-home .sbcap-day.neg,
-    body.dark-mode.tab-home .sbcap-spark.neg,
     body.dark-mode.tab-home .sbc-chg.neg { color: #DC2626; }
-    body.dark-mode.tab-home .sbcap-day.mut { color: var(--sbr-dim); }
     body.dark-mode.tab-home #sbNav .sb-badge { background: #DC2626; color: #fff; }
 
     /* ---------- Марка на странице ровно ОДНА ----------
@@ -1722,20 +1226,24 @@
     /* ---------- Палитра поиска, открытая из подвала ----------
        Та же палитра (#searchPalette), но пришвартована к сайдбару и без своего
        поля ввода: печатают в поле подвала, иначе полей было бы два. */
+    /* Палитра швартуется К ПОЛЮ. Поле переехало из подвала наверх колонки, и
+       вместе с ним палитра — с нижнего края к верхнему: раскрываться внизу от
+       строки, стоящей вверху, значило бы уводить взгляд через весь экран.
+       72px сверху = 18 отступа + 38 поля + 16 зазора. */
     body.sbs-open #searchOverlay {
-        align-items: flex-end;
+        align-items: flex-start;
         justify-content: flex-start;
         padding: 0;
     }
     body.sbs-open #searchPalette {
         position: fixed;
         left: calc(var(--sb-w, 288px) + 14px);
-        bottom: 18px;
-        top: auto; right: auto;
+        top: 72px;
+        bottom: auto; right: auto;
         width: 420px;
         max-width: calc(100vw - var(--sb-w, 288px) - 28px);
         transform: none !important;
-        transform-origin: left bottom;
+        transform-origin: left top;
     }
     body.sbs-open #searchBox { display: none; }
 }

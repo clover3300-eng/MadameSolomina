@@ -177,20 +177,21 @@
     }
     window.sbPersonalSync = sbPersonalSync;
 
-    // ---- поиск в подвале: лупа раскрывается полем ПОВЕРХ аватара и звоночка ----
+    // ---- КОМАНДНАЯ СТРОКА НАВЕРХУ КОЛОНКИ (#sbCmd) ----
     // Поле — не своя реализация поиска, а второй вход в ту же палитру
     // (js/top-search.js): oninput/onkeydown зовут её же обработчики, а результаты
     // рисуются в общий #searchResults. Признак body.sbs-open переставляет палитру
     // к сайдбару и прячет её собственное поле — иначе полей было бы два.
+    // ЧТО ИЗМЕНИЛОСЬ ПРОТИВ ПОДВАЛА: поле больше не раскрывается лупой поверх
+    // аватара, а стоит открытым наверху колонки — на месте снятого слота
+    // виджетов. Поэтому «открыто/закрыто» теперь означает не поле, а ПАЛИТРУ:
+    // класс .on висит на #sbCmd только пока она развёрнута.
     function sbSearchSet(on) {
-        var row = document.getElementById('sbPersonal');
-        var btn = document.getElementById('sbSearchBtn');
+        var row = document.getElementById('sbCmd');
         var inp = document.getElementById('sbSearchInput');
         var overlay = document.getElementById('searchOverlay');
         if (!row || !inp) return;
-        row.classList.toggle('open', !!on);
-        if (btn) btn.setAttribute('aria-expanded', on ? 'true' : 'false');
-        inp.tabIndex = on ? 0 : -1;
+        row.classList.toggle('on', !!on);
         document.body.classList.toggle('sbs-open', !!on);
         if (on) {
             if (overlay) overlay.classList.add('open');
@@ -198,15 +199,25 @@
             try { inp.focus(); } catch (e) {}
         } else {
             inp.value = '';
+            try { inp.blur(); } catch (e) {}
             if (window.closeTopSearch) window.closeTopSearch();
         }
     }
+    // Фокус в поле = запрос палитры. Поле стоит открытым всегда, и без этого
+    // пользователь набирал бы текст в никуда: обработчики ввода палитру сами
+    // не разворачивают.
+    window.sbSearchOpen = function () {
+        var row = document.getElementById('sbCmd');
+        if (row && row.classList.contains('on')) return;
+        sbSearchSet(true);
+    };
     window.sbSearchToggle = function (e) {
         if (e) { e.preventDefault(); e.stopPropagation(); }
-        var row = document.getElementById('sbPersonal');
-        var open = !(row && row.classList.contains('open'));
-        // в рейке 84px полю негде развернуться — сперва разворачиваем колонку,
-        // потом открываем поиск: клик по лупе всё равно приводит к поиску
+        var row = document.getElementById('sbCmd');
+        var open = !(row && row.classList.contains('on'));
+        // в рейке 84px поля нет вовсе — там на его месте кнопка-лупа. Сперва
+        // разворачиваем колонку, потом открываем палитру: клик по лупе всё
+        // равно должен приводить к поиску, а не только к ширине.
         if (open && document.body.classList.contains('sb-rail') && document.body.classList.contains('sb-collapsed')) {
             window.toggleSidebarCollapse();
             setTimeout(function () { sbSearchSet(true); }, 270);   // после перехода ширины
@@ -216,21 +227,19 @@
     };
     window.sbSearchClose = function () { sbSearchSet(false); };
     // Палитра закрывается своими путями (Esc, клик по подложке, выбор бумаги) —
-    // подвал обязан свернуться следом, иначе поле осталось бы раскрытым поверх
-    // аватара уже без палитры.
+    // поле обязано погаснуть следом, иначе в колонке остался бы набранный текст
+    // и активная рамка уже без результатов.
     (function () {
         var prev = window.closeTopSearch;
         if (typeof prev !== 'function') return;
         window.closeTopSearch = function () {
             var r = prev.apply(this, arguments);
-            var row = document.getElementById('sbPersonal');
-            if (row && row.classList.contains('open')) {
-                row.classList.remove('open');
+            var row = document.getElementById('sbCmd');
+            if (row && row.classList.contains('on')) {
+                row.classList.remove('on');
                 document.body.classList.remove('sbs-open');
                 var inp = document.getElementById('sbSearchInput');
-                if (inp) { inp.value = ''; inp.tabIndex = -1; }
-                var btn = document.getElementById('sbSearchBtn');
-                if (btn) btn.setAttribute('aria-expanded', 'false');
+                if (inp) { inp.value = ''; try { inp.blur(); } catch (e) {} }
             }
             return r;
         };
