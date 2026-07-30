@@ -122,6 +122,10 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
        font-size:13px;font-weight:600;color:var(--ink)}
 .sb-it svg{color:var(--mut)}
 .sb-it:hover{background:var(--bg)}
+.sb-it.on{background:var(--bg)}
+.sb-it.on svg{color:var(--ink)}
+.sb-it.more{color:var(--dim);font-size:12px}
+.sb-n{margin-left:auto;font-family:var(--fN);font-size:10.5px;font-weight:600;color:var(--dim);font-variant-numeric:tabular-nums}
 .sb-hr{height:1px;background:var(--hair);margin:9px 6px}
 .sb-sub{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;
         font-size:12.5px;font-weight:600;color:var(--mut)}
@@ -389,10 +393,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <!-- ================= 02 вариант А ================= -->
   <div class="mk">
     <div class="mk-h"><span class="mk-n">02</span><h2>Вариант А «Штаб» — герой-строка и строгие ряды</h2><span class="mk-tag">рекомендую</span></div>
-    <p class="mk-sub">Экран целиком, с раскрытым сайдбаром (раунд 6 «Верстак»): слева колонка 288px с командной строкой,
-       разделами-строками, вторым уровнем «Портфелей» и списком открытых портфелей. KPI-плитки и тёмная карточка сливаются
-       с «Графиком капитала» в один герой: сумма (один раз), дельта дня, тихие метрики, график и лидерборд — в одной строке.
-       Ниже — ряды с общей нижней гранью; между зонами воздух 28px, внутри зоны 16px. Пустое «Избранное» сложено в строку.</p>
+    <p class="mk-sub">Экран целиком, с раскрытым сайдбаром в актуальном виде (раунд «Плоскость», 2026-07-30): плоский первый
+       уровень — Обзор · Мои портфели · Ребаланс · Торговля рядом с Рынком, Расчётом и Академией, редкие разделы в «Ещё»;
+       ниже «Открытые портфели» с суммами. KPI-плитки и тёмная карточка сливаются с «Графиком капитала» в один герой:
+       сумма (один раз), дельта дня, тихие метрики, график и лидерборд — в одной строке. Ниже — ряды с общей нижней гранью;
+       между зонами воздух 28px, внутри зоны 16px. Пустое «Избранное» сложено в строку.</p>
     <div class="scroller"><div class="scr withsb"><div id="m1"></div></div></div>
     <div class="notes">
       <div class="note"><i>1</i><span>Каждая метрика живёт в одном месте: сумма и дельта — только в герое, аллокация — только в «Распределении», лидерборд — только в правой панели героя.</span></div>
@@ -503,6 +508,9 @@ const SPARK_D='M0,12 C20,14 36,10 58,14 C80,18 96,26 118,24 C140,22 156,30 180,2
 /* ---------------- сайдбар (раунд 6 «Верстак») ---------------- */
 const I={
   market:'<svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+  ports:'<svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg>',
+  rebal:'<svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M5 7h14"/><path d="M8 7l-4 7h8z"/><path d="M16 7l-4 7h8z"/></svg>',
+  chev:'<svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>',
   calc:'<svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>',
   acad:'<svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
   test:'<svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg>',
@@ -523,19 +531,20 @@ function sb(pfs){
       <span class="sb-name">Madame <b>Solomi'na</b><small>Terminal</small></span>
       <span class="sb-fold">${I.fold}</span></div>
     <div class="sb-cmd">${I.search}<span>Бумага, портфель, действие</span><kbd>⌘K</kbd></div>
+    <div class="sb-it on">${I.grid}Обзор</div>
+    <div class="sb-it">${I.ports}Мои портфели<span class="sb-n">${pfs.length}</span></div>
+    <div class="sb-it">${I.rebal}Ребаланс</div>
+    <div class="sb-it">${I.trade}Торговля</div>
     <div class="sb-it">${I.market}Рынок</div>
     <div class="sb-it">${I.calc}Расчёт</div>
     <div class="sb-it">${I.acad}Академия</div>
-    <div class="sb-it">${I.test}Тест</div>
+    <div class="sb-it more">${I.chev}Ещё 4 раздела</div>
     <div class="sb-hr"></div>
-    <div class="sb-sub on">${I.grid}Обзор</div>
-    <div class="sb-sub">${I.swap}Ребаланс</div>
-    <div class="sb-sub">${I.trade}Торговля</div>
     <div class="sb-grp">Открытые портфели</div>
     ${pfs.map(p=>`<div class="sb-pf"><i style="background:${p[0]}"></i><span class="tx">${p[1]}</span><b>${p[2]}</b></div>`).join('')}
     <div class="sb-sub ghost">${I.plus}Новый портфель</div>
     <div class="sb-foot"><span class="sb-ico">${I.ava}</span><span class="sb-ico">${I.bell}</span>
-      <span class="sp"></span><span class="sb-ico">${I.gear}</span><span class="sb-ico">${I.search}</span></div>
+      <span class="sp"></span><span class="sb-ico">${I.gear}</span></div>
   </div>`;
 }
 function frame(pgHtml, pfs){ return `<div class="frame">${sb(pfs)}<div class="pgpad">${pgHtml}</div></div>`; }
