@@ -59,6 +59,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .spec-cap{margin-top:12px;font-size:12px;line-height:1.5;color:var(--doc-mut)}
 .spec-cap b{color:var(--doc-ink);font-weight:700}
 .spec-cap > b:first-child{display:block;font-size:13px;margin-bottom:3px}
+/* акцент ВНУТРИ фразы: <b> первым элементом попал бы под правило заголовка выше */
+.spec-cap em.hl{font-style:normal;font-weight:700;color:var(--doc-ink)}
 .spec-cap .plus{color:#16a34a;font-weight:700}
 .spec-cap .minus{color:#c2760a;font-weight:700}
 .spec-cap p+p{margin-top:7px}
@@ -118,16 +120,19 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
    background:color-mix(in srgb,var(--pfa) 11%,transparent);border-radius:9px;padding:6px 11px 5px;
    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .scr.dark .px-name{color:color-mix(in srgb,var(--pfa) 60%,#f7fbff);background:color-mix(in srgb,var(--pfa) 22%,transparent)}
-/* НОВОЕ: имя забирает всю свободную ширину и сжимается последним */
-.px-name.grow{flex:1 1 auto;min-width:110px}
-.px-bk{flex:none;display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%;padding:3px 9px;
+/* НОВОЕ: имя сжимается ПОСЛЕДНИМ — всё остальное flex:none, ниже 110px не уходит */
+.px-name.grow{flex:0 1 auto;min-width:110px}
+.px-bk{flex:0 1 auto;display:inline-flex;align-items:center;gap:5px;min-width:0;max-width:100%;padding:3px 9px;
    border:1px solid rgba(43,57,74,.14);border-radius:999px;background:rgba(43,57,74,.04);
    font-family:var(--fU);font-size:10.5px;font-weight:600;color:#5f6b7a;white-space:nowrap}
 .scr.dark .px-bk{border-color:rgba(255,255,255,.13);background:rgba(255,255,255,.05);color:#a9b7c8}
 .px-bk svg{width:12px;height:12px;flex:none}
+/* как .pfbk-t в проде: текст бейджа сжимается многоточием, поэтому шапка не рвёт карточку */
+.px-bk .t{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .px-bk i.sand{font-style:normal;font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--amb)}
-.px-bk.mini{padding:3px 6px;gap:4px}
-.px-bk.dotonly{padding:0;width:26px;height:26px;justify-content:center;border-radius:9px}
+.px-bk.mini{flex:none;padding:3px 6px;gap:4px}
+.px-bk.dotonly{flex:none;position:relative;padding:0;width:28px;height:28px;justify-content:center;border-radius:9px}
+.px-bk.dotonly .sdot{position:absolute;top:2px;right:2px}
 .px-bk .sdot{width:5px;height:5px;border-radius:50%;background:var(--amb);flex:none}
 .px-flag{flex:none;font-family:var(--fU);font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;
    padding:3px 7px;border-radius:6px;white-space:nowrap;background:rgba(15,23,42,.07);color:var(--mut)}
@@ -608,12 +613,11 @@ function top(o){
     if (!o.tight) r += '<span class="px-icons"><span class="px-ico">' + IC.copy + '</span><span class="px-ico">' + IC.eyeoff + '</span></span>';
     r += '<span class="px-icons"><span class="px-ico">' + IC.gear + '</span></span></div>';
   } else {
-    if (o.broker) r += '<span class="px-bk">' + IC.bank + 'Т-Инвестиции · 12:34' + (o.sand ? '<i class="sand">песочница</i>' : '') + '</span>';
+    if (o.broker) r += '<span class="px-bk" style="min-width:0">' + IC.bank + '<span class="t">Т-Инвестиции · 12:34</span>' + (o.sand ? '<i class="sand">песочница</i>' : '') + '</span>';
     (o.flags || []).forEach(function(f){ r += '<span class="px-flag">' + f + '</span>'; });
-    r += '<div class="px-top-r">';
-    if (!o.tight) r += '<span class="px-seg">' + ['30д', 'Год', 'Всё'].map(function(x){
-      return '<b' + (x === (o.on || 'Всё') ? ' class="on"' : '') + '>' + x + '</b>'; }).join('') + '</span>';
-    else r += '<span class="px-seg">' + ['30д', 'Год', 'Всё'].map(function(x){
+    // сегменты периода в проде остаются и в узкой карточке — уходят только
+    // служебные иконки (.pfc-act--sec). Рисуем ровно так же.
+    r += '<div class="px-top-r"><span class="px-seg">' + ['30д', 'Год', 'Всё'].map(function(x){
       return '<b' + (x === (o.on || 'Всё') ? ' class="on"' : '') + '>' + x + '</b>'; }).join('') + '</span>';
     r += '<span class="px-icons">' + (o.tight ? '' : '<span class="px-ico">' + IC.copy + '</span><span class="px-ico">' + IC.eyeoff + '</span>') +
          '<span class="px-ico">' + IC.gear + '</span></span></div>';
@@ -785,19 +789,19 @@ var PAYS_D = [{ i: 12 }, { i: 26 }, { i: 39 }];
 /* ============================ 00. S / M / L ============================ */
 document.getElementById('scr0').innerHTML =
   '<div class="row" style="align-items:flex-start">' +
-    '<div class="col">' + szb('S', 300, 'до KPI') +
-      card({ size: 's', per: 'today', hideEyebrow: true, uid: 's0', pays: PAYS_D, pay: 'short', open: true, openGhost: true }) +
+    '<div class="col">' + szb('S', 315, 'до KPI') +
+      card({ size: 's', per: 'today', hideEyebrow: true, uid: 's0', pays: PAYS_D, pay: 'short', open: true, openGhost: true, tight: true }) +
       '<div class="spec-cap" style="max-width:440px"><b>Что видно</b>' +
       '<p>Имя, сумма, одна пилюля, кривая и подпись под ней. Ни KPI, ни долей, ни позиций, ни подвала. Подпись графика — нижняя кромка карточки: без неё срез кривой выглядел бы обрывом.</p>' +
       '<p><span class="plus">+</span> Восемь портфелей влезают в экран.<br><span class="minus">—</span> Дневная дельта живёт только в пилюле: выбрали «за год» — «сегодня» до следующего клика не видно.</p></div>' +
     '</div>' +
-    '<div class="col">' + szb('M', 500, '+ KPI') +
-      card({ size: 'm', per: 'd30', uid: 'm0', pays: PAYS_D, pay: 'short' }) +
+    '<div class="col">' + szb('M', 495, '+ KPI') +
+      card({ size: 'm', per: 'd30', uid: 'm0', pays: PAYS_D, pay: 'short', open: true, openGhost: true, tight: true }) +
       '<div class="spec-cap" style="max-width:440px"><b>Что добавилось</b>' +
       '<p>Строка KPI и подпись «Стоимость портфеля» над суммой. Полоса распределения и цель — уже нет: по вашей формулировке M кончается на KPI.</p>' +
       '<p><span class="plus">+</span> «За день» вернулся отдельным числом — пилюля свободна под период.<br><span class="minus">—</span> Про структуру портфеля карточка молчит.</p></div>' +
     '</div>' +
-    '<div class="col">' + szb('L', 960, 'всё до «Ребаланса»') +
+    '<div class="col">' + szb('L', 1010, 'всё до «Ребаланса»') +
       card({ size: 'l', per: 'all', uid: 'l0', pays: PAYS_L, ext: true, bench: 'off' }) +
       '<div class="spec-cap" style="max-width:440px"><b>Полный набор</b>' +
       '<p>KPI, доли с целью, пять позиций и «пик» шестой, подвал с «Ребалансом». Ровно то, что в проде сейчас, — минус чип сравнения и столбик выплаты на полотне.</p>' +
@@ -828,16 +832,16 @@ document.getElementById('scr1').innerHTML =
   '</div>' +
   '<div class="hr"></div>' +
   '<div class="row wrap">' +
-    '<div class="col" style="width:440px">' +
+    '<div class="col" style="width:425px">' +
       '<div class="lbl new" style="display:inline-flex;align-items:center;gap:7px;font-family:var(--fN);font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--grn);margin-bottom:9px"><em style="width:7px;height:7px;border-radius:50%;background:currentColor"></em>П1 · пилюля с меню</div>' +
-      '<div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px 18px 150px;text-align:center;position:relative">' +
+      '<div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px 18px 236px;text-align:center;position:relative">' +
         '<span class="px-hero-k">Стоимость портфеля</span>' + valHtml(VALUE) + pill({ key: 'all', kind: 'menu', open: true }) +
       '</div>' +
       '<div class="spec-cap"><b>Клик открывает список периодов — сразу с цифрами</b>' +
       '<p>Пилюля показывает выбранный период, каретка обещает выбор. В открытом списке — все четыре значения одновременно: это уже маленький отчёт, а не переключатель. Выбор меняет и график.</p>' +
-      '<p><span class="plus">+</span> Видно, что вообще бывает, и все цифры разом.<br><span class="plus">+</span> Пилюли периода уходят из шапки — там освобождается ~120&nbsp;px под имя.<br><span class="minus">—</span> Ещё один поповер в карточке (третий, после ⚙ и меню состава).</p></div>' +
+      '<p><span class="plus">+</span> Видно, что вообще бывает, и все цифры разом.<br><span class="plus">+</span> Пилюли периода уходят из шапки — там освобождается 135&nbsp;px под имя.<br><span class="minus">—</span> Ещё один поповер в карточке (третий, после ⚙ и меню состава).</p></div>' +
     '</div>' +
-    '<div class="col" style="width:440px">' +
+    '<div class="col" style="width:425px">' +
       '<div class="lbl new" style="display:inline-flex;align-items:center;gap:7px;font-family:var(--fN);font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--doc-mut);margin-bottom:9px"><em style="width:7px;height:7px;border-radius:50%;background:currentColor"></em>П2 · пилюля-циклер</div>' +
       '<div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px 18px 24px;text-align:center">' +
         '<span class="px-hero-k">Стоимость портфеля</span>' + valHtml(VALUE) + pill({ key: 'd30', kind: 'cyc' }) +
@@ -851,7 +855,7 @@ document.getElementById('scr1').innerHTML =
       '<p>Ровно тот же идиом, что у чипа сравнения сегодня: клик — следующий режим. Ни поповеров, ни каретки; период просто написан словом внутри пилюли.</p>' +
       '<p><span class="plus">+</span> Дешевле всех: ни разметки меню, ни закрытия по клику мимо.<br><span class="minus">—</span> Непознаваемо: пользователь видит одно значение и не знает, что кликом получит ещё три.<br><span class="minus">—</span> Чтобы вернуться к «сегодня», иногда надо кликнуть трижды.</p></div>' +
     '</div>' +
-    '<div class="col" style="width:440px">' +
+    '<div class="col" style="width:425px">' +
       '<div class="lbl new" style="display:inline-flex;align-items:center;gap:7px;font-family:var(--fN);font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--doc-mut);margin-bottom:9px"><em style="width:7px;height:7px;border-radius:50%;background:currentColor"></em>П3 · сегменты остаются наверху</div>' +
       '<div style="background:var(--card);border:1px solid var(--line);border-radius:16px;padding:0 0 24px">' +
         top({ mode: 'now', flags: [], on: 'Год' }) +
@@ -902,7 +906,7 @@ document.getElementById('scr2').innerHTML =
   '</div>' +
   '<div class="hr"></div>' +
   '<div class="row wrap">' +
-    '<div class="col" style="width:440px">' +
+    '<div class="col" style="width:425px">' +
       '<div class="hcase">Г1 · сравнение включено</div>' +
       '<div style="background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;padding-bottom:14px">' +
         '<div class="px-spark" style="height:150px;margin:0">' +
@@ -911,7 +915,7 @@ document.getElementById('scr2').innerHTML =
       '</div>' +
       '<div class="spec-cap"><p>Включённая половина строки становится <b>легендой пунктира</b>: образец линии, имя бенчмарка и его процент за то же окно. Ровно то, что чип делает сейчас, — но без рамки и не на кривой.</p></div>' +
     '</div>' +
-    '<div class="col" style="width:440px">' +
+    '<div class="col" style="width:425px">' +
       '<div class="hcase">Г2 · всё в ховер</div>' +
       '<div style="background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;padding-bottom:14px">' +
         '<div class="px-spark" style="height:150px;margin:0">' +
@@ -922,7 +926,7 @@ document.getElementById('scr2').innerHTML =
       '<div class="spec-cap"><p>На полотне только кривая. Сравнение уезжает иконкой <b>⇄</b> в шапку рядом с ⚙, выплата — подсказкой полой точки.</p>' +
       '<p><span class="plus">+</span> Тише некуда.<br><span class="minus">—</span> Ближайшая выплата пропадает из виду совсем, а это то, ради чего в карточку заходят.<br><span class="minus">—</span> На тач-устройствах ховера нет.</p></div>' +
     '</div>' +
-    '<div class="col" style="width:440px">' +
+    '<div class="col" style="width:425px">' +
       '<div class="hcase">Г3 · однострочная метка у точки</div>' +
       '<div style="background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;padding-bottom:14px">' +
         '<div class="px-spark" style="height:150px;margin:0">' +
@@ -950,40 +954,41 @@ var HCASES = [
   { t: 'Брокерский счёт в песочнице',
     now: { broker: true, sand: true, flags: ['Только чтение'], tight: true, name: 'Портфель 4' },
     neu: { broker: true, sand: true, fico: ['lock'], tight: true, name: 'Портфель 4' },
-    cap: 'Сейчас имени остаётся 84&nbsp;px — «ПОРТФ…». Бейдж схлопывается в банк-иконку с янтарной точкой песочницы, «Только чтение» — в замок; полный текст обоих живёт в подсказке.' },
+    cap: 'Сейчас имя сжато до 29&nbsp;px — поля пилюли и одна буква; бейдж брокера тоже обрезан многоточием (37&nbsp;px из 150). В предложении бейдж — банк-иконка 28&nbsp;px с янтарной точкой песочницы, «Только чтение» — замок, полный текст обоих в подсказке. Имени доступно <em class="hl">250&nbsp;px</em>, оно занимает свои 110 и не обрезается.' },
   { t: 'Длинное имя',
     now: { flags: [], tight: true, name: 'Пенсионный консервативный' },
     neu: { fico: [], tight: true, name: 'Пенсионный консервативный' },
-    cap: 'Без бейджей разница тише, но она есть: сегменты периода забирают 118&nbsp;px, и имя обрывается на «Пенсионный конс…». Без них помещается целиком.' },
+    cap: 'Бейджей нет, и вся разница — в сегментах периода: они забирают 135&nbsp;px, имени остаётся 179 и оно обрывается на «Пенсионный конс…». Без сегментов доступно <em class="hl">314&nbsp;px</em>, и имя укладывается в свои 229 целиком.' },
   { t: 'Скрытый портфель, режим «Скрывать суммы»',
     now: { flags: ['Скрыт', 'Суммы скрыты'], tight: true, name: 'Портфель 4' },
     neu: { fico: ['hid', 'eyeoff'], tight: true, name: 'Портфель 4' },
-    cap: 'Два текстовых флага — 168&nbsp;px, больше, чем само имя. В виде иконок — 56&nbsp;px. Текст не потерян: он в подсказке, а в размере L — ещё и плашкой над списком.' },
+    cap: 'Два текстовых флага съедают всё: имени остаётся 12&nbsp;px — видны только поля пилюли, ни одной буквы. Иконками те же два состояния занимают 56&nbsp;px, и имени достаётся <em class="hl">254&nbsp;px</em>. Текст не потерян — он в подсказке, а в размере L ещё и плашкой над списком.' },
   { t: 'Всё сразу: брокер, песочница, скрыт, суммы скрыты',
     now: { broker: true, sand: true, flags: ['Только чтение', 'Скрыт', 'Суммы скрыты'], tight: true, name: 'Портфель 4' },
     neu: { broker: true, sand: true, fico: ['lock', 'hid', 'eyeoff'], tight: true, name: 'Портфель 4' },
-    cap: 'Худший случай. Сейчас имя вытеснено полностью — видно «П…». В предложении оно занимает всё, что осталось от 380&nbsp;px после иконок: 150&nbsp;px, шестнадцать знаков.' }
+    cap: 'Худший случай: содержимое шапки на <em class="hl">128&nbsp;px шире карточки</em>. В конструкторе блок это обрежет (<code>.pfd-hset .pfd-body{overflow:hidden}</code>), а на классическом «Обзоре» обрезать нечем — у <code>.pf-card</code> нет <code>overflow</code>, и ⚙ уезжает за скруглённый угол. В предложении шапка укладывается, имени доступно <em class="hl">190&nbsp;px</em>.' }
 ];
 document.getElementById('scr3').innerHTML =
-  '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:26px 30px">' +
+  '<div style="display:grid;grid-template-columns:1fr;gap:26px">' +
   HCASES.map(function(c, i){
     return '<div><div class="hcase">' + (i + 1) + ' · ' + c.t + '</div>' +
-      '<div class="ba" style="gap:14px">' +
+      '<div style="display:flex;gap:24px;align-items:flex-start">' +
         '<div><div class="lbl now" style="font-size:9.5px"><em></em>сейчас</div>' +
           '<div class="hdrbox px w380" style="width:380px;box-shadow:none">' + top(Object.assign({ mode: 'now' }, c.now)) + '<div class="ghost"></div></div></div>' +
         '<div><div class="lbl new" style="font-size:9.5px"><em></em>предложение</div>' +
           '<div class="hdrbox px w380" style="width:380px;box-shadow:none">' + top(Object.assign({ mode: 'new' }, c.neu)) + '<div class="ghost"></div></div></div>' +
-      '</div>' +
-      '<div class="spec-cap">' + c.cap + '</div></div>';
+        '<div class="spec-cap" style="margin-top:26px;flex:1;min-width:0;max-width:520px">' + c.cap + '</div>' +
+      '</div></div>';
   }).join('') + '</div>';
 
 notes('notes3', [
-  '<b>Одно правило раскладки:</b> имя — <code>flex:1 1 auto; min-width:110px</code>, всё остальное — <code>flex:none</code>. Сейчас имя <code>flex:0 1 auto</code> и уступает место кому угодно.',
+  '<b>Одно правило раскладки:</b> имя — <code>min-width:110px</code>, всё остальное — <code>flex:none</code>. Сейчас сжиматься умеют и имя, и бейдж, а флаги и сегменты — нет, поэтому первыми в ноль уходят как раз те двое, которые и надо было беречь.',
   '<b>Бейдж брокера — три ступени:</b> полный «Т-Инвестиции · 12:34 песочница ↻» → «12:34 ●» → одна банк-иконка. Ступень выбирает <code>@container pfcard</code>, подсказка одна и та же на всех.',
   '<b>Песочница становится точкой.</b> Янтарная точка на бейдже — тот же сигнал, что и слово, но 5&nbsp;px вместо 74. В размере L слово можно оставить.',
   '<b>Флаги — иконки с подсказкой:</b> замок (только чтение), кольцо (скрыт), перечёркнутый глаз (суммы скрыты). Текст никуда не делся — он в <code>title</code> и в плашках над списком.',
-  '<b>Сегменты периода уходят вовсе</b> (см. П1) — это самая большая экономия: 118&nbsp;px в узком блоке.',
-  '<b>Кнопка ↻ у брокерского бейджа</b> в схлопнутом виде уезжает в ⚙-меню карточки: обновление вручную нужно редко, а место занимает всегда.'
+  '<b>Сегменты периода уходят вовсе</b> (см. П1) — это самая большая экономия: 135&nbsp;px в узком блоке, больше половины того, что нужно имени.',
+  '<b>Кнопка ↻ у брокерского бейджа</b> в схлопнутом виде уезжает в ⚙-меню карточки: обновление вручную нужно редко, а место занимает всегда.',
+  '<b>Побочная находка (случай 4):</b> у <code>.pf-card</code> и <code>.dash2-card</code> нет <code>overflow:hidden</code>. В конструкторе спасает <code>.pfd-hset .pfd-body</code>, а на классическом «Обзоре» переполненная шапка выносит ⚙ за скруглённый угол карточки. Порог по <code>min-width</code> это чинит заодно.'
 ]);
 
 /* ============================ 04. МЕХАНИКА ============================ */
@@ -996,11 +1001,11 @@ document.getElementById('scr4').innerHTML =
     '<div class="dblk" style="height:560px"><span class="dh">блок 2×3 · 540 px</span>' +
       card({ size: 'm', per: 'd30', uid: 'd2', pays: PAYS_D, pay: 'short', w: 420 }) +
       '<span class="dgrab"></span></div>' +
-    '<div class="dblk"><span class="dh">блок 2×5 · 960 px</span>' +
-      '<div style="height:150px;overflow:hidden;border-radius:14px;position:relative">' +
+    '<div class="dblk" style="height:560px"><span class="dh">блок 2×5 · 960 px · обрезан на макете</span>' +
+      '<div style="height:498px;overflow:hidden;border-radius:14px;position:relative">' +
       card({ size: 'l', per: 'all', uid: 'd3', pays: PAYS_L, w: 420 }) +
-      '<span style="position:absolute;left:0;right:0;bottom:0;height:60px;background:linear-gradient(transparent,var(--bg))"></span></div>' +
-      '<div style="text-align:center;font-family:var(--fN);font-size:10.5px;color:var(--dim);padding:10px 0 4px">…и дальше как сейчас: доли, пять позиций, «Ребаланс»</div>' +
+      '<span style="position:absolute;left:0;right:0;bottom:0;height:74px;background:linear-gradient(transparent,var(--bg))"></span>' +
+      '<span style="position:absolute;left:0;right:0;bottom:6px;text-align:center;font-family:var(--fN);font-size:10.5px;color:var(--dim)">…дальше доли, пять позиций, «Ребаланс»</span></div>' +
       '<span class="dgrab"></span></div>' +
   '</div>' +
   '<div class="hr"></div>' +
@@ -1034,19 +1039,20 @@ document.getElementById('scr5').innerHTML =
     '<div>' + card({ size: 's', w: 380, per: 'today', hideEyebrow: true, uid: 'k1', pal: PAL_D, pays: PAYS_D, pay: 'short', tight: true, open: true, openGhost: true }) + '</div>' +
     '<div>' + card({ size: 'm', w: 380, per: 'd30', uid: 'k2', pal: PAL_D, pays: PAYS_D, pay: 'short', tight: true, broker: true, sand: true, fico: ['lock'] }) + '</div>' +
     '<div>' + card({ size: 'l', w: 380, per: 'all', uid: 'k3', pal: PAL_D, pays: PAYS_D, pay: 'short', tight: true }) + '</div>' +
-    '<div style="width:330px" class="spec-cap"><b>Что проверено</b>' +
+    '<div style="width:400px" class="spec-cap"><b>Что проверено</b>' +
     '<p>В 380&nbsp;px KPI складывается 2×2, из таблицы уходят «Средняя» и «Доля», подвал становится столбиком — все пороги <code>@container pfcard</code> работают поверх размера, а не вместо него.</p>' +
     '<p>Подпись графика в узком виде сокращает выплату до «через 7 дн», сравнение остаётся словом. Пилюля мельчает до 13&nbsp;px.</p>' +
-    '<p>В M нарисован тяжёлый случай шапки: брокер + песочница + «только чтение». Имя целое.</p></div>' +
+    '<p>В M нарисован тяжёлый случай шапки: брокер + песочница + «только чтение». Имя целое.</p>' +
+    '<p>Узкая L выше широкой (1117 против 1012&nbsp;px) — столбик подвала и KPI 2×2 добавляют этажи. Это прежнее поведение прода, размер его не меняет.</p></div>' +
   '</div>' +
   '<div class="hr"></div>' +
   '<div class="cap">Краевые состояния<em>миллиард · приватность · прогрев · нет вчерашней цены</em></div>' +
   '<div class="row wrap" style="gap:20px">' +
-    '<div>' + card({ size: 'm', per: 'all', value: 1284903117, uid: 'e1', pal: PAL_D, pays: PAYS_D, pay: 'short' }) +
-      '<div class="spec-cap" style="max-width:440px"><b>Миллиард</b><p>Ступень <code>l13</code>: в M это 30&nbsp;px вместо 48. Пилюля не мельчает — она и так короткая.</p></div></div>' +
-    '<div>' + card({ size: 'm', per: 'all', priv: true, uid: 'e2', pal: PAL_D, pays: PAYS_D, pay: 'short', fico: ['eyeoff'] }) +
+    '<div>' + card({ size: 'm', w: 430, per: 'all', value: 1284903117, uid: 'e1', pal: PAL_D, pays: PAYS_D, pay: 'short' }) +
+      '<div class="spec-cap" style="max-width:430px"><b>Миллиард</b><p>Ступень <code>l13</code>: в M это 30&nbsp;px вместо 48. Пилюля не мельчает — она и так короткая.</p></div></div>' +
+    '<div>' + card({ size: 'm', w: 430, per: 'all', priv: true, uid: 'e2', pal: PAL_D, pays: PAYS_D, pay: 'short', fico: ['eyeoff'] }) +
       '<div class="spec-cap" style="max-width:440px"><b>«Скрывать суммы»</b><p>Маскируются сумма, ₽ в пилюле, «Вложено», «Доход», «За день» и ₽ выплаты в подписи графика. Проценты и цены Мосбиржи открыты.</p></div></div>' +
-    '<div>' + card({ size: 'm', warm: true, uid: 'e3', pal: PAL_D, pays: PAYS_D, pay: false }) +
+    '<div>' + card({ size: 'm', w: 430, warm: true, uid: 'e3', pal: PAL_D, pays: PAYS_D, pay: false }) +
       '<div class="spec-cap" style="max-width:440px"><b>Прогрев</b><p>Скелетон вместо суммы и одна плашка вместо пилюли — вместо двух, как сейчас. Подпись графика пустая: пока нет серии, нечего и сравнивать.</p></div></div>' +
   '</div>';
 
