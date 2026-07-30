@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Навигация: революция. Четыре решения</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+       --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+       --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding:44px 0 90px;-webkit-font-smoothing:antialiased}
+.page{width:1400px;max-width:100%;margin:0 auto;padding:0 20px}
+
+.doc-h{margin-bottom:34px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-acc);margin-bottom:9px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;text-wrap:balance;max-width:1020px}
+.doc-h p{margin-top:12px;font-size:15px;line-height:1.6;color:var(--doc-mut);max-width:920px}
+.verdict{margin-top:20px;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid var(--doc-acc);border-radius:14px;padding:16px 20px;max-width:1020px}
+.verdict p{margin:0;font-size:14.5px;line-height:1.6;color:var(--doc-quote)}
+.verdict p+p{margin-top:10px}
+.verdict b{font-weight:700;color:var(--doc-ink)}
+.verdict code{font-family:var(--fN);font-size:12px;color:var(--doc-acc)}
+
+.tree{margin-top:20px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:14px;padding:18px 22px;max-width:1020px}
+.tree h3{font-family:var(--fT);font-weight:400;font-size:19px;margin-bottom:12px}
+.tree .r{display:flex;align-items:center;gap:12px;padding:6px 0;font-size:13.5px;border-top:1px solid var(--doc-line)}
+.tree .r:first-of-type{border-top:0}
+.tree .r b{width:110px;flex:none;font-weight:700;color:var(--doc-ink)}
+.tree .bar{height:12px;border-radius:3px;background:var(--doc-acc);opacity:.75;flex:none}
+.tree .bar.zero{width:3px;background:var(--doc-dim);opacity:.5}
+.tree .r i{font-style:normal;color:var(--doc-mut);font-family:var(--fN);font-size:11.5px}
+.tree .r s{text-decoration:none;margin-left:auto;color:var(--doc-dim);font-size:12px}
+
+.mk{margin-top:52px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.ok{background:rgba(22,163,74,.15);color:#16a34a}
+.mk-tag.no{background:rgba(194,118,10,.16);color:#c2760a}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.6;max-width:1020px;margin-bottom:18px}
+.mk-sub b{color:var(--doc-ink);font-weight:700}
+.mk-sub code,.map code,.rec code,.spec-cap code{font-family:var(--fN);font-size:12px;color:var(--doc-acc)}
+.scroller{overflow-x:auto;padding:4px 0 10px}
+.strip{display:flex;gap:20px;align-items:flex-start;width:max-content}
+.spec-cap{margin-top:12px;font-size:12px;line-height:1.5;color:var(--doc-mut);max-width:290px}
+.spec-cap b{color:var(--doc-ink);font-weight:700}
+.spec-cap > b:first-child{display:block;font-size:13px;margin-bottom:3px}
+.spec-cap .plus{color:#16a34a;font-weight:700}
+.spec-cap .minus{color:#c2760a;font-weight:700}
+.spec-cap p+p{margin-top:7px}
+.badge{display:inline-block;font-family:var(--fN);font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;
+  background:color-mix(in srgb,var(--doc-mut) 13%,transparent);color:var(--doc-mut);margin-right:5px;margin-top:8px}
+.badge.g{background:rgba(22,163,74,.15);color:#16a34a}
+.badge.a{background:rgba(194,118,10,.15);color:#c2760a}
+
+.map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th,.map td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--doc-line);vertical-align:top}
+.map th{font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);background:color-mix(in srgb,var(--doc-line) 40%,transparent)}
+.map tr:last-child td{border-bottom:0}
+.map td b{font-weight:700;color:var(--doc-ink)}
+.map .n{font-family:var(--fN);font-size:11.5px;font-weight:700;color:var(--doc-dim)}
+.map .yes{color:#16a34a;font-weight:700}
+.map .no{color:#c2760a;font-weight:700}
+
+.rec{margin-top:22px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:14px;padding:18px 22px;max-width:1020px}
+.rec h3{font-family:var(--fT);font-weight:400;font-size:20px;margin-bottom:8px}
+.rec p{font-size:14px;line-height:1.65;color:var(--doc-quote)}
+.rec p+p{margin-top:9px}
+.rec b{font-weight:700;color:var(--doc-ink)}
+.rec ul{margin:9px 0 0 18px;font-size:14px;line-height:1.65;color:var(--doc-quote)}
+.rec li+li{margin-top:5px}
+
+/* ════════════════ КОЛОНКА ════════════════ */
+.col{
+  --ink:#101828; --mut:#64748b; --dim:#98a4b4;
+  --line:#e7ecf3; --bg:#f4f6fa; --card:#fff;
+  --grn:#16a34a; --red:#dc2626; --amb:#C2760A; --sbacc:#2F6B4F; --acc:#4453ef;
+  width:290px; background:var(--card); color:var(--ink);
+  border:1px solid var(--doc-line); border-radius:14px; overflow:hidden;
+  font-family:var(--fU); -webkit-font-smoothing:antialiased;
+  box-shadow:0 18px 44px -30px rgba(16,24,40,.5);
+}
+.col.narrow{width:230px}
+.col svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.col .num{font-family:var(--fN);font-variant-numeric:tabular-nums}
+
+.hd{padding:18px 18px 0;display:flex;align-items:center;gap:11px}
+.mark{flex:none;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;
+  background:linear-gradient(180deg,#232B3B 0%,#141A26 100%);color:#F1F6FB;font-family:var(--fT);font-size:15px}
+.bname{flex:1;font-family:var(--fT);font-size:16px;font-weight:400;line-height:1.15;white-space:nowrap}
+.bname span{color:var(--mut)}
+.bname b{font-weight:700}
+.hd .chev{width:30px;height:30px;flex:none;display:grid;place-items:center;border-radius:9px;color:var(--dim)}
+.hd .chev svg{width:16px;height:16px}
+
+.cmd{margin:20px 8px 0;height:38px;padding:0 12px;border-radius:11px;background:var(--bg);
+  display:flex;align-items:center;gap:9px;color:var(--dim);font-size:12.5px}
+.cmd svg{width:15px;height:15px;flex:none}
+.cmd .k{margin-left:auto;font-family:var(--fN);font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:6px;
+  background:var(--card);box-shadow:0 0 0 1px var(--line);color:var(--mut)}
+
+/* первый уровень — строки 44px */
+.nav{display:flex;flex-direction:column;gap:1px;padding:22px 8px 14px}
+.it{position:relative;display:flex;align-items:center;gap:12px;height:44px;padding:0 10px;border-radius:12px;
+  font-size:14.5px;font-weight:600;color:var(--mut)}
+.it i.ic{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:currentColor}
+.it i.ic svg{width:20px;height:20px}
+.it .tx{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.it.on{background:var(--bg);color:var(--ink);font-weight:700}
+.it.on i.ic{background:var(--sbacc);color:#fff}
+.it .n{font-family:var(--fN);font-size:10.5px;font-weight:600;color:var(--mut)}
+.it .bdg{position:absolute;left:31px;top:5px;min-width:15px;height:15px;padding:0 3px;border-radius:8px;
+  background:var(--amb);color:#fff;font-family:var(--fN);font-size:9px;font-weight:700;
+  display:grid;place-items:center;border:2px solid var(--card)}
+.it.mut{color:var(--dim);font-weight:600}
+.hr{height:1px;background:var(--line);margin:12px 18px}
+
+/* второй уровень (там, где он ещё есть) */
+.sub{padding:0 8px 12px}
+.sub .row{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px 0 22px;border-radius:9px;font-size:12.5px;font-weight:500;color:var(--mut)}
+.sub .row.on{background:var(--bg);color:var(--ink);font-weight:600}
+.sub .row svg{width:14px;height:14px;flex:none;opacity:.6}
+.sub .row.on svg{opacity:1;color:var(--sbacc)}
+.sub .row .tx{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sub .row .n{font-family:var(--fN);font-size:10.5px;font-weight:600;color:var(--mut)}
+.grp{display:flex;align-items:center;gap:9px;padding:16px 18px 6px;font-size:9px;font-weight:800;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+.dot{width:8px;height:8px;border-radius:50%;flex:none;margin:0 3.5px}
+
+/* «Память»: недавнее */
+.rec-row{display:flex;align-items:center;gap:10px;height:38px;padding:0 10px;border-radius:10px;font-size:13px;font-weight:500;color:var(--mut)}
+.rec-row i.k{flex:none;width:22px;height:22px;border-radius:7px;display:grid;place-items:center;background:var(--bg);color:var(--mut)}
+.rec-row i.k svg{width:12px;height:12px}
+.rec-row .tx{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rec-row .tx s{text-decoration:none;color:var(--dim);font-size:11px}
+.rec-row.on{background:var(--bg);color:var(--ink);font-weight:600}
+
+/* «Маршрут»: шаги */
+.step{position:relative;padding:0 8px}
+.step .s{display:flex;gap:12px;padding:9px 10px;border-radius:12px}
+.step .s .no{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
+  background:var(--bg);color:var(--mut);font-family:var(--fN);font-size:10px;font-weight:700;margin-top:2px}
+.step .s.on .no{background:var(--sbacc);color:#fff}
+.step .s .t{min-width:0;flex:1}
+.step .s .t b{display:block;font-size:13.5px;font-weight:700;color:var(--mut)}
+.step .s.on .t b{color:var(--ink)}
+.step .s .t u{display:block;text-decoration:none;margin-top:2px;font-size:11px;line-height:1.35;color:var(--dim)}
+.step .s .t em{font-style:normal;display:block;margin-top:5px;font-size:11.5px;color:var(--mut)}
+.step .line{position:absolute;left:29px;top:44px;bottom:44px;width:1.5px;background:var(--line)}
+.step .s .flag{flex:none;align-self:flex-start;margin-top:3px;font-family:var(--fN);font-size:9px;font-weight:700;
+  padding:2px 6px;border-radius:999px;background:rgba(194,118,10,.14);color:#B45309}
+
+.foot{display:flex;align-items:center;gap:4px;padding:12px 18px 16px;border-top:1px solid var(--line)}
+.foot .sp{flex:1}
+.foot .ava{width:30px;height:30px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--bg);color:var(--mut)}
+.foot .ava svg{width:15px;height:15px}
+.foot .btn{width:30px;height:30px;flex:none;display:grid;place-items:center;border-radius:9px;color:var(--dim)}
+.foot .btn svg{width:16px;height:16px}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="doc-h">
+  <div class="doc-kicker">Сайдбар · навигация · революция</div>
+  <h1>Дерево навигации кривое: один раздел из шести держит семь экранов, два — ни одного</h1>
+  <p>Оформление первого уровня мы довели: строки, ранг, приглушение, единый край. Но структура под ним осталась той, что сложилась по истории проекта, а не по работе пользователя. Революция — здесь, а не в кегле.</p>
+
+  <div class="tree">
+    <h3>Сколько экранов висит на каждом разделе — посчитано по коду</h3>
+    <div class="r"><b>Портфели</b><i class="bar" style="width:154px"></i><i>7</i><s>Обзор · Мои портфели · Ребаланс · Торговля · Аналитика · Отчёты · Операции<br>+ N открытых портфелей + третий уровень у «Торговли»</s></div>
+    <div class="r"><b>Расчёт</b><i class="bar" style="width:88px"></i><i>4</i><s>Рост капитала · Ежемесячный доход · Корзина ОФЗ · Тест риск-профиля</s></div>
+    <div class="r"><b>Рынок</b><i class="bar" style="width:22px"></i><i>1</i><s>Терминал</s></div>
+    <div class="r"><b>Академия</b><i class="bar zero"></i><i>0</i><s>один экран, второго уровня нет</s></div>
+    <div class="r"><b>Тест</b><i class="bar zero"></i><i>0</i><s>один экран, второго уровня нет</s></div>
+    <div class="r"><b>Админка</b><i class="bar zero"></i><i>0</i><s>один экран, только у админа</s></div>
+  </div>
+
+  <div class="verdict">
+    <p><b>Что это значит.</b> Двенадцать экранов продукта распределены по шести разделам так, что <b>больше половины сидит под одним пунктом</b>, а три пункта — это по одному экрану. Иерархия называется двухуровневой, но работает как одноуровневая с одной глубокой ямой: чтобы попасть в «Отчёты», нужно знать, что они внутри «Портфелей», хотя «Тест» — почему-то сам себе раздел. Это не логика задач, это порядок, в котором разделы появлялись.</p>
+    <p><b>Второе.</b> Разделы названы по <b>инструментам</b>: «Расчёт», «Тест», «Рынок». Пользователь приходит с задачами: сколько у меня, пора ли ребалансировать, что купить, что было в прошлом году. Совпадение случайное — и там, где оно есть («Ребаланс»), пункт лежит на втором уровне, а не на первом.</p>
+    <p><b>Третье, новое.</b> Наверху колонки теперь стоит <b>командная строка</b>. Полный список «всё, что есть в продукте» нужен, когда не знаешь, что искать; когда знаешь — быстрее ⌘K. Значит меню больше не обязано быть оглавлением и может стать чем-то полезнее.</p>
+    <p><b>Открытые портфели — это вкладки, а не разделы.</b> Они открываются, закрываются крестиком и живут в <code>pf_open_tabs_v1</code> — ведут себя как документы редактора, а нарисованы пунктами меню. Тот же жанровый сбой, что был у виджета наверху.</p>
+  </div>
+</div>
+
+<!-- ═══════════════════ ЧЕТЫРЕ РЕШЕНИЯ ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">1</span><h2>Четыре решения</h2></div>
+  <div class="mk-sub">Все нарисованы в настоящей ширине 288px, состояние — «Обзор» открыт. Маршрутизация во всех четырёх остаётся прежней (<code>route-hash.js</code>: раздел путём, подвкладка хэшем) — меняется навигация над ней, а не адреса.</div>
+  <div class="scroller"><div class="strip">
+
+    <!-- А. ПЛОСКОСТЬ -->
+    <div>
+      <div class="col">
+        <div class="hd"><div class="mark">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div><span class="chev"><svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg></span></div>
+        <div class="cmd"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg><span>Бумага, портфель, действие…</span><span class="k">⌘K</span></div>
+        <div class="nav">
+          <div class="it on"><i class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></i><span class="tx">Обзор</span></div>
+          <div class="it"><i class="ic"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg></i><span class="tx">Мои портфели</span><span class="n">6</span></div>
+          <div class="it"><i class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M5 7h14"/><path d="M8 7l-4 7h8z"/><path d="M16 7l-4 7h8z"/></svg><b class="bdg num">1</b></i><span class="tx">Ребаланс</span></div>
+          <div class="it"><i class="ic"><svg viewBox="0 0 24 24"><rect x="3.5" y="8" width="6" height="9" rx="1.5"/><path d="M6.5 4v4M6.5 17v3"/><rect x="14.5" y="5" width="6" height="10" rx="1.5"/><path d="M17.5 3v2M17.5 15v6"/></svg></i><span class="tx">Торговля</span><span class="n">2</span></div>
+          <div class="it"><i class="ic"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></i><span class="tx">Рынок</span></div>
+          <div class="it"><i class="ic"><svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></i><span class="tx">Расчёт</span></div>
+          <div class="it"><i class="ic"><svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg></i><span class="tx">Академия</span></div>
+          <div class="it mut"><i class="ic"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></i><span class="tx">Ещё 4 раздела</span></div>
+        </div>
+        <div class="grp"><span>Открытые портфели</span></div>
+        <div class="sub">
+          <div class="row"><i class="dot" style="background:#4453ef"></i><span class="tx">Основной</span><span class="n">51 424 ₽</span></div>
+          <div class="row"><i class="dot" style="background:#7c5cff"></i><span class="tx">Долгосрочный</span><span class="n">242 295 ₽</span></div>
+        </div>
+        <div class="foot">
+          <span class="ava"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
+          <span class="btn"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
+          <span class="sp"></span>
+          <span class="btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg></span>
+        </div>
+      </div>
+      <div class="spec-cap"><b>А · Плоскость</b>
+        <p><b>Второго уровня нет.</b> То, что сидело внутри «Портфелей», поднимается в первый: Обзор, Мои портфели, Ребаланс, Торговля стоят рядом с Рынком, Расчётом и Академией. Редкое («Аналитика», «Отчёты», «Операции», «Тест») уезжает в «Ещё» — механика уже написана и персистится. Открытые портфели остаются отдельной группой: они объекты, а не разделы.</p>
+        <p><span class="plus">За:</span> дерево выпрямляется — восемь равных пунктов вместо шести неравных с ямой. «Ребаланс» и «Торговля» выходят на первый экран, где им и место по частоте. Ни одного клика в глубину: любой экран продукта в один клик.</p>
+        <p><span class="minus">Против:</span> понятие «раздел» исчезает — крошка «Портфели · Обзор» станет просто «Обзор». Восемь строк + группа портфелей — это 470px, колонка становится длиннее.</p>
+        <span class="badge g">1 уровень</span><span class="badge">8 пунктов</span><span class="badge">адреса те же</span></div>
+    </div>
+
+    <!-- Б. ПАМЯТЬ -->
+    <div>
+      <div class="col">
+        <div class="hd"><div class="mark">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div><span class="chev"><svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg></span></div>
+        <div class="cmd"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg><span>Бумага, портфель, действие…</span><span class="k">⌘K</span></div>
+        <div class="grp" style="padding-top:20px"><span>Вы работали здесь</span></div>
+        <div class="sub" style="padding-bottom:6px">
+          <div class="rec-row on"><i class="k"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></i><span class="tx">Обзор</span></div>
+          <div class="rec-row"><i class="k"><svg viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M5 7h14"/><path d="M8 7l-4 7h8z"/><path d="M16 7l-4 7h8z"/></svg></i><span class="tx">Мастер ребаланса <s>· шаг 2 из 4</s></span></div>
+          <div class="rec-row"><i class="k"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M2 13h20"/></svg></i><span class="tx">Портфель «Основной»</span></div>
+          <div class="rec-row"><i class="k"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 10v10"/></svg></i><span class="tx">Терминал <s>· SBER</s></span></div>
+        </div>
+        <div class="hr"></div>
+        <div class="nav" style="padding-top:0">
+          <div class="it mut"><i class="ic"><svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></i><span class="tx">Все разделы</span><span class="n">12</span></div>
+        </div>
+        <div class="foot">
+          <span class="ava"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
+          <span class="btn"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
+          <span class="sp"></span>
+          <span class="btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg></span>
+        </div>
+      </div>
+      <div class="spec-cap"><b>Б · Память</b>
+        <p><b>Меню перестаёт быть оглавлением.</b> Наверху — четыре места, где вы работали, с состоянием: «Мастер ребаланса · шаг 2 из 4», «Терминал · SBER». Полный список свёрнут в одну строку «Все разделы 12» и раскрывается по клику. Оглавление нужно раз в неделю, а вернуться туда, где бросил, — каждый день.</p>
+        <p><span class="plus">За:</span> навигация начинает помнить работу, а не пересказывать структуру. Незаконченное («шаг 2 из 4») перестаёт теряться. Колонка короче любого варианта: 4 строки вместо 8+7.</p>
+        <p><span class="minus">Против:</span> список переставляется сам — позиция пункта перестаёт быть надёжной, мышечная память не работает. Нужен новый ключ истории переходов; сейчас пишется только последняя подвкладка.</p>
+        <span class="badge g">короче всех</span><span class="badge a">пункты двигаются</span><span class="badge a">нужен ключ истории</span></div>
+    </div>
+
+    <!-- В. ТОЛЬКО ПАЛИТРА -->
+    <div>
+      <div class="col narrow">
+        <div class="hd"><div class="mark">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div></div>
+        <div class="cmd"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg><span>Куда угодно…</span><span class="k">⌘K</span></div>
+        <div class="grp" style="padding-top:20px"><span>Открыто</span></div>
+        <div class="sub" style="padding-bottom:6px">
+          <div class="rec-row on"><i class="k"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></i><span class="tx">Обзор</span></div>
+          <div class="rec-row"><i class="k"><svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M2 13h20"/></svg></i><span class="tx">Основной</span></div>
+          <div class="rec-row"><i class="k"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 10v10"/></svg></i><span class="tx">Терминал</span></div>
+        </div>
+        <div class="foot">
+          <span class="ava"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
+          <span class="btn"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
+          <span class="sp"></span>
+          <span class="btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg></span>
+        </div>
+      </div>
+      <div class="spec-cap"><b>В · Только палитра</b>
+        <p><b>Меню нет вообще.</b> В колонке марка, ⌘K и то, что открыто. Разделы, подвкладки и действия — только через палитру, и она же умеет то, чего меню не умело никогда: «продать SBER», «ребаланс Основного», «отчёт за июль». Колонка сужается с 288 до 230px — странице достаётся 58px.</p>
+        <p><span class="plus">За:</span> самая честная реакция на то, что палитра уже есть. Ноль решений про порядок пунктов, глубину и группировку — их просто не существует.</p>
+        <p><span class="minus">Против:</span> продукт становится непознаваемым. Новичок не узнает, что в нём есть «Академия» и «Тест», пока не наберёт нужное слово. Требует, чтобы палитра умела разделы и действия, — сейчас она ищет только бумаги.</p>
+        <span class="badge g">колонка 230px</span><span class="badge a">продукт не виден</span><span class="badge a">палитру надо дописать</span></div>
+    </div>
+
+    <!-- Г. МАРШРУТ -->
+    <div>
+      <div class="col">
+        <div class="hd"><div class="mark">M</div><div class="bname"><span>Madame </span><b>Solomi'na</b></div><span class="chev"><svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg></span></div>
+        <div class="cmd"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg><span>Бумага, портфель, действие…</span><span class="k">⌘K</span></div>
+        <div class="step" style="margin-top:20px">
+          <div class="line"></div>
+          <div class="s on">
+            <span class="no num">1</span>
+            <span class="t"><b>Сколько у меня</b><u>Обзор · Мои портфели · Отчёты</u></span>
+          </div>
+          <div class="s">
+            <span class="no num">2</span>
+            <span class="t"><b>Что не так</b><u>Доли ушли на 4,1 п.п. · кэш 14%</u></span>
+            <span class="flag">1</span>
+          </div>
+          <div class="s">
+            <span class="no num">3</span>
+            <span class="t"><b>Что сделать</b><u>Ребаланс · Торговля · Рынок</u></span>
+          </div>
+          <div class="s">
+            <span class="no num">4</span>
+            <span class="t"><b>Проверить</b><u>Тест на истории · Академия</u></span>
+          </div>
+        </div>
+        <div class="grp"><span>Открытые портфели</span></div>
+        <div class="sub">
+          <div class="row"><i class="dot" style="background:#4453ef"></i><span class="tx">Основной</span><span class="n">51 424 ₽</span></div>
+          <div class="row"><i class="dot" style="background:#7c5cff"></i><span class="tx">Долгосрочный</span><span class="n">242 295 ₽</span></div>
+        </div>
+        <div class="foot">
+          <span class="ava"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.4"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
+          <span class="btn"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span>
+          <span class="sp"></span>
+          <span class="btn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg></span>
+        </div>
+      </div>
+      <div class="spec-cap"><b>Г · Маршрут</b>
+        <p><b>Не каталог, а процесс.</b> Четыре шага работы с портфелем вместо шести инструментов: сколько у меня → что не так → что сделать → проверить. Разделы становятся содержимым шагов, а не самими пунктами. Шаг 2 несёт янтарную метку, когда есть о чём сказать, — навигация первой сообщает, что доли ушли.</p>
+        <p><span class="plus">За:</span> единственный вариант, который отвечает на «что дальше», а не «где что лежит». Названия перестают быть названиями механик.</p>
+        <p><span class="minus">Против:</span> самый рискованный. Продуктом пользуются не по маршруту: «Рынок» открывают просто посмотреть, а не как шаг 3. Опытному пользователю шаги мешают — ему нужна точка, а не путь. И шаг 2 требует, чтобы кто-то считал «что не так» — сейчас такого сборщика нет.</p>
+        <span class="badge">4 шага</span><span class="badge a">нужен сборщик «что не так»</span><span class="badge a">ломает привычку</span></div>
+    </div>
+
+  </div></div>
+</div>
+
+<!-- ═══════════════════ СРАВНЕНИЕ ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">2</span><h2>Чем платим</h2></div>
+  <table class="map">
+    <tr><th style="width:130px">Решение</th><th style="width:100px">Уровней</th><th style="width:120px">Высота колонки</th><th style="width:150px">Новых сущностей</th><th>Главный риск</th></tr>
+    <tr><td><b>Сейчас</b></td><td class="n">2 + 3-й у «Торговли»</td><td class="n">~420px</td><td>—</td><td>Кривое дерево: 7 экранов под одним пунктом, 0 под тремя.</td></tr>
+    <tr><td><b>А · Плоскость</b></td><td class="n yes">1</td><td class="n">~470px</td><td class="yes">ноль</td><td>Исчезает понятие «раздел» — крошку и заголовки придётся пересобрать. Колонка длиннее на 50px.</td></tr>
+    <tr><td><b>Б · Память</b></td><td class="n yes">1 + свёрнутый список</td><td class="n yes">~260px</td><td>ключ истории переходов</td><td>Пункты меняют места — мышечная память перестаёт работать.</td></tr>
+    <tr><td><b>В · Только палитра</b></td><td class="n yes">0</td><td class="n yes">~200px</td><td>палитра должна уметь разделы и действия</td><td>Продукт непознаваем: чего не знаешь, того не найдёшь.</td></tr>
+    <tr><td><b>Г · Маршрут</b></td><td class="n">1 (шаги) + содержимое</td><td class="n">~400px</td><td>сборщик «что не так»</td><td>Навязывает порядок работы, которого у половины пользователей нет.</td></tr>
+  </table>
+</div>
+
+<!-- ═══════════════════ РЕКОМЕНДАЦИЯ ═══════════════════ -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">3</span><h2>Что бы взяла я</h2><span class="mk-tag ok">рекомендация</span></div>
+  <div class="rec">
+    <h3>А «Плоскость» — она единственная лечит болезнь, а не симптом</h3>
+    <p>Проблема, которую видно в таблице сверху, — <b>кривое дерево</b>. Плоскость его выпрямляет и делает это, не добавив ни одной новой сущности: пункты уже есть, механика «Ещё N» уже написана и персистится, адреса и <code>route-hash.js</code> не меняются вовсе. Меняется только то, на каком уровне пункт нарисован. Из четырёх вариантов это единственный, который можно откатить одним коммитом.</p>
+    <p><b>Что придётся пересобрать:</b> крошку (на мобиле она жива и говорит «Портфели · Обзор» — станет просто «Обзор»), заголовок группы второго уровня (его больше не будет) и <code>SEC_OF</code> в <code>sidebar-ctx.js</code>, который сейчас сводит подвкладку к разделу. Работы на один заход.</p>
+    <p><b>Почему не Б.</b> «Память» — самая приятная идея, и я бы взяла её <b>вторым слоем поверх плоскости</b>: три строки «вы работали здесь» над плоским списком. Но как замена списка она плоха тем, что позиция пункта перестаёт быть постоянной, а это единственное, за что в навигации держится рука.</p>
+    <p><b>Почему не В.</b> Палитра — вход для того, кто знает, что ищет. Продукт из шести разделов, где половину пользователь ещё не открывал, обязан себя показывать. Через год и с другим набором экранов — возможно.</p>
+    <p><b>Почему не Г.</b> Самая красивая и самая неверная: она предполагает, что в продукт приходят по маршруту. По маршруту приходят первые три раза, дальше — точками. К тому же шаг «что не так» требует сборщика, которого нет, — того же, что нужен был «ленте дня».</p>
+    <h3 style="margin-top:16px">Решить до кода</h3>
+    <ul>
+      <li><b>Куда девать «Тест».</b> Он проверка расчёта на истории — логично внутрь «Расчёта» последним шагом, а не в «Ещё». Но это меняет смысл раздела «Расчёт».</li>
+      <li><b>Что делать с крошкой на мобиле</b>, когда «раздела» больше нет: оставить одно имя экрана или собирать путь по-другому.</li>
+      <li><b>Открытые портфели — оставить группой в колонке или увести в ряд вкладок над страницей.</b> Они объекты, а не разделы, и это отдельный разговор.</li>
+      <li><b>Порядок восьми пунктов.</b> Нарисован по частоте (Обзор → Мои портфели → Ребаланс → Торговля → Рынок → Расчёт → Академия → Ещё); проверить на себе.</li>
+    </ul>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
