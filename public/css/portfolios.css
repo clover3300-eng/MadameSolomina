@@ -221,12 +221,18 @@ body.dark-mode .pf-card--tall .pfc-menu { box-shadow: 0 0 0 1.5px var(--pf-accen
 
 /* шапка (макет 02): имя серифом с цветовой меткой · бейдж брокера слева;
    период + служебные иконки справа */
-.pfc-top { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 18px 0; }
-.pfc-titles { min-width: 0; display: flex; align-items: center; gap: 8px; }
+/* РАУНД 4. Одно правило раскладки: имя сжимается ПОСЛЕДНИМ и не уходит ниже
+   110px, всё остальное — flex:none. Прежде сжиматься умели имя и бейдж брокера,
+   а флаги и сегменты периода — нет; первыми в ноль уходили ровно те двое, кого
+   надо было беречь. Обёртки .pfc-titles больше нет: она делила ряд на два
+   независимых flex-контекста, и «остаток ширины» имени считался внутри левой
+   половины, а не по всей шапке. */
+.pfc-top { position: relative; display: flex; align-items: center; gap: 8px; padding: 16px 18px 0; }
+.pfc-ctrls { margin-left: auto; }
 /* Название портфеля — моно-пилюля цвета портфеля (возврат к прежнему виду по
    просьбе 2026-07-22; серифный вариант макета 02 с квадратиком-меткой отменён).
    Клик по пилюле → инлайн-правка имени. */
-.pfc-name { display: inline-flex; align-items: center; max-width: 100%; min-width: 0; cursor: text; line-height: 1.1; }
+.pfc-name { display: inline-flex; align-items: center; max-width: 100%; flex: 0 1 auto; min-width: 110px; cursor: text; line-height: 1.1; }
 .pfc-name-dot { display: none; }   /* метка цвета не нужна: пилюля сама в цвете портфеля */
 .pfc-name-ink {
     display: inline-block; max-width: 100%;
@@ -249,11 +255,51 @@ body.dark-mode .pfc-name-ink {
     border: none; border-bottom: 2px solid var(--pf-accent); border-radius: 7px 7px 2px 2px;
     background: color-mix(in srgb, var(--pf-accent) 12%, transparent); padding: 6px 10px 5px; outline: none; }
 body.dark-mode .pfc-name-edit { color: #f7fbff; background: color-mix(in srgb, var(--pf-accent) 20%, transparent); }
-.pfc-ctrls { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-/* переключатель периода: тот же контрол, что в настройках виджета (.pfdcfg-seg-b),
-   не свой — модификатор лишь ужимает его до размеров шапки карточки */
-.pfc-seg { display: inline-flex; gap: 4px; }
-.pfc-seg .pfdcfg-seg-b { flex: none; padding: 5px 9px; font-size: 11px; border-radius: 8px; }
+/* группа контролов сжимаема, чтобы «Открыть ›» внутри неё успело отдать слово
+   ДО того, как начнёт резаться имя; сами иконки внутри — flex:none */
+.pfc-ctrls { display: flex; align-items: center; gap: 8px; flex: 0 1 auto; min-width: 0; }
+/* Сегментов периода в шапке больше нет: период выбирает пилюля дельты (раунд 4).
+   Их 135px были самой большой статьёй расхода шапки в узком блоке. */
+/* Ховер-хром шапки: переключатель размера и вход в портфель (в S и M подвала
+   нет). В покое их не видно, но место под них ЗАРЕЗЕРВИРОВАНО (opacity, не
+   display): иначе при наведении имя дёргалось бы влево на 60px. */
+.pfc-size, .pfc-openx { opacity: 0; transition: opacity 0.14s; }
+.pf-card:hover .pfc-size, .pf-card:hover .pfc-openx,
+.pfc-size:focus-within, .pfc-openx:focus { opacity: 1; }
+@media (hover: none) { .pfc-size, .pfc-openx { opacity: 1; } }
+/* Кнопка размера — компонент соседней .pfc-act (правило гармонии), а не свой
+   стиль: та же высота 30px, та же рамка и радиус. В покое видна одна текущая
+   буква; под курсором по самой кнопке она разъезжается в три. */
+.pfc-size { display: inline-flex; align-items: center; height: 30px; flex: none; overflow: hidden;
+    border: 1px solid rgba(24,38,60,0.1); border-radius: 9px; background: #fff; }
+.pfc-size-b { width: 28px; height: 28px; flex: none; border: 0; background: transparent; cursor: pointer;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #94a3b8;
+    display: none; place-items: center; padding: 0; }
+.pfc-size-b.on { display: grid; color: #64748b; }
+/* «авто» — буква приглушена пунктирным подчёркиванием: размер не выбран руками,
+   он следует за блоком. Ручной выбор рисуется сплошной подсветкой (ниже) */
+.pfc-size-b.on.auto { border-bottom: 1.5px dotted currentColor; }
+.pfc-size:hover .pfc-size-b, .pfc-size:focus-within .pfc-size-b { display: grid; }
+.pfc-size:hover .pfc-size-b.on, .pfc-size:focus-within .pfc-size-b.on { background: rgba(15,23,42,0.07); color: #0f172a; }
+.pfc-size-b:hover { color: #0f172a; }
+body.dark-mode .pfc-size { border-color: rgba(255,255,255,0.09); background: rgba(255,255,255,0.04); }
+body.dark-mode .pfc-size-b { color: #67748a; }
+body.dark-mode .pfc-size-b.on { color: #9fb0c4; }
+body.dark-mode .pfc-size:hover .pfc-size-b.on { background: rgba(255,255,255,0.12); color: #f4f8fd; }
+body.dark-mode .pfc-size-b:hover { color: #f4f8fd; }
+/* «Открыть ›» — то же действие, что кнопка подвала, но для размеров без подвала.
+   Единственный контрол шапки, которому позволено сжиматься РАНЬШЕ имени
+   (flex-shrink 4 против 1): в тесной карточке от него остаётся один шеврон, и
+   слово уходит в подсказку — имя портфеля важнее. */
+.pfc-openx { display: inline-flex; align-items: center; justify-content: flex-end; gap: 5px;
+    flex: 0 4 auto; min-width: 30px; height: 30px; padding: 0 9px;
+    border: 1px solid rgba(24,38,60,0.1); border-radius: 9px; background: #fff; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #64748b; white-space: nowrap; }
+.pfc-openx span { min-width: 0; overflow: hidden; }
+.pfc-openx svg { width: 12px; height: 12px; color: #b3bccb; flex: none; }
+.pfc-openx:hover { background: rgba(24,38,60,0.05); color: #1b2433; }
+body.dark-mode .pfc-openx { border-color: rgba(255,255,255,0.09); background: rgba(255,255,255,0.04); color: #9fb0c4; }
+body.dark-mode .pfc-openx:hover { background: rgba(255,255,255,0.09); color: #f4f8fd; }
 /* кнопки-иконки в шапке (копировать/скрыть/настройки) — единый компактный стиль,
    активная (открытая) — заливка тёмным (как «pc-act.on» в референсе) */
 .pfc-acts { display: flex; gap: 6px; flex-shrink: 0; }
@@ -307,24 +353,59 @@ body.dark-mode .pf-ch-go:hover { background: rgba(255,255,255,0.12); color: #fff
 .pfc-hero-val { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 54px; letter-spacing: -0.02em; line-height: 1.06; margin-top: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #0f172a; }
 body.dark-mode .pfc-hero-val { color: #f4f8fd; }
 .pfc-hero-val small { font-size: 0.58em; font-weight: 600; color: #64748b; margin-left: 0.08em; }
-/* двойная дельта: чип дня (цвет знака) + серый хвост периода */
+/* ---- ОДНА пилюля вместо двойной дельты (раунд 4) ----
+   Раньше под суммой стояли ДВА числа за разные окна — цветной чип «сегодня» и
+   серый хвост периода, — причём период задавался контролом на другом конце
+   карточки. Теперь цифра и переключатель в одном месте, и цвет всегда про
+   ВЫБРАННОЕ окно. .pfc-delta — обёртка-якорь меню (класс .open живёт на ней:
+   PF.liveSet пишет className внутренней КНОПКЕ и обёртку не трогает). */
 .pfc-dayrow { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
-.pfc-day { display: inline-flex; align-items: center; gap: 7px; font-family: 'JetBrains Mono', monospace; font-size: 13.5px; font-weight: 700; padding: 6px 11px; border-radius: 10px; color: #64748b; background: rgba(15,23,42,0.05); white-space: nowrap; }
-.pfc-day.pos { color: #16a34a; background: color-mix(in srgb, #16a34a 10%, transparent); }
-.pfc-day.neg { color: #dc2626; background: color-mix(in srgb, #dc2626 9%, transparent); }
-body.dark-mode .pfc-day { color: #8b98ad; background: rgba(255,255,255,0.06); }
-body.dark-mode .pfc-day.pos { color: #34d399; background: color-mix(in srgb, #34d399 12%, transparent); }
-body.dark-mode .pfc-day.neg { color: #f87171; background: color-mix(in srgb, #f87171 11%, transparent); }
-.pfc-day u { text-decoration: none; font-family: 'Inter', sans-serif; font-weight: 500; font-size: 11.5px; opacity: 0.8; }
-/* ступени кегля по числу цифр: до 7 — 30px, 8–10 — 26px, 11+ — 21px */
+.pfc-delta { position: relative; display: inline-flex; }
+.pfc-delta-b { display: inline-flex; align-items: center; gap: 9px; padding: 7px 8px 7px 12px; border: 1px solid transparent;
+    border-radius: 11px; background: rgba(15,23,42,0.05); color: #64748b; cursor: pointer;
+    font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 700; white-space: nowrap; transition: background 0.15s; }
+.pfc-delta-b[disabled] { cursor: default; }
+.pfc-delta-b b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.pfc-delta-b i { display: inline-flex; align-items: center; gap: 5px; font-style: normal;
+    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; opacity: 0.75;
+    padding-left: 9px; border-left: 1px solid color-mix(in srgb, currentColor 25%, transparent); }
+.pfc-delta-b i svg { width: 10px; height: 10px; transition: transform 0.15s; }
+.pfc-delta.open .pfc-delta-b { border-color: color-mix(in srgb, currentColor 30%, transparent); }
+.pfc-delta.open .pfc-delta-b i svg { transform: rotate(180deg); }
+.pfc-delta-b.pos { color: #16a34a; background: color-mix(in srgb, #16a34a 10%, transparent); }
+.pfc-delta-b.neg { color: #dc2626; background: color-mix(in srgb, #dc2626 9%, transparent); }
+.pfc-delta-b:not([disabled]):hover { background: color-mix(in srgb, currentColor 16%, transparent); }
+body.dark-mode .pfc-delta-b { color: #8b98ad; background: rgba(255,255,255,0.06); }
+body.dark-mode .pfc-delta-b.pos { color: #34d399; background: color-mix(in srgb, #34d399 12%, transparent); }
+body.dark-mode .pfc-delta-b.neg { color: #f87171; background: color-mix(in srgb, #f87171 11%, transparent); }
+/* меню периодов: все доступные окна СРАЗУ с процентами — маленький отчёт, а не
+   переключатель. Открывается классом .open, а не ре-рендером: полный своп заново
+   «рисует» мини-графики всех карточек (та же причина, что у pfToggleMenu). */
+.pfc-permenu { display: none; position: absolute; top: calc(100% + 7px); left: 50%; transform: translateX(-50%); z-index: 20;
+    min-width: 196px; text-align: left; padding: 5px; border-radius: 12px; border: 1px solid rgba(15,23,42,0.09);
+    background: #fff; box-shadow: 0 18px 40px -18px rgba(15,23,42,0.45); }
+.pfc-delta.open .pfc-permenu { display: block; }
+body.dark-mode .pfc-permenu { background: #1a232f; border-color: rgba(255,255,255,0.1); box-shadow: 0 18px 40px -14px rgba(0,0,0,0.7); }
+.pfc-permenu-i { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 7px 10px; border: 0; border-radius: 8px; background: transparent; cursor: pointer;
+    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; color: #0f172a; }
+.pfc-permenu-i:hover { background: rgba(15,23,42,0.05); }
+.pfc-permenu-i.on { background: rgba(15,23,42,0.06); }
+.pfc-permenu-i i { font-style: normal; font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 700;
+    color: #64748b; font-variant-numeric: tabular-nums; }
+.pfc-permenu-i i.pos { color: #16a34a; } .pfc-permenu-i i.neg { color: #dc2626; }
+body.dark-mode .pfc-permenu-i { color: #eef3f9; }
+body.dark-mode .pfc-permenu-i:hover, body.dark-mode .pfc-permenu-i.on { background: rgba(255,255,255,0.07); }
+body.dark-mode .pfc-permenu-i i { color: #8b98ad; }
+body.dark-mode .pfc-permenu-i i.pos { color: #34d399; } body.dark-mode .pfc-permenu-i i.neg { color: #f87171; }
+/* «Сегодня» — единственный пункт, который график не отрабатывает: суточной
+   кривой у нас нет. Говорим это прямо в меню, а не прячем в подсказку */
+.pfc-permenu-n { margin-top: 4px; padding: 7px 10px 5px; border-top: 1px solid rgba(15,23,42,0.07);
+    font-family: 'Inter', sans-serif; font-size: 10.5px; line-height: 1.45; color: #94a3b8; }
+body.dark-mode .pfc-permenu-n { border-color: rgba(255,255,255,0.08); color: #67748a; }
+/* ступени кегля по числу цифр */
 .pfc-hero-val.l10 { font-size: 42px; }
 .pfc-hero-val.l13 { font-size: 32px; letter-spacing: -0.03em; }
-/* хвост периода: тихая моно-строка БЕЗ цвета знака — цвет остаётся за чипом дня.
-   Классы .pos/.neg больше не приходят (heroIncParts), правил под них нет. */
-.pfc-hero-inc { font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; color: #64748b; white-space: nowrap; }
-body.dark-mode .pfc-hero-inc { color: #8b98ad; }
-.pfc-hero-inc u { text-decoration: none; font-family: 'Inter', sans-serif; font-weight: 500; color: #94a3b8; font-size: 12px; margin-right: 4px; }
-body.dark-mode .pfc-hero-inc u { color: #67748a; }
 /* мини-график переиспользует drawPfChart (шкала процентов слева + наводимые точки с тултипом
    «дата+значение» — как в большом графике), поэтому .pfc-mchart-plot — это просто увеличенный
    и уплотнённый пейн: те же .pfcv-yaxis/.pfcv-plot внутри, размеры подогнаны компактнее. */
@@ -357,27 +438,36 @@ body.dark-mode .pfcv-pay b { color: #34d399; background: color-mix(in srgb, #1a2
 body.dark-mode .pfcv-futline { stroke: #34d399; }
 .pfcv-payf { position: absolute; width: 9px; height: 9px; border-radius: 50%; transform: translate(-50%, -50%); background: transparent; border: 2px dashed #16a34a; z-index: 4; }
 body.dark-mode .pfcv-payf { border-color: #34d399; }
-/* подпись будущей выплаты — СТОЛБИКОМ у своей точки (строка наезжала на тултип
-   пульса и читалась как его подпись): источник и срок тихие, сумма зелёная.
-   .b — столбик вниз (линия в верхней половине сцены), иначе вверх */
-.pfcv-futlbl { position: absolute; display: flex; flex-direction: column; align-items: flex-end; gap: 1px; text-align: right; transform: translate(-100%, calc(-100% - 12px)); font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; color: #64748b; background: color-mix(in srgb, #fff 84%, transparent); padding: 2px 6px; border-radius: 6px; white-space: nowrap; backdrop-filter: blur(2px); z-index: 4; pointer-events: none; transition: opacity 0.15s; }
-/* наведение на график = работа с тултипами точек: метка будущей выплаты гаснет,
-   чтобы не спорить с тултипом пульса за место над последней точкой */
-.pfc-mchart-plot:hover .pfcv-futlbl { opacity: 0.15; }
-.pfcv-futlbl.b { transform: translate(-100%, 14px); }
-.pfcv-futlbl i { font-style: normal; display: block; }
-.pfcv-futlbl i.s { font-weight: 700; color: #16a34a; }
-body.dark-mode .pfcv-futlbl { color: #8b98ad; background: color-mix(in srgb, #1a232f 84%, transparent); }
-body.dark-mode .pfcv-futlbl i.s { color: #34d399; }
-/* чип сравнения (правый верхний угол графика): выкл — тихий «⇄ сравнить»,
-   вкл — легенда пунктира: образец линии + имя бенчмарка + его % за период */
-.pfcv-benchchip { position: absolute; top: 8px; right: 10px; z-index: 6; display: inline-flex; align-items: center; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600; color: #94a3b8; background: color-mix(in srgb, #fff 72%, transparent); border: 1px dashed rgba(15,23,42,0.14); border-radius: 8px; padding: 3px 8px; cursor: pointer; backdrop-filter: blur(2px); transition: color 0.15s, border-color 0.15s, background 0.15s; }
-.pfcv-benchchip:hover { color: #0f172a; border-color: rgba(15,23,42,0.3); }
-.pfcv-benchchip.on { color: #475569; border-style: solid; border-color: rgba(15,23,42,0.14); }
-.pfcv-benchchip i { width: 14px; height: 0; border-top: 2px dashed #94a3b8; opacity: 0.85; }
-body.dark-mode .pfcv-benchchip { color: #67748a; background: color-mix(in srgb, #1a232f 72%, transparent); border-color: rgba(255,255,255,0.14); }
-body.dark-mode .pfcv-benchchip:hover { color: #e8eef7; border-color: rgba(255,255,255,0.3); }
-body.dark-mode .pfcv-benchchip.on { color: #9fb0c4; }
+/* ПОДПИСЬ ГРАФИКА (раунд 4): одна тихая строка ПОД кривой — слева сравнение,
+   справа ближайшая выплата. Заменила собой два прямоугольника поверх полотна:
+   пунктирный чип «⇄ сравнить» в правом верхнем углу (единственный элемент
+   карточки с рамкой поверх контента, стоял ровно там, куда заходит кривая
+   растущего портфеля) и трёхстрочный столбик .pfcv-futlbl у полой точки — тот
+   гас на ховере до 0.15, чтобы не спорить с подсказкой пульса, и сама эта
+   заплатка была признаком, что элемент стоит не на своём месте.
+   Ни рамок, ни подложек, ни backdrop-blur: строка живёт В ПОТОКЕ. */
+.pfc-gcap { display: flex; align-items: center; gap: 12px; min-height: 22px; padding: 8px 18px 0; }
+.pfc-bench, .pfc-nextpay { display: inline-flex; align-items: center; gap: 6px; min-width: 0; border: 0; padding: 0;
+    background: transparent; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+    font-weight: 600; color: #94a3b8; white-space: nowrap; transition: color 0.15s; }
+.pfc-bench:hover, .pfc-nextpay:hover { color: #0f172a; }
+.pfc-bench.on { color: #64748b; }
+.pfc-bench.on b { color: #0f172a; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* образец пунктира = та же линия, что на графике: чип был легендой, строка ею и осталась */
+.pfc-bench.on i { width: 15px; height: 0; border-top: 2px dashed currentColor; flex: none; opacity: 0.8; }
+body.dark-mode .pfc-bench, body.dark-mode .pfc-nextpay { color: #67748a; }
+body.dark-mode .pfc-bench:hover, body.dark-mode .pfc-nextpay:hover { color: #e8eef7; }
+body.dark-mode .pfc-bench.on { color: #8b98ad; }
+body.dark-mode .pfc-bench.on b { color: #eef3f9; }
+/* ближайшая выплата прижата вправо; в узкой карточке остаются срок и сумма */
+.pfc-gcap-r { margin-left: auto; min-width: 0; display: inline-flex; }
+.pfc-nextpay u { text-decoration: none; font-family: 'Inter', sans-serif; font-weight: 500; opacity: 0.85;
+    overflow: hidden; text-overflow: ellipsis; }
+.pfc-nextpay b { color: #16a34a; font-weight: 700; flex: none; }
+body.dark-mode .pfc-nextpay b { color: #34d399; }
+/* полая точка ближайшей выплаты — тот же знак, что и на кривой */
+.pfc-nextpay i { width: 7px; height: 7px; border-radius: 50%; border: 1.5px dashed #16a34a; flex: none; }
+body.dark-mode .pfc-nextpay i { border-color: #34d399; }
 /* пульс «сейчас» на последней точке кривой */
 .pfcv-pulse { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--pf-accent); transform: translate(-50%, -50%); z-index: 5; pointer-events: none; }
 .pfcv-pulse::after { content: ''; position: absolute; inset: -3px; border-radius: 50%; border: 1.5px solid var(--pf-accent); animation: pfcPulse 2s ease-out infinite; }
@@ -397,7 +487,12 @@ body.dark-mode .pfcv-benchchip.on { color: #9fb0c4; }
 /* «Табло»: сводка НА ВОЗДУХЕ — серая подложка снята (самый большой прямоугольник
    верха выглядел канцелярией), колонки по центру, между ними хайрлайны, сверху
    одна линия. Нижней линии нет — её даёт строка долей ниже. */
-.pfc-stats2 { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid rgba(15,23,42,0.07); padding: 15px 0 16px; }
+/* РАУНД 4: колонок ТРИ, а не четыре. Причина не теснота, а дубль — пилюля героя
+   показывает и ₽, и % за выбранное окно, поэтому «Доход»+«Доходность» = она же
+   в режиме «за всё время», «За день» = она же в «сегодня». Осталось то, чего
+   пилюля не говорит никогда («Вложено», годовые), плюс дневное число: пилюля
+   обычно стоит на другом окне. «Доходность» сложилась в подпись «Дохода». */
+.pfc-stats2 { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid rgba(15,23,42,0.07); padding: 15px 0 16px; }
 body.dark-mode .pfc-stats2 { border-color: rgba(255,255,255,0.07); }
 .pfc-stat2 { min-width: 0; padding: 0 12px; border-left: 1px solid rgba(15,23,42,0.07); text-align: center; }
 body.dark-mode .pfc-stat2 { border-color: rgba(255,255,255,0.07); }
@@ -622,16 +717,18 @@ body.dark-mode .pfc-coup b { color: #eef3f9; }
    как «упало в ноль» / «не изменилось», а данных на самом деле просто нет */
 .pfc-dash { color: #94a3b8; font-weight: 500; }
 body.dark-mode .pfc-dash { color: #67748a; }
-/* метка состояния в шапке («Только чтение», «Скрыт») — нейтральная, не тревожная */
-.pfc-flag { font-family: 'Inter', sans-serif; font-size: 9px; font-weight: 800; letter-spacing: 0.07em;
-    text-transform: uppercase; padding: 3px 7px; border-radius: 6px; white-space: nowrap;
-    background: rgba(15,23,42,0.07); color: #64748b; }
-body.dark-mode .pfc-flag { background: rgba(255,255,255,0.09); color: #9fb0c4; }
+/* Метки состояния шапки («Только чтение», «Скрыт», «Суммы скрыты») — ИКОНКИ с
+   подсказкой (раунд 4). Текстом три метки занимали больше места, чем само имя
+   портфеля, и всё равно дублировали то, что уже сказано: плашками над списком
+   в размере L и самим видом карточки. */
+.pfc-fico { flex: none; width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center;
+    background: rgba(15,23,42,0.06); color: #64748b; }
+.pfc-fico svg { width: 12px; height: 12px; }
+body.dark-mode .pfc-fico { background: rgba(255,255,255,0.08); color: #9fb0c4; }
 /* индикатор режима «Скрывать суммы»: в разметке всегда, показывается по классу
    body — тумблер в кабинете переключается без ре-рендера карточек */
-.pfc-flag--priv { display: none; align-items: center; gap: 5px; }
-.pfc-flag--priv svg { width: 11px; height: 11px; }
-body.sums-hidden .pfc-flag--priv { display: inline-flex; }
+.pfc-fico--priv { display: none; }
+body.sums-hidden .pfc-fico--priv { display: grid; }
 /* скрытая карточка (видна только на своей вкладке) — приглушена целиком */
 .pf-card--dim .pfc-normal { opacity: 0.72; }
 .pf-card--dim .pfc-foot, .pf-card--dim .pfc-warn { opacity: 1; }
@@ -739,6 +836,33 @@ body.dark-mode .pfc-rebal { background: #e8eef7; border-color: #e8eef7; color: #
    конструктора ~380px из макета 07). Правило проекта: контент подстраивается под
    размер виджета. `container-type: inline-size` безопасен — внутри карточки нет
    position:fixed (все оверлеи живут в body), а .pfc-menu позиционируется от неё же. */
+/* ---- РАЗМЕРЫ S / M / L (раунд 4) ----
+   Высота карточки — не только сколько этажей показать, но и какого они кегля:
+   правило проекта «контент подстраивается под размер виджета» распространено с
+   ширины на высоту. Ширина при этом живёт своей жизнью (@container ниже) —
+   размер её не отменяет. Выбор размера — в cardSizeOf (portfolios-cards.js):
+   авто по высоте и ширине блока, ручной оверрайд — ховер-кнопкой в шапке. */
+.pf-card--s .pfc-hero { padding-top: 20px; }
+.pf-card--s .pfc-hero-k { display: none; }   /* имя портфеля в шапке и так над суммой */
+.pf-card--s .pfc-hero-val { font-size: 40px; margin-top: 2px; }
+.pf-card--s .pfc-hero-val.l10 { font-size: 34px; }
+.pf-card--s .pfc-hero-val.l13 { font-size: 27px; }
+.pf-card--s .pfc-dayrow { margin-top: 13px; }
+.pf-card--s .pfc-delta-b { font-size: 13px; padding: 6px 7px 6px 11px; }
+.pf-card--s .pfc-mchart-plot { height: 104px; margin-top: 20px; }
+/* на 104px четыре деления оси читаются как сор — кривая остаётся голой */
+.pf-card--s .pfc-mchart-plot .pfcv-yaxis { display: none; }
+.pf-card--s .pfc-gcap { padding-bottom: 14px; }
+.pf-card--m .pfc-hero { padding-top: 24px; }
+.pf-card--m .pfc-hero-val { font-size: 48px; }
+.pf-card--m .pfc-hero-val.l10 { font-size: 38px; }
+.pf-card--m .pfc-hero-val.l13 { font-size: 30px; }
+.pf-card--m .pfc-mchart-plot { height: 138px; margin-top: 24px; }
+.pf-card--m .pfc-stats2 { padding-bottom: 18px; }
+/* S и M кончаются подписью графика и сводкой — прижимать их к низу нечем,
+   поэтому карточка не растягивается на блок, а стоит по своей высоте */
+.pf-card--s .pfc-normal, .pf-card--m .pfc-normal { flex: 0 0 auto; }
+
 .pf-card { container-type: inline-size; container-name: pfcard; }
 @container pfcard (max-width: 440px) {
     /* «Табло» в узком блоке: сумма 38px (ступени вслед), график 140px,
@@ -747,17 +871,34 @@ body.dark-mode .pfc-rebal { background: #e8eef7; border-color: #e8eef7; color: #
     .pfc-hero-val { font-size: 38px; }
     .pfc-hero-val.l10 { font-size: 32px; }
     .pfc-hero-val.l13 { font-size: 26px; }
+    /* ступени размера повторены с селектором размера: у .pf-card--s/m специфичность
+       выше, чем у голого .pfc-hero-val, и @container её не добавляет — без этих
+       строк узкая карточка S оказалась бы КРУПНЕЕ узкой L */
+    .pf-card--s .pfc-hero-val { font-size: 34px; }
+    .pf-card--s .pfc-hero-val.l10 { font-size: 29px; }
+    .pf-card--s .pfc-hero-val.l13 { font-size: 24px; }
+    .pf-card--m .pfc-hero-val { font-size: 40px; }
+    .pf-card--m .pfc-hero-val.l10 { font-size: 33px; }
+    .pf-card--m .pfc-hero-val.l13 { font-size: 27px; }
     .pfc-dayrow { gap: 8px; margin-top: 13px; }
-    .pfc-day { font-size: 12.5px; padding: 5px 9px; }
+    .pfc-delta-b { font-size: 12.5px; padding: 6px 7px 6px 10px; gap: 7px; }
     .pfc-mchart-plot { height: 140px; margin: 22px -14px 0; }
-    .pfcv-ext, .pfcv-pay b, .pfcv-futlbl { display: none; }
-    .pfcv-benchchip { font-size: 9px; padding: 2px 6px; gap: 5px; }
-    /* KPI 2×2: разделители только между колонками, строки разведены отступом */
-    .pfc-stats2 { grid-template-columns: 1fr 1fr; row-gap: 14px; }
-    .pfc-stat2:nth-child(odd) { border-left: 0; }
-    .pfc-stat2-v { font-size: 15px; }
+    .pf-card--s .pfc-mchart-plot { height: 100px; }
+    .pf-card--m .pfc-mchart-plot { height: 124px; }
+    .pfcv-ext, .pfcv-pay b { display: none; }
+    .pfc-gcap { padding-left: 14px; padding-right: 14px; gap: 8px; }
+    /* от выплаты остаются срок и сумма: источник читается по подсказке */
+    .pfc-nextpay u { max-width: 92px; }
+    /* Сводка остаётся В ЛИНИЮ: трёх колонок 380px хватает, а 2×2 при нечётном
+       числе колонок оставляло бы сироту. Мельчает только кегль. */
+    .pfc-stat2 { padding: 0 6px; }
+    .pfc-stat2-v { font-size: 14.5px; }
+    .pfc-stat2-l, .pfc-stat2-s { font-size: 9.5px; letter-spacing: 0.04em; }
     .pfc-top { gap: 6px; }
-    .pfc-seg .pfdcfg-seg-b { padding: 4px 6px; font-size: 10px; }
+    /* бейдж брокера схлопывается: сначала уходит слово «Т-Инвестиции», потом
+       время и метка песочницы — от неё остаётся янтарная точка. Полный текст
+       во всех ступенях живёт в подсказке (title бейджа) */
+    .pfbk-t { max-width: 44px; }
     /* служебные иконки уходят первыми — шестерёнка остаётся всегда */
     .pfc-act--sec { display: none; }
     /* «Средняя» и «Доля» уходят: пять колонок на 380px уже своих же значений.
@@ -778,6 +919,25 @@ body.dark-mode .pfc-rebal { background: #e8eef7; border-color: #e8eef7; color: #
     /* деньги позиции: четыре колонки в узкой карточке уже своих же чисел */
     .pfc-facts { grid-template-columns: 1fr 1fr; row-gap: 10px; }
     .pfc-fact:nth-child(odd) { border-left: 0; padding-left: 0; }
+}
+/* Совсем узкий блок (минимальный span конструктора на небольшом экране): даже
+   имя в 110px + три контрола шапки в него не влезают, и ряд выносило за
+   скруглённый угол. Имя ужимается до восьми знаков, «Открыть» остаётся одним
+   шевроном (слово живёт в подсказке), сводка — в две колонки с переносом. */
+@container pfcard (max-width: 330px) {
+    .pfc-name { min-width: 84px; }
+    /* Тот же приём, что у шапки виджетов (.pf-ch на пороге 300px): имя забирает
+       всю строку, контролы переносятся ниже. Ужимать их дальше некуда — кнопка
+       30px и так минимум, а спрятать ⚙ нельзя. */
+    .pfc-top { gap: 5px; flex-wrap: wrap; row-gap: 8px; }
+    .pfc-name { flex-basis: 100%; }
+    .pfc-ctrls { gap: 5px; }
+    .pfc-openx { width: 30px; padding: 0; justify-content: center; }
+    .pfc-openx span { display: none; }
+    .pfc-fico { width: 20px; height: 20px; border-radius: 6px; }
+    .pfc-stats2 { grid-template-columns: 1fr 1fr; row-gap: 12px; }
+    .pfc-stat2:nth-child(odd) { border-left: 0; }
+    .pfc-nextpay u { display: none; }
 }
 
 /* ---- карточка «добавить» (компактная, в стиле новых карточек) ---- */
@@ -2363,7 +2523,10 @@ body.dark-mode .pfpc-kind.kind-red { color: #93c5fd; background: rgba(61,111,209
    клип, иначе в блоке с ручной высотой они бы обрезались; флайаут overlay-ем ложится
    поверх соседей, как и в обычной сетке. .pf-impmenu.open — дропдауны-фильтры
    («Портфели» в календаре и истории сделок): в коротком блоке выпадали бы за обрез */
-.pfd-item.pfd-hset:has(.menu-open, .pf-card--tall, .pf-impmenu.open) .pfd-body { overflow: visible; }
+.pfd-item.pfd-hset:has(.menu-open, .pf-card--tall, .pf-impmenu.open, .pfc-delta.open) .pfd-body { overflow: visible; }
+/* .pfc-delta.open — меню периодов в пилюле героя: в блоке размера S (≈315px) оно
+   уходит ниже нижней кромки, и без этого правила обрезалось бы на полуслове */
+.pfd-item:has(.pfc-delta.open) { z-index: 30; }
 /* «Ставки» с ручной высотой: полоса-флекс тянет сетку плиток на всю высоту блока,
    ряды растягиваются равномерно — потянув блок выше, пользователь ЗАПОЛНЯЕТ пустоту
    плитками, а не оставляет мёртвое поле снизу (жалоба «пространство не заполнить») */

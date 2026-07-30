@@ -94,6 +94,9 @@
                 if (Array.isArray(c.order)) c.order = c.order.map(function (x) { return x === 'cap' ? 'cap2' : x; });
             }
             return { on: firstRun ? true : !!c.on, order: Array.isArray(c.order) ? c.order : [], span: c.span || {}, h: c.h || {},
+                // размер карточки портфеля, выбранный ховер-кнопкой (раунд 4):
+                // 'pf:<id>' → 's'|'m'|'l'. Без записи размер следует за высотой блока
+                sz: c.sz || {},
                 // режим высоты пресетов: 'max' (S — «не выше») / 'min' (L — «не ниже»);
                 // без записи высота из h жёсткая (ручной ресайз) — см. pfdHProp
                 hm: pfdMigrHm(c),
@@ -102,7 +105,7 @@
                 thm: (c.thm && typeof c.thm === 'object') ? c.thm : {},   // per-виджет тема ('dark') из пикера
                 // ключа corner здесь больше нет: скругление одно на весь проект (14px)
                 saved: c.saved || null };                       // снимок сохранённой раскладки (для «Вернуть сохранённую»)
-        } catch (e) { return { on: true, order: [], span: {}, h: {}, hm: {}, hidden: {}, col: {}, notes: [], allocPf: 'all', thm: {}, saved: null }; }
+        } catch (e) { return { on: true, order: [], span: {}, h: {}, sz: {}, hm: {}, hidden: {}, col: {}, notes: [], allocPf: 'all', thm: {}, saved: null }; }
     }
     // R9.4: ручной known-список (pfdKnownIds) УДАЛЁН — он молча стирал из конфига
     // любой виджет, который забыли в него дописать (мина для каждого нового
@@ -124,7 +127,7 @@
             // тащит его в облако через cloud-sync). Скрытые портфели остаются в
             // PF.store.items, их раскладка переживает «скрыть/показать».
             PF.dashCfg.order = (PF.dashCfg.order || []).filter(function (id) { return !pfdDeadId(id); });
-            [PF.dashCfg.span, PF.dashCfg.h, PF.dashCfg.hm, PF.dashCfg.hidden, PF.dashCfg.col, PF.dashCfg.thm].forEach(function (m) {
+            [PF.dashCfg.span, PF.dashCfg.h, PF.dashCfg.sz, PF.dashCfg.hm, PF.dashCfg.hidden, PF.dashCfg.col, PF.dashCfg.thm].forEach(function (m) {
                 Object.keys(m || {}).forEach(function (id) { if (pfdDeadId(id)) delete m[id]; });
             });
             // R8: активная раскладка пер-вкладочная. «Обзор» живёт в старом ключе pf_dash_v1
@@ -160,6 +163,7 @@
         c = c || {};
         var notes = Array.isArray(c.notes) ? c.notes.filter(function (n) { return n && n.id; }).map(pfdNormNote) : [];
         return { on: true, order: Array.isArray(c.order) ? c.order : [], span: c.span || {}, h: c.h || {},
+            sz: c.sz || {},
             hm: pfdMigrHm(c),
             hidden: c.hidden || {}, col: c.col || {}, thm: (c.thm && typeof c.thm === 'object') ? c.thm : {},
             // name — подпись ЭКРАНА «Торговли» (см. pfxIsTradeTab): имя живёт в самом

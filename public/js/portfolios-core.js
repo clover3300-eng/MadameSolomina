@@ -583,6 +583,10 @@
     function setBenchMode(pid, mode) { chartImoex[pid] = mode === 'dep' ? 'dep' : mode === 'idx'; loadPfChart(pid); }
     PF.chartCache = {};     // pid → { imoex, points, pfFinal, imFinal, from, err }
     PF.chartRaw = {};       // pid → { from, series } — сырая серия стоимости (кеш под toggle IMOEX)
+    // pid → { bench, pct } | null — бенчмарк за ОКНО периода карточки. Считается
+    // только внутри drawPfChart (перебазировка окна живёт там), а нужен подписи
+    // графика карточки — она рисуется вне графика (раунд 4, .pfc-gcap).
+    PF.chartBench = {};
     var chartBusy = {};      // pid → идёт загрузка (защита от двойного запроса)
     function ruShortDate(ds) { var p = String(ds).split('-'); return p.length === 3 ? (p[2] + '.' + p[1]) : ds; }
     // сглаженный путь (Catmull-Rom → кубические безье) — как в графике «Ежемесячного дохода»
@@ -885,6 +889,10 @@
         // ---- оверлеи «Табло» (только карточный мини-график, ex.card) ----
         var exHtml = '';
         if (ex && ex.card && N > 1) {
+            // Раунд 4: полотно графика чистое во всех размерах, кроме L. Флажки
+            // экстремумов и подписи выплат перекрывали бы кривую 104–138px в S и M
+            // (мокап pf-card3, экран 00); точки выплат и пульс остаются везде.
+            var big = ex.size === 'l';
             // флажки экстремумов: ₽ на дату — стоимость БУМАГ из chartRaw (без свободных
             // денег: их истории в серии нет — названное отступление плана). Если серия
             // прорежена и точной даты нет — флажок честно пропускаем.
@@ -896,7 +904,7 @@
             };
             var iMax = 0, iMin = 0;
             pPts.forEach(function (q, k) { if (q.v > pPts[iMax].v) iMax = k; if (q.v < pPts[iMin].v) iMin = k; });
-            if (iMax !== iMin) [[iMax, 'max'], [iMin, 'min']].forEach(function (fx) {
+            if (big && iMax !== iMin) [[iMax, 'max'], [iMin, 'min']].forEach(function (fx) {
                 var q = pPts[fx[0]], rubV = rubAt(q.d);
                 if (rubV == null) return;
                 var edge = q.x > 80 ? ' r' : q.x < 20 ? ' l' : '';
@@ -919,45 +927,33 @@
                     var txt = m.n > 1
                         ? m.n + ' ' + (PF.plural ? PF.plural(m.n, 'выплата', 'выплаты', 'выплат') : 'выплаты')
                         : m.lbl;
-                    exHtml += '<span class="pfcv-pay' + (mi % 2 ? ' up' : '') + '" style="left:' + m.x.toFixed(2) + '%;top:' + m.y.toFixed(2) + '%">' +
-                        '<b>' + txt + ' · <span data-money>+' + fmtRub(m.sum) + '</span></b></span>';
+                    exHtml += '<span class="pfcv-pay' + (mi % 2 ? ' up' : '') + '" style="left:' + m.x.toFixed(2) + '%;top:' + m.y.toFixed(2) + '%"' +
+                        (big ? '' : ' title="' + attr(txt + ' · +' + fmtRub(m.sum)) + '"') + '>' +
+                        (big ? '<b>' + txt + ' · <span data-money>+' + fmtRub(m.sum) + '</span></b>' : '') + '</span>';
                 });
             }
-            // ближайшая выплата: полая точка на конце пунктира + подпись СТОЛБИКОМ
-            // (одна длинная строка тянулась влево и при наведении на пульс читалась
-            // как его подпись — замечание 2026-07-22). Столбик прижат к своей точке
-            // и уходит вниз, если линия в верхней половине сцены, иначе вверх.
+            // Ближайшая выплата: на полотне остаются только пунктир и ПОЛАЯ ТОЧКА.
+            // Трёхстрочный столбик .pfcv-futlbl убран (раунд 4): он перекрывал кривую,
+            // спорил с подсказкой пульса и гас на ховере — сам этот костыль и был
+            // признаком, что элемент стоит не на своём месте. Текст выплаты переехал
+            // в подпись графика под кривой (.pfc-gcap в portfolios-cards.js).
             if (ex.future) {
-                var fy = pPts[N - 1].y;
-                exHtml += '<span class="pfcv-payf" style="left:' + futX + '%;top:' + fy.toFixed(2) + '%"></span>' +
-                    '<span class="pfcv-futlbl' + (fy < 58 ? ' b' : '') + '" style="left:' + futX + '%;top:' + fy.toFixed(2) + '%">' +
-                        '<i>' + ex.future.lbl + '</i>' +
-                        '<i>через ' + ex.future.days + ' ' +
-                            (PF.plural ? PF.plural(ex.future.days, 'день', 'дня', 'дней') : 'дн.') + '</i>' +
-                        '<i class="s" data-money>+' + fmtRub(ex.future.sum) + '</i></span>';
+                exHtml += '<span class="pfcv-payf" style="left:' + futX + '%;top:' + pPts[N - 1].y.toFixed(2) + '%"' +
+                    ' title="' + attr(ex.future.lbl + ' · через ' + ex.future.days + ' ' +
+                        (PF.plural ? PF.plural(ex.future.days, 'день', 'дня', 'дней') : 'дн.') +
+                        ' · +' + fmtRub(ex.future.sum)) + '"></span>';
             }
             // пульс «сейчас» — карточка живая, а не нарисованная
             exHtml += '<span class="pfcv-pulse" style="left:' + pPts[N - 1].x.toFixed(2) + '%;top:' + pPts[N - 1].y.toFixed(2) + '%"></span>';
-            // чип сравнения (правый верхний угол): выкл → «⇄ сравнить», клик циклит
-            // выкл → индекс (IMOEX/RGBI по составу) → «Депозит» (RUSFAR) → выкл.
-            // Включённый чип — и легенда пунктирной линии: образец + финальный %
-            // бенчмарка В ОКНЕ выбранного периода (последняя точка перебазированной
-            // серии, а не глобальный imFinal)
-            // позиция чипа продублирована инлайном: при рассинхроне кэша (старый css
-            // при новом js) неоформленная кнопка вставала В ПОТОК поверх кривой —
-            // с инлайном она хотя бы стоит на своём месте до прихода свежего css
-            var chipPos = ' style="position:absolute;top:8px;right:10px;z-index:6"';
-            if (showIm) {
-                var bLbl = data.bench === 'RUSFAR' ? 'Депозит' : (data.bench || 'IMOEX');
-                var imv = pts[N - 1].im, imTxt = '';
-                if (imv != null && isFinite(imv)) imTxt = ' ' + (imv >= 0 ? '+' : '−') + Math.abs(imv).toFixed(1).replace('.', ',') + '%';
-                exHtml += '<button class="pfcv-benchchip on"' + chipPos + ' onclick="pfCardBench(\'' + pid + '\')" ' +
-                    'title="Сравнение: ' + (data.bench === 'RUSFAR' ? 'депозит по ставке RUSFAR (как линия «Депозит» в «Тесте»)' : 'индекс ' + data.bench) +
-                    ' за тот же период. Клик — следующий режим"><i></i>' + bLbl + imTxt + '</button>';
-            } else {
-                exHtml += '<button class="pfcv-benchchip"' + chipPos + ' onclick="pfCardBench(\'' + pid + '\')" ' +
-                    'title="Наложить для сравнения индекс (IMOEX, для облигационного портфеля — RGBI) или депозит по ставке RUSFAR">⇄ сравнить</button>';
-            }
+            // Чип сравнения .pfcv-benchchip с полотна тоже убран (раунд 4) — он был
+            // единственным элементом карточки с рамкой поверх контента и стоял ровно
+            // там, куда заходит кривая растущего портфеля. Кнопка переехала в подпись
+            // графика; сюда кладём только ЧИСЛО бенчмарка за ОКНО периода, которое
+            // считается здесь и больше нигде: pts[N−1].im — последняя точка
+            // перебазированной серии, а не глобальный data.imFinal.
+            PF.chartBench[pid] = showIm
+                ? { bench: data.bench || 'IMOEX', pct: (pts[N - 1].im != null && isFinite(pts[N - 1].im)) ? pts[N - 1].im : null }
+                : null;
         }
         // шкала процентов слева: «красивые» деления между minV и maxV (выравнены по кривой)
         var yaxis = niceTicks(minV, maxV, 4).map(function (v) {

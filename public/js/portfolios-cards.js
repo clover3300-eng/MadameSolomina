@@ -29,8 +29,9 @@
     // доходности с ОКНОМ по выбранному периоду карточки (PF.cardRange) и подписанной
     // шкалой процентов — серия стоимости у нас живёт только как доходность, поэтому
     // ось честно подписана, а не спрятана. После перерисовки дописывает дельту
-    // периода в герое (patchHeroInc): серия приходит с MOEX асинхронно, к моменту
-    // рендера карточки её может ещё не быть.
+    // периода в герое (patchHeroDelta): серия приходит с MOEX асинхронно, к моменту
+    // рендера карточки её может ещё не быть; заодно дописывает подпись графика
+    // (patchGcap): % бенчмарка за окно известен только после отрисовки кривой.
     function paintPfChartMini(pid) {
         // «Табло» (мокап 2026-07-22): графику карточки передаются флажки экстремумов,
         // пульс последней точки и метки выплат (cardPayMarks ниже) — всё рисует
@@ -38,8 +39,9 @@
         // его не передают и не меняются
         var p = findPf(pid), pm = p ? cardPayMarks(p) : null;
         drawPfChart(pid, dq('pfmChart-' + pid), null, null, pid + 'm', 16, cardRangeFrom(pid),
-            pm ? { card: true, pays: pm.past, future: pm.future } : null);
-        patchHeroInc(pid);
+            pm ? { card: true, pays: pm.past, future: pm.future, size: p ? cardSizeOf(p) : 'l' } : null);
+        patchHeroDelta(pid);
+        patchGcap(pid);        // % бенчмарка за окно известен только после отрисовки
     }
     // ---- выплаты для меток на графике ----
     // То же расписание, что кормит «Календарь выплат» (coupSched/divSched, ядро):
@@ -92,58 +94,146 @@
         });
     }
 
-    // ---- период карточки: 30д / Год / Всё ----
+    // ---- период карточки: Сегодня / 30д / Год / Всё ----
     // Правило: период, для которого нет данных, не показываем вовсе (а не пустым) —
-    // у портфеля моложе месяца остаётся только «Всё», «Год» появляется после года
-    // владения. Сегмента «День» нет сознательно (решение 2026-07-21): внутридневных
-    // точек в проекте нет, дневная дельта стоит отдельным KPI «За день».
-    // Выбор живёт в памяти сессии и не персистится.
-    PF.cardRange = {};   // pid → '30' | '365' | 'all'
-    var RANGE_LBL = { '30': 'за 30 дней', '365': 'за год', 'all': 'за всё время' };
+    // у портфеля моложе месяца остаются «Сегодня» и «Всё», «Год» появляется после
+    // года владения. Выбор живёт в памяти сессии и не персистится.
+    // РАУНД 4: период выбирает САМА пилюля дельты (меню), сегментов в шапке больше
+    // нет — их 135px ушли имени портфеля. «Сегодня» — четвёртое значение: раньше
+    // дневная дельта была отдельным чипом рядом, и под суммой стояли ДВА числа за
+    // разные окна, причём второе управлялось контролом на другом конце карточки.
+    PF.cardRange = {};   // pid → 'day' | '30' | '365' | 'all'
+    var RANGE_LBL = { day: 'сегодня', '30': 'за 30 дней', '365': 'за год', all: 'за всё время' };
+    var RANGE_MENU = { day: 'Сегодня', '30': 'За 30 дней', '365': 'За год', all: 'За всё время' };
     function pfAgeDays(p) { return (Date.now() - pfFirstBuyDate(p).getTime()) / 864e5; }
     function cardRanges(p) {
-        var age = pfAgeDays(p), r = [];
-        if (age > 30) r.push(['30', '30д']);
-        if (age > 365) r.push(['365', 'Год']);
-        r.push(['all', 'Всё']);
+        var age = pfAgeDays(p), r = ['day'];
+        if (age > 30) r.push('30');
+        if (age > 365) r.push('365');
+        r.push('all');
         return r;
     }
     function cardRangeOf(p) {
         var r = PF.cardRange[p.id];
-        if (!cardRanges(p).some(function (x) { return x[0] === r; })) r = pfAgeDays(p) > 30 ? '30' : 'all';
+        // по умолчанию «сегодня»: прежнее состояние карточки (чип дня + график за
+        // 30 дней) воспроизводится один в один, только без серого хвоста
+        if (cardRanges(p).indexOf(r) < 0) r = 'day';
         return r;
     }
-    // начало окна периода ISO-датой; null = вся история (график без фильтра)
-    function cardRangeFrom(pid) {
-        var p = findPf(pid); if (!p) return null;
-        var r = cardRangeOf(p); if (r === 'all') return null;
+    // Окно ГРАФИКА. «Сегодня» — единственный пункт меню, который график не
+    // отрабатывает: суточной кривой у нас физически нет (снимки дневные), поэтому
+    // полотно остаётся на самом коротком доступном окне. Названо в мокапе и в меню.
+    function chartRangeOf(p) {
+        var r = cardRangeOf(p);
+        if (r !== 'day') return r;
+        return pfAgeDays(p) > 30 ? '30' : 'all';
+    }
+    // начало окна ISO-датой; null = вся история (график без фильтра)
+    function rangeFromStr(r) {
+        if (r === 'all' || r === 'day') return null;
         var d = new Date(); d.setDate(d.getDate() - +r);
         return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
     }
-    // переключатель периода переиспользует контрол настроек виджетов (.pfdcfg-seg-b),
-    // а не рисует свой; модификатор .pfc-seg лишь ужимает его до шапки карточки
-    function cardSegHtml(p, cur, ranges) {
-        if (ranges.length < 2) return '';   // один доступный период — переключать нечего
-        return '<span class="pfdcfg-seg pfc-seg" data-pid="' + p.id + '">' + ranges.map(function (x) {
-            return '<button type="button" class="pfdcfg-seg-b' + (x[0] === cur ? ' on' : '') + '" data-r="' + x[0] +
-                '" onclick="pfCardRange(\'' + p.id + '\',\'' + x[0] + '\')">' + x[1] + '</button>';
-        }).join('') + '</span>';
+    function cardRangeFrom(pid) {
+        var p = findPf(pid); if (!p) return null;
+        return rangeFromStr(chartRangeOf(p));
     }
-    // чип сравнения на графике: цикл выкл → индекс → депозит → выкл; setBenchMode
-    // сам перерисует график (и чип вместе с ним) через loadPfChart/repaintCharts
-    window.pfCardBench = function (pid) {
+    // цикл сравнения: выкл → индекс → депозит → выкл; setBenchMode сам перерисует
+    // график через loadPfChart/repaintCharts, а подпись графика допишет patchGcap
+    window.pfCardBench = function (pid, ev) {
+        if (ev) ev.stopPropagation();
         var m = PF.benchMode(pid);
         PF.setBenchMode(pid, m === 'off' ? 'idx' : m === 'idx' ? 'dep' : 'off');
     };
-    // смена периода: точечно (подсветка сегментов + перерисовка графика и дельты
-    // ЭТОЙ карточки), без PF.renderPortfolios — полный своп мигает всеми графиками
-    window.pfCardRange = function (pid, r) {
+    // смена периода: точечно (пилюля + график ЭТОЙ карточки), без PF.renderPortfolios —
+    // полный своп мигает всеми графиками
+    window.pfCardRange = function (pid, r, ev) {
+        if (ev) ev.stopPropagation();
         PF.cardRange[pid] = r;
-        Array.prototype.forEach.call(document.querySelectorAll('.pfc-seg[data-pid="' + pid + '"] .pfdcfg-seg-b'), function (b) {
-            b.classList.toggle('on', b.getAttribute('data-r') === r);
-        });
+        pfCardPerClose();
+        var p = findPf(pid);
+        if (p) patchHeroDelta(pid);                      // число в пилюле — сразу
         loadPfChart(pid);        // из кеша рисует синхронно, иначе догрузит и перерисует
         paintPfChartMini(pid);   // окно нового периода сразу (не ждём тика котировок)
+    };
+    // ---- меню периодов в пилюле ----
+    // Открывается КЛАССОМ на обёртке, а не ре-рендером: полный своп заново «рисует»
+    // все мини-графики (та же причина, по которой pfToggleMenu ходит через
+    // renderNoAnim). Живой патчер пишет className внутренней КНОПКЕ, поэтому класс
+    // .open на обёртке он не сносит — ловушка liveSet из блока 4.
+    function pfCardPerClose() {
+        Array.prototype.forEach.call(document.querySelectorAll('.pfc-delta.open'), function (x) { x.classList.remove('open'); });
+        PF.cardPerOpen = null;
+    }
+    PF.cardPerOpen = null;
+    window.pfCardPer = function (pid, ev) {
+        if (ev) { ev.stopPropagation(); ev.preventDefault(); }
+        var el = dq('pfcDelta-' + pid); if (!el) return;
+        var on = !el.classList.contains('open');
+        pfCardPerClose();
+        if (on) { el.classList.add('open'); PF.cardPerOpen = pid; }
+    };
+    document.addEventListener('click', function (e) {
+        if (!PF.cardPerOpen) return;
+        if (e.target && e.target.closest && e.target.closest('.pfc-delta')) return;
+        pfCardPerClose();
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') pfCardPerClose(); });
+
+    // ---- размер карточки: S / M / L (раунд 4) ----
+    // S — до сводки, M — со сводкой, L — всё до «Ребаланса» с пятью позициями.
+    // АВТО: по заданной вручную высоте блока конструктора; L требует ещё и ширины —
+    // шесть колонок таблицы на узком блоке всё равно свернутся в четыре, и «полный
+    // набор» перестанет быть полным. Ручной выбор (ховер-кнопка в шапке) —
+    // оверрайд, живёт в конфиге БЛОКА, а не портфеля: один и тот же портфель в двух
+    // блоках может стоять в разных размерах.
+    // Почему не @container по высоте: он требует container-type:size, а это
+    // контейнит и высоту — сетка меряет offsetHeight карточки при упаковке блоков,
+    // и замер стал бы нулевым.
+    var SIZE_H_S = 380, SIZE_H_M = 620, SIZE_L_SPAN = 4;
+    function cardBlockCfg(p) {
+        var cfg = PF.dashCfg;
+        return (cfg && cfg.on) ? { cfg: cfg, id: 'pf:' + p.id } : null;
+    }
+    function cardSizeOf(p) {
+        var b = cardBlockCfg(p);
+        if (!b) return 'l';                       // классическая сетка — высота свободная
+        var man = b.cfg.sz && b.cfg.sz[b.id];
+        if (man === 's' || man === 'm' || man === 'l') return man;
+        var h = +(b.cfg.h && b.cfg.h[b.id]);
+        if (!(h > 0)) return 'l';                 // высота не задана — блок растёт сам
+        if (h < SIZE_H_S) return 's';
+        if (h < SIZE_H_M) return 'm';
+        return (+(b.cfg.span && b.cfg.span[b.id]) || 12) >= SIZE_L_SPAN ? 'l' : 'm';
+    }
+    // ховер-кнопка размера: в покое её нет; форма и размер — от соседней .pfc-act
+    // (правило гармонии: новый контрол в чужой карточке берёт её компонент).
+    // ⚙ рядом открывает настройки ПОРТФЕЛЯ — размеру там не место: он про виджет.
+    function sizeBtnHtml(p, cur) {
+        var b = cardBlockCfg(p);
+        if (!b) return '';                        // вне конструктора размера нет: высота свободная, карточка всегда L
+        var man = b.cfg.sz && b.cfg.sz[b.id];
+        return '<span class="pfc-size" title="' + attr('Размер карточки: S — до сводки, M — со сводкой, L — всё до «Ребаланса». ' +
+            (man ? 'Выбран вручную; повторный клик по подсвеченной букве вернёт «авто» — размер по высоте блока.'
+                 : 'Сейчас «авто»: размер следует за высотой блока.')) + '">' +
+            ['s', 'm', 'l'].map(function (x) {
+                return '<button type="button" class="pfc-size-b' + (x === cur ? ' on' : '') + (man ? '' : ' auto') +
+                    '" onclick="pfCardSize(\'' + p.id + '\',\'' + x + '\',event)">' + x.toUpperCase() + '</button>';
+            }).join('') + '</span>';
+    }
+    // Клик по НЕ подсвеченной букве фиксирует размер вручную, по подсвеченной —
+    // снимает выбор и возвращает «авто». Четвёртого состояния «А» в кнопке нет
+    // сознательно: тумблер из четырёх позиций в 30px не читается.
+    window.pfCardSize = function (pid, s, ev) {
+        if (ev) ev.stopPropagation();
+        var p = findPf(pid), b = p && cardBlockCfg(p); if (!b) return;
+        if (!b.cfg.sz) b.cfg.sz = {};
+        if (b.cfg.sz[b.id] === s) delete b.cfg.sz[b.id];
+        else b.cfg.sz[b.id] = s;
+        saveDashCfg();
+        PF.noChartAnim = true;                    // меняется набор этажей, а не данные
+        PF.renderPortfolios();
+        PF.noChartAnim = false;
     };
 
     // ---- герой: сумма ступенями кегля + дельта за период ----
@@ -156,60 +246,129 @@
         return { cls: digits >= 11 ? ' l13' : digits >= 8 ? ' l10' : '',
             html: s.slice(0, -2) + '<small> ₽</small>' };
     }
-    // дельта периода — серый «хвост» двойной дельты «Табло» (мокап 2026-07-22):
-    // главный факт дня живёт в чипе (heroDayParts), а дельта выбранного периода —
-    // тихой моно-строкой рядом, БЕЗ цвета знака (цвет остаётся за чипом дня).
-    // «за всё время» — живые c.pnl/pnlPct, окна 30д/год — по chartRaw[pid].series:
-    // изменение ПРИБЫЛИ за окно (докупка — довнесение капитала, а не рост),
-    // процент — к стоимости на начало окна.
-    // Пока серия не пришла с MOEX — «…», допишет patchHeroInc после загрузки.
-    function heroIncParts(p, c) {
-        var r = cardRangeOf(p), lbl = '<u>' + RANGE_LBL[r] + '</u>';
-        var dRub = null, dPct = null;
-        if (r === 'all') { dRub = c.pnl; dPct = c.pnlPct; }
-        else {
-            var raw = PF.chartRaw[p.id], from = cardRangeFrom(p.id), q = null;
-            if (raw && raw.series) for (var i = 0; i < raw.series.length; i++) { if (raw.series[i].d >= from) { q = raw.series[i]; break; } }
-            if (q) { dRub = c.pnl - (q.c - q.inv); dPct = q.c > 0 ? dRub / q.c * 100 : null; }
+    // ---- дельта за выбранное окно (одна на всю карточку) ----
+    // «сегодня» — тот же dayDelta, что KPI «За день»; «за всё время» — живые
+    // c.pnl/pnlPct; окна 30д/год — по chartRaw[pid].series: изменение ПРИБЫЛИ за окно
+    // (докупка — довнесение капитала, а не рост), процент — к стоимости на начало
+    // окна. Пока серия не пришла с MOEX — pend, допишет patchHeroDelta.
+    function rangeDelta(p, c, r) {
+        if (r === 'day') {
+            var dd = dayDelta(p, c.value);
+            if (dd == null) return { rub: null, pct: null,
+                tip: 'Нет вчерашней цены — дельта дня появится после следующего закрытия торгов' };
+            return { rub: dd, pct: c.value - dd > 0 ? dd / (c.value - dd) * 100 : null, tip: null };
         }
-        if (dRub == null) return { cls: 'pfc-hero-inc', html: lbl + '…' };
-        return { cls: 'pfc-hero-inc',
-            html: lbl + signRub(dRub) + (dPct != null ? ' · ' + fmtPct(dPct) : '') };
+        if (r === 'all') return { rub: c.pnl, pct: c.pnlPct, tip: null };
+        var raw = PF.chartRaw[p.id], from = rangeFromStr(r), q = null;
+        if (raw && raw.series) for (var i = 0; i < raw.series.length; i++) { if (raw.series[i].d >= from) { q = raw.series[i]; break; } }
+        if (!q) return { rub: null, pct: null, pend: true, tip: 'Историю за период ещё грузим с Мосбиржи' };
+        var dRub = c.pnl - (q.c - q.inv);
+        return { rub: dRub, pct: q.c > 0 ? dRub / q.c * 100 : null, tip: null };
     }
-    // чип дня: то же dayDelta, что KPI «За день», но у суммы — событие с цветом
-    // знака. Прочерк (нет вчерашней цены) — нейтральный чип с подсказкой:
-    // краевое состояние, мокапом не покрытое, названо в плане.
-    function heroDayParts(p, c) {
-        var dd = dayDelta(p, c.value);
-        if (dd == null) return { cls: 'pfc-day', title: 'Нет вчерашней цены — дельта дня появится после следующего закрытия торгов', html: '—<u>сегодня</u>' };
-        var ddPct = c.value - dd > 0 ? dd / (c.value - dd) * 100 : null;
-        var pos = dd >= 0;
-        return { cls: 'pfc-day ' + (pos ? 'pos' : 'neg'), title: null,
-            html: (pos ? '▲ ' : '▼ ') + '<b><span data-money>' + fmtRub(Math.abs(dd)) + '</span>' +
-                (ddPct != null ? ' · ' + fmtPct(Math.abs(ddPct)).replace('+', '') : '') + '</b><u>сегодня</u>' };
+    // Одна пилюля вместо двойной дельты (раунд 4). Она же — переключатель окна:
+    // цифра и контрол в одном месте, а не в разных концах карточки.
+    // Цвет всегда про ВЫБРАННОЕ окно (раньше цвет носил только чип дня, а хвост
+    // периода был вечно серым).
+    function heroDeltaParts(p, c) {
+        var r = cardRangeOf(p), d = rangeDelta(p, c, r);
+        var num;
+        if (d.pend) num = '<span class="pfc-dash">…</span>';
+        else if (d.rub == null) num = '<span class="pfc-dash">—</span>';
+        else num = (d.rub >= 0 ? '▲ ' : '▼ ') + '<span data-money>' + fmtRub(Math.abs(d.rub)) + '</span>' +
+            (d.pct != null ? ' · ' + fmtPct(Math.abs(d.pct)).replace('+', '') : '');
+        return {
+            cls: 'pfc-delta-b' + (d.rub == null ? '' : (d.rub >= 0 ? ' pos' : ' neg')),
+            title: d.tip || ('Дельта ' + RANGE_LBL[r] + '. Нажмите, чтобы выбрать другой период — за ним следует и график'),
+            html: '<b>' + num + '</b><i>' + RANGE_LBL[r] + CARET_SVG + '</i>'
+        };
     }
-    function patchHeroInc(pid) {
+    // меню периодов: все доступные окна СРАЗУ с процентами — это уже маленький
+    // отчёт, а не переключатель, и открывают его один раз, чтобы понять
+    function heroMenuHtml(p, c) {
+        var cur = cardRangeOf(p);
+        var rows = cardRanges(p).map(function (r) {
+            var d = rangeDelta(p, c, r);
+            var v = d.pend ? '…' : (d.pct == null ? '—' : fmtPct(d.pct));
+            var cls = d.pct == null ? 'pfc-dash' : (d.pct >= 0 ? 'pos' : 'neg');
+            return '<button type="button" class="pfc-permenu-i' + (r === cur ? ' on' : '') +
+                '" onclick="pfCardRange(\'' + p.id + '\',\'' + r + '\',event)">' +
+                '<span>' + RANGE_MENU[r] + '</span><i class="' + cls + '">' + v + '</i></button>';
+        }).join('');
+        return '<div class="pfc-permenu" data-live="pfc:' + p.id + ':permenu">' + rows +
+            '<div class="pfc-permenu-n">«Сегодня» график не отрабатывает: суточной кривой у нас нет. ' +
+            'Полотно остаётся на самом коротком окне.</div></div>';
+    }
+    function patchHeroDelta(pid) {
         var p = findPf(pid); if (!p || pfCardWarming(p) || !(p.holdings || []).length) return;
-        var inc = heroIncParts(p, calcPf(p));
-        PF.liveSet('pfc:' + pid + ':inc', { html: inc.html, cls: inc.cls });
+        var c = calcPf(p), d = heroDeltaParts(p, c);
+        PF.liveSet('pfc:' + pid + ':delta', { html: d.html, cls: d.cls, title: d.title });
+        // меню держим свежим: цифры в нём — те же дельты, и они приезжают асинхронно
+        var m = dq2('[data-live="pfc:' + pid + ':permenu"]');
+        if (m) m.outerHTML = heroMenuHtml(p, c);
     }
+    // ---- подпись графика: сравнение слева, ближайшая выплата справа ----
+    // Раунд 4: обе сущности ушли с ПОЛОТНА (чип с пунктирной рамкой в правом
+    // верхнем углу и трёхстрочный столбик у полой точки) в одну тихую строку под
+    // кривой. Полотно осталось под кривую, точки выплат и пульс; у размера S эта
+    // строка ещё и нижняя кромка карточки.
+    function benchPartsOf(pid) {
+        var m = PF.benchMode(pid), b = PF.chartBench[pid];
+        if (m === 'off') return { cls: 'pfc-bench', html: '⇄ сравнить',
+            title: 'Наложить для сравнения индекс (IMOEX, для облигационного портфеля — RGBI) или депозит по ставке RUSFAR' };
+        var lbl = m === 'dep' ? 'Депозит' : ((b && b.bench) || 'IMOEX');
+        var pct = (b && b.pct != null) ? ' <b>' + fmtPct(b.pct) + '</b>' : '';
+        return { cls: 'pfc-bench on', html: '<i></i>' + lbl + pct,
+            title: 'Сравнение: ' + (m === 'dep' ? 'депозит по ставке RUSFAR (как линия «Депозит» в «Тесте»)' : 'индекс ' + lbl) +
+                ' за то же окно. Клик — следующий режим' };
+    }
+    function gcapHtml(p, fut) {
+        var b = benchPartsOf(p.id);
+        var right = '';
+        if (fut) {
+            right = '<button type="button" class="pfc-nextpay" onclick="pfCardPayCal(event)" title="' +
+                attr('Ближайшая выплата: ' + fut.lbl + ', ' + ruDate(fut.d) + '. Нажмите — подсветить «Календарь выплат»') + '">' +
+                '<i></i><u>' + esc(fut.lbl) + ' · через ' + fut.days + ' ' + PF.plural(fut.days, 'день', 'дня', 'дней') +
+                '</u><b data-money>+' + fmtRub(fut.sum) + '</b></button>';
+        }
+        return '<div class="pfc-gcap">' +
+            '<button type="button" class="' + b.cls + '" data-live="pfc:' + p.id + ':bench" title="' + attr(b.title) + '"' +
+                ' onclick="pfCardBench(\'' + p.id + '\',event)">' + b.html + '</button>' +
+            '<span class="pfc-gcap-r" data-live="pfc:' + p.id + ':nextpay">' + right + '</span>' +
+        '</div>';
+    }
+    function patchGcap(pid) {
+        var p = findPf(pid); if (!p) return;
+        var b = benchPartsOf(pid);
+        PF.liveSet('pfc:' + pid + ':bench', { html: b.html, cls: b.cls, title: b.title });
+    }
+    // «Календарь выплат» — виджет «Обзора»: подсвечиваем его на месте, а не уводим
+    // на другую подвкладку (карточка и календарь живут на одном экране)
+    window.pfCardPayCal = function (ev) {
+        if (ev) ev.stopPropagation();
+        if (PF.pfxFlashBlock) PF.pfxFlashBlock('cal');
+    };
     function signRub(n) { return (n >= 0 ? '+' : '−') + fmtRub(Math.abs(n)); }
+    function dq2(sel) { return document.querySelector(sel); }
     var CHEVR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+    var CARET_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+    // иконки флагов состояния шапки (раунд 4: текст «Только чтение»/«Скрыт» уехал
+    // в подсказку — три текстовые метки занимали больше места, чем само имя)
+    var LOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>';
+    var HIDDEN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/></svg>';
 
     // подсказка KPI «Доходность»: одна строка на разметку И точечный патчер
     // (livePatchers.cards) — чтобы текст не разъезжался между ними
-    var YIELD_TIP = 'Доходность за всё время владения. Годовые (CAGR) показываем только после года владения: до этого annualize() их не экстраполирует и они совпали бы с фактическим процентом';
-    // Подпись под «Доходностью». Годовые имеют смысл только после ГОДА владения:
-    // annualize() держит floor 365 дней (иначе −18% за месяц дали бы −90% годовых),
-    // поэтому на сроке меньше года CAGR РАВЕН фактическому проценту — и подпись
-    // «−15,5% годовых» под значением «−15,5%» была бы дублем, ровно тем, за который
-    // мокап критиковал исходный макет.
-    function yieldSubText(c, days, allToday) {
-        // «за 1 день» здесь не пишем: ровно та же подпись стоит у соседнего «Дохода»,
-        // и две одинаковые строки подряд читаются как ошибка вёрстки
-        if (allToday) return 'годовых пока нет';
-        if (days >= 365 && c.annual != null) return fmtPct(c.annual) + ' годовых';
-        return 'за весь срок';
+    var YIELD_TIP = 'Доход за всё время владения; в подписи — он же в процентах. Годовые (CAGR) показываем только после года владения: до этого annualize() их не экстраполирует и они совпали бы с фактическим процентом';
+    // Подпись «Дохода» (раунд 4: сюда сложилась отдельная колонка «Доходность»).
+    // Годовые имеют смысл только после ГОДА владения: annualize() держит floor
+    // 365 дней (иначе −18% за месяц дали бы −90% годовых), поэтому на сроке меньше
+    // года CAGR РАВЕН фактическому проценту — и «−15,5% годовых» рядом с «−15,5%»
+    // было бы дублем, ровно тем, за который мокап критиковал исходный макет.
+    function pnlSubText(c, days, allToday) {
+        var pct = fmtPct(c.pnlPct);
+        if (allToday) return pct + ' · годовых пока нет';
+        if (days >= 365 && c.annual != null) return pct + ' · ' + fmtPct(c.annual) + ' годовых';
+        return pct + ' · за ' + days + ' ' + PF.plural(days, 'день', 'дня', 'дней');
     }
     // Разметка карточки ОДНА на любую ширину: под размер её подгоняет CSS по
     // ФАКТИЧЕСКОЙ ширине самой карточки (@container в portfolios.css), а не по флагу
@@ -236,24 +395,35 @@
         var noQuotes = !warm && c.hs.filter(function (x) { return x.c.curSrc === 'buy' && x.c.qty > 0; });
         var noQuoteN = noQuotes ? noQuotes.length : 0;
 
-        // шапка: имя (цветовая метка + сериф) · бейдж брокера · метки состояния ·
-        // период · копировать/скрыть/⚙
-        var flags = (isBrk ? '<span class="pfc-flag" title="Состав приходит от брокера и перезаписывается при каждом обновлении — ручные правки здесь не сохранятся">Только чтение</span>' : '') +
-            (p.hidden ? '<span class="pfc-flag" title="Карточка убрана с «Обзора». В капитале, «Списке портфелей» и аналитике портфель считается как обычно">Скрыт</span>' : '') +
+        var size = cardSizeOf(p);
+        // ШАПКА (раунд 4). Правило раскладки одно: имя сжимается ПОСЛЕДНИМ и не
+        // уходит ниже 110px, всё остальное — flex:none. Раньше сжиматься умели имя
+        // и бейдж брокера, а флаги и сегменты периода — нет, поэтому первыми в ноль
+        // уходили ровно те двое, которых надо было беречь: в худшем случае (брокер +
+        // песочница + три флага) содержимое шапки было на 128px шире карточки, имя
+        // схлопывалось до собственных полей, а ⚙ уезжала за скруглённый угол —
+        // overflow:hidden у .pf-card/.dash2-card нет.
+        // Текстовые флаги стали иконками с подсказкой: все три дублируются либо
+        // плашками над списком (размер L), либо самим видом карточки.
+        var flags = (isBrk ? '<span class="pfc-fico" title="Только чтение: состав приходит от брокера и перезаписывается при каждом обновлении — ручные правки здесь не сохранятся">' + LOCK_SVG + '</span>' : '') +
+            (p.hidden ? '<span class="pfc-fico" title="Скрыт: карточка убрана с «Обзора». В капитале, «Списке портфелей» и аналитике портфель считается как обычно">' + HIDDEN_SVG + '</span>' : '') +
             // индикатор режима «Скрывать суммы»: размытые числа иначе неотличимы от
             // скелетонов прогрева. Рисуем ВСЕГДА, показывает CSS по body.sums-hidden —
             // так переключение тумблера не требует ре-рендера карточек
-            '<span class="pfc-flag pfc-flag--priv" title="Включён режим «Скрывать суммы» (личный кабинет). Цены Мосбиржи и проценты остаются открытыми — прячем только ваши деньги">' +
-                PF.EYEOFF_SVG + 'Суммы скрыты</span>';
+            '<span class="pfc-fico pfc-fico--priv" title="Включён режим «Скрывать суммы» (личный кабинет). Цены Мосбиржи и проценты остаются открытыми — прячем только ваши деньги">' +
+                PF.EYEOFF_SVG + '</span>';
+        // В S и M подвала нет — вход в портфель проступает на ховере там же, где в L
+        // стоят служебные иконки. Правило showOpen то же, что у кнопки подвала.
+        var showOpen = visibleItems().length >= 2 || p.hidden;
+        var hoverOpen = (size !== 'l' && showOpen)
+            ? '<button class="pfc-openx" onclick="pfxOpenPf(\'' + p.id + '\')" title="Открыть вкладку портфеля"><span>Открыть</span>' + CHEVR_SVG + '</button>'
+            : '';
         var top = '<div class="pfc-top">' +
-            '<div class="pfc-titles">' +
-                '<span class="pfc-name" onclick="pfNameEdit(\'' + p.id + '\',event)" title="Нажмите, чтобы переименовать"><em class="pfc-name-dot"></em><span class="pfc-name-ink">' + esc(p.name) + '</span></span>' +
-                // бейдж брокерской карточки (№10): PF.* в момент вызова — файл
-                // portfolios-broker-pf.js грузится ПОСЛЕ этого
-                (isBrk && PF.brokerPfBadgeHtml ? PF.brokerPfBadgeHtml(p) : '') + flags +
-            '</div>' +
-            '<div class="pfc-ctrls">' +
-                (hasHold ? cardSegHtml(p, cardRangeOf(p), cardRanges(p)) : '') +
+            '<span class="pfc-name" onclick="pfNameEdit(\'' + p.id + '\',event)" title="Нажмите, чтобы переименовать"><em class="pfc-name-dot"></em><span class="pfc-name-ink">' + esc(p.name) + '</span></span>' +
+            // бейдж брокерской карточки (№10): PF.* в момент вызова — файл
+            // portfolios-broker-pf.js грузится ПОСЛЕ этого
+            (isBrk && PF.brokerPfBadgeHtml ? PF.brokerPfBadgeHtml(p) : '') + flags +
+            '<div class="pfc-ctrls">' + hoverOpen + sizeBtnHtml(p, size) +
                 // .pfc-act--sec — служебные иконки, которые в узкой карточке уходят
                 // первыми (см. @container): шестерёнка остаётся всегда
                 '<div class="pfc-acts">' +
@@ -264,12 +434,13 @@
             '</div>' +
         '</div>';
 
-        // герой: колонки 46% / остаток — длинное число меняет свой кегль, а не жмёт график
+        // ГЕРОЙ: метка, сумма и ОДНА пилюля по центру, график этажом ниже.
         var vh = heroValParts(fullV);
-        var inc;
-        if (!hasHold) inc = { cls: 'pfc-hero-inc', html: '<u>пока нечего считать</u>' };
-        else if (allToday) inc = { cls: 'pfc-hero-inc', html: '<span class="pfc-dash">—</span><u>куплено сегодня</u>' };
-        else inc = warm ? null : heroIncParts(p, c);
+        // краевые состояния пилюли: считать нечего / истории ещё нет
+        var dlt;
+        if (!hasHold) dlt = { cls: 'pfc-delta-b', title: null, html: '<b><span class="pfc-dash">—</span></b><i>пока нечего считать</i>' };
+        else if (allToday) dlt = { cls: 'pfc-delta-b', title: 'Все бумаги куплены сегодня — вчерашней цены ещё нет', html: '<b><span class="pfc-dash">—</span></b><i>куплено сегодня</i>' };
+        else dlt = warm ? null : heroDeltaParts(p, c);
         // график: пока нет ни одного закрытого торгового дня кривой не существует
         // физически — вместо пустого поля объясняем, чего ждём (drawPfChart нарисовал
         // бы то же сообщение, но только после круга запросов к MOEX)
@@ -278,27 +449,33 @@
                 ? 'Кривая появится завтра:<br>нужен хотя бы один закрытый торговый день'
                 : 'График появится после первой покупки') + '</div>'
             : '<div class="pfc-mchart-plot" id="pfmChart-' + p.id + '"></div>';
-        // «Табло»: ось симметрии — метка, сумма и строка дельт по центру, график ниже.
-        // Чип дня не рисуем у пустого портфеля и у «куплено сегодня» (там прочерк
-        // уже стоит в хвосте — два прочерка подряд читались бы как поломка).
-        var day = hasHold && !warm && !allToday ? heroDayParts(p, c) : null;
+        // подпись графика: сравнение + ближайшая выплата. Без графика её нет вовсе —
+        // сравнивать нечего, а выплата без кривой повисла бы одинокой строкой.
+        var gcap = (hasHold && !allToday && !warm) ? gcapHtml(p, (cardPayMarks(p) || {}).future) : '';
         var hero = '<div class="pfc-hero">' +
             '<div class="pfc-hero-l">' +
                 '<span class="pfc-hero-k">Стоимость портфеля</span>' +
                 // data-live: фоновый тик котировок переписывает эти узлы точечно
                 // (livePatchers.cards ниже) — включая замену скелетонов прогрева числами
                 (warm ? '<span class="pfc-hero-val" data-live="pfc:' + p.id + ':val">' + skelHtml(240, 40) + '</span>' +
-                        '<div class="pfc-dayrow">' + skelHtml(150, 28) + skelHtml(120, 13) + '</div>'
+                        '<div class="pfc-dayrow">' + skelHtml(170, 30) + '</div>'
                       : '<span class="pfc-hero-val' + vh.cls + '" data-money data-live="pfc:' + p.id + ':val">' + vh.html + '</span>' +
                         '<div class="pfc-dayrow">' +
-                            (day ? '<span class="' + day.cls + '"' + (day.title ? ' title="' + attr(day.title) + '"' : '') +
-                                ' data-live="pfc:' + p.id + ':hday">' + day.html + '</span>' : '') +
-                            '<span class="' + inc.cls + '" data-money data-live="pfc:' + p.id + ':inc">' + inc.html + '</span>' +
+                            // .open переживает полный ре-рендер: фоновый тик котировок
+                            // пересобирает карточки, и меню, живущее только классом в
+                            // DOM, закрывалось бы само собой через секунду
+                            '<span class="pfc-delta' + (PF.cardPerOpen === p.id ? ' open' : '') + '" id="pfcDelta-' + p.id + '">' +
+                                '<button type="button" class="' + dlt.cls + '"' + (dlt.title ? ' title="' + attr(dlt.title) + '"' : '') +
+                                    ' data-money data-live="pfc:' + p.id + ':delta"' +
+                                    (hasHold && !allToday ? ' onclick="pfCardPer(\'' + p.id + '\',event)"' : ' disabled') + '>' +
+                                    dlt.html + '</button>' +
+                                (hasHold && !allToday ? heroMenuHtml(p, c) : '') +
+                            '</span>' +
                         '</div>') +
-            '</div>' + chartCell +
+            '</div>' + chartCell + gcap +
         '</div>';
 
-        var head = '<div class="dash2-card pf-card' + (menuOn ? ' menu-open' : '') + tall +
+        var head = '<div class="dash2-card pf-card pf-card--' + size + (menuOn ? ' menu-open' : '') + tall +
             (p.hidden ? ' pf-card--dim' : '') + '" style="--pf-accent:' + ac + '" data-pfid="' + p.id + '">' +
             // сцена «Табло»: радиальный свет цвета портфеля из центра (z-index:-1,
             // карточка изолирована isolation:isolate — свет НАД фоном, ПОД контентом)
@@ -322,11 +499,17 @@
             return head + top + menu + '<div class="pfc-normal">' + hero + blank + '</div></div>';
         }
 
-        // KPI-полоса: четыре РАЗНЫХ числа, третья строка каждой ячейки — тоже число
-        // data-live: «Доход»/«Доходность»/«За день» обновляются точечным тиком
+        // СВОДКА: ТРИ колонки (раунд 4), а не четыре. Причина не теснота, а дубль:
+        // пилюля героя теперь показывает и ₽, и % за выбранное окно, поэтому
+        // «Доход»+«Доходность» — это она же в режиме «за всё время», а «За день» —
+        // она же в режиме «сегодня». Правило отбора: остаётся то, чего пилюля не
+        // говорит НИКОГДА («Вложено», годовые), плюс «За день» — пилюля обычно
+        // стоит на другом окне, и дневное число будет негде взять.
+        // «Доходность» сложилась в подпись «Дохода» — тот же приём, которым в
+        // раунде 1 убрали дубль «−15,5% годовых» под значением «−15,5%».
         var kpis;
         if (warm) {
-            kpis = '<div class="pfc-stats2">' + ['Вложено', 'Доход', 'Доходность', 'За день'].map(function (k) {
+            kpis = '<div class="pfc-stats2">' + ['Вложено', 'Доход', 'За день'].map(function (k) {
                 return '<div class="pfc-stat2"><span class="pfc-stat2-l">' + k + '</span><span class="pfc-stat2-v">' + skelHtml(84, 16) + '</span><span class="pfc-stat2-s">' + skelHtml(58, 11) + '</span></div>';
             }).join('') + '</div>';
         } else {
@@ -339,11 +522,14 @@
             var daySub = allToday ? 'нет вчерашней цены' : (dd == null ? 'нет вчерашней цены' : (ddPct != null ? fmtPct(ddPct) + ' сегодня' : 'сегодня'));
             kpis = '<div class="pfc-stats2">' +
                 '<div class="pfc-stat2"><span class="pfc-stat2-l">Вложено</span><span class="pfc-stat2-v" data-money>' + fmtRub(c.invested) + '</span><span class="pfc-stat2-s" data-money>' + fmtRub(cash) + ' свободно</span></div>' +
-                '<div class="pfc-stat2"><span class="pfc-stat2-l">Доход</span><span class="pfc-stat2-v ' + (c.pnl >= 0 ? 'pos' : 'neg') + '" data-money data-live="pfc:' + p.id + ':pnl">' + signRub(c.pnl) + '</span><span class="pfc-stat2-s">за ' + days + ' ' + PF.plural(days, 'день', 'дня', 'дней') + '</span></div>' +
-                '<div class="pfc-stat2" title="' + YIELD_TIP + '"><span class="pfc-stat2-l">Доходность</span><span class="pfc-stat2-v ' + (c.pnlPct >= 0 ? 'pos' : 'neg') + '" data-live="pfc:' + p.id + ':yield">' + fmtPct(c.pnlPct) + '</span><span class="pfc-stat2-s" data-live="pfc:' + p.id + ':ysub">' + yieldSubText(c, days, allToday) + '</span></div>' +
+                '<div class="pfc-stat2" title="' + YIELD_TIP + '"><span class="pfc-stat2-l">Доход</span><span class="pfc-stat2-v ' + (c.pnl >= 0 ? 'pos' : 'neg') + '" data-money data-live="pfc:' + p.id + ':pnl">' + signRub(c.pnl) + '</span><span class="pfc-stat2-s" data-live="pfc:' + p.id + ':ysub">' + pnlSubText(c, days, allToday) + '</span></div>' +
                 '<div class="pfc-stat2"><span class="pfc-stat2-l">За день</span><span class="pfc-stat2-v' + (dd == null ? ' pfc-dash' : (dd >= 0 ? ' pos' : ' neg')) + '" data-money data-live="pfc:' + p.id + ':day">' + (dd == null ? '—' : signRub(dd)) + '</span><span class="pfc-stat2-s" data-live="pfc:' + p.id + ':dsub">' + daySub + '</span></div>' +
             '</div>';
         }
+        // S обрывается на подписи графика — сводки, долей, позиций и подвала нет
+        if (size === 's') return head + top + menu + '<div class="pfc-normal">' + hero + '</div></div>';
+        // M — плюс сводка; всё, что ниже, отдано размеру L
+        if (size === 'm') return head + top + menu + '<div class="pfc-normal">' + hero + kpis + '</div></div>';
 
         // плашки над списком: по одной на состояние, тихие и объясняющие ПОСЛЕДСТВИЕ,
         // а не факт («итог занижен», «правки не сохранятся», «из расчётов не выпал»)
@@ -380,7 +566,6 @@
         // открывается вкладкой всегда (R9.2). Счётчик позиций из кнопки убран:
         // он всегда стоит в шапке списка (.pfc-cnt).
         // У скрытой карточки главное действие — вернуть её на «Обзор».
-        var showOpen = visibleItems().length >= 2 || p.hidden;
         var foot = '<div class="pfc-foot">' +
             (showOpen ? '<button class="pfc-all" onclick="pfxOpenPf(\'' + p.id + '\')"><span>Открыть портфель</span>' + CHEVR_SVG + '</button>' : '') +
             (p.hidden
@@ -483,25 +668,20 @@
             var cash = +p.cash > 0 ? +p.cash : 0, fullV = c.value + cash;
             var vh = heroValParts(fullV);
             PF.liveSet('pfc:' + p.id + ':val', { html: vh.html, cls: 'pfc-hero-val' + vh.cls });
-            var inc = heroIncParts(p, c);
-            PF.liveSet('pfc:' + p.id + ':inc', { html: inc.html, cls: inc.cls });
             PF.liveSet('pfc:' + p.id + ':pnl', { text: signRub(c.pnl), cls: 'pfc-stat2-v ' + (c.pnl >= 0 ? 'pos' : 'neg') });
-            PF.liveSet('pfc:' + p.id + ':yield', { text: fmtPct(c.pnlPct), cls: 'pfc-stat2-v ' + (c.pnlPct >= 0 ? 'pos' : 'neg') });
             // те же правила, что в разметке: годовые — только после года владения,
             // «за день» у «куплено сегодня» — прочерк (вчерашнего снимка нет)
             var allToday = pfAllBoughtToday(p.id);
             var days = Math.max(1, Math.floor(pfAgeDays(p)));
-            PF.liveSet('pfc:' + p.id + ':ysub', { text: yieldSubText(c, days, allToday) });
+            PF.liveSet('pfc:' + p.id + ':ysub', { text: pnlSubText(c, days, allToday) });
             var dd = allToday ? null : dayDelta(p, c.value);
             var ddPct = dd != null && c.value - dd > 0 ? dd / (c.value - dd) * 100 : null;
             PF.liveSet('pfc:' + p.id + ':day', { text: dd == null ? '—' : signRub(dd), cls: 'pfc-stat2-v' + (dd == null ? ' pfc-dash' : (dd >= 0 ? ' pos' : ' neg')) });
             PF.liveSet('pfc:' + p.id + ':dsub', { text: dd == null ? 'нет вчерашней цены' : (ddPct != null ? fmtPct(ddPct) + ' сегодня' : 'сегодня') });
-            // чип дня в герое: своя пара html+cls (у KPI «За день» другой класс,
-            // общий ключ перезаписывал бы его). У «куплено сегодня» чипа нет.
-            if (!allToday) {
-                var dh = heroDayParts(p, c);
-                PF.liveSet('pfc:' + p.id + ':hday', { html: dh.html, cls: dh.cls, title: dh.title });
-            }
+            // пилюля героя: одна на все окна. Класс приходит ВНУТРЕННЕЙ кнопке —
+            // .open живёт на обёртке .pfc-delta, и liveSet его не сносит.
+            // У «куплено сегодня» пилюля статична (прочерк) — не трогаем.
+            if (!allToday) patchHeroDelta(p.id);
             c.hs.forEach(function (x) {
                 var h = x.h, hc = x.c;
                 // те же выражения, что в pfMiniRowHtml — ячейки после апдейта
