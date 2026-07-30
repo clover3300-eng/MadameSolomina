@@ -98,6 +98,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .ctx-bar{height:3px;border-radius:999px;display:flex;overflow:hidden}
 .ctx-bar i{height:100%}
 .ctx-bar .st{background:var(--stock)} .ctx-bar .bd{background:var(--bond)}
+.ctx-drift{margin-top:9px;font-size:11px;font-weight:650;color:var(--amb)}
 .ctx-mode{margin-top:12px;font-size:11.5px;color:var(--mut);display:flex;align-items:center;gap:7px}
 .ctx-mode i{font-style:normal;font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--acc);background:color-mix(in srgb,var(--acc) 11%,transparent);border-radius:6px;padding:2.5px 7px}
 .demo{margin-top:auto;padding-top:20px;font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);display:flex;align-items:center;gap:6px}
@@ -135,6 +136,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .drift.ok{background:color-mix(in srgb,var(--grn) 10%,transparent);color:var(--grn)}
 .drift.mid{background:color-mix(in srgb,var(--dim) 13%,transparent);color:var(--mut)}
 .pfc-val{font-family:var(--fN);font-size:24px;font-weight:600;letter-spacing:-.01em;margin-top:14px}
+.pfc-val s{text-decoration:none;color:var(--dim);font-size:17px;font-weight:500;margin-left:2px}
 .pfc-meta{font-size:12px;color:var(--mut);margin-top:3px}
 .pfc-alloc{margin-top:16px}
 .abar{position:relative;height:4px;border-radius:999px;display:flex;overflow:visible}
@@ -170,7 +172,12 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .mc-viz{margin-top:18px;padding-top:14px;border-top:1px solid var(--hair);font-size:12px;color:var(--mut)}
 .mc-viz .num{color:var(--ink);font-weight:600}
 .mc-viz .to{color:var(--acc);font-weight:600}
-.mc-bars{display:flex;flex-direction:column;gap:6px;margin-top:9px}
+.mcb{display:flex;align-items:center;gap:9px;margin-top:8px}
+.mcb:first-child{margin-top:0}
+.mcb em{font-style:normal;font-size:9.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);width:46px;flex:none}
+.mcb .abar{flex:1}
+.mcb b{font-family:var(--fN);font-size:11.5px;font-weight:600;width:52px;text-align:right;flex:none}
+.mcb b.to{color:var(--acc)}
 .mc-pick{margin-top:18px;text-align:center;font-size:12.5px;font-weight:650;border-radius:999px;padding:9px 0;border:1px solid var(--line);color:var(--mut)}
 .mc.sel .mc-pick{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 
@@ -179,24 +186,26 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .cls{display:flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--card)}
 .cls span{font-size:12px;font-weight:600;color:var(--mut);border-radius:999px;padding:6px 14px}
 .cls span.on{background:var(--ink);color:var(--bg)}
-.swap{display:flex;align-items:center;gap:22px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:18px 26px;margin-bottom:16px;box-shadow:var(--shadow)}
+.swap{display:flex;align-items:center;gap:22px;background:#101828;border-radius:20px;padding:19px 26px;margin-bottom:16px;color:#f2f5fa;box-shadow:0 12px 30px -16px rgba(16,24,40,.5)}
+.swap .mono{background:rgba(255,255,255,.1);color:#dce5f2}
 .swap-side{display:flex;align-items:center;gap:13px;flex:1;min-width:0}
 .mono{flex:none;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;font-family:var(--fN);font-size:12.5px;font-weight:700}
 .mono.bd{background:var(--bond-s);color:var(--bond)}
 .mono.st{background:var(--stock-s);color:var(--stock)}
-.swap-t em{display:block;font-style:normal;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
-.swap-t b{display:block;font-size:14.5px;font-weight:650;margin-top:2px}
+.swap-t em{display:block;font-style:normal;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.48)}
+.swap-t b{display:block;font-size:14.5px;font-weight:650;margin-top:2px;color:#fff}
 .swap-n{margin-left:auto;text-align:right}
-.swap-n b{display:block;font-family:var(--fN);font-size:16px;font-weight:600}
-.swap-n em{display:block;font-style:normal;font-family:var(--fN);font-size:11.5px;color:var(--mut);margin-top:1px}
+.swap-n b{display:block;font-family:var(--fN);font-size:16px;font-weight:600;color:#fff}
+.swap-n b.up{color:#7ce3a5}
+.swap-n em{display:block;font-style:normal;font-family:var(--fN);font-size:11.5px;color:rgba(255,255,255,.55);margin-top:1px}
 .swap-mid{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px}
-.swap-mid i{font-style:normal;font-size:15px;color:var(--dim)}
-.swap-mid em{font-style:normal;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--dim);white-space:nowrap}
-.qty{display:flex;align-items:center;gap:9px;margin-left:8px;padding-left:22px;border-left:1px solid var(--line)}
-.qty em{font-style:normal;font-size:10.5px;color:var(--dim);white-space:nowrap}
-.qty-b{width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;font-size:13px;color:var(--mut)}
-.qty b{font-family:var(--fN);font-size:14px;white-space:nowrap}
-.qty u{text-decoration:none;font-size:11px;color:var(--dim);white-space:nowrap}
+.swap-mid i{font-style:normal;font-size:15px;color:rgba(255,255,255,.45)}
+.swap-mid em{font-style:normal;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.45);white-space:nowrap}
+.qty{display:flex;align-items:center;gap:9px;margin-left:8px;padding-left:22px;border-left:1px solid rgba(255,255,255,.16)}
+.qty em{font-style:normal;font-size:10.5px;color:rgba(255,255,255,.5);white-space:nowrap}
+.qty-b{width:26px;height:26px;border-radius:50%;border:1px solid rgba(255,255,255,.24);background:transparent;display:grid;place-items:center;font-size:13px;color:#e7edf6}
+.qty b{font-family:var(--fN);font-size:14px;white-space:nowrap;color:#fff}
+.qty u{text-decoration:none;font-size:11px;color:rgba(255,255,255,.5);white-space:nowrap}
 .calc{display:grid;grid-template-columns:1fr 1fr 312px;gap:16px;align-items:start}
 .lst{background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:var(--shadow)}
 .lst-h{display:flex;align-items:baseline;gap:8px;padding:16px 20px 4px}
@@ -319,9 +328,29 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .rcp-note span{display:flex;gap:9px;align-items:flex-start;max-width:560px;font-size:12px;line-height:1.55;color:var(--mut)}
 .rcp-note svg{flex:none;width:15px;height:15px;margin-top:1px;color:var(--dim)}
 
+/* ── состояния (док-панели, не сцены) ── */
+.states{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.stc{background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:16px;overflow:hidden}
+.stc-h{padding:12px 18px;border-bottom:1px solid var(--doc-line);font-family:var(--fN);font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--doc-dim)}
+.stc-b{padding:26px 26px 24px;min-height:252px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.stc-b .ic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:#f1f4f9;color:#8494ab;margin-bottom:14px}
+.stc-b .ic svg{width:20px;height:20px}
+.stc-b b{font-size:14.5px;font-weight:650;color:var(--doc-ink)}
+.stc-b p{font-size:12.5px;line-height:1.55;color:var(--doc-mut);margin-top:7px;max-width:300px}
+.stc-btn{margin-top:16px;font-size:12.5px;font-weight:600;border-radius:999px;padding:9px 18px;background:#101828;color:#fff}
+.stc-btn.ghost{background:transparent;color:var(--doc-mut);border:1px solid var(--doc-line)}
+.skl{width:100%}
+.skl-h{display:flex;align-items:baseline;gap:8px;padding-bottom:8px}
+.skl-h b{font-size:13px;font-weight:650;color:var(--doc-ink)}
+.skl-h i{margin-left:auto;font-style:normal;font-size:11px;color:var(--doc-dim)}
+.skrow{display:flex;align-items:center;gap:12px;padding:11px 2px;border-top:1px solid #eef2f7}
+.sk{display:block;background:#e9edf4;border-radius:6px;height:10px}
+.skm{width:32px;height:32px;border-radius:10px;background:#e9edf4;flex:none}
+.sk-note{font-size:11.5px;color:var(--doc-dim);margin-top:12px;text-align:center}
+
 /* ── готово ── */
 .fin{display:flex;flex-direction:column;align-items:center;text-align:center}
-.fin-ic{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--grn) 11%,transparent);color:var(--grn);font-size:26px}
+.fin-ic{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--grn) 11%,transparent);color:var(--grn);font-size:26px;box-shadow:0 0 0 12px color-mix(in srgb,var(--grn) 4%,transparent)}
 .fin h3{font-family:var(--fT);font-weight:400;font-size:31px;margin-top:20px}
 .fin>p{font-size:13.5px;color:var(--mut);margin-top:8px;max-width:480px}
 .fin-cards{display:grid;grid-template-columns:repeat(3,250px);gap:14px;margin-top:32px;text-align:left}
@@ -385,7 +414,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       <div class="body"><div class="pfgrid">
         <div class="pfc sel"><span class="pfc-ck">✓ выбран</span>
           <div class="pfc-top"><i style="background:#c9683f"></i><b>Пенсия 2045</b><span class="drift hi">перевес акций 4,2&nbsp;п.п.</span></div>
-          <div class="pfc-val num">1&nbsp;284&nbsp;500&nbsp;₽</div>
+          <div class="pfc-val num">1&nbsp;284&nbsp;500 <s>₽</s></div>
           <div class="pfc-meta">18 позиций</div>
           <div class="pfc-alloc">
             <div class="abar"><i class="st" style="width:64%"></i><i class="bd" style="width:36%"></i><u style="left:60%"></u></div>
@@ -394,7 +423,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         </div>
         <div class="pfc">
           <div class="pfc-top"><i style="background:#5f7fa8"></i><b>Дивидендный</b><span class="tag">брокер</span><span class="drift ok">в норме</span></div>
-          <div class="pfc-val num">642&nbsp;100&nbsp;₽</div>
+          <div class="pfc-val num">642&nbsp;100 <s>₽</s></div>
           <div class="pfc-meta">11 позиций</div>
           <div class="pfc-alloc">
             <div class="abar"><i class="st" style="width:71%"></i><i class="bd" style="width:29%"></i><u style="left:70%"></u></div>
@@ -403,7 +432,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         </div>
         <div class="pfc">
           <div class="pfc-top"><i style="background:#7a8aa0"></i><b>ОФЗ-лесенка</b><span class="drift mid">один тип бумаг</span></div>
-          <div class="pfc-val num">388&nbsp;900&nbsp;₽</div>
+          <div class="pfc-val num">388&nbsp;900 <s>₽</s></div>
           <div class="pfc-meta">9 выпусков · только облигации</div>
           <div class="pfc-alloc">
             <div class="abar"><i class="bd" style="width:100%"></i></div>
@@ -412,7 +441,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         </div>
         <div class="pfc">
           <div class="pfc-top"><i style="background:#b0793f"></i><b>Спекулятивный</b><span class="drift mid">один тип бумаг</span></div>
-          <div class="pfc-val num">215&nbsp;300&nbsp;₽</div>
+          <div class="pfc-val num">215&nbsp;300 <s>₽</s></div>
           <div class="pfc-meta">6 позиций · только акции</div>
           <div class="pfc-alloc">
             <div class="abar"><i class="st" style="width:100%"></i></div>
@@ -454,6 +483,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         <div class="ctx-r"><i style="background:#c9683f"></i><b>Пенсия 2045</b></div>
         <span class="ctx-val num">1&nbsp;284&nbsp;500&nbsp;₽</span>
         <div class="ctx-bar"><i class="st" style="width:64%"></i><i class="bd" style="width:36%"></i></div>
+        <div class="ctx-drift">перевес акций 4,2&nbsp;п.п.</div>
       </div>
       <div class="demo" style="margin-top:20px"><i></i>Демо-режим</div>
     </div>
@@ -470,10 +500,10 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
             <div class="mc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 21h14M6 7l-3 6h6zM18 7l-3 6h6zM6 7l6-2 6 2"/></svg></div>
             <h4>Годовая</h4>
             <div class="mc-d">Возвращаем доли акций и облигаций к цели 60&nbsp;/&nbsp;40: продаём чего много, докупаем чего мало. Раз в год или когда состав сильно уплыл.</div>
-            <div class="mc-viz">сейчас <span class="num">64&nbsp;/&nbsp;36</span> <span class="to">→ цель 60&nbsp;/&nbsp;40</span>
-              <div class="mc-bars">
-                <div class="abar"><i class="st" style="width:64%"></i><i class="bd" style="width:36%"></i><u style="left:60%"></u></div>
-              </div></div>
+            <div class="mc-viz">
+              <div class="mcb"><em>сейчас</em><div class="abar"><i class="st" style="width:64%"></i><i class="bd" style="width:36%"></i></div><b class="num">64&nbsp;/&nbsp;36</b></div>
+              <div class="mcb"><em>цель</em><div class="abar"><i class="st" style="width:60%"></i><i class="bd" style="width:40%"></i></div><b class="num to">60&nbsp;/&nbsp;40</b></div>
+            </div>
             <div class="mc-pick">✓ Выбрано</div>
           </div>
           <div class="mc">
@@ -510,8 +540,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 <div class="mk" id="m03">
   <div class="mk-h"><span class="mk-n">03</span><h2>Шаг 3 · Расчёт «В моменте»: герой-обмен над списками</h2><span class="mk-tag">самый плотный экран</span></div>
   <p class="mk-sub">Раньше сводка обмена, слайдер и эффект жили в третьей колонке — три равные колонки спорили за
-     внимание. Теперь сам обмен — герой-строка во всю ширину: отдаём → получаем → количество. Под ним два списка
-     для замены бумаг и узкая панель «Что изменится». Иерархия: сначала сделка, потом альтернативы, потом эффект.</p>
+     внимание. Теперь сам обмен — <b>тёмная герой-плита</b> во всю ширину, в языке «машины денег» терминала:
+     отдаём → получаем → количество. Под ней два светлых списка для замены бумаг и узкая панель «Что изменится».
+     Иерархия читается за секунду: сначала сделка, потом альтернативы, потом эффект.</p>
   <div class="scroller"><div class="scr">
     <div class="rail">
       <span class="exit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Портфели</span>
@@ -526,6 +557,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         <div class="ctx-r"><i style="background:#c9683f"></i><b>Пенсия 2045</b></div>
         <span class="ctx-val num">1&nbsp;284&nbsp;500&nbsp;₽</span>
         <div class="ctx-bar"><i class="st" style="width:64%"></i><i class="bd" style="width:36%"></i></div>
+        <div class="ctx-drift">перевес акций 4,2&nbsp;п.п.</div>
         <div class="ctx-mode"><i>В моменте</i><span>внутри облигаций</span></div>
       </div>
       <div class="demo" style="margin-top:20px"><i></i>Демо-режим</div>
@@ -607,7 +639,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     </div></div>
   </div></div>
   <div class="notes">
-    <div class="note"><i>1</i><span>Герой-строка обмена — единственный «жирный» элемент экрана: монограммы 36px, количество и суммы моно, счётчик количества −/+ за вертикальной линией (слайдер снят — при 12 бумагах шаг ±1 точнее ползунка; для сотен акций счётчик остаётся, но с зажимом кнопки).</span></div>
+    <div class="note"><i>1</i><span>Тёмная плита обмена — фирменный элемент экрана и цитата «машины денег»: единственное тёмное пятно, к которому стягивается взгляд. Монограммы полупрозрачные, зелёным — только «+11 шт». Счётчик −/+ за вертикальной линией (слайдер снят — при 12 бумагах шаг ±1 точнее ползунка; для сотен акций счётчик с зажимом кнопки).</span></div>
     <div class="note"><i>2</i><span>Списки — те же данные и сортировки, что в <code>pickerCol()</code>: продажа по росту в моменте, покупка по доходности к погашению. Выбранная строка — синяя рейка слева + заливка 4% + галочка; бейджи «+1» и «в портф.» остаются.</span></div>
     <div class="note"><i>3</i><span>Панель «Что изменится» сузилась до 312px и потеряла второй этаж: герой — купоны в год (машина денег), под hairline четыре строки-факта, действия — две пилюли. «Подобрать выгоднее» — второе и последнее синее пятно экрана.</span></div>
     <div class="note"><i>4</i><span>Тумблер «Облигации / Акции» — пилюльный сегмент в правом верху шапки (как в текущей версии, но пилюлей). Для режима «Годовая» его нет, а в панели эффекта вместо купонов — пара полос «Сейчас / Станет» с насечкой цели.</span></div>
@@ -635,6 +667,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         <div class="ctx-r"><i style="background:#c9683f"></i><b>Пенсия 2045</b></div>
         <span class="ctx-val num">1&nbsp;284&nbsp;500&nbsp;₽</span>
         <div class="ctx-bar"><i class="st" style="width:64%"></i><i class="bd" style="width:36%"></i></div>
+        <div class="ctx-drift">перевес акций 4,2&nbsp;п.п.</div>
         <div class="ctx-mode"><i>Авто</i><span>система подберёт</span></div>
       </div>
       <div class="demo" style="margin-top:20px"><i></i>Демо-режим</div>
@@ -701,6 +734,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         <div class="ctx-r"><i style="background:#c9683f"></i><b>Пенсия 2045</b></div>
         <span class="ctx-val num">1&nbsp;284&nbsp;500&nbsp;₽</span>
         <div class="ctx-bar"><i class="st" style="width:64%"></i><i class="bd" style="width:36%"></i></div>
+        <div class="ctx-drift">перевес акций 4,2&nbsp;п.п.</div>
         <div class="ctx-mode"><i>В моменте</i><span>внутри облигаций</span></div>
       </div>
       <div class="demo" style="margin-top:20px"><i></i>Демо-режим</div>
@@ -768,6 +802,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         <div class="ctx-r"><i style="background:#c9683f"></i><b>Пенсия 2045</b></div>
         <span class="ctx-val num">1&nbsp;284&nbsp;500&nbsp;₽</span>
         <div class="ctx-bar"><i class="st" style="width:64%"></i><i class="bd" style="width:36%"></i></div>
+        <div class="ctx-drift">перевес акций 4,2&nbsp;п.п.</div>
         <div class="ctx-mode"><i>В моменте</i><span>внутри облигаций</span></div>
       </div>
       <div class="demo" style="margin-top:20px"><i></i>Демо-режим</div>
@@ -877,7 +912,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       <div class="body"><div class="pfgrid">
         <div class="pfc sel"><span class="pfc-ck">✓ выбран</span>
           <div class="pfc-top"><i style="background:#d98a63"></i><b>Пенсия 2045</b><span class="drift hi">перевес акций 4,2&nbsp;п.п.</span></div>
-          <div class="pfc-val num">1&nbsp;284&nbsp;500&nbsp;₽</div>
+          <div class="pfc-val num">1&nbsp;284&nbsp;500 <s>₽</s></div>
           <div class="pfc-meta">18 позиций</div>
           <div class="pfc-alloc">
             <div class="abar"><i class="st" style="width:64%"></i><i class="bd" style="width:36%"></i><u style="left:60%"></u></div>
@@ -886,7 +921,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         </div>
         <div class="pfc">
           <div class="pfc-top"><i style="background:#7b98bd"></i><b>Дивидендный</b><span class="tag">брокер</span><span class="drift ok">в норме</span></div>
-          <div class="pfc-val num">642&nbsp;100&nbsp;₽</div>
+          <div class="pfc-val num">642&nbsp;100 <s>₽</s></div>
           <div class="pfc-meta">11 позиций</div>
           <div class="pfc-alloc">
             <div class="abar"><i class="st" style="width:71%"></i><i class="bd" style="width:29%"></i><u style="left:70%"></u></div>
@@ -895,7 +930,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         </div>
         <div class="pfc">
           <div class="pfc-top"><i style="background:#8494ab"></i><b>ОФЗ-лесенка</b><span class="drift mid">один тип бумаг</span></div>
-          <div class="pfc-val num">388&nbsp;900&nbsp;₽</div>
+          <div class="pfc-val num">388&nbsp;900 <s>₽</s></div>
           <div class="pfc-meta">9 выпусков · только облигации</div>
           <div class="pfc-alloc">
             <div class="abar"><i class="bd" style="width:100%"></i></div>
@@ -904,7 +939,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         </div>
         <div class="pfc">
           <div class="pfc-top"><i style="background:#c08a52"></i><b>Спекулятивный</b><span class="drift mid">один тип бумаг</span></div>
-          <div class="pfc-val num">215&nbsp;300&nbsp;₽</div>
+          <div class="pfc-val num">215&nbsp;300 <s>₽</s></div>
           <div class="pfc-meta">6 позиций · только акции</div>
           <div class="pfc-alloc">
             <div class="abar"><i class="st" style="width:100%"></i></div>
@@ -923,9 +958,49 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   </div>
 </div>
 
-<!-- ═════════════════ карта ═════════════════ -->
+<!-- ═════════════════ 09 · состояния ═════════════════ -->
 <div class="mk" id="m09">
-  <div class="mk-h"><span class="mk-n">09</span><h2>Карта: элемент мокапа → где живёт в коде</h2></div>
+  <div class="mk-h"><span class="mk-n">09</span><h2>Состояния: пусто, загрузка, «вариантов нет»</h2><span class="mk-tag mute">обязательная часть</span></div>
+  <p class="mk-sub">Мастер живёт на живых котировках, поэтому у каждого экрана данных есть жизнь до счастливого пути.
+     Три состояния, которые обязаны попасть в реализацию вместе с редизайном; тексты уже существуют в коде —
+     новое здесь только скелетоны списков.</p>
+  <div class="states">
+    <div class="stc"><div class="stc-h">Шаг 1 · портфелей ещё нет</div>
+      <div class="stc-b">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M5 21h14M6 7l-3 6h6zM18 7l-3 6h6zM6 7l6-2 6 2"/></svg></span>
+        <b>Пока нет ни одного портфеля</b>
+        <p>Соберите портфель на вкладке «Расчёт» — мастер поможет привести его в порядок.</p>
+        <span class="stc-btn">Собрать в «Расчёте» →</span>
+      </div></div>
+    <div class="stc"><div class="stc-h">Шаг 3 · котировки ещё едут</div>
+      <div class="stc-b" style="justify-content:flex-start;align-items:stretch;text-align:left">
+        <div class="skl">
+          <div class="skl-h"><b>Куда переложить</b><i>обновляем…</i></div>
+          <div class="skrow"><span class="skm"></span><span style="flex:1"><span class="sk" style="width:64%"></span><span class="sk" style="width:42%;height:8px;margin-top:6px"></span></span><span class="sk" style="width:44px"></span></div>
+          <div class="skrow"><span class="skm"></span><span style="flex:1"><span class="sk" style="width:56%"></span><span class="sk" style="width:38%;height:8px;margin-top:6px"></span></span><span class="sk" style="width:44px"></span></div>
+          <div class="skrow"><span class="skm"></span><span style="flex:1"><span class="sk" style="width:70%"></span><span class="sk" style="width:46%;height:8px;margin-top:6px"></span></span><span class="sk" style="width:44px"></span></div>
+          <div class="skrow"><span class="skm"></span><span style="flex:1"><span class="sk" style="width:52%"></span><span class="sk" style="width:34%;height:8px;margin-top:6px"></span></span><span class="sk" style="width:44px"></span></div>
+        </div>
+        <div class="sk-note">скелетоны в форме строк списка · шиммер 1,2s · появляются после 300&nbsp;мс тишины</div>
+      </div></div>
+    <div class="stc"><div class="stc-h">Шаг 3 · Авто: выгоды сейчас нет</div>
+      <div class="stc-b">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+        <b>Выгодных вариантов пока нет</b>
+        <p>Сейчас ребаланс не окупит комиссий — доли в норме, а бумаги работают хорошо. Загляните позже.</p>
+        <span class="stc-btn ghost">← Назад · режим</span>
+      </div></div>
+  </div>
+  <div class="notes">
+    <div class="note"><i>1</i><span>Две разные пустоты — это разные экраны: «ещё ничего нет» (первый запуск — объясняем и даём первое действие) и «ничего не нашлось» («Авто» без выгоды — говорим почему и куда вернуться). Один текст на оба случая — ошибка.</span></div>
+    <div class="note"><i>2</i><span>Скелетоны повторяют форму строк (монограмма + две строки + метрика), а не спиннер по центру: раскладка не прыгает, когда приходят данные. До 300&nbsp;мс не показываем ничего.</span></div>
+    <div class="note"><i>3</i><span>Частичный отказ: если котировки одной бумаги не пришли, строка остаётся с «—» и подписью «нет данных» — список работает, сломанная строка говорит о себе сама, экран целиком не блокируется.</span></div>
+  </div>
+</div>
+
+<!-- ═════════════════ карта ═════════════════ -->
+<div class="mk" id="m10">
+  <div class="mk-h"><span class="mk-n">10</span><h2>Карта: элемент мокапа → где живёт в коде</h2></div>
   <p class="mk-sub">Все экраны — переразметка существующих функций <code>rebalance-wizard.js</code>; расчёты, состояния и
      обработчики не трогаем. Объём: S — только CSS/разметка, M — заметная переразметка функции, L — новый компонент.</p>
   <table class="map">
@@ -934,13 +1009,15 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <tr><td>Центрированная колонка 980/1092px, прозрачный футер-пилюли</td><td><code>mainHtml()/footHtml()</code>: обёртка <code>.rbw-wrap</code>, кнопки на radius 999; ширина шага 3 — модификатор</td><td class="sz s">S</td></tr>
     <tr><td>Шаг 1 — карточки 2×2 с насечкой цели</td><td><code>stepPortfolio()</code>: список <code>.rbw-pflist</code> → сетка <code>.rbw-pfgrid</code>; данные те же (<code>calcPf/targetBond/driftThr</code>), в полосу добавить насечку <code>&lt;u&gt;</code></td><td class="sz m">M</td></tr>
     <tr><td>Шаг 2 — строка-факт вместо коробки-диаграммы, порог строкой</td><td><code>stepMode()</code>: упростить <code>.rbw-mc-diag</code> до <code>.rbw-mc-viz</code>; порог <code>rbwSetThr</code> без изменений</td><td class="sz s">S</td></tr>
-    <tr><td>Шаг 3 — герой-обмен со счётчиком количества</td><td><code>swapMini()+qtyCtrl()</code> сливаются в одну полосу над списками; слайдер → степпер (для акций счётчик с удержанием)</td><td class="sz m">M</td></tr>
+    <tr><td>Шаг 3 — тёмная герой-плита обмена («машина денег») со счётчиком</td><td><code>swapMini()+qtyCtrl()</code> сливаются в одну тёмную полосу над списками; палитра плиты фиксированная (ink #101828), не темизируется; слайдер → степпер (для акций счётчик с удержанием)</td><td class="sz m">M</td></tr>
     <tr><td>Шаг 3 — списки и панель «Что изменится» 312px</td><td><code>pickerCol()</code> — почти как есть (стили строк); <code>c2Panel()</code> — герой «купоны в год» + 4 строки-факта, кнопки из <code>.rbw-c2-actions</code></td><td class="sz m">M</td></tr>
     <tr><td>Шаг 3 · Авто — строки-карточки</td><td><code>stepAuto()</code>: разметка карточек, инфо-плашка уходит в лид; <code>autoVariants()</code> не трогаем</td><td class="sz s">S</td></tr>
     <tr><td>Шаг 4 — один лист: ноги + итоги + строки-предупреждения</td><td><code>stepBasket()/legHtml()</code>: слить <code>.rbw-legs/.rbw-bsum</code> в один <code>.rbw-sheet</code>, плашки → <code>.rbw-oline</code>; чипы корзины остаются</td><td class="sz m">M</td></tr>
     <tr><td>Квитанция — чек 660px со статус-точками</td><td><code>screenReceipt()</code>: центрирующая обёртка, статусы точками; поллинг/отмена без изменений</td><td class="sz s">S</td></tr>
     <tr><td>«Готово» — три карты + строка сверки</td><td><code>screenDone()</code>: карты из тех же полей <code>receipt</code>; для годовой — карта «до → после»</td><td class="sz s">S</td></tr>
     <tr><td>Тёмная тема</td><td>токены в <code>rebalance-wizard.css</code> под <code>body[data-theme=dark]</code> (по конвенции темизации проекта); теней нет — ступени поверхностей</td><td class="sz m">M</td></tr>
+    <tr><td>Дрейф в контексте рельсы</td><td><code>railHtml()</code>: строка «перевес … п.п.» под полосой долей — данные уже считаются для бейджа дрейфа</td><td class="sz s">S</td></tr>
+    <tr><td>Состояния: пусто / скелетоны / «вариантов нет» / строка без данных</td><td>тексты уже в коде (<code>rbw-empty</code>, <code>stepAuto</code>); скелетон-строки списков — новый CSS (<code>.rbw-sk</code>, шиммер 1,2s, показ после 300&nbsp;мс)</td><td class="sz s">S</td></tr>
     <tr><td>«Что если» — оверлей</td><td><code>whatIfHtml()</code> — без переразметки в этом раунде, только пилюльные кнопки; отдельным раундом, если понадобится</td><td class="sz s">S</td></tr>
   </table>
 </div>
