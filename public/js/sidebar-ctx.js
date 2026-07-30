@@ -702,6 +702,20 @@
     window.sbCtxSync = sbCtxSync;
 
     // ---------- клики ----------
+    // ПЕРЕХОД В «ПОРТФЕЛИ» ИЗ ЛЮБОГО МЕСТА. Пока «Обзор», «Ребаланс» и
+    // «Торговля» жили вторым уровнем, они нажимались только на своей вкладке —
+    // switchTab им был не нужен. В плоской навигации они стоят первым уровнем и
+    // нажимаются с «Главной» и с «Рынка»: без переключения вкладки клик молча
+    // ничего не делал (эту дыру владелец и нашёл).
+    // Модуль ленивый: switchTab поднимает цепочку #pfLazySrc, но pfxGoTab
+    // появляется только ПОСЛЕ неё — поэтому действие ждёт колбэка
+    // ensurePortfoliosJs. Тот же договор, что у rbxGoPf в js/rebalance.js.
+    function goPf(run) {
+        var away = (typeof currentTab === 'undefined') || currentTab !== 'portfolios';
+        if (away && window.switchTab) window.switchTab('portfolios');
+        if (window.ensurePortfoliosJs) window.ensurePortfoliosJs(run);
+        else run();
+    }
     function onClick(e) {
         var t = e.target;
         if (!t || !t.closest) return;
@@ -754,9 +768,9 @@
             setTimeout(function () { if (window.r5OpenQuiz) window.r5OpenQuiz(); }, 140);
             return;
         }
-        if (act === 'pfx') { if (window.pfxGoTab) window.pfxGoTab(key); return; }
-        if (act === 'trading') { if (window.pfxGoTrading) window.pfxGoTrading(); return; }
-        if (act === 'pf') { if (window.pfxOpenPf) window.pfxOpenPf(key); return; }
+        if (act === 'pfx') { goPf(function () { if (window.pfxGoTab) window.pfxGoTab(key); }); return; }
+        if (act === 'trading') { goPf(function () { if (window.pfxGoTrading) window.pfxGoTrading(); }); return; }
+        if (act === 'pf') { goPf(function () { if (window.pfxOpenPf) window.pfxOpenPf(key); }); return; }
         // скрыть/вернуть портфель прямо из колонки. Строка НЕ пропадает (скрытый
         // портфель остаётся приглушённым пунктом, cls 'dim'), поэтому вернуть его
         // можно тем же кликом — искать меню «Видимость» в шапке не надо.
