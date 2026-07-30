@@ -72,16 +72,20 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .exit svg{width:14px;height:14px}
 .brand em{display:block;font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--acc)}
 .brand b{display:block;font-family:var(--fT);font-weight:400;font-size:23px;letter-spacing:-.01em;margin-top:3px}
-.steps{margin-top:38px;display:flex;flex-direction:column;gap:22px}
-.rs{display:flex;align-items:flex-start;gap:13px}
-.rs i{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-style:normal;
-      font-family:var(--fN);font-size:11px;font-weight:700;border:1.5px solid var(--line);color:var(--dim);margin-top:-2px}
+.steps{margin-top:36px;display:flex;flex-direction:column}
+.rs{position:relative;display:flex;align-items:flex-start;gap:13px;padding:10px 0}
+.rs::after{content:'';position:absolute;left:11px;top:36px;bottom:-12px;width:1.5px;border-radius:1px;background:var(--line)}
+.rs:last-child::after{display:none}
+.rs.done::after{background:color-mix(in srgb,var(--ink) 35%,transparent)}
+.rs i{flex:none;position:relative;z-index:1;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-style:normal;
+      font-family:var(--fN);font-size:11px;font-weight:700;border:1.5px solid var(--line);color:var(--dim);background:var(--bg)}
+.rs>div{padding-top:3px}
 .rs b{display:block;font-size:13.5px;font-weight:600;color:var(--dim);line-height:1.25}
 .rs em{display:block;font-style:normal;font-size:11.5px;color:var(--dim);margin-top:2px;max-width:150px}
 .rs.on i{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 .rs.on b{color:var(--ink)}
 .rs.on em{color:var(--mut)}
-.rs.done i{border-color:transparent;background:color-mix(in srgb,var(--grn) 13%,transparent);color:var(--grn)}
+.rs.done i{border-color:color-mix(in srgb,var(--ink) 40%,transparent);color:var(--ink);font-size:10px}
 .rs.done b{color:var(--mut)}
 .rs:not(.on) em{display:none}
 .ctx{margin-top:auto;padding-top:20px;border-top:1px solid var(--line)}
@@ -314,11 +318,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .rcp-note svg{flex:none;width:15px;height:15px;margin-top:1px;color:var(--dim)}
 
 /* ── готово ── */
-.done{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:26px}
-.done-ic{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--grn) 11%,transparent);color:var(--grn);font-size:26px}
-.done h3{font-family:var(--fT);font-weight:400;font-size:31px;margin-top:20px}
-.done>p{font-size:13.5px;color:var(--mut);margin-top:8px;max-width:480px}
-.done-cards{display:grid;grid-template-columns:repeat(3,250px);gap:14px;margin-top:32px;text-align:left}
+.fin{display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:26px}
+.fin-ic{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--grn) 11%,transparent);color:var(--grn);font-size:26px}
+.fin h3{font-family:var(--fT);font-weight:400;font-size:31px;margin-top:20px}
+.fin>p{font-size:13.5px;color:var(--mut);margin-top:8px;max-width:480px}
+.fin-cards{display:grid;grid-template-columns:repeat(3,250px);gap:14px;margin-top:32px;text-align:left}
 .dc{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 20px;box-shadow:var(--shadow)}
 .dc em{display:block;font-style:normal;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
 .dc b{display:block;font-family:var(--fN);font-size:21px;font-weight:600;margin-top:9px}
@@ -327,7 +331,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .dc p .num{color:var(--ink)}
 .review{display:flex;align-items:center;gap:9px;margin-top:26px;font-size:12.5px;color:var(--mut)}
 .review svg{width:15px;height:15px;color:var(--dim)}
-.done-btns{display:flex;gap:12px;margin-top:28px}
+.fin-btns{display:flex;gap:12px;margin-top:28px}
 </style>
 </head>
 <body>
@@ -822,11 +826,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       <div class="demo" style="margin-top:20px"><i></i>Демо-режим</div>
     </div>
     <div class="main"><div class="wrap">
-      <div class="body"><div class="done">
-        <div class="done-ic">✓</div>
+      <div class="body"><div class="fin">
+        <div class="fin-ic">✓</div>
         <h3>Портфель выровнен</h3>
         <p>Заявки ушли брокеру — состав портфеля обновится, как счёт синхронизируется.</p>
-        <div class="done-cards">
+        <div class="fin-cards">
           <div class="dc"><em>Купоны · доход в год</em><b class="num up">+354&nbsp;₽</b>
             <p><span class="num">1&nbsp;010</span> → <span class="num">1&nbsp;364&nbsp;₽</span> в год — та же сумма вложений работает сильнее.</p></div>
           <div class="dc"><em>Облигаций стало</em><b class="num">10 → 11</b>
@@ -836,7 +840,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         </div>
         <div class="review"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0112 0c0 7 3 7 3 9H3c0-2 3-2 3-9zM10 21a2 2 0 004 0"/></svg>
           <span>Следующая годовая сверка — <b>30 июля 2027</b>. Напомним звоночком, когда подойдёт срок.</span></div>
-        <div class="done-btns"><div class="btn btn-ghost">Ещё ребаланс</div><div class="btn btn-dark">В портфель →</div></div>
+        <div class="fin-btns"><div class="btn btn-ghost">Ещё ребаланс</div><div class="btn btn-dark">В портфель →</div></div>
       </div></div>
     </div></div>
   </div></div>
