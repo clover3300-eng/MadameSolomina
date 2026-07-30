@@ -259,7 +259,14 @@
     function sbNavCells() {
         var nav = document.getElementById('sbNav');
         if (!nav) return [];
-        return Array.prototype.filter.call(nav.querySelectorAll('.sb-item[data-tab]'), sbVisible);
+        // БЕЗ ФИЛЬТРА [data-tab]: видимый первый уровень на десктопе — это
+        // строки, сгенерированные в #sbFlat (sidebar-ctx.js), и data-tab у них
+        // нет — подвкладки «Портфелей» ходят через data-act="pfx"/"trading",
+        // копии настоящих вкладок несут только href/onclick, а «Ещё» — это
+        // data-act="flatmore". Отбор по data-tab оставлял бы список пустым (или
+        // ловил бы скрытые исходные ссылки) — и стрелки на этих строках молчали.
+        // Скрытые исходники отсеивает sbVisible, порядок отдаёт сам DOM.
+        return Array.prototype.filter.call(nav.querySelectorAll('.sb-item'), sbVisible);
     }
     function sbCtxCells() {
         var ctx = document.getElementById('sbCtx');
