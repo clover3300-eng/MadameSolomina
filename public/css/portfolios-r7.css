@@ -1701,8 +1701,15 @@ body.dark-mode .pfpl-row:hover { background: rgba(255, 255, 255, 0.04); }
 .pfpl-nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 body.dark-mode .pfpl-id b { color: #f4f8fd; }
 /* портфель убран с «Обзора»: в списке он остаётся, но помечен глазом и приглушён —
-   строка читается как «есть, просто не на витрине», а не как обычная */
-.pfpl-hid { flex-shrink: 0; display: flex; color: #7c8aa0; opacity: 0.85; }
+   строка читается как «есть, просто не на витрине», а не как обычная.
+   Глаз — КНОПКА возврата видимости (pfToggleHidden), поэтому у него ховер */
+.pfpl-hid {
+    flex-shrink: 0; display: flex; color: #7c8aa0; opacity: 0.85;
+    background: none; border: 0; padding: 3px; margin: 0; cursor: pointer;
+    border-radius: 7px; transition: color 0.15s ease, background 0.15s ease;
+}
+.pfpl-hid:hover { color: #33465e; opacity: 1; background: rgba(124, 138, 160, 0.16); }
+body.dark-mode .pfpl-hid:hover { color: #dbe6f2; background: rgba(159, 177, 198, 0.18); }
 .pfpl-hid svg { width: 13px; height: 13px; }
 .pfpl-row.hid .pfpl-ic { opacity: 0.5; }
 .pfpl-row.hid .pfpl-nm { color: #64748b; }

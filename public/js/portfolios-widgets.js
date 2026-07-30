@@ -2498,8 +2498,11 @@
                     chip(c.pnlPct >= 0 ? 'pos' : 'neg', (c.pnlPct >= 0 ? '▲ ' : '▼ ') + absPct(c.pnlPct)), 'pfpl:' + p.id + ':yld')
                 : kpi('—', 'muted', '', 'pfpl:' + p.id + ':yld');
             var hid = !!p.hidden;
+            // значок-глаз скрытого — КНОПКА возврата (просьба 2026-07-30): раньше
+            // вернуть портфель можно было только из «Видимости», а список — самое
+            // очевидное место. pfToggleHidden сам гасит клик строки (stopPropagation)
             var hidMark = hid
-                ? '<span class="pfpl-hid" title="Карточка убрана с «Обзора» — в списке и в общем капитале портфель остаётся">' + PF.EYEOFF_SVG + '</span>'
+                ? '<button type="button" class="pfpl-hid" onclick="pfToggleHidden(\'' + p.id + '\',event)" title="Карточка убрана с «Обзора» — нажмите, чтобы вернуть" aria-label="Показать портфель на «Обзоре»">' + PF.EYEOFF_SVG + '</button>'
                 : '';
             return '<div class="pfpl-row' + (hid ? ' hid' : '') + '" role="button" tabindex="0" onclick="pfxOpenPf(\'' + p.id + '\')" title="Открыть дашборд портфеля">' +
                 '<span class="pfpl-ic" style="--pc:' + ac + '">' + PFPL_CASE_SVG + '</span>' +

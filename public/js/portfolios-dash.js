@@ -102,10 +102,11 @@
                 hm: pfdMigrHm(c),
                 hidden: c.hidden || {}, col: c.col || {}, notes: notes,
                 allocPf: c.allocPf || 'all',                    // выбранный портфель в «Распределении активов»
+                pdPf: c.pdPf || 'all',                          // выбранный портфель в «Составах портфелей»
                 thm: (c.thm && typeof c.thm === 'object') ? c.thm : {},   // per-виджет тема ('dark') из пикера
                 // ключа corner здесь больше нет: скругление одно на весь проект (14px)
                 saved: c.saved || null };                       // снимок сохранённой раскладки (для «Вернуть сохранённую»)
-        } catch (e) { return { on: true, order: [], span: {}, h: {}, sz: {}, hm: {}, hidden: {}, col: {}, notes: [], allocPf: 'all', thm: {}, saved: null }; }
+        } catch (e) { return { on: true, order: [], span: {}, h: {}, sz: {}, hm: {}, hidden: {}, col: {}, notes: [], allocPf: 'all', pdPf: 'all', thm: {}, saved: null }; }
     }
     // R9.4: ручной known-список (pfdKnownIds) УДАЛЁН — он молча стирал из конфига
     // любой виджет, который забыли в него дописать (мина для каждого нового
@@ -170,7 +171,7 @@
             // конфиге, а не отдельным ключом, поэтому едет в облако вместе с раскладкой
             // (pf_dash_tabs_v1 в cloud-sync.WATCH). У прочих подвкладок поле пустует.
             name: (typeof c.name === 'string') ? c.name.slice(0, 40) : '',
-            notes: notes, allocPf: c.allocPf || 'all', saved: c.saved || null };
+            notes: notes, allocPf: c.allocPf || 'all', pdPf: c.pdPf || 'all', saved: c.saved || null };
     }
     // ---- ЭКРАНЫ «ТОРГОВЛИ» ----------------------------------------------
     // Терминал держит бумагу парой «стакан + тикет», и на одной странице их
@@ -263,6 +264,7 @@
         if (pfxIsPfTab(tab)) {
             cfg.order.push(tab); cfg.col[tab] = 1; cfg.span[tab] = 5; cfg.hidden[tab] = 0;
             cfg.allocPf = tab.slice(3);
+            cfg.pdPf = tab.slice(3);   // «Составы» из пикера тоже сразу про этот портфель
             return cfg;
         }
         // НОВЫЙ экран «Торговли»: та же раскладка, что у первого (график | стакан |
@@ -2206,6 +2208,12 @@
     PF.pfdCfgFor = null;   // id блока с открытым поповером настроек (null — закрыт)
     // имя виджета для шапки поповера: каталог пикера + блоки вне каталога
     function pfdCfgName(id) {
+        // карточка портфеля: в каталоге пикера её теперь нет, пока она на дашборде
+        // (см. pfl2Catalog) — имя берём напрямую у портфеля
+        if (id.indexOf('pf:') === 0) {
+            var pp = findPf(id.slice(3));
+            return pp ? 'Портфель «' + pp.name + '»' : 'Портфель';
+        }
         var w = pfl2ById(id === 'cap2' ? 'cap' : id);
         if (w) return w.name;
         // карточки слотов терминала зовутся по бумаге: «Стакан · SBER»
@@ -2247,6 +2255,20 @@
                     }).join('') +
                 '</div>';
         }
+        // «Составы портфелей»: выбор, чей состав показывать (тот же селект, что в
+        // пикере) — при одном портфеле выбирать нечего, блока нет
+        var pdExtra = '';
+        if (id === 'pdetail' && visibleItems().length > 1) {
+            var scope = PF.dashCfg.pdPf || 'all';
+            if (scope !== 'all' && !visibleItems().some(function (p) { return p.id === scope; })) scope = 'all';
+            pdExtra = '<div class="pfdcfg-lbl">Портфель</div>' +
+                '<select class="pfl2-select" onchange="pfdCfgSetPdPf(\'' + a + '\', this.value)">' +
+                    '<option value="all"' + (scope === 'all' ? ' selected' : '') + '>Все портфели</option>' +
+                    visibleItems().map(function (p) {
+                        return '<option value="' + esc(p.id) + '"' + (scope === p.id ? ' selected' : '') + '>' + esc(p.name) + '</option>';
+                    }).join('') +
+                '</select>';
+        }
         return '<div class="pfdcfg-head">' +
                 '<div class="pfdcfg-head-t"><span class="pfdcfg-k">Настройки виджета</span><b class="pfdcfg-t">' + esc(pfdCfgName(id)) + '</b></div>' +
                 '<button type="button" class="pfdcfg-x" onclick="pfdCfgClose()" aria-label="Закрыть">' + PFDCFG_X_SVG + '</button>' +
@@ -2258,7 +2280,7 @@
                 segBtn('pfdCfgSetSize', 'm', size, 'M', 'Средний · по содержимому') +
                 segBtn('pfdCfgSetSize', 'l', size, 'L', 'Большой · не ниже 560 px') +
             '</div>' +
-            capExtra +
+            capExtra + pdExtra +
             '<div class="pfdcfg-hint">Изменения применяются сразу. Ширину и место меняйте перетаскиванием за кромки блока.</div>';
     }
     function pfdCfgMount(id, noAnim) {
@@ -2359,6 +2381,16 @@
         saveDashCfg();
         pfdRerender();
         pfdCfgRemountSoon(to);
+    };
+    // портфель «Составов»: контент блока меняется целиком → полный ре-рендер и
+    // повторный монтаж поповера без анимации (как смена вида графика)
+    window.pfdCfgSetPdPf = function (id, v) {
+        if ((PF.dashCfg.pdPf || 'all') === v) return;
+        pfdPushUndo();
+        PF.dashCfg.pdPf = v;
+        saveDashCfg();
+        pfdRerender();
+        pfdCfgRemountSoon(id);
     };
     // период графика — сессионная настройка, общая с пилюлями на самом виджете;
     // PF.pfdCapRepaint меняет карточку ВНУТРИ .pfd-body, поповер (сосед) не трогается
@@ -3177,9 +3209,12 @@
                     desc: 'Второй стакан и заявка по другому тикеру — рядом с первым', cats: ['pop', 'market'] });
             }
         }
-        // R9: карточки портфелей — тоже виджеты каталога: вернуть убранную карточку на
-        // вкладку-портфель или продублировать её на любую другую подвкладку
+        // R9 → 2026-07-30: карточка портфеля живёт в каталоге ТОЛЬКО когда её убрали
+        // корзиной с ТЕКУЩЕЙ вкладки (hidden=1) — как путь возврата. Постоянные
+        // «Портфель „…“» на каждый портфель захламляли «Активы и позиции»; скрытый
+        // глазом портфель возвращают «Видимость» и глаз в «Списке портфелей»
         visibleItems().forEach(function (p) {
+            if ((PF.dashCfg.hidden || {})['pf:' + p.id] !== 1) return;
             list.push({ id: 'pf:' + p.id, name: 'Портфель «' + p.name + '»', desc: 'Полная карточка портфеля: состав, мини-график и настройки', cats: ['assets'] });
         });
         return list;
@@ -3194,7 +3229,7 @@
     var pfl2OptMap = {};
     // тема по умолчанию — «стекло»: выбор расцветки из интерфейса убран (см. pfl2SetHtml
     // и pfdCfgHtml), все виджеты добавляются и живут стеклянными
-    function pfl2DefOpts() { return { size: 'm', theme: 'glass', view: 'line', period: '30' }; }
+    function pfl2DefOpts() { return { size: 'm', theme: 'glass', view: 'line', period: '30', pf: 'all' }; }
     function pfl2OptsOf(id) {
         if (!id) return pfl2DefOpts();
         if (!pfl2OptMap[id]) pfl2OptMap[id] = pfl2DefOpts();
@@ -3552,6 +3587,20 @@
         var curSel = '<label class="pfl2-lbl">Валюта</label>' +
             '<select class="pfl2-select" disabled title="Пока только рубль"><option>₽ Рубль</option></select>';
         var viewSeg = '<label class="pfl2-lbl">Вид графика</label>' + seg('view', [['line', PFD_ICO_CAP], ['bars', PFD_ICO_KPI]]);
+        // «Составы портфелей» при 2+ портфелях СПРАШИВАЮТ, чей состав показывать
+        // (просьба 2026-07-30): раньше виджет молча добавлял таблицы всех сразу.
+        // Выбор хранится в PF.dashCfg.pdPf (см. pfl2Add) — как allocPf у «Распределения»
+        var pfSel = '';
+        if (w.id === 'pdetail' && visibleItems().length > 1) {
+            var curPf = o.pf || 'all';
+            pfSel = '<label class="pfl2-lbl">Портфель</label>' +
+                '<select class="pfl2-select" onchange="pfl2SetOpt(\'pf\', this.value)">' +
+                    '<option value="all"' + (curPf === 'all' ? ' selected' : '') + '>Все портфели</option>' +
+                    visibleItems().map(function (p) {
+                        return '<option value="' + esc(p.id) + '"' + (curPf === p.id ? ' selected' : '') + '>' + esc(p.name) + '</option>';
+                    }).join('') +
+                '</select>';
+        }
         // Выбора темы нет: все виджеты — «стекло» (полупрозрачная поверхность с диагональным
         // бликом, как у плиток тепловой карты в «Рынке»), см. pfl2DefOpts
         var sizeSeg ='<label class="pfl2-lbl">Высота виджета</label>' + seg('size', [['s', 'S'], ['m', 'M'], ['l', 'L']]);
@@ -3559,6 +3608,7 @@
         // и «Высота» без имени читалась бы как общая для всех
         return '<div class="pfl2-set-t">Настройки · ' + esc(w.name) + '</div>' +
             (w.chart ? periodSel + curSel + viewSeg : '') +
+            pfSel +
             sizeSeg +
             '<div class="pfl2-set-hint">Настройки — у каждого виджета свои. Размеры и место всегда можно поменять позже — просто перетащите виджет или потяните за кромку.</div>';
     }
@@ -3648,6 +3698,9 @@
             var o = pfl2OptsOf(id);
             // «График капитала» — одно имя каталога на два блока-дизайна (линия/столбцы)
             var real = (id === 'cap' && o.view === 'bars') ? 'cap2' : id;
+            // «Составы портфелей»: выбранный в пикере портфель — в конфиг вкладки
+            // (применяем и если виджет уже на дашборде: выбор пользователя свежее)
+            if (real === 'pdetail' && o.pf) PF.dashCfg.pdPf = o.pf;
             var m = PF.dashCfg.hidden || {};
             var shownAlready = defOn[real] ? !m[real] : m[real] === 0;
             if (shownAlready) { skipped++; return; }
