@@ -413,8 +413,12 @@ body.dark-mode .pfc-permenu-n { border-color: rgba(255,255,255,0.08); color: #67
    в 30px от строки дельт. Ось процентов слева СОХРАНЕНА (решение раунда 1:
    «честно подписываем ось») — названное отступление от «голого» мокапа. */
 .pfc-mchart-plot { position: relative; display: flex; width: auto; height: 170px; min-width: 0; margin: 30px -18px 0; }
-.pfc-mchart-plot .pfcv-yaxis { flex: 0 0 28px; }
-.pfc-mchart-plot .pfcv-ytick { font-size: 8px; right: 4px; }
+/* Шкала процентов у карточки шире прежних 28px: график вылезает за паддинг
+   героя (margin -18px), поэтому подписи стояли в 4-5px от самой кромки карточки
+   и читались как оторванные. Теперь у них тот же воздух, что у остального
+   содержимого, а деления подпёрты линиями сетки (.pfcv-grid). */
+.pfc-mchart-plot .pfcv-yaxis { flex: 0 0 38px; }
+.pfc-mchart-plot .pfcv-ytick { font-size: 8.5px; right: 7px; }
 .pfc-mchart-plot .pfcv-x { display: none; }
 /* точки каждой даты по мокапу не рисуются — но остаются ховер-целями тултипов
    (названное отступление: мокап статичен и ховер не показывает) */
@@ -778,6 +782,10 @@ body.dark-mode .pfcv-ytick.zero { color: #9aa7b6; }
 .pfcv-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 .pfcv-zero { stroke: rgba(24,38,60,0.18); stroke-width: 1; stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
 body.dark-mode .pfcv-zero { stroke: rgba(255,255,255,0.18); }
+/* линии сетки под подписи шкалы: втрое тише нулевой и сплошные — ноль остаётся
+   единственной пунктирной, то есть по-прежнему главной опорой в кадре */
+.pfcv-grid { stroke: rgba(24,38,60,0.06); stroke-width: 1; vector-effect: non-scaling-stroke; }
+body.dark-mode .pfcv-grid { stroke: rgba(255,255,255,0.06); }
 /* IMOEX — второстепенная (сравнительная) кривая: тоньше, светлее и пунктиром, чтобы
    портфель (сплошная линия акцентного цвета) всегда читался как главный график. */
 .pfcv-imline { stroke: #94a3b8; stroke-width: 1.6; stroke-dasharray: 5 4; opacity: 0.85; }
@@ -850,8 +858,10 @@ body.dark-mode .pfc-rebal { background: #e8eef7; border-color: #e8eef7; color: #
 .pf-card--s .pfc-dayrow { margin-top: 13px; }
 .pf-card--s .pfc-delta-b { font-size: 13px; padding: 6px 7px 6px 11px; }
 .pf-card--s .pfc-mchart-plot { height: 104px; margin-top: 20px; }
-/* на 104px четыре деления оси читаются как сор — кривая остаётся голой */
-.pf-card--s .pfc-mchart-plot .pfcv-yaxis { display: none; }
+/* шкала в S остаётся, но делений меньше (niceTicks с count 2) и кегль мельче:
+   четыре деления на кривой 104px читались бы как сор */
+.pf-card--s .pfc-mchart-plot .pfcv-yaxis { flex: 0 0 32px; }
+.pf-card--s .pfc-mchart-plot .pfcv-ytick { font-size: 8px; right: 6px; }
 .pf-card--s .pfc-gcap { padding-bottom: 14px; }
 .pf-card--m .pfc-hero { padding-top: 24px; }
 .pf-card--m .pfc-hero-val { font-size: 48px; }

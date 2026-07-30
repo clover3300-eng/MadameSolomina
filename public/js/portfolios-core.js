@@ -870,10 +870,19 @@
             ? '<line class="pfcv-futline" x1="' + pPts[N - 1].x.toFixed(2) + '" y1="' + pPts[N - 1].y.toFixed(2) +
               '" x2="' + futX + '" y2="' + pPts[N - 1].y.toFixed(2) + '" vector-effect="non-scaling-stroke"/>'
             : '';
+        // Деления шкалы считаем ДО svg: подписям нужны линии, иначе «−5%» и «−10%»
+        // висят у левого края и не указывают ни на что (замечание 2026-07-30).
+        // В маленькой карточке делений меньше — на кривой 100px четыре не читаются.
+        var tickVals = niceTicks(minV, maxV, (ex && ex.size === 's') ? 2 : 4);
+        var grid = tickVals.map(function (v) {
+            if (v === 0) return '';   // ноль рисует своя, более заметная .pfcv-zero
+            var gy = yAt(v).toFixed(2);
+            return '<line class="pfcv-grid" x1="0" y1="' + gy + '" x2="100" y2="' + gy + '"/>';
+        }).join('');
         var svg = '<svg class="pfcv-svg" viewBox="0 0 100 100" preserveAspectRatio="none">' +
             '<defs><linearGradient id="pfcvGrad-' + uid + '" x1="0" y1="0" x2="0" y2="1">' +
             '<stop offset="0" stop-color="var(--pf-accent)" stop-opacity="0.34"/>' +
-            '<stop offset="1" stop-color="var(--pf-accent)" stop-opacity="0"/></linearGradient></defs>' +
+            '<stop offset="1" stop-color="var(--pf-accent)" stop-opacity="0"/></linearGradient></defs>' + grid +
             '<line class="pfcv-zero" x1="0" y1="' + zeroY.toFixed(2) + '" x2="100" y2="' + zeroY.toFixed(2) + '"/>' +
             '<path class="pfcv-area" d="' + area + '" fill="url(#pfcvGrad-' + uid + ')"/>' + imLine + futLine +
             '<path class="pfcv-line" pathLength="1" d="' + line + '" fill="none" stroke="var(--pf-accent)" stroke-width="2.4" vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -955,8 +964,8 @@
                 ? { bench: data.bench || 'IMOEX', pct: (pts[N - 1].im != null && isFinite(pts[N - 1].im)) ? pts[N - 1].im : null }
                 : null;
         }
-        // шкала процентов слева: «красивые» деления между minV и maxV (выравнены по кривой)
-        var yaxis = niceTicks(minV, maxV, 4).map(function (v) {
+        // шкала процентов слева: те же деления, что у линий сетки выше
+        var yaxis = tickVals.map(function (v) {
             var lbl = (Math.round(v) === v) ? String(v) : v.toFixed(1);
             return '<span class="pfcv-ytick' + (v === 0 ? ' zero' : '') + '" style="top:' + yAt(v).toFixed(2) + '%">' + lbl + '%</span>';
         }).join('');
