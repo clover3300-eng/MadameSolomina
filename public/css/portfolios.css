@@ -2611,6 +2611,37 @@ body.pfd-dragging-now * { cursor: grabbing !important; }
     z-index: 5; pointer-events: auto; touch-action: none; cursor: grab;
 }
 body.pfd-dragging-now .pfd-move { cursor: grabbing; }
+/* Ручка-«таблетка» по центру верхней грани — видимый маячок «за это тянут»:
+   проявляется при наведении на блок, страддлит кромку (наполовину над карточкой).
+   Сам хват шире пилюли: вся полоса .pfd-move плюс шапка-хват (.pfd-headgrab ниже). */
+.pfd-move::before {
+    content: ''; position: absolute; left: 50%; top: 50%;
+    width: 46px; height: 15px; border-radius: 8px;
+    transform: translate(-50%, -50%);
+    background: #fff; border: 1px solid rgba(15, 23, 42, 0.12);
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.14);
+    opacity: 0; transition: opacity 0.15s;
+}
+.pfd-move::after {
+    content: ''; position: absolute; left: 50%; top: 50%;
+    width: 15px; height: 10px;
+    transform: translate(-50%, -50%);
+    background-image: radial-gradient(circle, #97a3b4 1px, transparent 1.4px);
+    background-size: 5px 5px;
+    opacity: 0; transition: opacity 0.15s;
+}
+.pfd-grid.pfd-live .pfd-item:hover .pfd-move::before,
+.pfd-grid.pfd-live .pfd-item:hover .pfd-move::after { opacity: 1; }
+body.pfd-dragging-now .pfd-move::before,
+body.pfd-dragging-now .pfd-move::after { opacity: 0 !important; }
+body.dark-mode .pfd-move::before {
+    background: #243044; border-color: rgba(255, 255, 255, 0.14);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+}
+body.dark-mode .pfd-move::after { background-image: radial-gradient(circle, #8fa0b8 1px, transparent 1.4px); }
+/* Шапка-хват: JS вешает класс, пока мышь в верхних 44px блока вне интерактива —
+   «ладошка» подсказывает, что тянуть можно за заголовок, как окно ОС. */
+.pfd-grid.pfd-live .pfd-item.pfd-headgrab { cursor: grab; }
 /* Режим настройки (карточка «Раскладка» открыта): блок тащится за ЛЮБОЕ место (логика в
    pointerdown-хендлере) — показываем это курсором «ладошка» на всей карточке, а на
    интерактивных элементах внутри возвращаем обычный указатель. */

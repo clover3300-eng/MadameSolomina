@@ -1521,7 +1521,7 @@
                     // и .pfd-rs-l/-r; чистая CSS-анимация, кликов не ловит (pointer-events none)
                     '<div class="pfxg-demo" aria-hidden="true">' +
                         '<div class="pfxg-demo-stage"><span class="pfxg-dtile pfxg-dtile-a"></span><span class="pfxg-dtile pfxg-dtile-b"></span></div>' +
-                        '<span class="pfxg-demo-t">виджеты живые: тяните за верхнюю грань — поменяются местами, за края — изменят размер</span>' +
+                        '<span class="pfxg-demo-t">виджеты живые: тяните за шапку — поменяются местами, за края — изменят размер</span>' +
                     '</div>' +
                     pfxgLaysHtml() +
                 '</div></div>' +
@@ -2418,6 +2418,10 @@
     var pfdGz = 1;              // zoom-фактор контекста призрака (body zoom 0.9)
     var pfdGrabX = 0, pfdGrabY = 0;
     var pfdArm = null;          // { item, x, y } — ждём порог 5px до старта
+    var PFD_GRAB_H = 44;        // шапка-хват: верхние px блока тянут его мышью (как окно за заголовок)
+    // интерактив, который хваты НЕ перехватывают: кнопки/ссылки/поля/редактируемый
+    // текст заметок, ручки ресайза, угловые кнопки, поповер настроек виджета
+    var PFD_GRAB_SKIP = 'button, a, input, textarea, select, [contenteditable="true"], .pfnt-tx, .pfd-rs, .pfd-rs-r, .pfd-rs-b, .pfd-rs-l, .pfd-eye, .pfd-cardrm, .pfdcfg-pop';
     var pfdLastPt = null;
     var pfdLastReorder = 0;
     var pfdTick = null;
@@ -2699,14 +2703,39 @@
             // в режиме настройки (карточка «Раскладка» открыта) блок тащится за ЛЮБОЕ
             // место — левый край, тело, шапку — кроме интерактивных элементов (кнопки,
             // ссылки, поля, редактируемый текст заметок, ручки ресайза, глаз/корзина)
-            if (e.target.closest('button, a, input, textarea, select, [contenteditable="true"], .pfnt-tx, .pfd-rs, .pfd-rs-r, .pfd-rs-b, .pfd-rs-l, .pfd-eye, .pfd-cardrm')) return;
+            if (e.target.closest(PFD_GRAB_SKIP)) return;
             it = e.target.closest('#pfdGrid.pfd-live .pfd-item');
+        } else if (e.target.closest && e.pointerType !== 'touch') {
+            // шапка-хват: вне режима настройки блок тянется и за верхние 44px карточки
+            // («схватить за заголовок», как окно ОС) — целиться в грип-полосу больше
+            // не обязательно. Интерактив шапки не перехватываем; touch не трогаем —
+            // там верх карточки нужен жестам скролла страницы.
+            if (e.target.closest(PFD_GRAB_SKIP)) return;
+            it = e.target.closest('.pfd-grid.pfd-live .pfd-item');
+            if (it && (it.getAttribute('data-pfd') === '__ghost' || e.clientY - it.getBoundingClientRect().top > PFD_GRAB_H)) it = null;
         }
         if (!it) return;
         e.preventDefault();
         pfdArm = { item: it, x: e.clientX, y: e.clientY };
     });
+    // курсор-«ладошка» над шапкой-хватом: пока мышь в верхних PFD_GRAB_H px блока
+    // вне интерактива — класс .pfd-headgrab (cursor: grab). Над кнопками/полями
+    // класс снимается (у них свои курсоры), во время жестов (drag/resize) — тоже.
+    var pfdHeadItem = null;
+    function pfdHeadHover(e) {
+        var it = null;
+        if (!pfdBusy() && !PF.dashEdit && e.pointerType !== 'touch' && pfdLive() &&
+            e.target.closest && !e.target.closest(PFD_GRAB_SKIP)) {
+            it = e.target.closest('.pfd-grid.pfd-live .pfd-item');
+            if (it && (it.getAttribute('data-pfd') === '__ghost' || e.clientY - it.getBoundingClientRect().top > PFD_GRAB_H)) it = null;
+        }
+        if (it === pfdHeadItem) return;
+        if (pfdHeadItem) pfdHeadItem.classList.remove('pfd-headgrab');
+        pfdHeadItem = it;
+        if (it) it.classList.add('pfd-headgrab');
+    }
     document.addEventListener('pointermove', function (e) {
+        pfdHeadHover(e);
         if (pfdArm && !pfdDragEl && !pfdRsCancel) {   // во время ресайза драг не стартует
             // порог 5px: случайный клик не превращается в перетаскивание
             if (Math.abs(e.clientX - pfdArm.x) + Math.abs(e.clientY - pfdArm.y) > 5) {
