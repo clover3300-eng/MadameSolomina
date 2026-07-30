@@ -111,6 +111,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .scr.dark .px.scene::before{background:radial-gradient(120% 130% at 50% -14%, color-mix(in srgb,var(--pfa) 17%,transparent) 0%, transparent 66%)}
 .px.w880{width:880px}
 .px.w640{width:640px}
+.px.w520{width:520px}
 .px.w380{width:380px}
 
 /* ---------- шапка ---------- */
@@ -152,6 +153,28 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
    color:var(--mut);background:var(--card);flex:none}
 .scr.dark .px-ico{border-color:rgba(255,255,255,.09);background:rgba(255,255,255,.04);color:#9fb0c4}
 .px-ico svg{width:14px;height:14px}
+/* НОВОЕ: переключатель размера — ховер-хром карточки, в покое его нет.
+   Кнопка того же размера и той же формы, что .pfc-act рядом (правило гармонии). */
+.px-szb{display:inline-flex;align-items:center;height:30px;border-radius:9px;flex:none;
+   border:1px solid rgba(24,38,60,.1);background:var(--card);overflow:hidden}
+.scr.dark .px-szb{border-color:rgba(255,255,255,.09);background:rgba(255,255,255,.04)}
+.px-szb b{width:28px;text-align:center;line-height:28px;font-family:var(--fN);font-size:11px;font-weight:700;color:var(--dim)}
+.px-szb b.on{background:color-mix(in srgb,var(--ink) 8%,transparent);color:var(--ink)}
+.scr.dark .px-szb b.on{background:rgba(255,255,255,.12);color:#f4f8fd}
+.px-szb.one{width:30px}
+.px-szb.ghost{opacity:.45}
+.px-szb.one b{width:28px;color:var(--mut)}
+.px-szb svg{width:13px;height:13px;color:var(--mut)}
+/* Р3: ручка на нижней кромке */
+.px-hand{position:absolute;left:50%;bottom:0;transform:translateX(-50%);display:inline-flex;align-items:center;gap:6px;
+   padding:4px 11px 5px;border-radius:10px 10px 0 0;border:1px solid var(--line);border-bottom:0;background:var(--card);z-index:8}
+.px-hand i{font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;color:var(--dim)}
+.px-hand b{font-family:var(--fN);font-size:10.5px;font-weight:700;color:var(--ink);letter-spacing:.06em}
+/* рамка «курсор здесь» вокруг карточки в состоянии ховера */
+.hoverbox{position:relative;padding:9px;border-radius:20px;border:1.5px dashed color-mix(in srgb,var(--acc) 45%,transparent);
+   background:color-mix(in srgb,var(--acc) 4%,transparent)}
+.hoverbox .hh{position:absolute;top:-11px;left:16px;font-family:var(--fN);font-size:10px;font-weight:700;letter-spacing:.08em;
+   text-transform:uppercase;color:var(--acc);background:var(--bg);padding:0 7px}
 /* «Открыть ›» — появляется на ховере в S/M вместо подвала */
 .px-open{flex:none;display:inline-flex;align-items:center;gap:5px;font-family:var(--fU);font-size:11.5px;font-weight:700;
    color:var(--mut);border:1px solid var(--line);border-radius:9px;padding:6px 9px;background:var(--card)}
@@ -248,6 +271,14 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
 /* ---------- KPI ---------- */
 .px-kpis{display:grid;grid-template-columns:repeat(4,1fr);padding:15px 0 16px;border-top:1px solid var(--hair);margin-top:14px}
+.px-kpis.n3{grid-template-columns:repeat(3,1fr)}
+.px-kpis.n2{grid-template-columns:repeat(2,1fr)}
+/* К3: сводка не колонками, а одной тихой строкой */
+.px-krow{display:flex;align-items:baseline;gap:0;flex-wrap:wrap;padding:14px 18px 16px;border-top:1px solid var(--hair);margin-top:14px;justify-content:center}
+.px-krow span{font-size:11.5px;color:var(--mut);white-space:nowrap}
+.px-krow b{font-family:var(--fN);font-size:12.5px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;margin-left:6px}
+.px-krow b.pos{color:var(--grn)} .px-krow b.neg{color:var(--red)}
+.px-krow i{font-style:normal;color:var(--dim);margin:0 10px}
 .px-kpi{padding:0 12px;border-left:1px solid var(--hair);text-align:center;min-width:0}
 .px-kpi:first-child{border-left:0}
 .px-kpi .k{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -386,10 +417,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <div class="doc-h">
     <div class="doc-kicker">Портфели · Обзор · карточка · раунд 4</div>
     <h1>Одна пилюля, тихий график и три размера</h1>
-    <p>Четыре замечания: <b>две дельты вместо одной</b>, <b>чип «сравнить»</b>, который лезет в глаз, <b>столбик будущей выплаты</b> рядом с кривой и <b>три размера S / M / L</b> — с условием, что имя портфеля видно всегда. Ниже — что меняется в каждом месте, из чего выбрать и чем это платится.</p>
+    <p>Замечания раунда: <b>две дельты вместо одной</b>, <b>чип «сравнить»</b>, который лезет в глаз, <b>столбик будущей выплаты</b> рядом с кривой, <b>три размера S / M / L</b> — с условием, что имя портфеля видно всегда, — а по итогам первого просмотра ещё три: <b>четыре числа в сводке M — много</b>, <b>L нужен пошире</b> и <b>переключать размер нужно ховер-кнопкой</b>, не настройками. Ниже — что меняется в каждом месте, из чего выбрать и чем это платится.</p>
     <div class="verdict">
       <p><b>У всех четырёх замечаний один корень.</b> Верхний этаж карточки собирался по частям: сначала появились пилюли периода в шапке, потом чип дня, потом бейдж брокера и флаги состояния, потом чип сравнения и метки выплат на графике. Каждый элемент по отдельности оправдан, а вместе получилось <b>четыре независимых контрола на 350 пикселях высоты</b> — и ни одному не хватает места.</p>
       <p><b>Поэтому чинить их надо вместе.</b> Пилюля забирает себе период — и из шапки уходят сегменты <code>.pfc-seg</code>; освободившееся место достаётся имени. Чип сравнения и подпись выплаты уходят с полотна графика в одну тихую строку под ним — и полотно остаётся чистым в любом размере. После этого этажи карточки становятся отделимыми друг от друга, и S / M / L — уже просто вопрос, где обрезать.</p>
+      <p><b>Сводка ужалась не ради воздуха.</b> Пилюля теперь сама показывает и ₽, и % за выбранное окно — и три числа из четырёх в сводке стали её дублем. Осталось три колонки: то, чего пилюля не говорит никогда («Вложено», годовые), плюс «За день», потому что пилюля обычно стоит на другом окне.</p>
       <p><b>Новых данных не нужно.</b> Дельты за 30 дней и год уже считает <code>heroIncParts</code> по <code>chartRaw[pid].series</code>, ближайшую выплату — <code>cardPayMarks</code>, бенчмарк — <code>PF.benchMode</code>. Меняется только то, как это показано.</p>
     </div>
   </div>
@@ -426,17 +458,25 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <div class="notes" id="notes3"></div>
   </section>
 
-  <!-- ================= 04. ЧЕМ ПЕРЕКЛЮЧАЕТСЯ ================= -->
+  <!-- ================= 04. СКОЛЬКО ЧИСЕЛ В СВОДКЕ ================= -->
   <section class="mk">
-    <div class="mk-h"><span class="mk-n">04</span><h2>Чем переключается размер</h2><span class="mk-tag mute">механика</span></div>
-    <div class="mk-sub">Размер не должен быть ещё одной настройкой, о которой надо помнить. В конструкторе высоту блока задаёт сам пользователь — размер карточки просто следует за ней; ручной выбор остаётся как оверрайд.</div>
+    <div class="mk-h"><span class="mk-n">04</span><h2>Сколько чисел в сводке</h2><span class="mk-tag mute">три решения</span></div>
+    <div class="mk-sub">Четыре колонки в M действительно много — и дело не только в тесноте. <b>Пилюля теперь сама показывает и ₽, и % за выбранный период</b>, поэтому половина сводки стала её дублем: «Доход» и «Доходность» — то же самое, что пилюля в режиме «за всё время», а «За день» — то же, что пилюля в режиме «сегодня».</div>
+    <div class="scroller"><div class="scr" id="scr4k"></div></div>
+    <div class="notes" id="notes4k"></div>
+  </section>
+
+  <!-- ================= 05. ЧЕМ ПЕРЕКЛЮЧАЕТСЯ ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">05</span><h2>Чем переключается размер</h2><span class="mk-tag mute">три решения + авто</span></div>
+    <div class="mk-sub">⚙ в шапке — это <b>настройки портфеля</b> (состав, цвет, цель), и размеру карточки там не место: он про виджет, а не про портфель. Значит нужен свой контрол — и он не должен занимать место в покое. Ниже три ховер-решения и правило, по которому размер выбирается сам.</div>
     <div class="scroller"><div class="scr" id="scr4"></div></div>
     <div class="notes" id="notes4"></div>
   </section>
 
   <!-- ================= 05. ПРОВЕРКА ================= -->
   <section class="mk">
-    <div class="mk-h"><span class="mk-n">05</span><h2>Тёмная тема, узкий блок, краевые</h2><span class="mk-tag no">проверка на прочность</span></div>
+    <div class="mk-h"><span class="mk-n">06</span><h2>Тёмная тема, узкий блок, краевые</h2><span class="mk-tag no">проверка на прочность</span></div>
     <div class="mk-sub">Узкий блок 380&nbsp;px во всех трёх размерах, тёмная тема, миллиард, «Скрывать суммы», прогрев и портфель без вчерашней цены.</div>
     <div class="scroller"><div class="scr dark" id="scr5"></div></div>
     <div class="notes" id="notes5"></div>
@@ -444,18 +484,21 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
   <!-- ================= КАРТА ================= -->
   <section class="mk">
-    <div class="mk-h"><span class="mk-n">06</span><h2>Что где меняется</h2><span class="mk-tag mute">карта в код</span></div>
+    <div class="mk-h"><span class="mk-n">07</span><h2>Что где меняется</h2><span class="mk-tag mute">карта в код</span></div>
     <table class="map" id="mapTbl"></table>
   </section>
 
   <!-- ================= РЕКОМЕНДАЦИЯ ================= -->
   <section class="mk">
-    <div class="mk-h"><span class="mk-n">07</span><h2>Что бы взяла я</h2><span class="mk-tag ok">рекомендация</span></div>
+    <div class="mk-h"><span class="mk-n">08</span><h2>Что бы взяла я</h2><span class="mk-tag ok">рекомендация</span></div>
     <div class="rec">
-      <h3>П1 + Г1 + приоритет имени, размеры автоматом по высоте блока</h3>
+      <h3>П1 + Г1 + К2 + Р2, приоритет имени, размеры автоматом по блоку</h3>
       <p><b>Пилюля П1 «с меню».</b> Циклер (П2) дешевле, но у него нет ответа на вопрос «а что тут вообще бывает»: пользователь видит одно значение и не знает, что кликом получит ещё три. Меню показывает все четыре периода <b>сразу с цифрами</b> — это уже не переключатель, а маленький отчёт, и его открывают один раз, чтобы понять, а дальше пользуются как переключателем.</p>
       <p><b>Подпись графика Г1.</b> Она решает сразу оба замечания одним элементом в 22&nbsp;px и попутно даёт S нижнюю кромку — без неё карточка обрывается ровно по срезу кривой. Полотно графика остаётся чистым: на нём только линия, точки выплат и пульс.</p>
-      <p><b>Размеры — автоматом.</b> Высоту блока в конструкторе пользователь и так тянет мышью; заставлять его после этого выбирать ещё и S/M/L — двойная работа и источник рассинхрона («блок высокий, а карточка маленькая»). Поэтому размер считается из высоты блока, а ручной выбор остаётся в настройках виджета как оверрайд для тех, кому нужно наоборот.</p>
+      <p><b>Сводка К2 «три».</b> Две колонки — строже по логике, но сводка из двух чисел выглядит недоделанной, а хайрлайн над ней перестаёт себя оправдывать. Три — это ровно тот же приём, которым в раунде&nbsp;1 уже убрали дубль годовых: лишнее не выкидывается, а складывается в подпись. И «За день» остаётся на месте — иначе при пилюле на «за год» дневное число будет негде взять.</p>
+      <p><b>Переключатель Р2.</b> Довод тот же, что за меню в пилюле: контрол должен показывать не только, где ты, но и что бывает. В покое кнопки нет вовсе, на ховере карточки — квадрат с буквой, под курсором он разъезжается в три. Форма и размер — от соседней ⚙, а не свои: правило «новый контрол в чужой карточке берёт её компонент».</p>
+      <p><b>Размеры — автоматом.</b> Высоту блока в конструкторе пользователь и так тянет мышью; заставлять его после этого выбирать ещё и S/M/L — двойная работа и источник рассинхрона («блок высокий, а карточка маленькая»). Поэтому размер считается из блока, а ховер-кнопка — оверрайд для тех, кому нужно наоборот. И размер, и оверрайд живут в конфиге блока, а не в настройках портфеля: один и тот же портфель в двух блоках может стоять по-разному.</p>
+      <p><b>L шире.</b> Не косметика: на 440&nbsp;px шестиколоночная таблица давала «Активу» 125&nbsp;px, и «Банк Санкт-Петербург» резался. На 520 — 149&nbsp;px. Поэтому в правило авто-размера ширина входит вторым условием: высокий, но узкий блок остаётся на M.</p>
       <h3 style="margin-top:16px">Что решить до кода</h3>
       <ul>
         <li><b>Полоса распределения в M.</b> По вашей формулировке M кончается на KPI, так и нарисовано. Но полоса — это 38&nbsp;px, и она единственная в карточке говорит про структуру. Предлагаю оставить как нарисовано (M = ровно до KPI), а если захочется — добавить её в M одной строкой CSS.</li>
@@ -463,6 +506,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         <li><b>«Сегодня» и график.</b> Это единственный пункт меню, который график не отрабатывает: суточной кривой у нас физически нет (снимки дневные). В мокапе при «сегодня» график остаётся на самом коротком доступном окне, и в меню это подписано. Второй вариант — не пускать «сегодня» в меню вовсе и оставить дневную дельту только в KPI, но тогда в S её негде взять.</li>
         <li><b>Флаги состояния становятся иконками.</b> «Только чтение», «Скрыт» и «Суммы скрыты» дублируются плашками над списком (в L) и самим видом карточки. В шапке от них остаётся иконка с подсказкой. В S и M плашек нет — значит, подсказка становится единственным носителем текста; это осознанный размен.</li>
         <li><b>Экстремумы на графике.</b> Флажки «₽ · дата» у максимума и минимума нигде не заказывались к правке, но в S на кривой 104&nbsp;px их некуда ставить. Предлагаю: экстремумы только в L, в S и M — чистая кривая.</li>
+        <li><b>Сводка в L — тоже три?</b> Нарисовано «да»: держать в M три колонки, а в L четыре — значит рассинхронить две карточки, которые пользователь видит рядом. Если «Доходность» отдельной колонкой в L всё-таки нужна, это одна строка CSS.</li>
+        <li><b>Размер на мобиле.</b> Ховера там нет: кнопка либо видна всегда, либо размеров на мобиле нет вовсе. Мобильный слой карточки живёт по своим правилам в <code>css/mobile.css</code>, и это отдельный разговор — в мокапе он не нарисован.</li>
+        <li><b>Сброс к «авто».</b> Первый клик по ховер-кнопке фиксирует размер вручную. Вернуться к автоматическому — предлагаю в настройках блока конструктора; в самой кнопке четвёртого состояния «А» не рисовала, чтобы не превращать её в четырёхпозиционный тумблер.</li>
       </ul>
     </div>
   </section>
@@ -610,6 +656,7 @@ function top(o){
     (o.fico || []).forEach(function(f){ r += '<span class="px-fico">' + IC[f] + '</span>'; });
     r += '<div class="px-top-r">';
     if (o.open) r += '<span class="px-open' + (o.openGhost ? ' ghost' : '') + '">Открыть' + IC.right + '</span>';
+    if (o.sz) r += szBtn(o.sz, o.szOpen, o.openGhost);
     if (!o.tight) r += '<span class="px-icons"><span class="px-ico">' + IC.copy + '</span><span class="px-ico">' + IC.eyeoff + '</span></span>';
     r += '<span class="px-icons"><span class="px-ico">' + IC.gear + '</span></span></div>';
   } else {
@@ -623,6 +670,14 @@ function top(o){
          '<span class="px-ico">' + IC.gear + '</span></span></div>';
   }
   return r + '</div>';
+}
+
+/* переключатель размера: в покое одна буква, при наведении НА НЕГО — три */
+function szBtn(cur, open, ghost){
+  var g = ghost ? ' ghost' : '';
+  if (!open) return '<span class="px-szb one' + g + '"><b>' + cur + '</b></span>';
+  return '<span class="px-szb' + g + '">' + ['S', 'M', 'L'].map(function(x){
+    return '<b' + (x === cur ? ' class="on"' : '') + '>' + x + '</b>'; }).join('') + '</span>';
 }
 
 function valHtml(n, o){
@@ -679,23 +734,42 @@ function gcap(o){
   return '<div class="px-gcap">' + l + r + '</div>';
 }
 
+/* сводка. set: '4' (как сейчас) | '3' (рекомендую) | '2' | 'row' (одной строкой) */
 function kpis(o){
   o = o || {};
+  var set = o.set || '3';
   function c(k, v, cls, s){
     return '<div class="px-kpi"><div class="k">' + k + '</div><div class="v' + (cls ? ' ' + cls : '') + '">' + v + '</div><div class="s">' + s + '</div></div>';
   }
   if (o.warm) {
     var sk = function(w, h){ return '<span class="px-sk" style="width:' + w + 'px;height:' + h + 'px"></span>'; };
-    return '<div class="px-kpis">' + c('Вложено', sk(80, 16), '', sk(56, 10)) + c('Доход', sk(66, 16), '', sk(56, 10)) +
-      c('Доходность', sk(52, 16), '', sk(56, 10)) + c('За день', sk(66, 16), '', sk(56, 10)) + '</div>';
+    var n = set === '2' ? 2 : set === '4' ? 4 : 3;
+    var cells = ['Вложено', 'Доход', 'Доходность', 'За день'];
+    if (n === 3) cells = ['Вложено', 'Доход', 'За день'];
+    if (n === 2) cells = ['Вложено', 'Доход'];
+    return '<div class="px-kpis n' + n + '">' + cells.map(function(k){ return c(k, sk(74, 16), '', sk(54, 10)); }).join('') + '</div>';
   }
   var m = function(t){ return o.priv ? '<span class="mask">' + t + '</span>' : t; };
-  return '<div class="px-kpis">' +
-    c('Вложено', m(rub(INVEST) + NB + '₽'), '', '0' + NB + '₽ свободно') +
-    c('Доход', m('+' + rub(23191) + NB + '₽'), 'pos', 'за 428 дней') +
-    c('Доходность', '+13,2%', 'pos', '+11,1% годовых') +
-    c('За день', m('−' + rub(554) + NB + '₽'), 'neg', '−0,3% сегодня') +
-  '</div>';
+  var invested = c('Вложено', m(rub(INVEST) + NB + '₽'), '', '0' + NB + '₽ свободно');
+  var day = c('За день', m('−' + rub(554) + NB + '₽'), 'neg', '−0,3% сегодня');
+
+  if (set === 'row') {
+    return '<div class="px-krow"><span>Вложено<b>' + m(rub(INVEST) + NB + '₽') + '</b></span><i>·</i>' +
+      '<span>Доход<b class="pos">' + m('+' + rub(23191) + NB + '₽') + '</b><b class="pos">+13,2%</b></span><i>·</i>' +
+      '<span>За день<b class="neg">' + m('−' + rub(554) + NB + '₽') + '</b></span></div>';
+  }
+  if (set === '4') {
+    return '<div class="px-kpis">' + invested +
+      c('Доход', m('+' + rub(23191) + NB + '₽'), 'pos', 'за 428 дней') +
+      c('Доходность', '+13,2%', 'pos', '+11,1% годовых') + day + '</div>';
+  }
+  if (set === '2') {
+    return '<div class="px-kpis n2">' + invested +
+      c('Доход', m('+' + rub(23191) + NB + '₽'), 'pos', '+13,2% · +11,1% годовых') + '</div>';
+  }
+  // '3' — «Доходность» сложилась в подпись «Дохода», как годовые в раунде 1
+  return '<div class="px-kpis n3">' + invested +
+    c('Доход', m('+' + rub(23191) + NB + '₽'), 'pos', '+13,2% · +11,1% годовых') + day + '</div>';
 }
 
 function thin(){
@@ -739,14 +813,16 @@ function foot(){
 function card(o){
   o = o || {};
   var size = o.size || 'l';
-  var W = o.w || 440;
+  // L живёт в блоке пошире: шесть колонок таблицы на 440px уже жмутся
+  var W = o.w || (size === 'l' ? 520 : 440);
   var H = o.chartH || (size === 's' ? 104 : size === 'm' ? 138 : 170);
-  var cls = 'px scene sz-' + size + (W === 880 ? ' w880' : W === 640 ? ' w640' : W === 380 ? ' w380' : '') + (o.dim ? ' dim' : '');
+  var cls = 'px scene sz-' + size + (W === 880 ? ' w880' : W === 640 ? ' w640' : W === 520 ? ' w520' : W === 380 ? ' w380' : '') + (o.dim ? ' dim' : '');
   var pad = W === 380 ? 14 : 18;
 
   var r = '<div class="' + cls + '" style="width:' + W + 'px">';
   r += top({ mode: o.mode || 'new', name: o.name, broker: o.broker, sand: o.sand, fico: o.fico,
-             flags: o.flags, tight: o.tight, on: o.on, open: o.open, openGhost: o.openGhost });
+             flags: o.flags, tight: o.tight, on: o.on, open: o.open, openGhost: o.openGhost,
+             sz: o.sz, szOpen: o.szOpen });
 
   r += '<div class="px-hero">';
   if (!o.hideEyebrow) r += '<span class="px-hero-k">Стоимость портфеля</span>';
@@ -768,11 +844,11 @@ function card(o){
   if (o.mode !== 'now') r += gcap({ bench: o.bench || 'off', pay: o.pay == null ? true : o.pay });
   else r += '<div style="height:14px"></div>';
 
-  if (size === 's') return r + '</div>';
-  r += kpis({ priv: o.priv, warm: o.warm });
-  if (size === 'm') return r + '</div>';
+  if (size === 's') return r + (o.hand || '') + '</div>';
+  r += kpis({ priv: o.priv, warm: o.warm, set: o.kpi });
+  if (size === 'm') return r + (o.hand || '') + '</div>';
   r += thin() + positions({ narrow: W === 380 }) + foot();
-  return r + '</div>';
+  return r + (o.hand || '') + '</div>';
 }
 
 /* ============================ вспомогательное ============================ */
@@ -788,29 +864,47 @@ var PAYS_D = [{ i: 12 }, { i: 26 }, { i: 39 }];
 
 /* ============================ 00. S / M / L ============================ */
 document.getElementById('scr0').innerHTML =
-  '<div class="row" style="align-items:flex-start">' +
-    '<div class="col">' + szb('S', 315, 'до KPI') +
-      card({ size: 's', per: 'today', hideEyebrow: true, uid: 's0', pays: PAYS_D, pay: 'short', open: true, openGhost: true, tight: true }) +
+  '<div class="row" style="align-items:flex-start;gap:26px">' +
+    '<div class="col">' + szb('S', 315, '440 px · до сводки') +
+      card({ size: 's', per: 'today', hideEyebrow: true, uid: 's0', pays: PAYS_D, pay: 'short', open: true, openGhost: true, tight: true, sz: 'S' }) +
       '<div class="spec-cap" style="max-width:440px"><b>Что видно</b>' +
-      '<p>Имя, сумма, одна пилюля, кривая и подпись под ней. Ни KPI, ни долей, ни позиций, ни подвала. Подпись графика — нижняя кромка карточки: без неё срез кривой выглядел бы обрывом.</p>' +
+      '<p>Имя, сумма, одна пилюля, кривая и подпись под ней. Ни сводки, ни долей, ни позиций, ни подвала. Подпись графика — нижняя кромка карточки: без неё срез кривой выглядел бы обрывом.</p>' +
       '<p><span class="plus">+</span> Восемь портфелей влезают в экран.<br><span class="minus">—</span> Дневная дельта живёт только в пилюле: выбрали «за год» — «сегодня» до следующего клика не видно.</p></div>' +
     '</div>' +
-    '<div class="col">' + szb('M', 495, '+ KPI') +
-      card({ size: 'm', per: 'd30', uid: 'm0', pays: PAYS_D, pay: 'short', open: true, openGhost: true, tight: true }) +
+    '<div class="col">' + szb('M', 495, '440 px · + сводка') +
+      card({ size: 'm', per: 'd30', uid: 'm0', pays: PAYS_D, pay: 'short', open: true, openGhost: true, tight: true, sz: 'M', kpi: '3' }) +
       '<div class="spec-cap" style="max-width:440px"><b>Что добавилось</b>' +
-      '<p>Строка KPI и подпись «Стоимость портфеля» над суммой. Полоса распределения и цель — уже нет: по вашей формулировке M кончается на KPI.</p>' +
+      '<p>Сводка и подпись «Стоимость портфеля» над суммой. Колонок в сводке <em class="hl">три, а не четыре</em> — «Доходность» сложилась в подпись «Дохода» (экран&nbsp;04). Полосы распределения и цели нет: M кончается на сводке.</p>' +
       '<p><span class="plus">+</span> «За день» вернулся отдельным числом — пилюля свободна под период.<br><span class="minus">—</span> Про структуру портфеля карточка молчит.</p></div>' +
     '</div>' +
-    '<div class="col">' + szb('L', 1010, 'всё до «Ребаланса»') +
-      card({ size: 'l', per: 'all', uid: 'l0', pays: PAYS_L, ext: true, bench: 'off' }) +
-      '<div class="spec-cap" style="max-width:440px"><b>Полный набор</b>' +
-      '<p>KPI, доли с целью, пять позиций и «пик» шестой, подвал с «Ребалансом». Ровно то, что в проде сейчас, — минус чип сравнения и столбик выплаты на полотне.</p>' +
-      '<p><span class="plus">+</span> Ничего не потеряно.<br><span class="minus">—</span> Одна карточка — почти экран.</p></div>' +
+    '<div class="col" style="flex:1;min-width:0">' +
+      '<div class="cap">Переключатель размера<em>ховер-хром, в покое его нет</em></div>' +
+      '<div class="spec-cap" style="max-width:360px;margin-top:0">' +
+      '<p>В шапке S и M на ховере проступают две кнопки: <em class="hl">«Открыть&nbsp;›»</em> (подвала в этих размерах нет) и <em class="hl">переключатель размера</em> — квадрат той же формы и размера, что ⚙ рядом. В покое ни той, ни другой нет.</p>' +
+      '<p>На макете обе показаны полупрозрачными — так они выглядят в момент проявления. Три решения переключателя — на экране&nbsp;05.</p></div>' +
+      '<div style="margin-top:20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">' +
+        '<span class="px-szb one"><b>M</b></span>' +
+        '<span style="font-family:var(--fN);font-size:10.5px;color:var(--dim)">наведение на кнопку →</span>' +
+        szBtn('M', true) +
+      '</div>' +
+    '</div>' +
+  '</div>' +
+  '<div class="hr"></div>' +
+  '<div class="row" style="align-items:flex-start;gap:26px">' +
+    '<div class="col">' + szb('L', 1010, '520 px · всё до «Ребаланса»') +
+      card({ size: 'l', per: 'all', uid: 'l0', pays: PAYS_L, ext: true, bench: 'off', kpi: '3' }) +
+    '</div>' +
+    '<div class="col" style="flex:1;min-width:0;max-width:520px">' +
+      '<div class="spec-cap" style="margin-top:36px"><b>Полный набор — и он шире</b>' +
+      '<p>L нарисован на <em class="hl">520&nbsp;px</em>, а не на 440. Причина не в красоте: у таблицы шесть колонок, и на 440 «Активу» доставалось 125&nbsp;px — «Банк Санкт-Петербург» туда не помещался. На 520 у него 150, и подписи перестают резаться.</p>' +
+      '<p>Ширину задаёт сетка конструктора, а не размер карточки, — но L и высокий блок обычно приходят вместе, поэтому в авто-правиле (экран&nbsp;05) ширина участвует: узкий и высокий блок остаётся на M.</p>' +
+      '<p>Ниже 440&nbsp;px по-прежнему работает прежний порог <code>@container pfcard</code>: «Средняя» и «Доля» уходят, сводка складывается 2×2. Размер этого не отменяет.</p>' +
+      '<p><span class="plus">+</span> Ничего не потеряно, подписи целы.<br><span class="minus">—</span> Одна карточка — почти экран.</p></div>' +
     '</div>' +
   '</div>';
 
 notes('notes0', [
-  '<b>Сумма мельчает вместе с карточкой:</b> 40&nbsp;px в S, 48 в M, 54 в L. Ступени по числу цифр (<code>heroValParts</code>) внутри каждого размера сохраняются — миллиард в S станет 34&nbsp;px.',
+  '<b>Сумма мельчает вместе с карточкой:</b> 40&nbsp;px в S, 48 в M, 54 в L; ширина растёт только у L (440 → 520). Ступени по числу цифр (<code>heroValParts</code>) внутри каждого размера сохраняются — миллиард в S станет 34&nbsp;px.',
   '<b>График тоже:</b> 104 / 138 / 170&nbsp;px. В S ось процентов слева убрана — на 104&nbsp;px четыре деления читаются как сор; в M и L ось остаётся.',
   '<b>Подписи выплат на кривой</b> — только в L. В S и M остаются зелёные точки, а сумма приходит подсказкой при наведении. Флажки экстремумов — тоже только L.',
   '<b>Вход в портфель в S и M</b> — «Открыть&nbsp;›» в шапке, проявляется на ховере (на макете показан полупрозрачным). Служебные иконки копирования и скрытия в этих размерах не нужны.',
@@ -991,54 +1085,130 @@ notes('notes3', [
   '<b>Побочная находка (случай 4):</b> у <code>.pf-card</code> и <code>.dash2-card</code> нет <code>overflow:hidden</code>. В конструкторе спасает <code>.pfd-hset .pfd-body</code>, а на классическом «Обзоре» переполненная шапка выносит ⚙ за скруглённый угол карточки. Порог по <code>min-width</code> это чинит заодно.'
 ]);
 
-/* ============================ 04. МЕХАНИКА ============================ */
+/* ============================ 04. СВОДКА ============================ */
+document.getElementById('scr4k').innerHTML =
+  '<div class="lbl now" style="display:inline-flex;align-items:center;gap:7px;font-family:var(--fN);font-size:10.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--amb);margin-bottom:9px"><em style="width:7px;height:7px;border-radius:50%;background:currentColor"></em>Как сейчас · четыре</div>' +
+  '<div class="row" style="align-items:flex-start;gap:26px">' +
+    '<div>' + card({ size: 'm', per: 'd30', uid: 'k4a', pays: PAYS_D, pay: 'short', tight: true, sz: 'M', kpi: '4' }) + '</div>' +
+    '<div class="spec-cap" style="max-width:520px;margin-top:0">' +
+    '<p>Четыре колонки по 110&nbsp;px в карточке 440. Но теснота — следствие, а не причина. Причина в том, что <em class="hl">три числа из четырёх повторяют пилюлю</em>: «Доход» и «Доходность» — это ровно она в режиме «за всё время», «За день» — она же в режиме «сегодня». Из четырёх колонок пилюля не говорит только про «Вложено» и про годовые.</p>' +
+    '<p>Отсюда и правило отбора: в сводке остаётся то, чего пилюля не показывает <em class="hl">никогда</em>, плюс дневное число — потому что пилюля обычно стоит на другом окне, и взять день будет негде.</p></div>' +
+  '</div>' +
+  '<div class="hr"></div>' +
+  '<div class="row wrap" style="gap:22px">' +
+    '<div class="col" style="width:425px">' +
+      '<div class="hcase" style="color:var(--grn)">К2 · три — рекомендую</div>' +
+      card({ size: 'm', per: 'd30', uid: 'k4b', pays: PAYS_D, pay: 'short', tight: true, sz: 'M', kpi: '3' }) +
+      '<div class="spec-cap"><b>Вложено · Доход · За день</b>' +
+      '<p>«Доходность» складывается в подпись «Дохода»: «+13,2% · +11,1% годовых». Это ровно тот приём, которым в раунде&nbsp;1 уже убрали дубль «−15,5% годовых» под значением «−15,5%».</p>' +
+      '<p><span class="plus">+</span> Колонка становится 147&nbsp;px вместо 110 — числа перестают жаться.<br><span class="plus">+</span> Дневное число остаётся на месте, даже когда пилюля на «за год».<br><span class="minus">—</span> Годовые уезжают в подпись и теряют вес.</p></div>' +
+    '</div>' +
+    '<div class="col" style="width:425px">' +
+      '<div class="hcase">К1 · две</div>' +
+      card({ size: 'm', per: 'd30', uid: 'k4c', pays: PAYS_D, pay: 'short', tight: true, sz: 'M', kpi: '2' }) +
+      '<div class="spec-cap"><b>Вложено · Доход</b>' +
+      '<p>Строгое применение правила: остаётся только то, чего пилюля не говорит никогда. «За день» уходит — за ним идут в пилюлю.</p>' +
+      '<p><span class="plus">+</span> Тише всех, колонка 220&nbsp;px.<br><span class="minus">—</span> Сводка из двух чисел выглядит незаполненной, а строка-разделитель над ней перестаёт себя оправдывать.<br><span class="minus">—</span> Чтобы увидеть день, надо кликнуть.</p></div>' +
+    '</div>' +
+    '<div class="col" style="width:425px">' +
+      '<div class="hcase">К3 · одной строкой</div>' +
+      card({ size: 'm', per: 'd30', uid: 'k4d', pays: PAYS_D, pay: 'short', tight: true, sz: 'M', kpi: 'row' }) +
+      '<div class="spec-cap"><b>Не колонки, а фраза</b>' +
+      '<p>Те же три числа, но без сетки и хайрлайнов — тихая строка по центру, как строка долей ниже.</p>' +
+      '<p><span class="plus">+</span> Экономит 26&nbsp;px и убирает из карточки ещё одну табличную структуру.<br><span class="minus">—</span> Числа перестают быть колонками и хуже сравниваются между карточками.<br><span class="minus">—</span> В узком блоке 380&nbsp;px строка переносится и теряет ритм.</p></div>' +
+    '</div>' +
+  '</div>';
+
+notes('notes4k', [
+  '<b>В L колонок тоже три.</b> Держать в M три, а в L четыре — значит рассинхронить две карточки, которые пользователь видит рядом. Правило одно на оба размера; если захочется вернуть «Доходность» отдельной колонкой в L — это одна строка CSS.',
+  '<b>Правило отбора, а не вкусовщина:</b> в сводке остаётся то, чего пилюля не показывает никогда («Вложено», годовые) плюс «За день» — потому что пилюля обычно стоит на другом окне.',
+  '<b>Прогрев</b> отдаёт столько скелетонов, сколько колонок в наборе — иначе после прогрева сводка перестроится и карточка дёрнется.',
+  '<b>Живые ключи</b> <code>pfc:&lt;pid&gt;:pnl</code> и <code>:yield</code> остаются, но <code>:yield</code> начинает писать в подпись «Дохода» вместе с годовыми — это один узел, а не два.',
+  '<b>Узкий блок 380&nbsp;px:</b> три колонки по 117&nbsp;px помещаются в линию, и прежнее сворачивание 2×2 (порог 440) для набора из трёх больше не нужно — но проверить на самом узком блоке всё равно надо.',
+  '<b>Что НЕ трогаем:</b> сами цифры и их смысл. «Вложено» по-прежнему со «свободно» в подписи, «За день» по-прежнему из <code>dayDelta</code> с прочерком, когда вчерашней цены нет.'
+]);
+
+/* ============================ 05. МЕХАНИКА ============================ */
 document.getElementById('scr4').innerHTML =
-  '<div class="cap">Конструктор «Обзора» · высота блока тянется мышью, размер карточки следует за ней</div>' +
+  '<div class="cap">Ховер-переключатель<em>слева — карточка в покое, справа — под курсором</em></div>' +
+  '<div class="row wrap" style="gap:22px">' +
+    '<div class="col" style="width:425px">' +
+      '<div class="hcase">Р1 · циклер: клик листает S → M → L</div>' +
+      '<div class="hoverbox"><span class="hh">курсор на карточке</span>' +
+      card({ size: 's', per: 'today', hideEyebrow: true, uid: 'r1', pays: PAYS_D, pay: 'short', tight: true, sz: 'S', open: true, w: 390 }) +
+      '</div>' +
+      '<div class="spec-cap"><b>Одна кнопка, внутри — текущая буква</b>' +
+      '<p>Квадрат 30&nbsp;px рядом с ⚙, той же формы и с той же рамкой (правило гармонии: новый контрол в чужой карточке берёт её компонент). Клик — следующий размер по кругу, подсказка называет текущий и следующий.</p>' +
+      '<p><span class="plus">+</span> Дешевле всех, ничего не перекрывает.<br><span class="minus">—</span> Непознаваемо: видно, что ты в S, не видно, что бывает L.</p></div>' +
+    '</div>' +
+    '<div class="col" style="width:425px">' +
+      '<div class="hcase" style="color:var(--grn)">Р2 · разворачивающийся сегмент — рекомендую</div>' +
+      '<div class="hoverbox"><span class="hh">курсор на самой кнопке</span>' +
+      card({ size: 's', per: 'today', hideEyebrow: true, uid: 'r2', pays: PAYS_D, pay: 'short', tight: true, sz: 'S', szOpen: true, open: true, w: 390 }) +
+      '</div>' +
+      '<div class="spec-cap"><b>Та же кнопка, но под курсором она раскрывается в три буквы</b>' +
+      '<p>В покое кнопки нет вовсе. На ховере карточки — квадрат с текущей буквой. На ховере по самой кнопке она разъезжается в сегмент S&nbsp;M&nbsp;L, текущая подсвечена; клик по букве ставит размер сразу, без перебора.</p>' +
+      '<p><span class="plus">+</span> Тот же довод, что за меню в пилюле: видно и где ты, и что бывает.<br><span class="plus">+</span> Попасть в нужный размер — один клик, а не три.<br><span class="minus">—</span> Кнопка меняет ширину под курсором: соседние иконки сдвигаются на 60&nbsp;px.</p></div>' +
+    '</div>' +
+    '<div class="col" style="width:425px">' +
+      '<div class="hcase">Р3 · ручка на нижней кромке</div>' +
+      '<div class="hoverbox"><span class="hh">курсор на карточке</span>' +
+      card({ size: 's', per: 'today', hideEyebrow: true, uid: 'r3', pays: PAYS_D, pay: 'short', tight: true, w: 390,
+             hand: '<span class="px-hand"><i>⌃</i><b>S</b><i>⌄</i></span>' }) +
+      '</div>' +
+      '<div class="spec-cap"><b>Ручка по центру нижнего края: вверх — меньше, вниз — больше</b>' +
+      '<p>Прямая метафора «карточка растёт вниз», и шапка остаётся нетронутой — а её мы весь мокап и освобождали.</p>' +
+      '<p><span class="plus">+</span> Ничего не добавляет в шапку.<br><span class="minus">—</span> Спорит с ручкой ресайза блока конструктора, которая живёт в том же нижнем углу, — два разных «потяни» рядом.<br><span class="minus">—</span> В L нижняя кромка — это кнопка «Ребаланс»: ручка сядет прямо на неё.</p></div>' +
+    '</div>' +
+  '</div>' +
+  '<div class="hr"></div>' +
+  '<div class="cap">Авто по блоку<em>ручной выбор — оверрайд поверх этого</em></div>' +
   '<div class="dgrid">' +
     '<div class="dblk" style="height:360px"><span class="dh">блок 2×2 · 340 px</span>' +
-      card({ size: 's', per: 'today', hideEyebrow: true, uid: 'd1', pays: PAYS_D, pay: 'short', w: 420 }) +
+      card({ size: 's', per: 'today', hideEyebrow: true, uid: 'd1', pays: PAYS_D, pay: 'short', w: 420, tight: true }) +
       '<span class="dgrab"></span></div>' +
     '<div class="dblk" style="height:560px"><span class="dh">блок 2×3 · 540 px</span>' +
-      card({ size: 'm', per: 'd30', uid: 'd2', pays: PAYS_D, pay: 'short', w: 420 }) +
+      card({ size: 'm', per: 'd30', uid: 'd2', pays: PAYS_D, pay: 'short', w: 420, tight: true, kpi: '3' }) +
       '<span class="dgrab"></span></div>' +
-    '<div class="dblk" style="height:560px"><span class="dh">блок 2×5 · 960 px · обрезан на макете</span>' +
+    '<div class="dblk" style="height:560px"><span class="dh">блок 3×5 · 960 px · обрезан на макете</span>' +
       '<div style="height:498px;overflow:hidden;border-radius:14px;position:relative">' +
-      card({ size: 'l', per: 'all', uid: 'd3', pays: PAYS_L, w: 420 }) +
+      card({ size: 'l', per: 'all', uid: 'd3', pays: PAYS_L, w: 420, kpi: '3' }) +
       '<span style="position:absolute;left:0;right:0;bottom:0;height:74px;background:linear-gradient(transparent,var(--bg))"></span>' +
       '<span style="position:absolute;left:0;right:0;bottom:6px;text-align:center;font-family:var(--fN);font-size:10.5px;color:var(--dim)">…дальше доли, пять позиций, «Ребаланс»</span></div>' +
       '<span class="dgrab"></span></div>' +
   '</div>' +
-  '<div class="hr"></div>' +
-  '<div class="row" style="align-items:flex-start;gap:34px">' +
+  '<div class="row" style="align-items:flex-start;gap:34px;margin-top:26px">' +
     '<div class="cfg">' +
-      '<h5>Карточка портфеля</h5><p>Настройки виджета · конструктор</p>' +
-      '<div style="font-size:11px;font-weight:700;color:var(--mut);margin-bottom:6px">Размер</div>' +
-      '<div class="seg"><b class="on">Авто</b><b>S</b><b>M</b><b>L</b></div>' +
-      '<div class="hint"><b>Авто</b> — размер по высоте блока: до 380&nbsp;px — S, до 620 — M, дальше L. Потяните блок за угол, и карточка перестроится сама.</div>' +
+      '<h5>Правило авто-размера</h5><p>считается при сборке разметки</p>' +
+      '<div class="seg"><b>S</b><b class="on">M</b><b>L</b></div>' +
+      '<div class="hint">Высота блока до 380&nbsp;px — <b>S</b>, до 620 — <b>M</b>, дальше <b>L</b>. Но L ещё требует ширины от 460&nbsp;px: узкий и высокий блок остаётся на <b>M</b> и отдаёт лишнюю высоту списку позиций… которого в M нет, — поэтому такой блок честнее сразу тянуть шире.</div>' +
     '</div>' +
-    '<div style="max-width:640px">' +
+    '<div style="max-width:620px">' +
       '<div class="cap">Почему не контейнерный запрос по высоте</div>' +
-      '<div class="spec-cap" style="font-size:13px;max-width:640px">' +
+      '<div class="spec-cap" style="font-size:13px">' +
       '<p>Соблазн написать <code>@container pfcard (min-height: 620px)</code> есть, но он требует <code>container-type: size</code>, а это контейнит и высоту тоже. Сетка «Обзора» меряет реальную высоту карточки (<code>offsetHeight</code>) при упаковке блоков — с законтейненной высотой замер станет нулевым, и раскладка поедет.</p>' +
-      '<p>Поэтому размер выбирается в JS в момент сборки разметки: конструктор и так знает высоту блока (<code>pfd-hset</code>), а в классической сетке «Обзора» высота свободная — там по умолчанию L.</p>' +
-      '<p>Ручной выбор — оверрайд поверх авто, хранится в конфиге виджета рядом с остальными его настройками. Смена размера не требует полного рендера: это класс на <code>.pf-card</code>.</p></div>' +
+      '<p>Поэтому размер выбирается в JS в момент сборки разметки: конструктор и так знает высоту и ширину блока, а в классической сетке «Обзора» высота свободная — там по умолчанию L.</p>' +
+      '<p><b>Где хранится ручной выбор.</b> В конструкторе — в конфиге блока (<code>pf_dash_v1</code>), рядом с остальными его настройками: один и тот же портфель в двух блоках может стоять в разных размерах. На классическом «Обзоре» блоков нет — там выбор ляжет на портфель, ключом рядом с <code>PF.cardRange</code>.</p>' +
+      '<p><b>Смена размера — не полный рендер:</b> это класс на <code>.pf-card</code> плюс пересборка того куска разметки, который появился или исчез. График перерисовывается сам (высота изменилась), живые ключи не трогаются.</p></div>' +
     '</div>' +
   '</div>';
 
 notes('notes4', [
-  '<b>Пороги 380 / 620</b> взяты из фактических высот макетов (S ≈ 300, M ≈ 500, L ≈ 960) с запасом: блок чуть выше S-карточки не должен переключаться в M и оставлять пустоту.',
-  '<b>Классический «Обзор» без конструктора</b> — всегда L: там высота карточки ничем не ограничена, обрезать нечего.',
-  '<b>Что делает L в низком блоке</b> — как сейчас: список позиций отдаёт остаток высоты и скроллится внутри себя, «Ребаланс» остаётся достижим.',
-  '<b>Ручной S в высоком блоке</b> — карточка прижимается к верху блока, низ остаётся пустым. Это осознанный выбор пользователя, ничего не растягиваем.'
+  '<b>Кнопка — ховер-хром, а не постоянный элемент:</b> в покое шапка ровно та же, что на экране&nbsp;03, и все замеры имени остаются в силе. Появление кнопки не должно двигать имя — под неё резервируется место, как под «Открыть&nbsp;›».',
+  '<b>Почему не в ⚙:</b> там настройки ПОРТФЕЛЯ — состав, цвет, цель, они одни на все его карточки. Размер — свойство виджета: тот же портфель в другом блоке может стоять в другом размере.',
+  '<b>Почему не в настройках блока конструктора:</b> они открываются с двух кликов и на «Обзоре» без конструктора их нет вовсе, а размер хочется менять «на лету», глядя на результат.',
+  '<b>Тач-устройства:</b> ховера нет, поэтому на мобиле кнопка либо видна всегда, либо размера там нет совсем — мобильный слой карточки живёт по своим правилам (<code>css/mobile.css</code>). Это отдельный разговор.',
+  '<b>Авто и ручной вместе:</b> пока пользователь не трогал кнопку, размер следует за блоком. Первый клик по кнопке фиксирует выбор; сброс к «авто» — в настройках блока, где ему и место.',
+  '<b>Порог по ширине</b> (L требует ≥460&nbsp;px) нужен, чтобы высокий узкий блок не получал шестиколоночную таблицу на 380&nbsp;px — она там уже сворачивается в четыре, и «полный набор» перестаёт быть полным.'
 ]);
 
 /* ============================ 05. ПРОВЕРКА ============================ */
 document.getElementById('scr5').innerHTML =
   '<div class="cap">Узкий блок 380 px · тёмная тема<em>S / M / L</em></div>' +
   '<div class="row wrap" style="gap:20px">' +
-    '<div>' + card({ size: 's', w: 380, per: 'today', hideEyebrow: true, uid: 'k1', pal: PAL_D, pays: PAYS_D, pay: 'short', tight: true, open: true, openGhost: true }) + '</div>' +
-    '<div>' + card({ size: 'm', w: 380, per: 'd30', uid: 'k2', pal: PAL_D, pays: PAYS_D, pay: 'short', tight: true, broker: true, sand: true, fico: ['lock'] }) + '</div>' +
-    '<div>' + card({ size: 'l', w: 380, per: 'all', uid: 'k3', pal: PAL_D, pays: PAYS_D, pay: 'short', tight: true }) + '</div>' +
+    '<div>' + card({ size: 's', w: 380, per: 'today', hideEyebrow: true, uid: 'k1', pal: PAL_D, pays: PAYS_D, pay: 'short', tight: true, open: true, openGhost: true, sz: 'S' }) + '</div>' +
+    '<div>' + card({ size: 'm', w: 380, per: 'd30', uid: 'k2', pal: PAL_D, pays: PAYS_D, pay: 'short', tight: true, broker: true, sand: true, fico: ['lock'], kpi: '3' }) + '</div>' +
+    '<div>' + card({ size: 'l', w: 380, per: 'all', uid: 'k3', pal: PAL_D, pays: PAYS_D, pay: 'short', tight: true, kpi: '3' }) + '</div>' +
     '<div style="width:400px" class="spec-cap"><b>Что проверено</b>' +
     '<p>В 380&nbsp;px KPI складывается 2×2, из таблицы уходят «Средняя» и «Доля», подвал становится столбиком — все пороги <code>@container pfcard</code> работают поверх размера, а не вместо него.</p>' +
     '<p>Подпись графика в узком виде сокращает выплату до «через 7 дн», сравнение остаётся словом. Пилюля мельчает до 13&nbsp;px.</p>' +
@@ -1048,11 +1218,11 @@ document.getElementById('scr5').innerHTML =
   '<div class="hr"></div>' +
   '<div class="cap">Краевые состояния<em>миллиард · приватность · прогрев · нет вчерашней цены</em></div>' +
   '<div class="row wrap" style="gap:20px">' +
-    '<div>' + card({ size: 'm', w: 430, per: 'all', value: 1284903117, uid: 'e1', pal: PAL_D, pays: PAYS_D, pay: 'short' }) +
+    '<div>' + card({ size: 'm', w: 430, per: 'all', value: 1284903117, uid: 'e1', pal: PAL_D, pays: PAYS_D, pay: 'short', kpi: '3' }) +
       '<div class="spec-cap" style="max-width:430px"><b>Миллиард</b><p>Ступень <code>l13</code>: в M это 30&nbsp;px вместо 48. Пилюля не мельчает — она и так короткая.</p></div></div>' +
-    '<div>' + card({ size: 'm', w: 430, per: 'all', priv: true, uid: 'e2', pal: PAL_D, pays: PAYS_D, pay: 'short', fico: ['eyeoff'] }) +
+    '<div>' + card({ size: 'm', w: 430, per: 'all', priv: true, uid: 'e2', pal: PAL_D, pays: PAYS_D, pay: 'short', fico: ['eyeoff'], kpi: '3' }) +
       '<div class="spec-cap" style="max-width:440px"><b>«Скрывать суммы»</b><p>Маскируются сумма, ₽ в пилюле, «Вложено», «Доход», «За день» и ₽ выплаты в подписи графика. Проценты и цены Мосбиржи открыты.</p></div></div>' +
-    '<div>' + card({ size: 'm', w: 430, warm: true, uid: 'e3', pal: PAL_D, pays: PAYS_D, pay: false }) +
+    '<div>' + card({ size: 'm', w: 430, warm: true, uid: 'e3', pal: PAL_D, pays: PAYS_D, pay: false, kpi: '3' }) +
       '<div class="spec-cap" style="max-width:440px"><b>Прогрев</b><p>Скелетон вместо суммы и одна плашка вместо пилюли — вместо двух, как сейчас. Подпись графика пустая: пока нет серии, нечего и сравнивать.</p></div></div>' +
   '</div>';
 
@@ -1099,8 +1269,20 @@ document.getElementById('mapTbl').innerHTML =
      '<code>cardHtml</code>, переменная <code>flags</code>'],
     ['Размер карточки',
      'Один вид; высоту блока отрабатывает только список позиций',
-     'S / M / L классом на <code>.pf-card</code>; авто по высоте блока + оверрайд в настройках виджета',
-     'новый класс <code>.pf-card--s/m/l</code>; выбор в <code>cardHtml</code> из конфига блока'],
+     'S / M / L классом на <code>.pf-card</code>; авто по высоте и ширине блока, ручной выбор — ховер-кнопкой',
+     'новый класс <code>.pf-card--s/m/l</code>; выбор в <code>cardHtml</code> из конфига блока (<code>pf_dash_v1</code>)'],
+    ['Переключатель размера',
+     'Нет; ⚙ шапки — настройки ПОРТФЕЛЯ, размеру там не место',
+     'Ховер-кнопка рядом с ⚙: в покое нет, на ховере квадрат с текущей буквой, под курсором разворачивается в S&nbsp;M&nbsp;L',
+     'новый <code>.pfc-size</code> на компоненте <code>.pfc-act</code>; рядом с ним резервируется место, чтобы имя не прыгало'],
+    ['Сводка (KPI)',
+     'Четыре колонки: Вложено · Доход · Доходность · За день',
+     'Три: «Доходность» складывается в подпись «Дохода» («+13,2% · +11,1% годовых»). Одинаково в M и L',
+     '<code>cardHtml</code>, блок <code>kpis</code>; ключ <code>pfc:&lt;pid&gt;:yield</code> пишет теперь в подпись «Дохода»'],
+    ['Ширина L',
+     '440&nbsp;px и на «Обзоре», и в конструкторе: «Активу» достаётся 125&nbsp;px, длинные имена режутся',
+     'L рассчитан на блок от 460&nbsp;px (на макете 520): «Активу» 149&nbsp;px',
+     'ширину задаёт сетка; в правиле авто-размера ширина — второе условие для L'],
     ['Экстремумы на графике',
      '<code>.pfcv-ext</code> — «₽ · дата» у максимума и минимума, скрыты только в узком',
      'Только в L (в S и M кривой 104–138&nbsp;px, флажки её перекрывают)',
