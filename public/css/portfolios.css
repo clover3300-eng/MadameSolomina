@@ -2629,6 +2629,22 @@ body.dark-mode .pfpc-kind.kind-red { color: #93c5fd; background: rgba(61,111,209
 .pfd-grid.pfd-live .pfd-item.pfd-resizing {
     box-shadow: 0 16px 40px rgba(15, 23, 42, 0.16);   /* только мягкая тень — без синих рамок/линий */
 }
+/* ОБРЕЗ ПО ЖИВОМУ во время тяги кромки (фикс 2026-07-30). Пока кнопку держат,
+   полного ре-рендера не делаем — он заменил бы узел, за который держится сам
+   жест, — поэтому карточка просто клипуется по новой высоте. Остановка на
+   середине строки «Вложено» рассекала цифры пополам, и половинки читались как
+   наложенные друг на друга данные. Растворяем обрез: у нижней кромки контент
+   уходит в прозрачность, и срез читается как «дальше есть ещё», а не как
+   сломанная вёрстка. На отпускании pfdRerender подбирает размер карточки под
+   новую высоту (cardSizeOf: <380 → S, <620 → M), обрез исчезает сам, а маска
+   снимается вместе с классом жеста. */
+.pfd-item.pfd-resizing.pfd-hset .pfc-normal,
+.pfd-item.pfd-resizing.pfd-hset .pft-body,
+.pfd-item.pfd-resizing.pfd-hset .pff-body,
+.pfd-item.pfd-resizing.pfd-hset .pfpc-body {
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent 100%);
+}
 body.pfd-dragging-now { cursor: grabbing; }
 body.pfd-dragging-now * { cursor: grabbing !important; }
 
