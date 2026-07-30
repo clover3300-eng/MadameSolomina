@@ -869,9 +869,24 @@ body.dark-mode .pfc-rebal { background: #e8eef7; border-color: #e8eef7; color: #
 .pf-card--m .pfc-hero-val.l13 { font-size: 30px; }
 .pf-card--m .pfc-mchart-plot { height: 138px; margin-top: 24px; }
 .pf-card--m .pfc-stats2 { padding-bottom: 18px; }
-/* S и M кончаются подписью графика и сводкой — прижимать их к низу нечем,
-   поэтому карточка не растягивается на блок, а стоит по своей высоте */
-.pf-card--s .pfc-normal, .pf-card--m .pfc-normal { flex: 0 0 auto; }
+/* Блок ВЫШЕ, чем нужно S или M (пользователь выбрал маленький размер руками в
+   большом блоке): остаток высоты забирает график, а не мёртвое белое поле под
+   карточкой. Ограничение сверху есть — кривую нельзя растягивать бесконечно,
+   она перестаёт читаться. Ниже этих потолков лишняя высота остаётся пустой,
+   но такой блок пользователь тянул сам и знает зачем. */
+.pfd-item.pfd-hset .pf-card--s .pfc-hero,
+.pfd-item.pfd-hset .pf-card--m .pfc-hero { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+.pfd-item.pfd-hset .pf-card--s .pfc-mchart-plot,
+.pfd-item.pfd-hset .pf-card--m .pfc-mchart-plot { flex: 1 1 auto; height: auto; }
+.pfd-item.pfd-hset .pf-card--s .pfc-mchart-plot { min-height: 104px; max-height: 260px; }
+.pfd-item.pfd-hset .pf-card--m .pfc-mchart-plot { min-height: 138px; max-height: 320px; }
+/* А выше этого потолка карточка просто КОНЧАЕТСЯ, и дальше видно сам блок.
+   Белое поле внутри карточки читалось бы как поломка, пустой низ блока — как
+   то, что и есть: блок больше выбранного размера. Потолки те же, что пороги
+   авто-размера (380/620), поэтому «карточка кончилась» совпадает с моментом,
+   когда авто уже переключило бы её на следующий размер. */
+.pfd-item.pfd-hset .pf-card--s { max-height: 400px; }
+.pfd-item.pfd-hset .pf-card--m { max-height: 560px; }
 
 .pf-card { container-type: inline-size; container-name: pfcard; }
 @container pfcard (max-width: 440px) {
