@@ -922,8 +922,14 @@ body.dark-mode .pfc-rebal { background: #e8eef7; border-color: #e8eef7; color: #
     .pfc-top { gap: 6px; }
     /* бейдж брокера схлопывается: сначала уходит слово «Т-Инвестиции», потом
        время и метка песочницы — от неё остаётся янтарная точка. Полный текст
-       во всех ступенях живёт в подсказке (title бейджа) */
+       во всех ступенях живёт в подсказке (title бейджа).
+       ФИКС 2026-07-30: точка была только на словах — правила не было, и
+       «ПЕСОЧНИЦА» всегда рисовалась полным словом (~70px), отжимая имя счёта
+       («Т-Инв…») и текст причины («синк недоступен на э…») до нечитаемых
+       обрубков — карточка «Т-Инвестиции» именно так и выглядела. */
     .pfbk-t { max-width: 44px; }
+    .pfbk-sand { width: 6px; height: 6px; flex: none; padding: 0; border-radius: 50%;
+        background: currentColor; overflow: hidden; white-space: nowrap; text-indent: 200%; }
     /* служебные иконки уходят первыми — шестерёнка остаётся всегда */
     .pfc-act--sec { display: none; }
     /* «Средняя» и «Доля» уходят: пять колонок на 380px уже своих же значений.
@@ -3805,11 +3811,15 @@ body.dark-mode .pf-newsblk .nwf-chg.neg, .pfd-item.pfd-thm-dark .nwf-chg.neg { c
     background: rgba(43, 57, 74, 0.04); font-family: 'Inter', sans-serif; font-size: 10.5px;
     font-weight: 600; color: #5f6b7a; white-space: nowrap; }
 .pfbk-badge > svg { width: 12px; height: 12px; flex: none; }
-.pfbk-t { overflow: hidden; text-overflow: ellipsis; }
+/* min-width:0 — БЕЗ него overflow:hidden/ellipsis у флекс-детей не срабатывает
+   (умолчание min-width:auto держит собственную ширину контента), и текст
+   причины (.pfbk-note) молча выталкивал пилюлю за карточку вместо усечения */
+.pfbk-t { overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 0 1 auto; }
 .pfbk-t b { font-weight: 700; font-variant-numeric: tabular-nums; }
-.pfbk-sand { font-style: normal; font-size: 9px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: #d97706; }
+.pfbk-sand { font-style: normal; font-size: 9px; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; color: #d97706; flex: none; }
 .pfbk-badge.off { border-style: dashed; opacity: 0.75; }
-.pfbk-note { font-style: italic; font-weight: 500; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; }
+.pfbk-note { font-style: italic; font-weight: 500; color: #94a3b8; overflow: hidden; text-overflow: ellipsis;
+    min-width: 0; flex: 1 1 auto; }
 .pfbk-re { display: inline-flex; align-items: center; justify-content: center; flex: none;
     width: 18px; height: 18px; margin: -2px -5px -2px -1px; padding: 0; border: none; border-radius: 50%;
     background: transparent; color: #8494a7; cursor: pointer; }
