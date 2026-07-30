@@ -2331,3 +2331,41 @@ body.dark-mode .pfd-inbtn:hover, .pfd-item.pfd-thm-dark .pfd-inbtn:hover { color
 /* у «Моих портфелей» кнопки теперь в ряду — угловой резерв 78px шапке не нужен
    (перебиваем .pfd-rmable-правило, оно специфичнее базового .pf-plistblk) */
 #panel-portfolios .pfd-item[data-pfd="plist"] > .pfd-body > .dash2-card > .pf-ch { padding-right: 0; }
+
+/* ============ 19. «Ставки» — тикер-строка (мокап «Обзор р2», 2026-07-30) ============
+   Четыре плитки .drt-tile заменены одной строкой в стандартной карточке виджета
+   .pf-card2: подпись + крупное моно-значение, hairline-разделители, справа источник
+   и дата данных (в выходные — пятница, ratesDateLabel в portfolios-widgets.js).
+   Обычная карточка → тема «Стекло» и хром конструктора достаются как всем
+   (.pfd-thm-glass > .pfd-body > .pf-card2), адресные правила под плитки не нужны.
+   Плитки живы только у ratesStackHtml (режим «Ставки» блока cal). */
+#panel-portfolios .pf-ratesbar { position: relative; padding: 14px 20px; }
+.pf-ratesbar .rtb-row { display: flex; align-items: center; min-width: 0; position: relative; z-index: 4; }
+.rtb-i { display: flex; align-items: baseline; gap: 9px; min-width: 0; padding: 0 22px;
+    border-left: 1px solid rgba(15, 23, 42, 0.07); }
+.rtb-i:first-child { border-left: 0; padding-left: 0; }
+.rtb-l { font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: #8593a8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rtb-v { font-family: 'JetBrains Mono', monospace; font-size: 17px; font-weight: 700;
+    letter-spacing: -0.01em; color: #111927; line-height: 1; font-variant-numeric: tabular-nums; }
+.rtb-src { margin-left: auto; padding-left: 16px; font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px; color: #a6b2c3; white-space: nowrap; transition: opacity 0.15s; }
+body.dark-mode .rtb-i { border-left-color: rgba(255, 255, 255, 0.09); }
+body.dark-mode .rtb-l { color: #97a7bb; }
+body.dark-mode .rtb-v { color: #f4f8fd; }
+body.dark-mode .rtb-src { color: #6c7a8e; }
+/* кнопки конструктора — в правом торце строки; на hover карточки подпись источника
+   гаснет и уступает им место (тот же приём, что .sbc-acts на месте суммы в сайдбаре) */
+.pf-ratesbar .rtb-chrome { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); z-index: 5; }
+.pf-ratesbar .rtb-chrome .pfd-inchrome { padding-right: 0; margin-right: 0; border-right: 0; }
+.pf-ratesbar:has(.rtb-chrome):hover .rtb-src { opacity: 0; }
+/* адаптация к ширине БЛОКА (container pfw объявлен у .pf-card2 в portfolios.css):
+   узкий span — сетка 2×2, совсем узкий — столбик; подпись уходит вниз */
+@container pfw (max-width: 700px) {
+    .pf-ratesbar .rtb-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; }
+    .rtb-i { padding: 0; border-left: 0; }
+    .rtb-src { grid-column: 1 / -1; margin-left: 0; padding-left: 0; }
+}
+@container pfw (max-width: 330px) {
+    .pf-ratesbar .rtb-row { grid-template-columns: 1fr; }
+}
