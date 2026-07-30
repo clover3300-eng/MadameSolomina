@@ -2552,6 +2552,30 @@
         pfdGhost.style.left = ((x - pfdGrabX) / pfdGz) + 'px';
         pfdGhost.style.top = ((y - pfdGrabY) / pfdGz) + 'px';
     }
+    // Место блока БЕЗ учёта летящей FLIP-анимации. Живой getBoundingClientRect во
+    // время перестановки отдаёт ПРОМЕЖУТОЧНОЕ положение соседа — он ещё едет свои
+    // 200мс, — а решение «до/после» принимается каждые 55мс, то есть по три-четыре
+    // раза внутри одной анимации. Спор с собственной анимацией и давал качели:
+    // сосед на полпути «оказывался» не там, порядок откатывался, анимация начиналась
+    // заново. Снимаем с rect текущий transform — получаем то место, куда упаковщик
+    // блок уже назначил.
+    function pfdRestRect(el, z) {
+        var r = el.getBoundingClientRect();
+        var box = { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
+        var t = getComputedStyle(el).transform;
+        if (!t || t === 'none') return box;
+        var m = /matrix(3d)?\(([^)]+)\)/.exec(t);
+        if (!m) return box;
+        var a = m[2].split(',');
+        var dx = parseFloat(m[1] ? a[12] : a[4]) || 0;
+        var dy = parseFloat(m[1] ? a[13] : a[5]) || 0;
+        if (!dx && !dy) return box;
+        // transform живёт в layout-px, rect — в визуальных (body { zoom: .9 })
+        dx *= z; dy *= z;
+        box.left -= dx; box.right -= dx; box.top -= dy; box.bottom -= dy;
+        return box;
+    }
+    function pfdRectHas(r, x, y) { return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; }
     function pfdReorderAt(x, y) {
         if (!pfdDragEl || Date.now() - pfdLastReorder < 55) return;
         var grid = document.getElementById('pfdGrid');
@@ -2575,42 +2599,61 @@
         if (!PF.dashCfg.col) PF.dashCfg.col = {};
         var colChanged = PF.dashCfg.col[id] !== targetCol;
         // ---- ПОРЯДОК В СТОПКЕ: блок под курсором, иначе ближайший по расстоянию ----
-        var el = document.elementFromPoint(x, y);
-        var over = el && el.closest ? el.closest('.pfd-item') : null;
-        if (over && (over === pfdDragEl || over.parentNode !== grid)) over = null;
-        if (!over) {
-            var bestD = Infinity;
-            Array.prototype.forEach.call(grid.children, function (c) {
-                if (c === pfdDragEl || !c.classList || !c.classList.contains('pfd-item')) return;
-                var cr = c.getBoundingClientRect();
-                var cx = cr.left + cr.width / 2, cy = cr.top + cr.height / 2;
-                var d = (x - cx) * (x - cx) + (y - cy) * (y - cy);
-                if (d < bestD) { bestD = d; over = c; }
-            });
+        // Ищем ГЕОМЕТРИЧЕСКИ по «спокойным» местам (pfdRestRect), а не elementFromPoint:
+        // под курсором может оказаться сосед, который прямо сейчас едет по анимации, —
+        // его видимое место временное, и решать по нему нельзя.
+        var t0 = targetCol - 1, t1 = t0 + span;
+        var cand = [], selfRect = null;
+        Array.prototype.forEach.call(grid.children, function (c) {
+            if (!c.classList || !c.classList.contains('pfd-item')) return;
+            var rr = pfdRestRect(c, z);
+            if (c === pfdDragEl) { selfRect = rr; return; }
+            var rc = pfdGridRect(c);
+            // «свои» — блоки, чьи колонки пересекаются с целевыми: только они стоят с
+            // тянутым блоком в одной стопке, и только с ними порядок в DOM что-то значит
+            cand.push({ el: c, r: rr, mine: !rc || (rc.right0 > t0 && rc.col0 < t1) });
+        });
+        var over = null;
+        // ТИШИНА НАД СВОИМ СЛОТОМ: курсор внутри места, куда блок уже поставлен, —
+        // переставлять нечего. Без этого правила слот, встав под курсор, тут же
+        // «переспоривал» сам себя: ближайшим соседом оказывался блок из чужой колонки,
+        // тянутый уезжал обратно, и карточка, стоявшая наверху, прыгала вверх-вниз.
+        if (!(selfRect && pfdRectHas(selfRect, x, y))) {
+            var pool = cand.filter(function (c) { return c.mine; });
+            if (!pool.length) pool = cand;
+            pool.forEach(function (c) { if (!over && pfdRectHas(c.r, x, y)) over = c; });
+            if (!over) {
+                var bestD = Infinity;
+                pool.forEach(function (c) {
+                    var cx = (c.r.left + c.r.right) / 2, cy = (c.r.top + c.r.bottom) / 2;
+                    var d = (x - cx) * (x - cx) + (y - cy) * (y - cy);
+                    if (d < bestD) { bestD = d; over = c; }
+                });
+            }
         }
         var before = false, orderChanged = false;
-        if (over && over !== pfdDragEl) {
+        if (over) {
             // Куда вставлять — ПРОСТРАНСТВЕННО: выше блока или в его левой половине → до;
             // ниже или в правой половине → после.
-            var r = over.getBoundingClientRect();
+            var r = over.r;
             // Полноширинные блоки (span 12: «Панель управления», «История сделок», «Ставки») —
             // решаем ТОЛЬКО по вертикали (выше середины → перед ним). Для них левая/правая
             // половина бессмысленна, и раньше такой блок было не поднять наверх мимо колоночных
             // карточек (курсор попадал в «правую половину» → всегда «после»).
-            var fullW = pfdSpanOf(pfdDragEl, colW, gap) >= 12 || pfdSpanOf(over, colW, gap) >= 12;
+            var fullW = span >= 12 || pfdSpanOf(over.el, colW, gap) >= 12;
             if (y < r.top) before = true;
             else if (y > r.bottom) before = false;
-            else if (fullW) before = y < (r.top + r.height / 2);
-            else before = x < (r.left + r.width / 2);
-            if (before && over.previousElementSibling !== pfdDragEl) orderChanged = true;
-            else if (!before && over.nextElementSibling !== pfdDragEl) orderChanged = true;
+            else if (fullW) before = y < (r.top + r.bottom) / 2;
+            else before = x < (r.left + r.right) / 2;
+            if (before && over.el.previousElementSibling !== pfdDragEl) orderChanged = true;
+            else if (!before && over.el.nextElementSibling !== pfdDragEl) orderChanged = true;
         }
         if (!colChanged && !orderChanged) return;   // ни колонка, ни порядок не поменялись
         PF.dashCfg.col[id] = targetCol;
         pfdFlip(grid, function () {
             if (orderChanged && over) {
-                if (before) grid.insertBefore(pfdDragEl, over);
-                else grid.insertBefore(pfdDragEl, over.nextSibling);
+                if (before) grid.insertBefore(pfdDragEl, over.el);
+                else grid.insertBefore(pfdDragEl, over.el.nextSibling);
             }
             pfdPack();   // masonry: сразу пере-упаковываем — FLIP снимет новые места
         });
@@ -2625,9 +2668,15 @@
             if (pfdLastPt.y < m) dy = -Math.ceil((m - pfdLastPt.y) / 5);
             else if (pfdLastPt.y > vh - m) dy = Math.ceil((pfdLastPt.y - (vh - m)) / 5);
             if (dy) {
+                var top0 = pfdScrollEl ? pfdScrollEl.scrollTop : (window.pageYOffset || 0);
                 if (pfdScrollEl) pfdScrollEl.scrollTop += dy;
                 else window.scrollBy(0, dy);
-                pfdReorderAt(pfdLastPt.x, pfdLastPt.y);
+                var top1 = pfdScrollEl ? pfdScrollEl.scrollTop : (window.pageYOffset || 0);
+                // Пересчитываем место ТОЛЬКО если страница правда поехала. У самого верха
+                // (и у самого низа) прокрутка упирается в край, а курсор при этом остаётся
+                // в 90-пиксельной зоне — и пересчёт звался каждый кадр при НЕПОДВИЖНОЙ мыши,
+                // раскачивая соседнюю карточку. Курсор не двигался — решать нечего.
+                if (top1 !== top0) pfdReorderAt(pfdLastPt.x, pfdLastPt.y);
             }
         }
         pfdTick = requestAnimationFrame(pfdAutoScroll);
