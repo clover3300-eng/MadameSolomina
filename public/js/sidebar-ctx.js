@@ -458,6 +458,39 @@
     var FLAT_TABS      = ['market', 'calc', 'rebalance'];
     var FLAT_TABS_MORE = ['backtest', 'admin'];
     var FLAT_MORE_KEY = 'sb_flat_more_v1';
+
+    // ---- КТО ЧТО ВИДИТ ----
+    // ГОСТЮ НЕ ПОКАЗЫВАЕМ ТО, ЧТО БЕЗ АККАУНТА НЕ РАБОТАЕТ: все экраны портфелей
+    // (Обзор, Мои портфели, Ребаланс, Торговля, Аналитика, Отчёты, Операции)
+    // требуют вход — там нечего показать, а пункт, который ведёт в заглушку,
+    // это обещание, которого навигация не сдержит. Остаются Рынок, Расчёт,
+    // Академия и Тест: они считают и показывают без входа.
+    //
+    // БЕЗ ОБЛАКА СЧИТАЕМ, ЧТО ДОСТУПНО ВСЁ. В демо-режиме (пустые ключи в
+    // js/supabase-config.js) сессии не бывает вовсе, и гостевая логика спрятала
+    // бы половину продукта у каждого, кто поднял копию без Supabase.
+    function authed() {
+        try {
+            if (!(window.supa && window.supa.enabled)) return true;
+            return !!window.supa.isAuthed();
+        } catch (e) { return true; }
+    }
+    // ЭКРАН ПРИВЕТСТВИЯ — НЕ ПОЛНАЯ НАВИГАЦИЯ, А КОРОТКИЙ ВХОД. На «Главной»
+    // колонка сжата в рейку 84px поверх живой карты, и семь пунктов ей не по
+    // росту: там нужен не каталог, а несколько дверей. Состав выбран владельцем.
+    var HOME_AUTHED = ['pf:overview', 'pf:trading', 'tab:market', 'tab:rebalance', 'tab:backtest'];
+    var HOME_GUEST  = ['tab:market', 'tab:calc', 'tab:rebalance', 'tab:backtest'];
+    function flatLabel(key) {
+        var i;
+        for (i = 0; i < FLAT_PF.length; i++) if (FLAT_PF[i][0] === key) return FLAT_PF[i][1];
+        for (i = 0; i < FLAT_PF_MORE.length; i++) if (FLAT_PF_MORE[i][0] === key) return FLAT_PF_MORE[i][1];
+        return key;
+    }
+    function flatOne(id) {
+        return id.indexOf('pf:') === 0
+            ? flatPfHtml(id.slice(3), flatLabel(id.slice(3)))
+            : flatTabHtml(id.slice(4));
+    }
     var flatMoreOpen = (function () {
         try { return localStorage.getItem(FLAT_MORE_KEY) === '1'; } catch (e) { return false; }
     })();
@@ -540,22 +573,35 @@
             (num != null ? '<span class="sb-n">' + esc(num) + '</span>' : '') +
             '</button>';
     }
-    function flatHtml() {
-        var h = '';
-        FLAT_PF.forEach(function (t) { h += flatPfHtml(t[0], t[1]); });
-        FLAT_TABS.forEach(function (t) { h += flatTabHtml(t); });
-        // «Ещё» собирает редкое: три подвкладки «Портфелей» и вкладки, за
-        // которыми ходят эпизодически. Считаем ТОЛЬКО то, что реально видно:
-        // «Админка» приходит по роли, и в закрытом виде её в счёте быть не должно.
-        var hidden = [];
-        FLAT_PF_MORE.forEach(function (t) { hidden.push({ pf: t }); });
-        FLAT_TABS_MORE.forEach(function (t) { if (!flatTabOff(flatTabNode(t))) hidden.push({ tab: t }); });
-        if (!hidden.length) return h;
-        if (flatMoreOpen) {
-            hidden.forEach(function (it) {
-                h += it.pf ? flatPfHtml(it.pf[0], it.pf[1]) : flatTabHtml(it.tab);
-            });
+    // Состав первого уровня одним списком: гость и «Главная» — это фильтры над
+    // ним, а не отдельные ветки разметки.
+    function flatIds() {
+        var home = document.body.classList.contains('tab-home');
+        if (home) return { main: (authed() ? HOME_AUTHED : HOME_GUEST).slice(), more: [] };
+        var main = [], more = [];
+        if (authed()) FLAT_PF.forEach(function (t) { main.push('pf:' + t[0]); });
+        FLAT_TABS.forEach(function (t) { main.push('tab:' + t); });
+        if (authed()) {
+            FLAT_PF_MORE.forEach(function (t) { more.push('pf:' + t[0]); });
+            FLAT_TABS_MORE.forEach(function (t) { more.push('tab:' + t); });
+        } else {
+            // У гостя первичных пунктов всего три. Прятать за «Ещё» один «Тест»
+            // значило бы делать вид, что список длинный, — поднимаем его наверх.
+            FLAT_TABS_MORE.forEach(function (t) { main.push('tab:' + t); });
         }
+        return { main: main, more: more };
+    }
+    function flatHtml() {
+        var ids = flatIds();
+        var h = '';
+        ids.main.forEach(function (id) { h += flatOne(id); });
+        // Считаем ТОЛЬКО то, что реально видно: «Админка» приходит по роли, и в
+        // закрытом виде её в счёте «Ещё» быть не должно.
+        var hidden = ids.more.filter(function (id) {
+            return id.indexOf('pf:') === 0 || !flatTabOff(flatTabNode(id.slice(4)));
+        });
+        if (!hidden.length) return h;
+        if (flatMoreOpen) hidden.forEach(function (id) { h += flatOne(id); });
         h += '<button type="button" class="sb-item sb-more' + (flatMoreOpen ? ' open' : '') + '"' +
             ' data-act="flatmore" data-key="" aria-expanded="' + (flatMoreOpen ? 'true' : 'false') + '">' +
             svg(IC.chev) +
@@ -752,6 +798,11 @@
     // ширина рейки меняется вместе с колонкой — пересобираем на кроссинге брейкпоинта
     if (MQ.addEventListener) MQ.addEventListener('change', sbCtxSync);
     else if (MQ.addListener) MQ.addListener(sbCtxSync);
+    // ВХОД И ВЫХОД МЕНЯЮТ СОСТАВ ПЕРВОГО УРОВНЯ. Гость видит четыре пункта,
+    // вошедший — семь; без подписки на onChange список остался бы гостевым до
+    // первой смены вкладки, то есть сразу после входа человек не увидел бы своих
+    // портфелей в навигации.
+    try { if (window.supa && window.supa.onChange) window.supa.onChange(flatSync); } catch (e) {}
     // Свой тик бейджа. На «Портфелях» его пересобирает рендер, но на остальных
     // вкладках сайдбар — единственный, кто вообще спрашивает цены: без тика
     // метка дрейфа замерла бы на числе, посчитанном при заходе на вкладку.
