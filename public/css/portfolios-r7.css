@@ -2339,8 +2339,8 @@ body.dark-mode .pfd-inbtn:hover, .pfd-item.pfd-thm-dark .pfd-inbtn:hover { color
    Обычная карточка → тема «Стекло» и хром конструктора достаются как всем
    (.pfd-thm-glass > .pfd-body > .pf-card2), адресные правила под плитки не нужны.
    Плитки живы только у ratesStackHtml (режим «Ставки» блока cal). */
-#panel-portfolios .pf-ratesbar { position: relative; padding: 14px 20px; }
-.pf-ratesbar .rtb-row { display: flex; align-items: center; min-width: 0; position: relative; z-index: 4; }
+#panel-portfolios .pf-ratesbar { padding: 14px 20px; }
+.pf-ratesbar .rtb-row { display: flex; align-items: center; min-width: 0; }
 .rtb-i { display: flex; align-items: baseline; gap: 9px; min-width: 0; padding: 0 22px;
     border-left: 1px solid rgba(15, 23, 42, 0.07); }
 .rtb-i:first-child { border-left: 0; padding-left: 0; }
@@ -2348,24 +2348,28 @@ body.dark-mode .pfd-inbtn:hover, .pfd-item.pfd-thm-dark .pfd-inbtn:hover { color
     text-transform: uppercase; color: #8593a8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rtb-v { font-family: 'JetBrains Mono', monospace; font-size: 17px; font-weight: 700;
     letter-spacing: -0.01em; color: #111927; line-height: 1; font-variant-numeric: tabular-nums; }
-.rtb-src { margin-left: auto; padding-left: 16px; font-family: 'JetBrains Mono', monospace;
-    font-size: 9.5px; color: #a6b2c3; white-space: nowrap; transition: opacity 0.15s; }
 body.dark-mode .rtb-i { border-left-color: rgba(255, 255, 255, 0.09); }
 body.dark-mode .rtb-l { color: #97a7bb; }
 body.dark-mode .rtb-v { color: #f4f8fd; }
+/* хвост строки: кнопки конструктора ПЕРЕД подписью источника, одним кластером
+   в общем потоке (правка 2026-07-30) — не абсолютный оверлей поверх подписи,
+   а обычный флекс-элемент строки: скрытый .pfd-inchrome (opacity:0 до hover
+   карточки) не занимает видимого места, но и не выталкивает соседей никуда,
+   поэтому строка не переносится и хвост не оставляет пустой полосы. */
+.rtb-tail { margin-left: auto; padding-left: 16px; flex: none; display: flex; align-items: center;
+    gap: 8px; min-width: 0; white-space: nowrap; }
+.rtb-tail .pfd-inchrome { flex: none; }
+.rtb-src { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: #a6b2c3; white-space: nowrap; }
 body.dark-mode .rtb-src { color: #6c7a8e; }
-/* кнопки конструктора — в правом торце строки; на hover карточки подпись источника
-   гаснет и уступает им место (тот же приём, что .sbc-acts на месте суммы в сайдбаре) */
-.pf-ratesbar .rtb-chrome { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); z-index: 5; }
-.pf-ratesbar .rtb-chrome .pfd-inchrome { padding-right: 0; margin-right: 0; border-right: 0; }
-.pf-ratesbar:has(.rtb-chrome):hover .rtb-src { opacity: 0; }
 /* адаптация к ширине БЛОКА (container pfw объявлен у .pf-card2 в portfolios.css):
-   узкий span — сетка 2×2, совсем узкий — столбик; подпись уходит вниз */
+   узкий span — сетка 2×2, хвост остаётся ОДНОЙ строкой снизу (не пустой — в нём
+   хром+подпись); совсем узкий — столбик */
 @container pfw (max-width: 700px) {
     .pf-ratesbar .rtb-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; }
     .rtb-i { padding: 0; border-left: 0; }
-    .rtb-src { grid-column: 1 / -1; margin-left: 0; padding-left: 0; }
+    .rtb-tail { grid-column: 1 / -1; margin-left: 0; padding-left: 0; justify-content: flex-end; }
 }
 @container pfw (max-width: 330px) {
     .pf-ratesbar .rtb-row { grid-template-columns: 1fr; }
+    .rtb-tail { justify-content: space-between; }
 }
