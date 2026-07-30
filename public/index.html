@@ -266,7 +266,7 @@
     <!-- Сайдбар «Подъём»: рейка 76px + колонка второго уровня (мокап В3-б).
          Идёт ПОСЛЕ site-layout.css — перебивает и его базовые правила рейки,
          и блок body.dark-mode (рейка светлая в обеих темах), но ДО mobile.css -->
-    <link rel="stylesheet" href="css/sidebar-rail.css?v=43">
+    <link rel="stylesheet" href="css/sidebar-rail.css?v=45">
     <!-- Мобильный слой (≤1023px) — всегда ПОСЛЕДНИЙ, перебивает всё -->
     <link rel="stylesheet" href="css/mobile.css?v=28">
     
@@ -419,6 +419,17 @@
             </div>
         </div>
         <div id="sbNav">
+            <!-- ПЛОСКАЯ НАВИГАЦИЯ. Сюда js/sidebar-ctx.js рисует первый уровень
+                 одним списком: подвкладки «Портфелей» (Обзор, Мои портфели,
+                 Ребаланс, Торговля) поднялись к настоящим вкладкам (Рынок,
+                 Расчёт, Академия), редкое уехало в «Ещё». display:contents —
+                 дети становятся элементами флекса #sbNav, поэтому все стили
+                 #sbNav .sb-item достаются им бесплатно.
+                 Ссылки разделов НИЖЕ никуда не делись: они остаются источником
+                 правды (подписи переименовывает админка через tab-gates,
+                 видимость гейтит роль) и работают в мобильной шторке — там
+                 сгенерированного списка нет вовсе. На десктопе они скрыты. -->
+            <div id="sbFlat"></div>
             <!-- Пункты — настоящие ссылки: Cmd/Ctrl/средний клик открывает раздел в новой
                  вкладке браузера (SPA-фолбэк вернёт index.html, route-hash восстановит),
                  обычный клик перехватывают sbGo/sbGoParent/sbGoSub (sidebar.js) -->
@@ -2779,7 +2790,7 @@
 <script src="js/sidebar.js?v=21" defer></script>
 <!-- Колонка второго уровня: строго ПОСЛЕ sidebar.js (пользуется sbNavSub и
      дёргается из его sbSyncActive) -->
-<script src="js/sidebar-ctx.js?v=30" defer></script>
+<script src="js/sidebar-ctx.js?v=31" defer></script>
 <script src="js/stock-terminal.js?v=13" defer></script>
 <script src="js/bond-terminal.js?v=10" defer></script>
 <script src="js/table-tooltip.js?v=1" defer></script>

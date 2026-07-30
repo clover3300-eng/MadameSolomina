@@ -335,6 +335,20 @@
             if (!g.items || !g.items.length) return;
             var items = g.items, tailHtml = '';
             var lab = g.label;
+            // ПОДВКЛАДКИ «ПОРТФЕЛЕЙ» УШЛИ В ПЕРВЫЙ УРОВЕНЬ и во втором больше не
+            // печатаются — иначе одни и те же семь пунктов стояли бы дважды.
+            // Из этой группы во втором уровне остаются только ЭКРАНЫ «ТОРГОВЛИ»
+            // (cls 'lvl3'): они третий уровень, и подниматься им некуда.
+            if (first && tab === 'portfolios') {
+                var lvl3 = items.filter(function (it) { return it.cls === 'lvl3'; });
+                if (!lvl3.length) { first = false; return; }
+                items = lvl3;
+                lab = 'Экраны торговли';
+                h += '<div class="sbc-grp"><span>' + esc(lab) + '</span></div>';
+                h += items.map(itemHtml).join('');
+                first = false;
+                return;
+            }
             if (first) {
                 // «Разделы» — служебное имя группы; вслух блок называется именем
                 // раздела, а его могли переименовать из админки (js/tab-gates.js)
@@ -416,63 +430,156 @@
     // js/cloud-sync.js), интрадей-ряд sb_day_series со спарклайном и разбором
     // выбросов, пустые состояния табло. Пережил только БЕЙДЖ ДРЕЙФА на кружке
     // «Ребаланса» — он про навигацию, а не про данные (badgeTick ниже).
-    // В СВЁРНУТОЙ РЕЙКЕ КАПИТАЛА НЕТ. Чип «1,46 млн / +0,8%» из мокапа Б+3 был
-    // сделан и снят по просьбе владельца: свёрнутая рейка — это выбор «покажи
-    // только разделы», и пилюля с суммой в ней спорила с этим выбором. Состояние
-    // в 84px по-прежнему держит бейдж дрейфа на кружке «Ребаланса».
-    // Бейдж «сколько портфелей просят ребаланса» на кружке раздела. Правило
-    // порога живёт в мастере (PF.pfDriftCount) — здесь только показ.
+    // ---------- ПЛОСКИЙ ПЕРВЫЙ УРОВЕНЬ (раунд «Плоскость», 2026-07-30) ----------
+    // Дерево навигации было кривым: из шести разделов один держал СЕМЬ экранов
+    // (Обзор, Мои портфели, Ребаланс, Торговля, Аналитика, Отчёты, Операции),
+    // а три — ни одного. Иерархия называлась двухуровневой, а работала как
+    // одноуровневая с ямой: «Отчёты» надо было искать внутри «Портфелей», хотя
+    // «Тест» был сам себе разделом. Второй уровень «Портфелей» поднят в первый и
+    // встал рядом с «Рынком», «Расчётом» и «Академией»; редкое уехало в «Ещё».
+    //
+    // АДРЕСА НЕ ИЗМЕНИЛИСЬ. route-hash.js по-прежнему держит раздел путём, а
+    // подвкладку хэшем — поднялся только уровень, на котором пункт нарисован.
+    //
+    // Список рисуется в #sbFlat ВНУТРИ #sbNav (display:contents), поэтому все
+    // правила #sbNav .sb-item достаются ему без единого нового селектора, и
+    // рейка 84px складывает его теми же плитками, что складывала разделы.
+    //
+    // ПОДПИСИ ПОДВКЛАДОК ДУБЛИРУЮТСЯ ЗДЕСЬ НАМЕРЕННО. PF грузится лениво
+    // (#pfLazySrc), а первый уровень навигации обязан стоять целиком с первого
+    // кадра — иначе на «Расчёте» четыре пункта из семи появлялись бы с задержкой.
+    // Из PF приходят только счётчики, метка дрейфа и признак активности.
+    var FLAT_PF      = [['overview', 'Обзор'], ['ports', 'Мои портфели'],
+                        ['rebal', 'Ребаланс'], ['trading', 'Торговля']];
+    var FLAT_PF_MORE = [['analytics', 'Аналитика'], ['reports', 'Отчёты'], ['ops', 'Операции']];
+    // Настоящие вкладки: подписи, иконки, адреса и видимость читаются из
+    // РАЗМЕТКИ #sbNav — там единственный источник правды (админка переименовывает
+    // вкладки через tab-gates, роль гейтит «Админку»), и дублировать его нельзя.
+    var FLAT_TABS      = ['market', 'calc', 'rebalance'];
+    var FLAT_TABS_MORE = ['backtest', 'admin'];
+    var FLAT_MORE_KEY = 'sb_flat_more_v1';
+    var flatMoreOpen = (function () {
+        try { return localStorage.getItem(FLAT_MORE_KEY) === '1'; } catch (e) { return false; }
+    })();
+
     function plural(n, one, few, many) {
         var m10 = n % 10, m100 = n % 100;
         if (m10 === 1 && m100 !== 11) return one;
         if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
         return many;
     }
-    // Подсказка раздела собирается в js/sidebar.js (sbTitleSync) — у title
-    // один владелец, иначе следующий switchTab затёр бы дописанное здесь.
-    // Наше дело — положить примечание и позвать пересборку.
-    function noteSync(it, note) {
-        if (note) {
-            if (it.getAttribute('data-sb-note') !== note) it.setAttribute('data-sb-note', note);
-        } else if (it.hasAttribute('data-sb-note')) {
-            it.removeAttribute('data-sb-note');
-        } else return;
-        if (window.sbTitleSync) window.sbTitleSync();
+    function flatTabNode(tab) {
+        return document.querySelector('#sbNav .sb-item[data-tab="' + tab + '"]');
     }
-    function badgeSync(n) {
-        var it = document.querySelector('#sbNav .sb-item[data-tab="rebalance"]');
-        if (!it) return;
-        var b = it.querySelector('.sb-badge');
-        if (!(n > 0) || !wide()) { if (b) b.remove(); noteSync(it, ''); return; }
-        if (!b) {
-            b = document.createElement('span');
-            b.className = 'sb-badge';
-            it.appendChild(b);
+    function flatTabOff(n) {
+        return !n || n.hidden || (n.style && n.style.display === 'none');
+    }
+    // Строка настоящей вкладки — КОПИЯ ссылки из разметки, а не своя кнопка:
+    // href и onclick переносятся как есть, поэтому Cmd/Ctrl-клик по-прежнему
+    // открывает раздел в новой вкладке браузера, а обычный перехватывает
+    // sbGo/sbGoParent. Иконка берётся оттуда же — второго набора глифов нет.
+    function flatTabHtml(tab) {
+        var n = flatTabNode(tab);
+        if (flatTabOff(n)) return '';
+        var lbl = n.querySelector('.sb-label');
+        var ic = n.querySelector('svg');
+        var tx = lbl ? lbl.textContent.trim() : tab;
+        var oc = n.getAttribute('onclick') || '';
+        return '<a class="sb-item' + (n.classList.contains('active') ? ' active' : '') + '"' +
+            ' href="' + esc(n.getAttribute('href') || '#') + '"' +
+            (oc ? ' onclick="' + esc(oc) + '"' : '') +
+            ' title="' + esc(tx) + '">' +
+            (ic ? '<svg viewBox="0 0 24 24" aria-hidden="true">' + ic.innerHTML + '</svg>' : '') +
+            '<span class="sb-label">' + esc(tx) + '</span></a>';
+    }
+    // Строка подвкладки «Портфелей». Клик идёт через общий onClick по data-act —
+    // тот же путь, которым она ходила, пока была вторым уровнем.
+    function flatPfHtml(key, tx) {
+        var on = false, num = null, drift = 0;
+        var cur = (typeof currentTab !== 'undefined') ? currentTab : '';
+        try {
+            if (window.PF) {
+                if (cur === 'portfolios' && PF.pfxEffTab) {
+                    var eff = PF.pfxEffTab();
+                    on = key === 'trading'
+                        ? (PF.pfxIsTradeTab ? !!PF.pfxIsTradeTab(eff) : eff === 'trading')
+                        : eff === key;
+                }
+                if (key === 'ports' && PF.store && PF.store.items) num = PF.store.items.length || null;
+                if (key === 'ops' && PF.collectTrades) num = PF.collectTrades(true).length || null;
+                if (key === 'trading' && PF.pfxTradeTabs) {
+                    var s = PF.pfxTradeTabs().length;
+                    num = s > 1 ? s : null;      // один экран — не число, а данность
+                }
+                // МЕТКА ДРЕЙФА ПЕРЕЕХАЛА НА «РЕБАЛАНС». Раньше она висела на
+                // разделе data-tab="rebalance", а он в проде подписан «Академия»:
+                // метка про мастер ребаланса горела на разделе про обучение.
+                // Теперь мастер стоит своей строкой, и метка на нём.
+                if (key === 'rebal' && PF.pfDriftCount) drift = PF.pfDriftCount() || 0;
+            }
+        } catch (e) {}
+        var note = '';
+        if (drift > 0) {
+            var d = null;
+            try { d = PF.pfDriftMax ? PF.pfDriftMax() : null; } catch (e2) { d = null; }
+            var where = drift + ' ' + plural(drift, 'портфеле', 'портфелях', 'портфелях');
+            note = d != null
+                ? ('дрейф ' + d.toFixed(1).replace('.', ',') + ' п.п. в ' + where)
+                : ('дрейф в ' + where);
         }
-        var tx = String(n);
-        if (b.textContent !== tx) b.textContent = tx;
-        var lbl = n + ' ' + plural(n, 'портфель просит', 'портфеля просят', 'портфелей просят') + ' ребаланса';
-        if (b.getAttribute('aria-label') !== lbl) b.setAttribute('aria-label', lbl);
-        // Величину дрейфа метка не носит (в 15px её не написать) — её называет
-        // подсказка. Если максимума почему-то нет, примечание остаётся счётным:
-        // выдумывать число ради красивой строки нельзя.
-        var d = null;
-        try { d = (window.PF && PF.pfDriftMax) ? PF.pfDriftMax() : null; } catch (e) { d = null; }
-        var where = n + ' ' + plural(n, 'портфеле', 'портфелях', 'портфелях');
-        noteSync(it, d != null
-            ? ('дрейф ' + d.toFixed(1).replace('.', ',') + ' п.п. в ' + where)
-            : ('дрейф в ' + where));
+        var act = key === 'trading' ? 'trading' : 'pfx';
+        return '<button type="button" class="sb-item' + (on ? ' active' : '') + '"' +
+            ' data-act="' + act + '" data-key="' + esc(key) + '"' +
+            (on ? ' aria-current="page"' : '') +
+            ' title="' + esc(note ? tx + ' · ' + note : tx) + '">' +
+            svg(IC[key] || IC.overview) +
+            '<span class="sb-label">' + esc(tx) + '</span>' +
+            (drift > 0 ? '<span class="sb-badge" aria-label="' + esc(drift + ' ' +
+                plural(drift, 'портфель просит', 'портфеля просят', 'портфелей просят') +
+                ' ребаланса') + '">' + drift + '</span>' : '') +
+            (num != null ? '<span class="sb-n">' + esc(num) + '</span>' : '') +
+            '</button>';
     }
-    // Бейдж дрейфа на «Ребалансе» — единственное, что пережило снятие табло.
-    // Он про навигацию («сюда стоит зайти»), а не про данные, поэтому модель
-    // «Портфелей» всё ещё спрашиваем, но только ради числа портфелей за порогом.
-    // ensureQuotes оставлен: дрейф считается от стоимостей, а на не-«Портфелях»
-    // цены не спрашивает больше никто. Вызов дешёвый — внутри TTL 60с.
+    function flatHtml() {
+        var h = '';
+        FLAT_PF.forEach(function (t) { h += flatPfHtml(t[0], t[1]); });
+        FLAT_TABS.forEach(function (t) { h += flatTabHtml(t); });
+        // «Ещё» собирает редкое: три подвкладки «Портфелей» и вкладки, за
+        // которыми ходят эпизодически. Считаем ТОЛЬКО то, что реально видно:
+        // «Админка» приходит по роли, и в закрытом виде её в счёте быть не должно.
+        var hidden = [];
+        FLAT_PF_MORE.forEach(function (t) { hidden.push({ pf: t }); });
+        FLAT_TABS_MORE.forEach(function (t) { if (!flatTabOff(flatTabNode(t))) hidden.push({ tab: t }); });
+        if (!hidden.length) return h;
+        if (flatMoreOpen) {
+            hidden.forEach(function (it) {
+                h += it.pf ? flatPfHtml(it.pf[0], it.pf[1]) : flatTabHtml(it.tab);
+            });
+        }
+        h += '<button type="button" class="sb-item sb-more' + (flatMoreOpen ? ' open' : '') + '"' +
+            ' data-act="flatmore" data-key="" aria-expanded="' + (flatMoreOpen ? 'true' : 'false') + '">' +
+            svg(IC.chev) +
+            '<span class="sb-label">' + (flatMoreOpen ? 'Свернуть'
+                : ('Ещё ' + hidden.length + ' ' + plural(hidden.length, 'раздел', 'раздела', 'разделов'))) +
+            '</span></button>';
+        return h;
+    }
+    // Пересборка только при разнице html: тик котировок зовёт нас раз в минуту,
+    // а живой :hover и фокус в колонке рвать нельзя.
+    function flatSync() {
+        var host = document.getElementById('sbFlat');
+        if (!host) return;
+        var html = wide() ? flatHtml() : '';
+        if (host.__flatHtml === html) return;
+        host.innerHTML = html;
+        host.__flatHtml = html;
+    }
+    // Цены обновляет рендер «Портфелей», а метка дрейфа висит на ЛЮБОЙ вкладке —
+    // без этой строчки она замерла бы на числе, посчитанном при заходе. Вызов
+    // дешёвый: внутри ensureQuotes стоит TTL 60с.
     function badgeTick() {
-        var m = null;
         try { if (wide() && window.PF && PF.ensureQuotes && PF.store && PF.store.items.length) PF.ensureQuotes(); } catch (e) {}
-        try { m = (wide() && window.PF && PF.sbCapModel) ? PF.sbCapModel() : null; } catch (e) { m = null; }
-        badgeSync(m ? m.drift : 0);
+        flatSync();
     }
 
     // ---------- место блока в разметке ----------
@@ -513,7 +620,7 @@
     // Своп только при изменении HTML: фоновый тик котировок пересобирает модель
     // каждую секунду, а живой :hover и фокус в колонке рвать нельзя.
     function sbCtxSync() {
-        badgeTick();                                // бейдж дрейфа живёт и без второго уровня
+        flatSync();                                 // первый уровень живёт на любой вкладке
         // крошка в шапке несёт подвкладку («Портфели · Обзор»), а меняется та
         // без switchTab — обновляем здесь, на каждом рендере «Портфелей»
         if (window.renderHeaderBadge && typeof currentTab !== 'undefined' && currentTab) {
@@ -558,6 +665,15 @@
         e.preventDefault();
         e.stopPropagation();
         if (act === 'collapse') { if (window.toggleSidebarCollapse) window.toggleSidebarCollapse(); return; }
+        // «Ещё» первого уровня: тот же договор, что у «Ещё» второго — раскрытие
+        // запоминается, чтобы тот, кто ходит в «Отчёты» каждый день, раскрыл
+        // список один раз.
+        if (act === 'flatmore') {
+            flatMoreOpen = !flatMoreOpen;
+            try { localStorage.setItem(FLAT_MORE_KEY, flatMoreOpen ? '1' : '0'); } catch (e) {}
+            flatSync();
+            return;
+        }
         if (act === 'ctxmore') {
             moreOpen = !moreOpen;
             try { localStorage.setItem(MORE_KEY, moreOpen ? '1' : '0'); } catch (e) {}
@@ -626,6 +742,11 @@
         // у неё нет data-act)
         var foot = document.getElementById('sbRailFoot');
         if (foot) foot.addEventListener('click', onClick);
+        // Первый уровень теперь тоже наш: строки подвкладок ходят по data-act,
+        // как ходили вторым уровнем. Ссылки настоящих вкладок идут своим onclick
+        // из разметки и до onClick не доходят — у них нет data-act.
+        var nav = document.getElementById('sbNav');
+        if (nav) nav.addEventListener('click', onClick);
         sbCtxSync();
     });
     // ширина рейки меняется вместе с колонкой — пересобираем на кроссинге брейкпоинта

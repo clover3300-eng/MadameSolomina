@@ -57,6 +57,9 @@
 /* бейдж дрейфа — деталь сетки разделов; в мобильной шторке строки плоские,
    и метка встала бы обычным текстом в конце строки */
 #sbNav .sb-badge { display: none; }
+/* Плоский первый уровень — только десктоп. В мобильной шторке работают исходные
+   ссылки разделов, и генерируемый список стал бы вторым набором тех же пунктов. */
+#sbFlat { display: none; }
 
 @media (min-width: 1024px) {
     :root {
@@ -330,6 +333,18 @@
         padding: 26px 8px 16px;
     }
     #sbNav .sb-group { display: contents; }
+    /* ПЛОСКИЙ СПИСОК ЖИВЁТ ВНУТРИ #sbNav. display:contents отдаёт его строки
+       прямо во флекс колонки — значит все правила #sbNav .sb-item ниже
+       достаются им без единого нового селектора.
+       Исходные ссылки разделов на десктопе СКРЫТЫ, но остаются в разметке: по
+       ним генератор читает подписи (их переименовывает админка), иконки,
+       адреса и видимость по роли. Прятать их через display:none безопасно —
+       генератор смотрит на style/hidden самих узлов, а не на то, видны ли они. */
+    #sbFlat { display: contents; }
+    /* body в селекторе НУЖЕН: правило #sbNav .sb-item ниже задаёт display:flex с
+       той же специфичностью, но идёт позже и перебивало бы скрытие. */
+    body #sbNav > .sb-item,
+    body #sbNav > .sb-group { display: none; }
     /* волосяная черта между уровнями — только когда второй уровень есть */
     body.sb-ctx #sbNav::after {
         content: '';
@@ -448,6 +463,28 @@
     /* второй уровень уехал в #sbCtx — шевроны и inline-подпункты не нужны */
     #sbNav .sb-chev,
     #sbNav .sb-subs { display: none; }
+
+    /* Счётчик в строке первого уровня — та же справка, что и во втором уровне:
+       10,5px, табличные цифры, тон текста. Правый край общий у всех строк. */
+    #sbNav .sb-n {
+        flex: none;
+        margin-left: auto;
+        font-family: var(--font-num, 'JetBrains Mono', monospace);
+        font-variant-numeric: tabular-nums;
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--sbr-mut);
+    }
+    /* «Ещё N разделов» — не пункт, а обещание показать остальные: тише прочих
+       строк и без активного состояния. Шеврон разворачивается вместе со списком. */
+    #sbNav .sb-more,
+    body.dark-mode #sbNav .sb-more { color: var(--sbr-dim); font-weight: 600; }
+    #sbNav .sb-more > svg { transition: transform 0.16s ease; }
+    #sbNav .sb-more.open > svg { transform: rotate(180deg); }
+    /* в рейке 84px «Ещё» не нужно: подпись «Ещё 5 разделов» под кружком
+       читалась бы разделом с таким именем */
+    body.sb-rail #sbNav .sb-more,
+    body.sb-rail #sbNav .sb-n { display: none; }
 
     /* Бейдж на кружке (дрейф долей за порогом у «Ребаланса»). Кружок —
        .sb-item > svg, у <svg> потомков-элементов разметки нет, поэтому метка
