@@ -412,6 +412,11 @@
     }
     // Рыночной ленты в шапке больше нет — живые значения нужны только виджету
     // «Рынок сейчас» (pfwIdxHtml); источник прежний: скрытые span'ы дашборда
+    // Плитки рынка форматируют числа по-английски («79.86 ₽», «-0.06%»), а весь
+    // остальной проект — по-русски: запятая в дробях и типографский минус (см.
+    // fmtRub/fmtPct). В одном виджете рядом с портфельными числами эта разница
+    // бросается в глаза, поэтому переводим на лету.
+    function ruNum(s) { return String(s).replace(/(\d)\.(\d)/g, '$1,$2').replace(/^-/, '−'); }
     function tickLive() {
         [['imoex', 'val-imoex', 'dyn-imoex'], ['usd', 'val-usdrub', 'dyn-usdrub'], ['btc', 'val-btc', 'dyn-btc']].forEach(function (p) {
             var sv = dq(p[1]), sd = dq(p[2]);
@@ -419,8 +424,8 @@
             var d = sd ? (sd.textContent || '').trim() : '';
             var cls = sd ? (sd.classList.contains('negative') ? 'neg' : (sd.classList.contains('positive') ? 'pos' : 'flat')) : 'flat';
             var wv = dq('pfxidx-v-' + p[0]), wc = dq('pfxidx-c-' + p[0]);
-            if (wv && s) wv.textContent = s;
-            if (wc && sd) { wc.textContent = d; wc.className = 'pfix-c ' + cls; }
+            if (wv && s) wv.textContent = ruNum(s);
+            if (wc && sd) { wc.textContent = ruNum(d); wc.className = 'pfix-c ' + cls; }
         });
     }
     function ensureLiveTick() { if (liveTimer) return; liveTimer = setInterval(function () {

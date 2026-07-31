@@ -2832,13 +2832,16 @@
         return '<div class="dash2-card pf-card2 pf-opsblk">' +
             PF.pfCardHead('', 'Последние операции', 'свежие покупки и продажи', null) + body + '</div>';
     }
-    // «Доходность портфелей»: горизонтальные полосы-сравнение
+    // «Доходность портфелей»: строка мокапа — точка · имя · за всё время ·
+    // годовых, полоса ПОД строкой. Раньше полоса стояла между именем и числом
+    // и растаскивала строку на три колонки разной природы; и число было одно —
+    // подпись «годовых» обещала второе, которого не было.
     function pfwYieldHtml() {
         var rows = [];
         visibleItems().forEach(function (p) {
             var c = calcPf(p);
             if (!(c.invested > 0)) return;
-            rows.push({ name: p.name, color: colorVal(p.color), pct: c.pnlPct, val: c.value });
+            rows.push({ name: p.name, color: colorVal(p.color), pct: c.pnlPct, annual: c.annual, val: c.value });
         });
         var body;
         if (!rows.length) {
@@ -2848,15 +2851,20 @@
             rows.sort(function (a, b) { return b.pct - a.pct; });
             body = '<div class="pfyl-list">' + rows.map(function (r) {
                 var w = clamp(Math.abs(r.pct) / maxAbs * 100, 4, 100);
+                var cls = r.pct >= 0 ? 'pos' : 'neg';
                 return '<div class="pfyl-row">' +
-                    '<span class="pfyl-n"><i style="background:' + r.color + '"></i>' + esc(r.name) + '</span>' +
-                    '<span class="pfyl-barwrap"><span class="pfyl-bar ' + (r.pct >= 0 ? 'pos' : 'neg') + '" style="width:' + w.toFixed(1) + '%"></span></span>' +
-                    '<b class="' + (r.pct >= 0 ? 'pos' : 'neg') + '">' + fmtPct(r.pct) + '</b>' +
+                    '<span class="pfyl-l">' +
+                        '<i class="pfyl-dot" style="background:' + r.color + '"></i>' +
+                        '<b class="pfyl-n">' + esc(r.name) + '</b>' +
+                        '<span class="pfyl-v ' + cls + '">' + fmtPct(r.pct) + '</span>' +
+                        '<span class="pfyl-a ' + cls + '">' + (r.annual == null ? '—' : fmtPct(r.annual)) + '</span>' +
+                    '</span>' +
+                    '<span class="pfyl-barwrap"><span class="pfyl-bar" style="width:' + w.toFixed(1) + '%;background:' + r.color + '"></span></span>' +
                 '</div>';
             }).join('') + '</div>';
         }
         return '<div class="dash2-card pf-card2 pf-yieldblk">' +
-            PF.pfCardHead('', 'Доходность портфелей', 'изменение к вложенному, за весь срок', null) + body + '</div>';
+            PF.pfCardHead('', 'Доходность портфелей', 'за всё время · годовых', null) + body + '</div>';
     }
     // «Снимки капитала»: последние дневные значения и их дневное изменение
     function pfwSnapsHtml() {
@@ -2968,20 +2976,19 @@
     // «Рынок сейчас»: IMOEX / USD / BTC — живые значения из скрытых спанов дашборда
     // (те же источники, что рыночная лента в шапке; тикает tickLive раз в секунду)
     function pfwIdxHtml() {
-        var items = [
-            ['imoex', 'IMOEX', 'Индекс Мосбиржи'],
-            ['usd', 'USD/RUB', 'Доллар США'],
-            ['btc', 'BTC', 'Биткойн']
-        ];
+        // Строка мокапа (экран 13): тикер · значение · процент. Расшифровок
+        // «IMOEX — Индекс Мосбиржи» больше нет: они пересказывали тикер своими
+        // словами и требовали третьего кегля, а строка и так читается.
+        var items = [['imoex', 'IMOEX'], ['usd', 'USD/RUB'], ['btc', 'BTC']];
         var rows = items.map(function (t) {
             return '<div class="pfix-row">' +
-                '<span class="pfix-t"><b>' + t[1] + '</b><i>' + t[2] + '</i></span>' +
+                '<span class="pfix-tk">' + t[1] + '</span>' +
                 '<span class="pfix-v" id="pfxidx-v-' + t[0] + '">—</span>' +
                 '<span class="pfix-c" id="pfxidx-c-' + t[0] + '"></span>' +
             '</div>';
         }).join('');
         return '<div class="dash2-card pf-card2 pf-idxblk">' +
-            PF.pfCardHead('', 'Рынок сейчас', 'индекс, валюта и криптовалюта — живые значения',
+            PF.pfCardHead('', 'Рынок сейчас', 'живые котировки, задержка до 15 минут',
                 // кнопки конструктора — в потоке шапки ПЕРЕД «Рынок» (PFD_OWN_CHROME)
                 pfdInChromeHtml('idx') +
                 '<button class="d3-quick ghost pfhm-go" onclick="switchTab(\'market\')">Рынок' + GO_ARROW_SVG + '</button>') +
@@ -3036,12 +3043,17 @@
             // не зависящая от размера виджета)
             var top = list.slice(0, Math.max(5, pfdRowsFor('conc', 5, 34, 150))), top5Sum = 0;
             list.slice(0, 5).forEach(function (r) { top5Sum += r.v / total * 100; });
+            // та же строка, что у «Доходности портфелей» (мокап overview3, .dv-r):
+            // бумага · сколько денег · доля, полоса ПОД строкой
             var rows = top.map(function (r) {
                 var sh = r.v / total * 100;
                 return '<div class="pfyl-row">' +
-                    '<span class="pfyl-n"><b>' + esc(r.tk) + '</b></span>' +
-                    '<span class="pfyl-barwrap"><span class="pfyl-bar ' + (sh > 40 ? 'neg' : 'pos') + '" style="width:' + clamp(sh, 3, 100).toFixed(1) + '%"></span></span>' +
-                    '<b>' + sh.toFixed(1).replace('.', ',') + '%</b>' +
+                    '<span class="pfyl-l">' +
+                        '<b class="pfyl-n">' + esc(r.tk) + '</b>' +
+                        '<span class="pfyl-v">' + fmtRub(r.v) + '</span>' +
+                        '<span class="pfyl-a">' + sh.toFixed(1).replace('.', ',') + '%</span>' +
+                    '</span>' +
+                    '<span class="pfyl-barwrap"><span class="pfyl-bar" style="width:' + clamp(sh, 3, 100).toFixed(1) + '%"></span></span>' +
                 '</div>';
             }).join('');
             var topSum = top5Sum;
@@ -3054,7 +3066,7 @@
                 '<div class="pfcc-verdict ' + verdict[0] + '"><i>' + (verdict[0] === 'ok' ? NW_CHECK_SVG : '!') + '</i>' + verdict[1] + '</div>';
         }
         return '<div class="dash2-card pf-card2 pf-concblk">' +
-            PF.pfCardHead('', 'Диверсификация', '', null) + body + '</div>';
+            PF.pfCardHead(list.length || '', 'Диверсификация', 'вес бумаги в капитале', null) + body + '</div>';
     }
 
     // ====================================================================

@@ -473,20 +473,31 @@ body.dark-mode .pfop-sum { color: #e8eef7; }
 .pfop-all svg { width: 14px; height: 14px; }
 body.dark-mode .pfop-all { color: #a5b4fc; }
 
-/* — Доходность портфелей — */
-.pfyl-list { display: flex; flex-direction: column; gap: 13px; margin-top: 8px; }
-.pfyl-row { display: grid; grid-template-columns: minmax(90px, 150px) minmax(0, 1fr) auto; gap: 12px; align-items: center; }
-.pfyl-n { display: flex; align-items: center; gap: 8px; min-width: 0; font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; color: #1b2433; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* — Доходность портфелей / Диверсификация: ОДНА строка мокапа (.dv-r, yRow) —
+   имя и числа одной строкой, полоса ПОД ней. Прежняя раскладка ставила полосу
+   МЕЖДУ именем и числом: колонка переменной ширины разрывала строку пополам,
+   и глазу приходилось перепрыгивать через неё, чтобы связать имя с процентом. */
+.pfyl-list { display: flex; flex-direction: column; margin-top: 6px; }
+.pfyl-row { padding: 9px 0; border-bottom: 1px solid rgba(24, 38, 60, 0.07); }
+.pfyl-row:last-child { border-bottom: 0; }
+body.dark-mode .pfyl-row { border-bottom-color: rgba(255, 255, 255, 0.07); }
+.pfyl-l { display: flex; align-items: baseline; gap: 10px; font-size: 12px; }
+.pfyl-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; align-self: center; }
+.pfyl-n { min-width: 0; font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; color: #1b2433;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 body.dark-mode .pfyl-n { color: #e8eef7; }
-.pfyl-n i { width: 9px; height: 9px; border-radius: 99px; flex-shrink: 0; }
-.pfyl-barwrap { height: 8px; border-radius: 99px; background: rgba(24, 38, 60, 0.06); overflow: hidden; }
+/* число, отжатое вправо, и колонка фиксированной ширины — как .val/.sub мокапа */
+.pfyl-v { margin-left: auto; flex: none; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; color: #1b2433; }
+.pfyl-a { flex: none; width: 56px; text-align: right; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #8494a7; }
+.pfyl-v.pos, .pfyl-a.pos { color: #119d5c; }
+.pfyl-v.neg, .pfyl-a.neg { color: #c2410c; }
+body.dark-mode .pfyl-v { color: #e8eef7; }
+.pfyl-barwrap { display: block; margin-top: 6px; height: 4px; border-radius: 99px; background: rgba(24, 38, 60, 0.06); overflow: hidden; }
 body.dark-mode .pfyl-barwrap { background: rgba(255, 255, 255, 0.08); }
-.pfyl-bar { display: block; height: 100%; border-radius: 99px; }
-.pfyl-bar.pos { background: linear-gradient(90deg, #34d399, #12a35c); }
-.pfyl-bar.neg { background: linear-gradient(90deg, #fca5a5, #e0592b); }
-.pfyl-row > b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 13px; font-weight: 700; white-space: nowrap; }
-.pfyl-row > b.pos { color: #119d5c; }
-.pfyl-row > b.neg { color: #c2410c; }
+.pfyl-bar { display: block; height: 100%; border-radius: 99px; opacity: 0.55; background: rgba(24, 38, 60, 0.42); }
+body.dark-mode .pfyl-bar { background: rgba(255, 255, 255, 0.42); }
 /* «Лидеры дня»: главное число — вклад в рублях, процент подписью под ним */
 /* «Лидеры дня» — строка мокапа: тикер · имя · рубли · процент (экран 13) */
 .pfmv-list { display: flex; flex-direction: column; padding-top: 6px; }
@@ -523,21 +534,22 @@ body.dark-mode .pfsn-v { color: #e8eef7; }
 /* — заметка: третья заливка «без линии» (чистая карточка) — */
 #panel-portfolios .pf-noteblk.pfnt-fill-none::before { opacity: 0; }
 
-/* — «Рынок сейчас» (pfwIdxHtml) — */
-.pfix-rows { display: flex; flex-direction: column; margin-top: 2px; }
-.pfix-row {
-    display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: center;
-    padding: 12px 2px; border-bottom: 1px solid #eef2f7;
-}
+/* — «Рынок сейчас» (pfwIdxHtml): строка мокапа .row — тикер · значение · процент.
+   Стопка «тикер + расшифровка» ушла вместе с расшифровками: они пересказывали
+   тикер и тянули за собой третий кегль (Inter 13.5/800) в списке из трёх строк. */
+.pfix-rows { display: flex; flex-direction: column; margin-top: 6px; }
+.pfix-row { display: flex; align-items: center; gap: 10px; padding: 9px 0;
+    border-bottom: 1px solid rgba(24, 38, 60, 0.07); font-size: 12px; }
 .pfix-row:last-child { border-bottom: 0; }
-body.dark-mode .pfix-row { border-bottom-color: rgba(255, 255, 255, 0.08); }
-.pfix-t { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.pfix-t b { font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 800; color: #0f172a; }
-.pfix-t i { font-family: 'Inter', sans-serif; font-style: normal; font-size: 11px; font-weight: 600; color: #8494a7; }
-body.dark-mode .pfix-t b { color: #f4f8fd; }
-.pfix-v { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 15px; font-weight: 700; color: #1b2433; white-space: nowrap; }
+body.dark-mode .pfix-row { border-bottom-color: rgba(255, 255, 255, 0.07); }
+.pfix-tk { flex: none; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px;
+    font-weight: 700; color: #1b2433; }
+body.dark-mode .pfix-tk { color: #e8eef7; }
+.pfix-v { margin-left: auto; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px;
+    font-weight: 700; font-variant-numeric: tabular-nums; color: #1b2433; white-space: nowrap; }
 body.dark-mode .pfix-v { color: #e8eef7; }
-.pfix-c { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11.5px; font-weight: 700; min-width: 52px; text-align: right; white-space: nowrap; color: #94a3b8; }
+.pfix-c { flex: none; width: 56px; text-align: right; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #8494a7; }
 .pfix-c.pos { color: #119d5c; }
 .pfix-c.neg { color: #c2410c; }
 
@@ -557,18 +569,18 @@ body.dark-mode .pfpv-row { border-bottom-color: rgba(255, 255, 255, 0.08); }
 .pfpv-row b.pos { color: #119d5c; }
 body.dark-mode .pfpv-row b { color: #e8eef7; }
 
-/* — «Лидеры дня» / «Диверсификация»: имя с тикером в барах — */
-/* R11 (мокап «Обзора» 2026-07-22): полоски долей — тонкие и нейтральные, вердикт —
-   тихая строка с цветной иконкой вместо цветной плашки; о концентрации говорит
-   только он (красная полоса при доле >40% ушла вместе с зелёным градиентом) */
-.pfcc-list .pfyl-barwrap { height: 4px; background: rgba(24, 38, 60, 0.07); }
-.pfcc-list .pfyl-bar.pos, .pfcc-list .pfyl-bar.neg { background: rgba(30, 41, 59, 0.5); }
-.pfcc-list .pfyl-row > b { color: #64748b; font-size: 12px; font-weight: 600; }
-body.dark-mode .pfcc-list .pfyl-bar.pos, body.dark-mode .pfcc-list .pfyl-bar.neg,
-.pfd-item.pfd-thm-dark .pfcc-list .pfyl-bar.pos, .pfd-item.pfd-thm-dark .pfcc-list .pfyl-bar.neg { background: rgba(232, 238, 247, 0.45); }
-body.dark-mode .pfcc-list .pfyl-row > b, .pfd-item.pfd-thm-dark .pfcc-list .pfyl-row > b { color: #8b98ad; }
+/* — «Диверсификация»: первая ячейка — ТИКЕР (моно), середина — деньги тихо,
+   справа — доля громко. Обратный порядок веса к «Доходности», где имя портфеля
+   набрано гротеском, а громкое число — доходность (мокап: .dv-r против yRow). */
+.pfcc-list .pfyl-n { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px; }
+.pfcc-list .pfyl-v { font-size: 11.5px; font-weight: 400; color: #8494a7; }
+.pfcc-list .pfyl-a { font-size: 12.5px; font-weight: 700; color: #1b2433; }
+body.dark-mode .pfcc-list .pfyl-v, .pfd-item.pfd-thm-dark .pfcc-list .pfyl-v { color: #8b98ad; }
+body.dark-mode .pfcc-list .pfyl-a, .pfd-item.pfd-thm-dark .pfcc-list .pfyl-a { color: #e8eef7; }
+/* R11 (мокап «Обзора» 2026-07-22): вердикт — тихая строка с цветной иконкой
+   вместо цветной плашки; о концентрации говорит только он */
 .pfcc-verdict {
-    display: flex; align-items: center; gap: 7px; margin-top: 12px;
+    display: flex; align-items: center; gap: 7px; margin-top: auto; padding-top: 12px;
     font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; line-height: 1.45; color: #64748b;
 }
 body.dark-mode .pfcc-verdict, .pfd-item.pfd-thm-dark .pfcc-verdict { color: #8b98ad; }
@@ -1110,8 +1122,11 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 .pfd-item.pfd-thm-dark .pfas-id i { background: rgba(255, 255, 255, 0.08); }
 .pfd-item.pfd-thm-dark .pfop-all { color: #a5b4fc; }
 .pfd-item.pfd-thm-dark .pfyl-barwrap { background: rgba(255, 255, 255, 0.08); }
+.pfd-item.pfd-thm-dark .pfyl-bar { background: rgba(255, 255, 255, 0.42); }
+.pfd-item.pfd-thm-dark .pfyl-n, .pfd-item.pfd-thm-dark .pfyl-v { color: #e8eef7; }
+.pfd-item.pfd-thm-dark .pfyl-row { border-bottom-color: rgba(255, 255, 255, 0.07); }
 /* Рынок сейчас / Пассивный доход / Лидеры дня (бар-строки реюзают pfyl) */
-.pfd-item.pfd-thm-dark .pfix-t b, .pfd-item.pfd-thm-dark .pfmv-r .tk { color: #f4f8fd; }
+.pfd-item.pfd-thm-dark .pfix-tk, .pfd-item.pfd-thm-dark .pfmv-r .tk { color: #f4f8fd; }
 .pfd-item.pfd-thm-dark .pfix-v, .pfd-item.pfd-thm-dark .pfpv-row b { color: #e8eef7; }
 /* Распределение активов */
 .pfd-item.pfd-thm-dark .pfal-chip { background: #16213a; border-color: #2b3a55; color: #b6c4d8; }
