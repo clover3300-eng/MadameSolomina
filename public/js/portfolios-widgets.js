@@ -673,6 +673,52 @@
             return '<button class="pfcap-rb' + (PF.pfdCapRange === r[0] ? ' on' : '') + '" onclick="pfdCapSetRange(\'' + r[0] + '\')">' + r[1] + '</button>';
         }).join('') + '</div>';
     }
+    // ═══════════ СРАВНЕНИЕ ГРАФИКА КАПИТАЛА С ИНДЕКСОМ ═══════════
+    // (мокап overview3, экран 19). Шкала графика уже в процентах от старта окна,
+    // поэтому вторая кривая ложится на неё без пересчёта осей: индекс переводим
+    // в «синтетическую стоимость» base × (idx_i / idx_0) — те же проценты, тот же
+    // масштаб. Ось при этом расширяется под обе кривые, иначе индекс уходил бы
+    // за край полотна.
+    PF.pfdCapCmp = null;             // null | 'IMOEX' | 'RGBI' — что наложено
+    var pfdCmpCache = {};            // 'IMOEX|2026-01-15|2026-07-30' → [{d,c}] | 'load' | 'err'
+    function pfdCmpSeries(bench, from, till) {
+        var key = bench + '|' + from + '|' + till;
+        var hit = pfdCmpCache[key];
+        if (hit) return hit === 'load' || hit === 'err' ? null : hit;
+        if (typeof btFetchHistorySeries !== 'function') { pfdCmpCache[key] = 'err'; return null; }
+        pfdCmpCache[key] = 'load';
+        btFetchHistorySeries('/iss/history/engines/stock/markets/index/securities/' + bench + '.json', from, till)
+            .then(function (rows) {
+                pfdCmpCache[key] = (rows && rows.length > 1) ? rows : 'err';
+                if (PF.pfdCapCmp === bench) pfdRerender();
+            })
+            .catch(function () { pfdCmpCache[key] = 'err'; });
+        return null;
+    }
+    function pfdCmpState(bench, from, till) {
+        var key = bench + '|' + from + '|' + till;
+        return pfdCmpCache[key] === 'load' ? 'load' : (pfdCmpCache[key] === 'err' ? 'err' : 'ok');
+    }
+    // Кнопка живёт в ШАПКЕ виджета, рядом с периодами: и то и другое про то,
+    // «что показывать», и стоять им положено вместе (мокап, экран 19).
+    function pfdCapCmpBtnHtml() {
+        var on = !!PF.pfdCapCmp;
+        return '<button type="button" class="pfcap-cmp' + (on ? ' on' : '') + '" onclick="pfdCapCmpToggle(event)" ' +
+            'title="Наложить кривую индекса — обе считаются в процентах от начала окна">⊕ Сравнить' +
+            (on ? '<i>' + esc(PF.pfdCapCmp) + '</i>' : '') + '</button>';
+    }
+    // Индекс по составу: чисто облигационному портфелю IMOEX не соперник — ему RGBI.
+    function pfdCapBench() {
+        var bond = 0, all = 0;
+        PF.store.items.forEach(function (p) { var c = calcPf(p); bond += c.bondVal; all += c.value; });
+        return all > 0 && bond / all > 0.7 ? 'RGBI' : 'IMOEX';
+    }
+    window.pfdCapCmpToggle = function (ev) {
+        if (ev) ev.stopPropagation();
+        PF.pfdCapCmp = PF.pfdCapCmp ? null : pfdCapBench();
+        pfdRerender();
+    };
+
     // Полотно графика капитала вынесено в отдельную функцию: тот же плот нужен
     // и виджету «График капитала», и герою «Обзора». Возвращает {hero, body} —
     // крупную строку стоимости с дельтой и само полотно с осью и подписями дат.
@@ -690,6 +736,31 @@
         } else {
             var min = Infinity, max = -Infinity;
             s.forEach(function (pt) { if (pt.v < min) min = pt.v; if (pt.v > max) max = pt.v; });
+            // вторая кривая (индекс) в тех же процентах: base × (idx_i / idx_0).
+            // Считаем ДО расчёта span — ось обязана вместить обе, иначе индекс
+            // вылезал бы за полотно или упирался в кромку.
+            var bench = opts.noCmp ? null : PF.pfdCapCmp, cmpPts = null, cmpState = null;
+            if (bench && !demoSeries) {
+                var from = s[0].d, till = last.d;
+                cmpState = pfdCmpState(bench, from, till);
+                var rows = pfdCmpSeries(bench, from, till);
+                if (rows && rows.length > 1) {
+                    var byD = {}; rows.forEach(function (r) { byD[r.d] = r.c; });
+                    var base0 = null, prev = null, arr = [];
+                    s.forEach(function (pt) {
+                        var c = byD[pt.d];
+                        if (c == null) c = prev;          // выходной/пропуск — тянем прошлое значение
+                        if (c == null) { arr.push(null); return; }
+                        prev = c;
+                        if (base0 == null) base0 = c;
+                        arr.push(s[0].v * (c / base0));
+                    });
+                    if (arr.some(function (v) { return v != null; })) {
+                        cmpPts = arr;
+                        arr.forEach(function (v) { if (v == null) return; if (v < min) min = v; if (v > max) max = v; });
+                    }
+                }
+            }
             var span = Math.max(1, max - min);
             var n = s.length, INX = 1.6, PT = 12, PB = 16;
             function xP(i) { return INX + (n > 1 ? i / (n - 1) : 0) * (100 - 2 * INX); }
@@ -738,6 +809,11 @@
                     '</linearGradient></defs>' +
                     grid +
                     '<path d="' + area + '" fill="url(#pfcapGrad)"/>' +
+                    (cmpPts ? '<path d="' + cmpPts.reduce(function (acc, v, i) {
+                        if (v == null) return acc;
+                        return acc + (acc ? ' L' : 'M') + xP(i).toFixed(2) + ',' + yP(v).toFixed(2);
+                    }, '') + '" fill="none" stroke="#4a6fa5" stroke-width="1.6" stroke-dasharray="5 4" ' +
+                        'stroke-opacity="0.85" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>' : '') +
                     '<path d="' + line + '" fill="none" stroke="' + col + '" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>' +
                 '</svg>' +
                 '<span class="pfcap-end" style="left:' + lx + '%;top:' + ly + '%;--cc:' + col + '"></span>' +
@@ -746,7 +822,12 @@
                 '<div class="pfcap-hit" onmousemove="pfdCapHover(event)" onmouseleave="pfdCapHoverEnd(event)"></div>' +
             '</div>' +
             '<div class="pfcap-x"><span>' + ruDate(s[0].d) + '</span><span>' + ruDate(last.d) + '</span></div>' +
+            (bench ? '<div class="pfcap-leg"><span><i class="pfcap-lp" style="background:' + col + '"></i>капитал</span>' +
+                '<span><i class="pfcap-li"></i>' + esc(bench) +
+                (cmpState === 'load' ? ' <em>грузим…</em>' : cmpState === 'err' ? ' <em>нет данных</em>' : '') + '</span>' +
+                '<span class="pfcap-leg-r">обе кривые — в процентах от начала окна</span></div>' : '') +
             pfdCapRangesHtml();
+            if (!opts.noCmp) right = pfdCapCmpBtnHtml();
         }
         return { hero: hero, body: body, right: right, empty: s.length < 2 };
     }
