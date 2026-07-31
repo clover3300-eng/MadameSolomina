@@ -1569,6 +1569,9 @@ body:has(#pftBar) #pfxTabPanel { padding-bottom: 0; }
 /* у панели было padding: 24px 40px 84px — сверху и снизу это чистая потеря
    высоты, ради которой режим и затевался; по бокам оставляем немного воздуха */
 body:has(#pftBar) #panel-portfolios { padding: 0 !important; }
+/* #contentArea добавлял свои 18px сверху — сцена начиналась с гэпа от края
+   окна, и строка среды не прижималась к началу страницы (владелец 2026-07-31) */
+body:has(#pftBar) #contentArea { padding: 0 !important; }
 /* #pfWrap — флекс-колонка с gap:16px: между полосой и работой он давал те самые
    14 экранных пикселей, которых в макете нет (.work2 начинается на 44px ровно) */
 body:has(#pftBar) #pfWrap { gap: 0; }

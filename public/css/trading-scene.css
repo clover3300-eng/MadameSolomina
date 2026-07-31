@@ -318,8 +318,7 @@
 /* при открытом «Счёте» прячем «средняя станет» + «останется» (обе .sum-sub) и
    «что нужно знать» (.know/.know2) — чтобы кнопка «Купить» влезла; квитанция со
    «Спишется» и защита остаются (владелец 2026-07-24) */
-.bts[data-acct="1"] .tkt .tk-know,
-.bts[data-acct="1"] .tkt .know2 { display: none; }
+/* «что нужно знать» удалён из карточки (2026-07-31) — прятать больше нечего */
 /* сплит + счёт: жмётся ТОЛЬКО карточка сделки — стакан держит полную
    высоту, дыры под ним нет (владелец 2026-07-24, скрин). Высота сделки =
    контейнер минус счёт с зазором (--bts-acct = высота счёта + 96 + 12) */
@@ -332,27 +331,10 @@
 }
 .bts .tkt-h b { font: 400 16px var(--font-title); }
 .bts .freshw { margin-left: auto; font: 400 10px var(--font-num); color: var(--dim); }
-/* вкладки карточки «Старта»: Сделка / Стакан / Сплит — СЕГМЕНТОМ в идиоме
-   «Купить/Продать» ниже. Они основные (владелец 2026-07-24) — сегмент
-   растянут на ширину, вкладки равные и крупные, активная с заливкой */
-.bts .tkt-tabs {
-    flex: 1 1 auto; display: inline-flex; gap: 3px;
-    border: 1px solid var(--line); border-radius: 11px; padding: 3px;
-}
-.bts .tkt-tabs .tt {
-    flex: 1; text-align: center;
-    font: 700 12.5px var(--font-ui); color: var(--dim); border-radius: 8px;
-    padding: 7px 0; cursor: pointer; user-select: none; white-space: nowrap;
-}
-.bts .tkt-tabs .tt:hover { color: var(--mut); }
-.bts .tkt-tabs .tt.on {
-    background: color-mix(in srgb, var(--acc) 14%, transparent); color: var(--acc);
-    box-shadow: 0 1px 6px -2px color-mix(in srgb, var(--acc) 35%, transparent);
-}
-.bts .tkt-tabs .tt.grn.on {
-    background: color-mix(in srgb, var(--grn) 15%, transparent); color: var(--grn);
-    box-shadow: 0 1px 6px -2px color-mix(in srgb, var(--grn) 35%, transparent);
-}
+/* ЛОВУШКА ИМЁН №2: словесный сегмент раунда 1 тоже звался .tkt-tabs. Его
+   `flex:1 1 auto` растягивал мокапный переключатель на всю шапку — иконки
+   прижимались к ЛЕВОМУ краю растянутой коробки и «убегали с правого угла»
+   (владелец 2026-07-31). Правила удалены вместе с разметкой .tt. */
 /* иконочный переключатель (владелец 2026-07-24): заголовок режима слева, значки
    справа; активный залит акцентом (стакан — зелёным), слов «Сплит» в UI нет */
 .bts .tkt-h .tkt-title { font: 400 16px var(--font-title); letter-spacing: -0.01em; color: var(--ink); }
@@ -2270,10 +2252,6 @@
 #btScene .tk-sl i { display:block;height:100%;border-radius:99px;background:color-mix(in srgb,var(--ink) 45%,transparent) }
 #btScene .tk-sl u { position:absolute;top:-4px;width:12px;height:12px;border-radius:50%;background:var(--ink);
     border:2px solid var(--gl-hero) }
-#btScene .tk-know { display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:11px;margin-bottom:11px;
-    background:var(--gl-in);font-size:11.5px;color:var(--mut) }
-#btScene .tk-know u { margin-left:auto;text-decoration:none;font-weight:700;color:var(--ink) }
-#btScene .tk-know svg { width:15px;height:15px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8 }
 /* в узкой колонке сплита цена и сумма встают друг под друга, а не рядом */
 #btScene .tkt-sub-deal .tk-pair { flex-direction:column }
 #btScene .tkt-sub-deal .tk-cell + .tk-cell { border-left:0;border-top:1px solid var(--hair) }
@@ -2317,27 +2295,12 @@
 #btScene .tk-big u[role="button"] { cursor: pointer; }
 #btScene .tk-big u[role="button"]:hover { color: var(--ink); }
 #btScene .tk-sl { cursor: pointer; }
-#btScene .tk-know { cursor: pointer; }
-#btScene .tk-know:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
 #btScene .tk-go:not(.dis) { cursor: pointer; border: 0; width: 100%; font-family: var(--font-ui); }
 #btScene .tk-go.dis { border: 0; width: 100%; font-family: var(--font-ui); cursor: default; }
 #btScene .wn u { margin-left: auto; text-decoration: none; font-weight: 700; color: var(--acc); white-space: nowrap; cursor: pointer; }
 #btScene .tk-cap b { font-family: var(--font-num); font-weight: 700; color: var(--mut); }
 /* подпись под ячейкой стопа: в мокапе инлайном text-align:left;margin-top:6px */
 #btScene .tk-cap-l { text-align: left; margin-top: 6px; }
-/* защита позиции: ячейки-кнопки и режим правки */
-#btScene .prot-c { cursor: pointer; }
-#btScene .prot-c:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
-#btScene .prot-c .prot-x { font-style: normal; margin-left: 6px; cursor: pointer; }
-#btScene .prot-c .prot-x:hover { color: var(--red); }
-#btScene .tk-cell.prot-e { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-#btScene .prot-e label { display: flex; align-items: baseline; gap: 6px; font: 400 11px var(--font-ui); color: var(--mut); }
-#btScene .prot-e input {
-    width: 5.5em; border: 1px solid var(--gl-in-edge); background: var(--gl-in); border-radius: 8px;
-    padding: 4px 7px; font: 700 12.5px var(--font-num); color: var(--ink);
-}
-#btScene .prot-e input:focus { outline: none; border-color: color-mix(in srgb, var(--acc) 45%, transparent); }
-#btScene .prot-e u { margin-left: auto; text-decoration: none; font: 700 11px var(--font-ui); color: var(--acc); cursor: pointer; }
 /* переключатель вида карточки = .tkt-tabs мокапа */
 #btScene .tkt-tabs { display:flex;gap:2px;border:1px solid var(--gl-in-edge);border-radius:8px;padding:2px;margin-left:auto }
 #btScene .tkt-tabs i { width:28px;height:22px;border-radius:6px;display:grid;place-items:center;font-style:normal;
@@ -2355,13 +2318,6 @@
 #btScene .tkt-sub-deal::-webkit-scrollbar { width: 6px; }
 #btScene .tkt-sub-deal::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ink) 18%, transparent); border-radius: 99px; }
 #btScene .tkt-sub-deal::-webkit-scrollbar-track { background: transparent; }
-/* пустая защита — приглашение в одну строку, теми же чипами, что .tk-pre */
-#btScene .prot-inv { display: flex; gap: 5px; padding: 9px 11px; }
-#btScene .prot-inv b {
-    font-family: var(--font-num); font-size: 10.5px; font-weight: 600; color: var(--mut);
-    border: 1px solid var(--gl-in-edge); border-radius: 7px; padding: 3px 8px; cursor: pointer;
-}
-#btScene .prot-inv b:hover { color: var(--ink); background: var(--gl-in); }
 /* кнопка не уезжает за край прокрутки: липнет ко дну колонки заявки */
 #btScene .tkt-sub-deal .ctaw {
     position: sticky; bottom: 0; padding-top: 8px; margin-bottom: -2px;
@@ -2589,20 +2545,21 @@
 #btScene .price-big small { line-height: 1; }
 #btScene .bts-chart { flex-direction: row; }
 
-/* СЦЕНА — ПАНЕЛЬ, А НЕ ПОЛОТНО (мокап: .bts — карточка 16px с рамкой и тенью
-   на светлой подложке). Без этого строка среды и полоса позиций читались
-   отдельными планками, приклеенными к краям окна, а не шапкой и подвалом
-   одного объекта (владелец 2026-07-31). */
-#btScene {
-    margin: var(--bts-inset, 10px);
-    border-radius: 16px; overflow: hidden;
-    border: 1px solid rgba(15, 23, 42, 0.09);
-    box-shadow: 0 2px 4px rgba(15, 23, 42, 0.05), 0 34px 70px -34px rgba(24, 38, 60, 0.4);
-}
-#btScene.night {
-    border-color: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25), 0 34px 70px -34px rgba(0, 0, 0, 0.6);
-}
-/* подложка под панелью — ровный тон мокапа, а не мозаика сайта */
-body:has(#btScene) { background: #eef1f6; }
-body:has(#btScene.night) { background: #0b1017; }
+/* Сцена — ВО ВЕСЬ ЭКРАН, без полей (владелец 2026-07-31: «сверху такой же блок,
+   как снизу, без гэпов от начала страницы»). Строка среды и полоса позиций —
+   парные планки .gl-thin на волоске, прижатые к верхнему и нижнему краю окна;
+   раунд «панели с полями 10px» отменён. */
+
+/* РАМКИ (владелец 2026-07-31: «где рамки как в мокапе?»). Белые кромки
+   --gl-in-edge на светлом стекле поверх светлого градиента не читаются —
+   перевод по правилу «белое стекло на непрозрачном → чернильная кромка»
+   (см. mockups-are-binding): днём кромка чернильная, ночью мокапная белая
+   работает как есть. Одна переменная — рамки получают все: типы заявки,
+   зоны, пресеты, пилюли, омнибокс, переключатели. */
+#btScene:not(.night) { --gl-in-edge: rgba(15, 23, 42, 0.14); }
+/* паддинг несут ВЛОЖЕННЫЕ .tkt-sub (мокап: у .tkt его нет вовсе). Свой на
+   карточке складывался с паддингом обёртки заявки — контент вида «Заявка»
+   стоял на 12px левее, и иконки видов прыгали при переключении (владелец
+   2026-07-31: «иконки убегают с правого угла»). Стакан во всю карточку без
+   обёртки — ему паддинг карточки остаётся. */
+#btScene .tkt:has(> .tkt-sub) { padding: 0; }

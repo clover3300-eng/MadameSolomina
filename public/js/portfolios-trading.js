@@ -4196,7 +4196,6 @@
         if (!sceneLive()) return;
         var st = document.querySelector('#pftBar .bts-link');
         if (st) st.outerHTML = scnLinkHtml();
-        scnSet('btScnFresh', scnFreshInner()); scnSet('btScnFreshD', scnFreshInner());
         scnTicketBits();
     }
 
@@ -4814,18 +4813,9 @@
         if (/AUCTION/.test(st)) return 'auction';
         return 'closed';
     }
-    function scnFreshInner() {
-        if (RP) return '<span class="fresh amber"><i></i>реплей · счёт виртуальный</span>';
-        var s = S(sxSlot());
-        var l = linkState(s);
-        // закрытая биржа — не обрыв: стакан отвечает, но это цена закрытия
-        var mkt = scnMktState(s);
-        if (l.state === 'live' && mkt === 'closed') return '<span class="fresh dimm"><i></i>биржа закрыта</span>';
-        if (l.state === 'live' && mkt === 'auction') return '<span class="fresh amber"><i></i>аукцион</span>';
-        if (l.state === 'live') return '<span class="fresh"><i></i>цена живая</span>';
-        if (l.state === 'wait') return '<span class="fresh amber"><i></i>ждём цену</span>';
-        return '<span class="fresh amber"><i></i>цена замерла · ' + ageTxt(l.ageMs) + '</span>';
-    }
+    // маркер «цена живая»/«аукцион» из шапок карточек удалён (владелец
+    // 2026-07-31): о связи говорит точка в строке среды, о закрытой бирже и
+    // несвежих данных — кнопка (scnSubmitBlock) и баннер (scnStaleInner)
     // причина, по которой кнопку сцены жать нельзя (поверх гварда свежести)
     function scnSubmitBlock(n) {
         var s = S(n);
@@ -5244,47 +5234,7 @@
         if (btn.disabled !== !v.can) btn.disabled = !v.can;
         box.__btHtml = null;   // следующий полный scnSet не должен считать себя лишним
     }
-    // «что нужно знать» — развёрнуто прямо в тикете: новичок по ссылкам не ходит
-    function scnKnowHtml(n) {
-        var s = S(n), buy = s.side !== 'sell';
-        var last = sxPrice(s);
-        var px = last > 0 ? fmtPx(last, s) + ' ₽' : '—';
-        // первая строка обязана видеть лимитку (владелец 2026-07-23: тикет с
-        // лимиткой говорил «по рыночной цене» — враньё). Спрашиваем scnLimPx,
-        // а не слот: в реплее лимиток нет, и старая цена слота тут врала бы
-        var limPx = scnLimPx(s);
-        var lim = limPx > 0 ? fmtPx(limPx, s) + ' ₽' : '';
-        // три факта с иконками (владелец 2026-07-24): цена / комиссия / отмена(налог).
-        // Первый факт видит лимитку; жирным — числа. ✕ живёт ВНУТРИ (тик сцены
-        // scnSet btScnKnow переписывает содержимое — вынесенная наружу ссылка
-        // «Свернуть» умирала с первым тиком, владелец 2026-07-23)
-        var unit = isBond(s) ? 'облигацию' : 'акцию';
-        var f1t = lim ? 'Цена — ваша лимитная' : 'Цена — рыночная';
-        var f1 = buy
-            ? (lim ? 'купится по <b>' + lim + '</b> или дешевле — дороже никогда.'
-                : 'сейчас <b>' + px + '</b> за ' + unit + '; купится по ней или дешевле, дороже — никогда.')
-            : (lim ? 'продастся по <b>' + lim + '</b> или дороже — дешевле никогда.'
-                : 'сейчас <b>' + px + '</b> за ' + unit + '; продастся по ней или дороже, дешевле — никогда.');
-        var f2 = buy
-            ? '<b>' + feeTxt() + ' %</b> зашиты в кнопку — сверх «спишется» ничего не снимут.'
-            : '<b>' + feeTxt() + ' %</b> уже вычтены из суммы кнопки.';
-        var f3t = buy ? 'Можно передумать' : 'Налог — по итогам года';
-        var f3 = buy
-            ? 'пока заявка не исполнена — отмена бесплатна и мгновенна.'
-            : 'если продаёте с прибылью, 13 % удержат по итогам года.';
-        function k2(ic, t, d) {
-            return '<div class="k2"><span class="k2ic">' + ic + '</span>' +
-                '<span class="k2t"><b>' + t + '</b><span>' + d + '</span></span></div>';
-        }
-        return '<div class="know2-h"><span class="k2q">' + IC_KINFO + '</span>Что нужно знать перед ' +
-            (buy ? 'покупкой' : 'продажей') +
-            '<i class="know-x" role="button" tabindex="0" aria-label="Свернуть" onclick="pftScKnow()">свернуть</i></div>' +
-            '<div class="know2-b">' +
-                k2(IC_KTAG, f1t, f1) +
-                k2(IC_KPCT, 'Комиссия уже в сумме', f2) +
-                k2(buy ? IC_KUNDO : IC_KYEAR, f3t, f3) +
-            '</div>';
-    }
+    // «что нужно знать» из карточки удалён целиком (владелец 2026-07-31)
     // ---- вид карточки тикета «Старта»: Сделка / Стакан / Сплит ----
     // (владелец 2026-07-23): стакан приходит прямо в карточку, сплит
     // раздваивает её на стакан + заявку и поджимает герой слева
@@ -5299,12 +5249,8 @@
     var IC_FORM = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3.2" width="12" height="13.6" rx="2.6"/><line x1="6.8" y1="7.3" x2="13.2" y2="7.3"/><line x1="6.8" y1="9.9" x2="11" y2="9.9"/><rect x="6.6" y="12.3" width="6.8" height="2.1" rx="1.05" fill="currentColor" stroke="none"/></svg>';
     var IC_BOOK = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><line x1="6" y1="4.6" x2="15" y2="4.6"/><line x1="9.6" y1="7.3" x2="15" y2="7.3"/><line x1="9.6" y1="12.7" x2="15" y2="12.7"/><line x1="5" y1="15.4" x2="15" y2="15.4"/></svg>';
     var IC_SPLIT = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.4" y="3.4" width="13.2" height="13.2" rx="2.8"/><line x1="9.7" y1="3.6" x2="9.7" y2="16.4"/><line x1="5.6" y1="7.2" x2="7.9" y2="7.2"/><line x1="5.6" y1="10" x2="7.9" y2="10"/><line x1="5.6" y1="12.8" x2="7.9" y2="12.8"/><line x1="11.6" y1="8" x2="14.6" y2="8"/><line x1="11.6" y1="11.4" x2="13.8" y2="11.4"/></svg>';
-    // иконки блока «что нужно знать»: инфо, ценник, процент, отмена, календарь(налог)
+    // IC_KINFO — кружок-инфо: живёт в баннере несвежих данных (.wn.info)
     var IC_KINFO = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><line x1="10" y1="9.4" x2="10" y2="13.4"/><circle cx="10" cy="6.7" r="0.5" fill="currentColor" stroke="currentColor" stroke-width="1.3"/></svg>';
-    var IC_KTAG = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3H16A1 1 0 0 1 17 4V9L9 17A1.4 1.4 0 0 1 7 17L3 13A1.4 1.4 0 0 1 3 11L11 3Z"/><circle cx="13" cy="6.9" r="1" fill="currentColor" stroke="none"/></svg>';
-    var IC_KPCT = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><line x1="5.5" y1="14.5" x2="14.5" y2="5.5"/><circle cx="7.1" cy="7.1" r="1.7"/><circle cx="12.9" cy="12.9" r="1.7"/></svg>';
-    var IC_KUNDO = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 8H12.3A3.6 3.6 0 0 1 12.3 15.2H8"/><polyline points="9 5 5.6 8 9 11"/></svg>';
-    var IC_KYEAR = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="13" height="12" rx="2.2"/><line x1="3.5" y1="8" x2="16.5" y2="8"/><line x1="7" y1="3" x2="7" y2="5.5"/><line x1="13" y1="3" x2="13" y2="5.5"/></svg>';
     // ПЕРЕКЛЮЧАТЕЛЬ ВИДА = .tkt-tabs мокапа: три <i> в рамке, активный залит
     // стеклом. Значки наши (мокап рисует их символами ▤▥▦)
     function scnTktTabsHtml() {
@@ -5338,9 +5284,10 @@
     // должна трогать карточку стакана рядом — scnTicketRedraw патчит #btScnDeal
     function scnDealHtml(n) {
         var s = S(n), buy = s.side !== 'sell';
-        var head = '<div class="tkt-h"><b class="tkt-title">Заявка</b>' +
-            '<span class="freshw" id="btScnFresh">' + scnFreshInner() + '</span>' +
-            scnTktTabsHtml() + '</div>';
+        // маркер свежести из шапки снят (владелец 2026-07-31): «цена живая»
+        // прыгала длиной («аукцион», «замерла · 5 с») и таскала за собой иконки
+        // видов — заголовок и переключатель, больше в шапке ничего
+        var head = '<div class="tkt-h"><b class="tkt-title">Заявка</b>' + scnTktTabsHtml() + '</div>';
         // облигации ПУЩЕНЫ в тикет (владелец 2026-07-23): вся сцена в рублях
         // (bondKOf на границах), НКД в simpleBuyCalc. «свободно» живёт у поля
         // суммы; обёртка с id всегда на месте (деньги приходят позже, pollPos)
@@ -5388,10 +5335,10 @@
         }
         // защита позиции — про живые стоп-заявки брокера: в реплее её нет
         // у стоп-заявки «защиты позиции» нет: стоп сам и есть защита
-        var protRow = (RP || s.kind === 'stop') ? '' :
-            '<div class="tk-zone" id="btScnProt">' + scnProtHead() + scnProtInner(n) + '</div>';
-        // ПОРЯДОК МОКАПА (dealInner): сторона · типы · зоны · защита · квитанция ·
-        // предупреждение · «что нужно знать» · кнопка с подписью
+        // ПОРЯДОК МОКАПА (dealInner): сторона · типы · зоны · квитанция ·
+        // предупреждение · кнопка с подписью. «Защита позиции» и «что нужно
+        // знать» из карточки УДАЛЕНЫ (владелец 2026-07-31): защита — это стоп,
+        // а стоп — третий тип заявки; ликбез строке заявки не принадлежит
         return head +
             '<div class="tk-side">' +
                 '<b class="' + (buy ? 'on' : '') + '" role="button" tabindex="0" onclick="pftSxSide(\'buy\')">Купить</b>' +
@@ -5399,14 +5346,8 @@
             '<div class="tk-types" id="btScnTypes">' + scnTypesHtml(n) + '</div>' +
             '<div class="tk-warnw" id="btScnStale">' + scnStaleInner(n) + '</div>' +
             scope +
-            protRow +
             '<div class="tk-sumw" id="btScnSum">' + scnSumHtml(n) + '</div>' +
             '<div class="tk-warnw" id="btScnWarn">' + scnWarnHtml(n) + '</div>' +
-            (scnKnowOpen
-                ? '<div class="know2" id="btScnKnow">' + scnKnowHtml(n) + '</div>'
-                : '<div class="tk-know" role="button" tabindex="0" onclick="pftScKnow()">' +
-                  IC_KINFO + 'Что нужно знать перед ' + (buy ? 'покупкой' : 'продажей') +
-                  '<u>3 факта ›</u></div>') +
             '<div class="ctaw" id="btScnCta">' + scnCtaHtml(n) + '</div>';
     }
     function scnTicketHtml(n) {
@@ -5414,9 +5355,7 @@
         var vw = RP ? 'deal' : scnTktView();   // в реплее только «Сделка»
         // стакан на всю карточку — заголовок «Стакан» в шапке (слова «Сплит» нет)
         if (vw === 'depth') {
-            var head = '<div class="tkt-h"><b class="tkt-title">Стакан</b>' +
-                '<span class="freshw" id="btScnFresh">' + scnFreshInner() + '</span>' +
-                scnTktTabsHtml() + '</div>';
+            var head = '<div class="tkt-h"><b class="tkt-title">Стакан</b>' + scnTktTabsHtml() + '</div>';
             return head + '<div class="tkt-depth" id="btScnTkDepth" onmouseover="pftScDepthHov(event)" ' +
                 'onmouseleave="pftScDepthHovOff()">' + scnDepthHtml(s, 1, scnDepthDeep()) + '</div>';
         }
@@ -5721,7 +5660,6 @@
             var s = S(sxSlot());
             scnSet('btScnChart', rpChartHtml(s));
             scnSet('btScnPrice', scnPriceHtml(s));
-            scnSet('btScnFresh', scnFreshInner()); scnSet('btScnFreshD', scnFreshInner());
             scnTicketBits();
         }
         rpBarPatch();
@@ -7388,13 +7326,12 @@
         // Шапка мокапа — только имя и свежесть: подсказку жеста «клик — выбрать
         // уровень» убрал, она занимала строку в узкой колонке и вылезала полосой
         // над лесенкой. Жест раскрывается ховером и плашкой свипа.
-        // ШАПКА СЖАТОГО СТАКАНА = .tkt-h мокапа (заголовок + свежесть на волоске,
-        // padding 0 0 10px). Прежняя .d-h стоила 46px против мокапных 30 — на них
-        // и не хватало пятой строки ленты. Свой id: #btScnFresh занят «Заявкой»
+        // ШАПКА СЖАТОГО СТАКАНА = .tkt-h мокапа (padding 0 0 10px). Прежняя .d-h
+        // стоила 46px против мокапных 30 — на них и не хватало пятой строки
+        // ленты. Маркер свежести снят владельцем 2026-07-31 вместе с «цена живая»
         var head = slim
             ? ''
-            : '<div class="tkt-h dep-hd"><b class="tkt-title">Стакан</b>' +
-              '<span class="freshw" id="btScnFreshD">' + scnFreshInner() + '</span></div>';
+            : '<div class="tkt-h dep-hd"><b class="tkt-title">Стакан</b></div>';
         if (!s.ob) return head + '<div class="bts-cnote">Ждём стакан…</div>';
         var d = scnDepthData(s, deep || SCN_DEPTH);
         var bal = scnBalTxt(d);
@@ -7665,7 +7602,6 @@
     };
 
     // ---- строка цены тикета («Разгон»+): рынок ⇄ лимит ----
-    var scnKnowOpen = false;   // «что нужно знать» на «Разгоне» свёрнуто в строку
     // рынок ⇄ лимит — мини-сегмент в идиоме тикета (владелец 2026-07-23
     // поверх мокапа: текстовые ссылки читались плохо); значение цены — рядом
     // ТИП ЗАЯВКИ — ОТДЕЛЬНЫЙ РЯД (мокап overview3, экран 23, п. 1): от него зависит,
@@ -7810,10 +7746,6 @@
         saveSlots();
         scnTicketRedraw(n);
         if (toLim) { var i = dq('btScnLimIn'); if (i) try { i.focus(); i.select(); } catch (e) {} }
-    };
-    window.pftScKnow = function () {
-        scnKnowOpen = !scnKnowOpen;
-        scnTicketRedraw(sxSlot());
     };
 
     // ================= СТУПЕНЬ «КОНТРОЛЬ» (экран 06) =================
@@ -8484,7 +8416,6 @@
             return;
         }
         if (s.meta) {
-            scnSet('btScnFresh', scnFreshInner()); scnSet('btScnFreshD', scnFreshInner());
             scnTicketBits();
             scnSet('btScnPrice', scnPriceHtml(s));
             // свечи живут своим канвасом (движок), innerHTML их убил бы;
@@ -8493,7 +8424,6 @@
             else if (candlesOn() || scnCmpGet().length) {
                 scnKMount(); scnKTags(); scnKFills(); scnKProfile(); scnKCmp();
             } else scnSet('btScnChart', scnChartHtml(s));
-            scnSet('btScnKnow', scnKnowHtml(n));
             // стакан в карточке тикета (вид «Стакан»/«Сплит») — жив тиками
             var tv = scnTktView();
             if (tv !== 'deal') scnDepthSet('btScnTkDepth', s, tv === 'depth' ? 1 : 0, scnDepthDeep());
@@ -8549,14 +8479,11 @@
     }
     // высота сцены — по факту, как sxFit раунда 1: сверху набегает переменный
     // хром, а zoom 0.9 отдаёт rect в экранных пикселях (делим на zoom)
-    var SCN_INSET = 10;   // поля панели сцены — тот же --bts-inset в CSS
     function scnFit() {
         var el = dq('btScene');
         if (!el) return;
         var z = parseFloat(getComputedStyle(document.body).zoom) || 1;
-        // сцена — панель с полями (SCN_INSET): низ обязан оставить своё поле,
-        // иначе панель уезжает под край окна и тень снизу срезается
-        var h = (window.innerHeight - el.getBoundingClientRect().top) / z - SCN_INSET;
+        var h = (window.innerHeight - el.getBoundingClientRect().top) / z;
         if (h > 480) el.style.height = h + 'px';
         scnDockFit();
         scnAcctFit();
