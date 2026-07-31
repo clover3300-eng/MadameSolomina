@@ -339,16 +339,14 @@
 .bts .pair .big .gh { margin-left: auto; font: 600 11px var(--font-num); color: var(--dim); white-space: nowrap; }
 .bts .pair .row.err .big .big-in { color: var(--red); }
 /* Рынок/Лимит компактным сегментом в подписи */
-.bts .seg2 { margin-left: auto; display: inline-flex; gap: 1px; border: 1px solid var(--line); border-radius: 8px; padding: 2px; background: var(--bg); }
-.bts .seg2 span { font: 600 10.5px var(--font-ui); color: var(--dim); padding: 3px 9px; border-radius: 6px; cursor: pointer; }
-.bts .seg2 span.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 4px -2px rgba(15, 23, 42, 0.3); }
+/* .seg2 «Рынок|Лимит» в строке цены удалён: тип заявки живёт своим рядом .types */
 /* тонкий слайдер доли: волосяная дорожка, клик ставит сумму */
 .bts .slider { height: 14px; margin: 12px 2px 3px; position: relative; cursor: pointer; display: flex; align-items: center; }
 .bts .slider:empty { display: none; }
 .bts .slider .track { height: 2px; border-radius: 999px; background: var(--line); position: relative; flex: 1; }
 .bts .slider .track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: var(--acc); }
 .bts .slider .track b { position: absolute; top: 50%; width: 11px; height: 11px; border-radius: 50%; background: var(--card); border: 2px solid var(--acc); transform: translate(-50%, -50%); box-shadow: 0 2px 6px -2px rgba(0, 0, 0, 0.35); }
-.bts .pair .presets { margin-top: 9px; }
+.bts .pair .presets { margin-top: 6px; }
 /* квитанция «Итог» */
 .bts .sum { display: flex; flex-direction: column; gap: 8px; }
 .bts .sum:empty { display: none; }
@@ -476,17 +474,18 @@
 .bts .fld-in u { text-decoration: none; font: 400 13.5px var(--font-ui); color: var(--mut); white-space: nowrap; }
 /* переключатель единицы ₽ ⇄ лоты — прямо в поле (мокап 08) */
 .bts .fld-sw { margin-left: auto; font: 600 11px var(--font-ui); color: var(--acc); white-space: nowrap; cursor: pointer; user-select: none; }
-.bts .presets { display: flex; gap: 6px; }
+/* плашка-пресет = .tk-pre b мокапа: КОМПАКТНАЯ, по содержимому, не растянутая
+   на всю ширину; выбранная заливается нейтрально, а не акцентом */
+.bts .presets { display: flex; gap: 5px; flex-wrap: wrap; }
 .bts .pch {
-    flex: 1; text-align: center;
-    font: 600 11.5px var(--font-num); color: var(--mut);
-    border: 1px solid var(--line); border-radius: 9px; padding: 7px 0;
+    font: 600 10.5px var(--font-num); color: var(--mut);
+    border: 1px solid rgba(15, 23, 42, 0.09); border-radius: 7px; padding: 3px 8px;
     cursor: pointer; user-select: none; white-space: nowrap;
 }
-.bts .pch.on {
-    border-color: color-mix(in srgb, var(--acc) 55%, transparent);
-    color: var(--ink); background: color-mix(in srgb, var(--acc) 10%, transparent);
-}
+.bts.night .pch { border-color: rgba(255, 255, 255, 0.1); }
+.bts .pch:hover { color: var(--ink); }
+.bts .pch.on { color: var(--ink); background: rgba(15, 23, 42, 0.045); }
+.bts.night .pch.on { background: rgba(255, 255, 255, 0.06); }
 .bts .pch.off { opacity: 0.45; cursor: default; }
 .bts .apx { font: 400 12.5px/1.5 var(--font-ui); color: var(--mut); }
 .bts .apx b { font: 600 13px var(--font-num); color: var(--ink); }
@@ -1849,3 +1848,33 @@
 .bts .cf2-chk input { position: absolute; opacity: 0; width: 0; height: 0; }
 .bts .cf2-chk:hover { color: var(--ink); }
 
+/* ═══════ ТИП ЗАЯВКИ ОТДЕЛЬНЫМ РЯДОМ (мокап overview3, экран 23) ═══════
+   Порт .tk-types/.tk-pre/.tk-lab span — величины один в один. Стеклянные
+   --gl-in/--gl-in-edge мокапа на непрозрачной карточке невидимы, поэтому
+   тот же вес даёт чернильная заливка (общий приём проекта). */
+.bts .types { display: flex; gap: 4px; margin-bottom: 12px; }
+.bts .types span {
+    flex: 1; text-align: center; cursor: pointer;
+    font: 700 11.5px var(--font-ui); color: var(--mut);
+    padding: 7px 0; border-radius: 9px; border: 1px solid rgba(15, 23, 42, 0.09);
+    transition: color 0.13s, background 0.13s, border-color 0.13s;
+}
+.bts.night .types span { border-color: rgba(255, 255, 255, 0.1); }
+.bts .types span:hover { color: var(--ink); }
+.bts .types span.on {
+    color: var(--ink); background: rgba(15, 23, 42, 0.045);
+    border-color: color-mix(in srgb, var(--ink) 24%, transparent);
+}
+.bts.night .types span.on { background: rgba(255, 255, 255, 0.06); }
+/* правый слот подписи поля: «рынок 273,78» у лимитной и стопа */
+.bts .pair .lab .lab-r {
+    margin-left: auto; letter-spacing: 0; text-transform: none;
+    font: 600 10px var(--font-num); color: var(--dim); font-variant-numeric: tabular-nums;
+}
+/* пресеты отступа от рынка — тот же .pch, что у сумм; ряд под крупным числом */
+.bts .pair .row > .presets { margin-top: 6px; }
+/* вторая ячейка стопа: «затем продать по рынку» — фраза, не число */
+.bts .pair .big .big-v.sm { font-size: 15px; }
+.bts .pair .big .gh[role="button"] { cursor: pointer; }
+.bts .pair .big .gh[role="button"]:hover { color: var(--ink); }
+.bts .pair .row-cap { margin-top: 6px; font: 400 10.5px var(--font-ui); color: var(--dim); }

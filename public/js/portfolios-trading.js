@@ -4938,7 +4938,8 @@
     };
     function scnCalc(n) {
         var s = S(n), buy = s.side !== 'sell';
-        var px = scnExecPx(s, buy);
+        // стоп: деньги считаются по цене СРАБАТЫВАНИЯ — она и станет ценой сделки
+        var px = s.kind === 'stop' ? (+s.price || sxPrice(s)) : scnExecPx(s, buy);
         var v = +simpleSum || 0;
         if (buy) return unitOf(s) === 'rub' ? simpleBuyCalc(s, v, px) : buyFromQty(s, v, px);
         if (unitOf(s) === 'qty') return simpleSellCalc(s, v, px);
@@ -5171,7 +5172,7 @@
         var c = scnCalc(n);
         var blk = scnSubmitBlock(n);
         var auction = scnMktState(s) === 'auction';
-        var short = buy ? scnShortfall(n) : 0;
+        var short = (buy && s.kind !== 'stop') ? scnShortfall(n) : 0;
         var have = haveQty(s);
         var sellOver = !buy && c && c.qty > have;
         var can = !!(c && c.lots) && !blk && !(short > 0) && !sellOver;
@@ -5197,6 +5198,10 @@
         } else if (RP) {
             label = (buy ? 'Купить в реплее на ' : 'Продать в реплее на ') + fmtKop(c.total);
             note = 'Деньги виртуальные · комиссия ' + feeTxt() + ' % как настоящая';
+        } else if (s.kind === 'stop') {
+            // стоп не тратит деньги сейчас — кнопка и подпись говорят это прямо
+            label = 'Поставить стоп на ' + c.lots + ' ' + PF.plural(c.lots, 'лот', 'лота', 'лотов');
+            note = 'сработает при ' + fmtPx(+s.price || 0, s) + ' ₽ · пока висит без списания';
         } else label = (buy ? 'Купить на ' : 'Продать на ') + fmtKop(c.total);
         return { label: label, note: note, can: can, sell: !buy };
     }
@@ -5337,16 +5342,39 @@
                 (unit === 'rub' ? 'в лотах ⇄' : 'в рублях ⇄') + '</span></div>' +
             '<div class="slider" id="btScnSlider" onclick="pftScSlide(event)">' + scnSliderInner(n) + '</div>' +
             '<div class="presets" id="btScnPre">' + scnPresetsHtml(n) + '</div></div>';
-        var scope = '<div class="zone"><div class="zone-t">Сколько и почём<em>' +
-            esc((s.meta && s.meta.ticker) || '') + ' · лот ' + ((s.meta && s.meta.lot) || 1) + '</em></div>' +
-            '<div class="pair">' + priceRow + sumRow + '</div></div>';
+        var tk = esc((s.meta && s.meta.ticker) || ''), lot = (s.meta && s.meta.lot) || 1;
+        var scope;
+        if (s.kind === 'stop') {
+            // У СТОПА ДВЕ ЗОНЫ (мокап, экран 23, карточка 3): «Сколько и почём» —
+            // цена срабатывания и чем исполнить; «Сколько» — количество отдельно.
+            var isLim = s.stopKind === 'lim';
+            var afterCap = +s.price > 0
+                ? 'заявка появится в стакане только при ' + fmtPx(+s.price, s) + ' ₽'
+                : 'назначьте цену срабатывания';
+            var after = '<div class="row">' +
+                '<div class="lab">Затем ' + (buy ? 'купить' : 'продать') + '</div>' +
+                '<div class="big"><span class="big-v sm">' + (isLim ? 'по лимиту' : 'по рынку') + '</span>' +
+                    '<span class="gh" role="button" tabindex="0" onclick="pftScStopKind()">' +
+                    (isLim ? 'рынок ⇄' : 'лимит ⇄') + '</span></div>' +
+                '<div class="row-cap">' + afterCap + '</div></div>';
+            scope = '<div class="zone"><div class="zone-t">Сколько и почём<em>' + tk + ' · лот ' + lot + '</em></div>' +
+                    '<div class="pair">' + priceRow + after + '</div></div>' +
+                '<div class="zone"><div class="zone-t">Сколько<em>из ' +
+                    have.toLocaleString('ru-RU') + ' шт</em></div>' +
+                    '<div class="pair">' + sumRow + '</div></div>';
+        } else {
+            scope = '<div class="zone"><div class="zone-t">Сколько и почём<em>' + tk + ' · лот ' + lot + '</em></div>' +
+                '<div class="pair">' + priceRow + sumRow + '</div></div>';
+        }
         // защита позиции — про живые стоп-заявки брокера: в реплее её нет
-        var protRow = RP ? '' :
+        // у стоп-заявки «защиты позиции» нет: стоп сам и есть защита
+        var protRow = (RP || s.kind === 'stop') ? '' :
             '<div class="protb" id="btScnProt">' + scnProtHead() + scnProtInner(n) + '</div>';
         return head +
             '<div class="seg">' +
                 '<span class="' + (buy ? 'on' : '') + '" role="button" tabindex="0" onclick="pftSxSide(\'buy\')">Купить</span>' +
                 '<span class="' + (buy ? '' : 'on sell') + '" role="button" tabindex="0" onclick="pftSxSide(\'sell\')">Продать</span></div>' +
+            '<div class="types" id="btScnTypes">' + scnTypesHtml(n) + '</div>' +
             '<div class="eg-bannerw" id="btScnStale">' + scnStaleInner(n) + '</div>' +
             scope +
             '<div class="sum" id="btScnSum">' + scnSumHtml(n) + '</div>' +
@@ -7554,6 +7582,40 @@
     var scnKnowOpen = false;   // «что нужно знать» на «Разгоне» свёрнуто в строку
     // рынок ⇄ лимит — мини-сегмент в идиоме тикета (владелец 2026-07-23
     // поверх мокапа: текстовые ссылки читались плохо); значение цены — рядом
+    // ТИП ЗАЯВКИ — ОТДЕЛЬНЫЙ РЯД (мокап overview3, экран 23, п. 1): от него зависит,
+    // что вообще показывать, поэтому прятать его сегментом внутри поля цены нельзя.
+    // Прежний .seg2 «Рынок|Лимит» в строке цены снят — тип теперь тут.
+    function scnTypesHtml(n) {
+        var s = S(n), k = s.kind === 'stop' ? 'stop' : (s.kind === 'limit' ? 'limit' : 'market');
+        function t(key, lab) {
+            return '<span class="' + (k === key ? 'on' : '') + '" role="button" tabindex="0" ' +
+                'onclick="pftScType(\'' + key + '\')">' + lab + '</span>';
+        }
+        return t('market', 'По рынку') + t('limit', 'Лимит') + t('stop', 'Стоп');
+    }
+    // пресеты отступа от рынка у лимитной (мокап: −1 % · −0,5 % · рынок · +0,5 %);
+    // у рыночной их нет — отступать не от чего
+    var SCN_OFF = [-1, -0.5, 0, 0.5];
+    function scnOffHtml(n) {
+        var s = S(n), last = sxPrice(s);
+        if (!(last > 0)) return '';
+        var cur = +s.price || 0;
+        return SCN_OFF.map(function (o) {
+            var px = scnSnap(last * (1 + o / 100), s);
+            var on = cur > 0 && Math.abs(cur - px) < 1e-9;
+            var lab = o === 0 ? 'рынок' : (o > 0 ? '+' : '−') + String(Math.abs(o)).replace('.', ',') + ' %';
+            return '<span class="pch' + (on ? ' on' : '') + '" role="button" tabindex="0" ' +
+                'onclick="pftScOff(' + o + ')">' + lab + '</span>';
+        }).join('');
+    }
+    window.pftScOff = function (o, keepStop) {
+        var n = sxSlot(), s = S(n), last = sxPrice(s);
+        if (!(last > 0)) return;
+        if (!keepStop) s.kind = 'limit';
+        s.price = String(scnSnap(last * (1 + o / 100), s));
+        saveSlots();
+        scnTicketRedraw(n);
+    };
     function scnPriceRowInner(n) {
         // строка цены — верхний ряд блока «Сколько и почём»: подпись «Цена» с
         // сегментом Рынок/Лимит справа, крупное значение (лимит редактируется
@@ -7567,21 +7629,83 @@
                 '<span class="gh" id="btScnPxNow">' +
                 (rpPx() > 0 ? 'сейчас ' + fmtPx(rpPx(), s) + ' ₽' : '') + '</span></div>';
         }
-        var lim = s.kind === 'limit' && +s.price > 0;
         var last = sxPrice(s);
-        var seg = '<span class="seg2">' +
-            '<span class="' + (lim ? '' : 'on') + '" role="button" tabindex="0" onclick="pftScKind(0)">Рынок</span>' +
-            '<span class="' + (lim ? 'on' : '') + '" role="button" tabindex="0" onclick="pftScKind(1)">Лимит</span></span>';
-        var lab = '<div class="lab">Цена' + seg + '</div>';
+        // СТОП: вместо цены сделки — цена СРАБАТЫВАНИЯ (мокап, экран 23, карточка 3)
+        if (s.kind === 'stop') {
+            var gap = scnStopGapTxt(s);
+            return '<div class="lab">Цена срабатывания' +
+                    (last > 0 ? '<span class="lab-r">рынок ' + fmtPx(last, s) + '</span>' : '') + '</div>' +
+                '<div class="big"><input class="big-in" id="btScnLimIn" type="text" inputmode="decimal" ' +
+                    'autocomplete="off" spellcheck="false" value="' + esc(String(s.price || '')) + '" ' +
+                    'aria-label="Цена срабатывания"><small>₽</small>' +
+                    '<span class="gh">' + (gap ? gap + ' ⇅' : 'шаг ' + fmtPx((s.meta && s.meta.minInc) || 0.01, s) + ' ⇅') + '</span></div>' +
+                '<div class="presets">' + scnStopOffHtml(n) + '</div>';
+        }
+        var lim = s.kind === 'limit' && +s.price > 0;
+        // «рынок N» — в правом слоте ПОДПИСИ (мокап: .tk-lab span), у рыночной
+        // подписи нет: там сама цена и есть рыночная
+        var lab = '<div class="lab">Цена' + (lim && last > 0
+            ? '<span class="lab-r" id="btScnPxNow">рынок ' + fmtPx(last, s) + '</span>' : '') + '</div>';
         if (!lim) {
-            return lab + '<div class="big"><span class="big-v">По рынку</span>' +
+            return '<div class="lab">Цена</div><div class="big"><span class="big-v">По рынку</span>' +
                 '<span class="gh" id="btScnPxNow">' +
                 (last > 0 ? 'сейчас ' + fmtPx(last, s) + ' ₽' : '') + '</span></div>';
         }
+        var inc = (s.meta && +s.meta.minInc > 0) ? s.meta.minInc : 0.01;
         return lab + '<div class="big"><input class="big-in" id="btScnLimIn" type="text" inputmode="decimal" ' +
             'autocomplete="off" spellcheck="false" value="' + esc(String(s.price)) + '" aria-label="Лимитная цена">' +
-            '<small>₽</small><span class="gh" id="btScnPxNow">' +
-            (last > 0 ? 'сейчас ' + fmtPx(last, s) : '') + '</span></div>';
+            '<small>₽</small><span class="gh">шаг ' + fmtPx(inc, s) + ' ⇅</span></div>' +
+            '<div class="presets">' + scnOffHtml(n) + '</div>';
+    }
+    // тип заявки одной точкой; pftScKind остаётся псевдонимом для старых вызовов
+    // (омнибокс, выход из отказа) — у него аргумент-флаг, а не имя типа
+    window.pftScType = function (kind) {
+        var n = sxSlot(), s = S(n);
+        if (kind !== 'stop') {
+            if (s.kind === 'stop') { s.kind = 'market'; s.price = ''; }   // из стопа выходим на рынок
+            window.pftScKind(kind === 'limit' ? 1 : 0);
+            return;
+        }
+        // СТОП: цена срабатывания по умолчанию — 3 % в сторону убытка (продажа
+        // ниже рынка, покупка выше), как в мокапе; исполнение по умолчанию
+        // рыночное («затем продать по рынку»), лимит — вторым нажатием
+        s.kind = 'stop';
+        s.stopKind = s.stopKind === 'lim' ? 'lim' : 'sl';
+        var last = sxPrice(s);
+        if (last > 0) s.price = String(scnSnap(last * (s.side === 'sell' ? 0.97 : 1.03), s));
+        scnUnit = 'qty';           // стоп ставят на количество, а не на сумму
+        simpleSum = '';
+        saveSlots();
+        scnTicketRedraw(n);
+    };
+    // «затем продать: по рынку ⇄ лимит» — вторая ячейка зоны у стопа
+    window.pftScStopKind = function () {
+        var n = sxSlot(), s = S(n);
+        s.stopKind = s.stopKind === 'lim' ? 'sl' : 'lim';
+        if (s.stopKind === 'lim' && !(+s.stopLimit > 0)) s.stopLimit = s.price;
+        saveSlots();
+        scnTicketRedraw(n);
+    };
+    // пресеты отступа срабатывания у стопа: −1 % · −3 % · −5 % от рынка
+    // (у покупки — в плюс: стоп-покупка стоит ВЫШЕ рынка)
+    var SCN_STOP_OFF = [1, 3, 5];
+    function scnStopOffHtml(n) {
+        var s = S(n), last = sxPrice(s);
+        if (!(last > 0)) return '';
+        var sell = s.side === 'sell', cur = +s.price || 0;
+        return SCN_STOP_OFF.map(function (o) {
+            var px = scnSnap(last * (1 + (sell ? -o : o) / 100), s);
+            var on = cur > 0 && Math.abs(cur - px) < 1e-9;
+            return '<span class="pch' + (on ? ' on' : '') + '" role="button" tabindex="0" ' +
+                'onclick="pftScOff(' + (sell ? -o : o) + ',1)">' + (sell ? '−' : '+') + o + ' %</span>';
+        }).join('');
+    }
+    // насколько цена срабатывания отстоит от рынка — подпись у крупного числа
+    function scnStopGapTxt(s) {
+        var last = sxPrice(s), px = +s.price || 0;
+        if (!(last > 0) || !(px > 0)) return '';
+        var d = (px - last) / last * 100;
+        return (d >= 0 ? '+' : '−') + Math.abs(d).toFixed(1).replace('.', ',') + ' %';
     }
     window.pftScKind = function (toLim) {
         var n = sxSlot(), s = S(n);
@@ -8399,6 +8523,16 @@
         // лимитка сцены (строка цены «Разгона» или гвард «Старта») — уважаем;
         // иначе «купить сейчас» остаётся рыночной заявкой. В АУКЦИОНЕ рыночной
         // не существует — уходит лимитка по индикативной цене («спишется до»)
+        if (s.kind === 'stop') {
+            // Стоп-заявка уходит своей ветвью submitOrder (PostStopOrder): она
+            // ничего не списывает сейчас, и следить за исполнением нечего —
+            // карточка итога ей не нужна, остаётся тост и звоночек.
+            if (!(+s.price > 0)) { toast('Назначьте цену срабатывания', true); return; }
+            ensureOrderId(s, ['sx', s.uid, s.side, 'stop', c.lots].join('|'));
+            saveSlots();
+            sxConfirm(n, s, c, buy);
+            return;
+        }
         var lim = scnLimPx(s);
         if (!(lim > 0) && scnMktState(s) === 'auction') lim = sxPrice(s);
         if (lim > 0) { s.kind = 'limit'; s.price = String(scnSnap(lim, s)); }
@@ -8493,9 +8627,10 @@
             if (ask && ask.checked) { try { localStorage.setItem('bt_noask_v1', '1'); } catch (e2) {} }
             closeCf();
             // карточка итога открывается ДО отправки: шаг «проверили деньги» уже
-            // пройден (его и делал этот гвард), дальше человек видит путь заявки
-            scnFlowOpen(n, s, c, buy);
-            submitOrder(n, c.lots, c.px, c.total);
+            // пройден (его и делал этот гвард), дальше человек видит путь заявки.
+            // У стопа исполнения сейчас нет — следить не за чем, ему остаётся тост.
+            if (s.kind !== 'stop') scnFlowOpen(n, s, c, buy);
+            submitOrder(n, c.lots, s.kind === 'stop' ? (+s.price || c.px) : c.px, c.total);
         });
         setTimeout(function () {
             var f = dq('btScnCfYes');
