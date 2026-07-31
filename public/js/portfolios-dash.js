@@ -678,7 +678,10 @@
     function pfdPack() {
         pfdPackRaf = 0;
         var grid = document.getElementById('pfdGrid');
-        if (!grid || !grid.classList.contains('pfd-masonry')) return;
+        if (!grid) return;
+        // Без masonry раскладку держит CSS — упаковывать нечего, но ширина блоков
+        // изменилась, и карте рынка нужно перерисовать плитки.
+        if (!grid.classList.contains('pfd-masonry')) { PF.pfdHeatRepaintSoon(); return; }
         var items = Array.prototype.filter.call(grid.children, function (el) {
             return el.classList && el.classList.contains('pfd-item');
         });
@@ -794,7 +797,18 @@
     // ширину, поэтому петли нет: упаковка идемпотентна и сходится за пару проходов.
     function pfdSchedulePack() {
         var grid = document.getElementById('pfdGrid');
-        if (!grid || !grid.classList.contains('pfd-masonry')) { if (pfdRO) pfdRO.disconnect(); return; }
+        if (!grid) { if (pfdRO) pfdRO.disconnect(); return; }
+        // Рядовая раскладка считается самим CSS-grid — упаковщик тут не нужен, но
+        // наблюдатель ширины остаётся: карта рынка перерисовывает плитки по размеру.
+        if (!grid.classList.contains('pfd-masonry')) {
+            if (pfdRO) pfdRO.disconnect();
+            if (window.ResizeObserver) {
+                if (!pfdRO) pfdRO = new ResizeObserver(pfdRepackSoon);
+                pfdRO.observe(grid);
+            }
+            PF.pfdHeatRepaintSoon();
+            return;
+        }
         if (window.ResizeObserver) {
             if (!pfdRO) pfdRO = new ResizeObserver(pfdRepackSoon);
             pfdRO.disconnect();
@@ -1567,8 +1581,11 @@
         // и список блоков с превью. Сама сетка ниже остаётся живой (drag/resize/скрытие).
         // R8: вторым жильцом того же места может быть панель «Раскладки» (pfl3).
         var panel = PF.dashEdit ? pflPanelHtml() : (PF.pfl3Open ? pfl3PanelHtml() : '');
-        var fsCls = (PF.pftFsOn && PF.pftFsOn()) ? ' pfd-fs' : '';
-        return panel + '<div class="pfd-grid pfd-masonry pfd-live' + fsCls + (PF.dashEdit ? ' editing' : '') + '" id="pfdGrid">' + items + '</div>';
+        // pfd-masonry БОЛЬШЕ НЕ СТАВИМ (раунд «Витраж»): жадная упаковка уводила
+        // колонки в независимые цепочки. Ряды держит сам CSS-grid, pfdPack при этом
+        // выходит по первому же гарду и остаётся только для полноэкранного режима.
+        var fsCls = (PF.pftFsOn && PF.pftFsOn()) ? ' pfd-masonry pfd-fs' : '';
+        return panel + '<div class="pfd-grid pfd-live' + fsCls + (PF.dashEdit ? ' editing' : '') + '" id="pfdGrid">' + items + '</div>';
     }
     // ---- сохранённая раскладка: снимок + сравнение (для «Сохранено» и «Вернуть сохранённую») ----
     // Каждая правка автосохраняется в pf_dash_v1 (рабочее состояние переживает перезагрузку),

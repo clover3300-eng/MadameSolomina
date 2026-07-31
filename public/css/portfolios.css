@@ -168,6 +168,10 @@ body.dark-mode .pf-sumcard {
    выше ~340px — список скроллится внутри. Так блок можно вернуть в компактный вид и растянуть.
    Классическая правая колонка (.pf-topgrid-fav вне .pfd-item) сохраняет 674px. */
 .pfd-item:not(.pfd-hset) .pf-fav { height: auto; max-height: 340px; }
+/* РЯДОВАЯ РАСКЛАДКА («Витраж»): у ряда общая нижняя грань, значит потолок 340px
+   тут не нужен — карточка дотягивается до низа ряда, а список внутри скроллится
+   и по-прежнему режет невлезающие строки (pfFavFitRows считает от своей высоты). */
+.pfd-grid:not(.pfd-masonry) .pfd-item:not(.pfd-hset) .pf-fav { max-height: none; }
 .pf-fav .pf-ch { flex-shrink: 0; }
 /* Заголовок-колонка ужимается по flex-basis:0, а не тянется по содержимому: иначе в узкой
    правой колонке длинный подзаголовок занимал всю строку и «+» (margin-left:auto при
@@ -2536,8 +2540,14 @@ body.dark-mode .pfpc-kind.kind-red { color: #93c5fd; background: rgba(61,111,209
 .pfd-grid {
     display: grid;
     grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 16px;
-    align-items: start;   /* блоки держат свою природную высоту, ряд не растягивает соседей */
+    /* РЯДЫ ВМЕСТО ЖАДНОГО MASONRY (раунд «Витраж», мокап overview3, экран 02).
+       Жадная упаковка клала блок в колонку с самым низким дном, и три колонки
+       уезжали в три независимые цепочки — сквозной горизонтали не оставалось
+       ни одной. Обычная grid-раскладка сама держит ряды, а align-items:stretch
+       выравнивает их по ОБЩЕЙ НИЖНЕЙ ГРАНИ. Пустоту внутри виджета забирает
+       подвал с margin-top:auto, а не соседний блок. */
+    gap: 20px;            /* было 16: стеклу нужен просвет, иначе фон между карточками не читается */
+    align-items: stretch;
     position: relative;   /* якорь для абсолютных ручек/кластера инструментов блоков */
 }
 /* masonry-режим: короткие блоки подтягиваются вверх в чужой зазор. CSS-masonry
@@ -2549,6 +2559,27 @@ body.dark-mode .pfpc-kind.kind-red { color: #93c5fd; background: rgba(61,111,209
 .pfd-item { position: relative; min-width: 0; display: flex; flex-direction: column; }
 .pfd-body { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
 .pfd-body > * { min-width: 0; }
+/* Общая нижняя грань ряда: сам блок растянут (align-items:stretch выше), значит
+   и карточка внутри обязана дотянуться до низа — иначе выровняются невидимые
+   границы блоков, а видимые кромки карточек останутся рваными. */
+.pfd-grid:not(.pfd-masonry) > .pfd-item > .pfd-body > .pf-card2,
+.pfd-grid:not(.pfd-masonry) > .pfd-item > .pfd-body > .dash2-card,
+.pfd-grid:not(.pfd-masonry) > .pfd-item > .pfd-body > * > .pf-card2 {
+    height: 100%;
+    display: flex; flex-direction: column;   /* чтобы тело виджета забрало лишнюю высоту */
+}
+/* «Избранное» живёт в обёртке .pfd-favwrap и держит собственную фикс-высоту —
+   вне ручного ресайза она мешала дотянуться до нижней грани ряда */
+.pfd-grid:not(.pfd-masonry) .pfd-favwrap,
+.pfd-grid:not(.pfd-masonry) .pfd-favwrap > * { height: 100%; min-height: 0; }
+/* Тело виджета растёт, а подвал остаётся у нижней кромки: пустота, если она есть,
+   собирается ВНУТРИ списка, а не под ним. Хвост «Витража»: у виджетов, где подвала
+   нет, лишняя высота просто достаётся телу. */
+.pfd-grid:not(.pfd-masonry) .pfal-body,
+.pfd-grid:not(.pfd-masonry) .pff-body,
+.pfd-grid:not(.pfd-masonry) .pft-body,
+.pfd-grid:not(.pfd-masonry) .pfcap-body,
+.pfd-grid:not(.pfd-masonry) .pfc-normal { flex: 1; min-height: 0; }
 /* ручная высота: карточка заполняет блок и СКРОЛЛИТСЯ ВНУТРИ своей области-списка
    (шапка и рамка карточки закреплены). Раньше прокручивался сам .pfd-body — он уносил
    карту ЦЕЛИКОМ, и при прокрутке верхняя граница/шапка уезжали под обрез («пропадает
