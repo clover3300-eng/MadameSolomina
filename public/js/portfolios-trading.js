@@ -8434,37 +8434,45 @@
         var kindRow = s.kind === 'limit'
             ? '<span>По лимиту</span><b>' + fmtPx(c.px, s) + ' ₽ за штуку</b>'
             : '<span>Примерно по</span><b>' + fmtPx(c.px, s) + ' ₽ за штуку</b>';
+        // тот же скелет, что у карточки итога (мокап, экран 24, карточка 1):
+        // шапка со значком «?» · тело строками · подвал с кнопками справа
         sc.insertAdjacentHTML('beforeend',
             '<div class="veil" id="btScnCfV"></div>' +
             '<div class="cf2" id="btScnCf" role="dialog" aria-modal="true" aria-label="Проверьте заказ">' +
-                '<h3>Проверьте заказ</h3>' +
-                '<div class="cf2-sub">' + (buy ? 'Покупка' : 'Продажа') + ' · ' +
-                    esc(s.meta.name || s.meta.ticker) +
-                    (cn.sandbox ? '<i>песочница</i>' : '') + '</div>' +
-                '<div class="cf2-rows">' +
-                    '<div><span>Бумага</span><b>' + esc(s.meta.ticker) + '</b></div>' +
-                    '<div><span>Сколько</span><b>' + c.qty.toLocaleString('ru-RU') + ' шт · ' +
-                        c.lots + ' ' + PF.plural(c.lots, 'лот', 'лота', 'лотов') + '</b></div>' +
-                    '<div>' + kindRow + '</div>' +
-                    (c.aci > 0 ? '<div><span>Накопленный купон</span><b>' + (buy ? '' : '+') + fmtKop(c.aci) + '</b></div>' : '') +
-                    '<div><span>Комиссия брокера</span><b>' + fmtKop(c.fee) + '</b></div>' +
+                '<div class="cf2-h"><span class="cf2-ic">?</span>' +
+                    '<span class="cf2-t"><b>' + (buy ? 'Купить ' : 'Продать ') + c.lots + ' ' +
+                        PF.plural(c.lots, 'лот', 'лота', 'лотов') + ' ' + esc(s.meta.ticker) + '</b>' +
+                        '<span>' + (s.kind === 'limit' ? 'по вашей цене' : 'по рыночной цене') + ' · ' +
+                        c.qty.toLocaleString('ru-RU') + ' ' + unitWord(s, c.qty) +
+                        (cn.sandbox ? '<i>песочница</i>' : '') + '</span></span>' +
+                    '<button type="button" class="cf2-x" id="btScnCfX" aria-label="Закрыть">✕</button>' +
                 '</div>' +
-                '<div class="cf2-tot"><span>' + (buy ? 'Спишется со счёта' : 'Придёт на счёт') + '</span><b>' +
-                    fmtKop(c.total) + '</b></div>' +
-                (free != null ? '<div class="cf2-rest">' + (buy ? 'останется' : 'станет') + ' свободно ' +
-                    fmtKop(buy ? free - c.total : free + c.total) + '</div>' : '') +
-                '<div class="cf2-know">' + (s.kind === 'limit'
-                    ? 'Исполнится по вашей цене или лучше — когда рынок до неё дойдёт. Пока заявка ждёт, деньги заблокированы; отменить можно в любой момент.'
-                    : 'Исполнится по лучшей цене на бирже в этот момент — обычно разница в копейки, на редких бумагах бывает заметнее.') + '</div>' +
-                (s.kind === 'market'
-                    ? '<label class="cf2-chk"><input type="checkbox" id="btScnCfAsk">' +
-                        'Больше не спрашивать для рыночных заявок</label>' : '') +
-                '<div class="cf2-act">' +
-                    '<button type="button" class="cf2-no" id="btScnCfNo">Отмена</button>' +
+                '<div class="cf2-b">' +
+                    '<div class="cf2-r"><span>Бумага</span><b>' + esc(s.meta.name || s.meta.ticker) + '</b></div>' +
+                    '<div class="cf2-r">' + kindRow + '</div>' +
+                    (c.aci > 0 ? '<div class="cf2-r"><span>Накопленный купон</span><b>' + (buy ? '' : '+') + fmtKop(c.aci) + '</b></div>' : '') +
+                    '<div class="cf2-r"><span>Комиссия ≈</span><b>' + fmtKop(c.fee) + '</b></div>' +
+                    '<div class="cf2-tot"><span>' + (buy ? 'Спишется до' : 'Придёт на счёт') + '</span><b>' +
+                        fmtKop(c.total) + '</b></div>' +
+                    (free != null ? '<div class="cf2-rest">' + (buy ? 'останется' : 'станет') + ' свободно ' +
+                        fmtKop(buy ? free - c.total : free + c.total) + '</div>' : '') +
+                    '<div class="wn ' + (s.kind === 'limit' ? 'info' : 'warn') + '"><span class="ic">' +
+                        (s.kind === 'limit' ? 'i' : '!') + '</span><span>' + (s.kind === 'limit'
+                        ? 'Исполнится <b>по вашей цене или лучше</b> — когда рынок до неё дойдёт. Пока заявка ждёт, деньги заблокированы; отменить можно в любой момент.'
+                        : 'Рыночная заявка исполняется по цене стакана — она может отличаться от показанной. Разница обычно в пределах спреда.') +
+                    '</span></div>' +
+                '</div>' +
+                '<div class="cf2-f">' +
+                    (s.kind === 'market'
+                        ? '<label class="cf2-chk"><input type="checkbox" id="btScnCfAsk">' +
+                            'Больше не спрашивать для рыночных заявок</label>' : '') +
+                    '<span class="sp"></span>' +
+                    '<button type="button" class="cf2-gh" id="btScnCfNo">Отмена</button>' +
                     '<button type="button" class="cf2-go' + (buy ? '' : ' sell') + '" id="btScnCfYes">' +
                         (buy ? 'Купить' : 'Продать') + '</button>' +
                 '</div>' +
             '</div>');
+        dq('btScnCfX').addEventListener('click', function () { closeCf(); });
         function closeCf() {
             var v = dq('btScnCfV'), k = dq('btScnCf');
             if (v) v.remove(); if (k) k.remove();
@@ -8517,13 +8525,13 @@
         return { qty: p ? p.qty : 0, avg: p ? p.avg : 0, money: T.pos.money };
     }
     function flowIcHtml(cls) {
-        var g = { wait: '◐', ok: '✓', warn: '◐', bad: '✕', queue: '⋯' };
+        var g = { wait: '◐', ok: '✓', warn: '◐', bad: '✕', queue: '◐' };
         return '<span class="cf3-ic ' + cls + '">' + (g[cls] || '·') + '</span>';
     }
     function flowRows(list) {
-        return '<div class="cf3-rows">' + list.map(function (r) {
-            return '<div><span>' + r[0] + '</span><b>' + r[1] + '</b></div>';
-        }).join('') + '</div>';
+        return list.map(function (r) {
+            return '<div class="cf3-r"><span>' + r[0] + '</span><b>' + r[1] + '</b></div>';
+        }).join('');
     }
     // «было → стало»: единственная строка, ради которой карточка вообще нужна
     function flowAfter(list) {
@@ -8538,12 +8546,14 @@
             return '<div class="cf3-s ' + cls + '"><i>' + (i < at ? '✓' : (i === at ? '◐' : '')) + '</i>' + t + '</div>';
         }).join('') + '</div>';
     }
+    // тот же .wn, что у предупреждений тикета (мокап: один блок на весь набор)
     function flowNote(cls, html) {
-        return '<div class="cf3-note ' + cls + '"><span class="ic">' +
-            (cls === 'ok' ? '✓' : (cls === 'bad' ? '!' : (cls === 'warn' ? '!' : 'i'))) + '</span><span>' + html + '</span></div>';
+        return '<div class="wn ' + cls + '"><span class="ic">' +
+            (cls === 'ok' ? '✓' : (cls === 'bad' || cls === 'warn' ? '!' : 'i')) + '</span><span>' + html + '</span></div>';
     }
+    // подвал мокапа: распорка слева, кнопки прижаты к правому краю
     function flowFoot(btns) {
-        return '<div class="cf3-act">' + btns.map(function (b) {
+        return '<div class="cf3-f"><span class="sp"></span>' + btns.map(function (b) {
             return '<button type="button" class="' + (b.pri ? 'cf3-go' : 'cf3-gh') + '" data-fl="' + b.act + '">' + b.t + '</button>';
         }).join('') + '</div>';
     }
@@ -8553,7 +8563,7 @@
         d = d || {};
         f.state = state; f.data = d;   // снимок для восстановления после ре-рендера сцены
         var s = f.s, tk = esc(s.meta.ticker);
-        var head, body, foot = '', cls = 'wait', closable = true;
+        var head, body, foot = '', cls = 'wait';
         if (state === 'sending') {
             head = ['Отправляем', 'заявка ушла брокеру · ' + tk];
             body = flowStepsHtml(f.at) +
@@ -8581,7 +8591,7 @@
                 ]) +
                 '<div class="cf3-tot"><span>' + (f.buy ? 'Списано' : 'Получено') + '</span><b>' + fmtKop(d.total) + '</b></div>' +
                 flowNote('ok', '<b>Остаток живёт в «Заявках»</b> и доисполнится сам. Звоночек придёт, когда это случится; снять заявку можно там же.');
-            foot = flowFoot([{ t: 'Открыть заявки', act: 'orders' }, { t: 'Понятно', act: 'close', pri: 1 }]);
+            foot = flowFoot([{ t: 'Снять остаток', act: 'cancel' }, { t: 'Понятно', act: 'close', pri: 1 }]);
         } else if (state === 'queued') {
             cls = 'queue';
             head = ['Заявка в стакане', (f.c.lots) + ' ' + PF.plural(f.c.lots, 'лот', 'лота', 'лотов') + ' · ' + tk];
@@ -8594,7 +8604,7 @@
             foot = flowFoot([{ t: 'Открыть заявки', act: 'orders' }, { t: 'Понятно', act: 'close', pri: 1 }]);
         } else {   // fail
             cls = 'bad';
-            head = ['Заявка отклонена', d.code ? 'биржа не приняла · ' + esc(d.code) : 'биржа не приняла заявку'];
+            head = ['Заявка отклонена', d.code ? 'биржа не приняла · код ' + esc(d.code) : 'биржа не приняла заявку'];
             body = flowNote('bad', '<b>' + esc(d.msg) + '</b>') +
                 flowRows([['Что списано', 'ничего'], ['Что изменилось', 'ничего']]) +
                 '<div class="cf3-tot"><span>Позиция и деньги</span><b>без изменений</b></div>' +
@@ -8606,7 +8616,7 @@
             '<div class="cf3" id="btScnFl" role="dialog" aria-modal="true" aria-label="' + esc(head[0]) + '">' +
                 '<div class="cf3-h">' + flowIcHtml(cls) +
                     '<span class="cf3-t"><b>' + head[0] + '</b><span>' + head[1] + '</span></span>' +
-                    (closable ? '<button type="button" class="cf3-x" data-fl="close" aria-label="Закрыть">✕</button>' : '') +
+                    '<button type="button" class="cf3-x" data-fl="close" aria-label="Закрыть">✕</button>' +
                 '</div>' +
                 '<div class="cf3-b">' + body + '</div>' + foot +
             '</div>';
@@ -8621,10 +8631,14 @@
         }
         dq('btScnFl').addEventListener('click', function (e) {
             var b = e.target.closest && e.target.closest('[data-fl]'); if (!b) return;
-            var act = b.getAttribute('data-fl');
+            var act = b.getAttribute('data-fl'), f = scnFlow || {};
             if (act === 'close') scnFlowClose();
             else if (act === 'hist') { scnFlowClose(); if (window.pftScDeck) window.pftScDeck('hist'); }
             else if (act === 'orders') { scnFlowClose(); if (window.pftScDeck) window.pftScDeck('orders'); }
+            else if (act === 'cancel') {   // «Снять остаток» — тот же диалог, что в «Заявках»
+                var oid = f.orderId; scnFlowClose();
+                if (oid && window.pftScCancelPart) window.pftScCancelPart(oid);
+            }
             else if (act === 'limit') {   // выход из отказа: рыночная не прошла — ставим лимитку
                 scnFlowClose();
                 if (window.pftScKind) window.pftScKind(1);   // аргумент — флаг «в лимит», не строка
@@ -8697,7 +8711,8 @@
         f.at = 4;
         if (state === 'fail') {
             var raw = String((o && (o.message || o.raw)) || '').slice(0, 200);
-            scnFlowRender('fail', { msg: (o && o.cancelled) ? o.message : humanErr(raw), raw: raw, code: (o || {}).code });
+            var code = (raw.match(/\b(\d{5})\b/) || [])[1] || '';   // «30079: …» → в подпись шапки
+            scnFlowRender('fail', { msg: (o && o.cancelled) ? o.message : humanErr(raw), raw: raw, code: code });
             return;
         }
         if (state === 'queued') { scnFlowRender('queued'); return; }

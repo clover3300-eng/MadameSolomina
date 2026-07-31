@@ -1645,54 +1645,6 @@
 }
 
 /* ═══════ полировка №8 (владелец 2026-07-23) ═══════ */
-/* подтверждение заказа — карточка сцены (не модалка раунда 1) */
-.bts .cf2 {
-    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-    z-index: 60; width: 430px; max-width: calc(100% - 48px);
-    background: var(--card); border: 1px solid var(--line); border-radius: 20px;
-    padding: 24px 26px 22px; box-shadow: 0 42px 90px -38px rgba(15, 23, 42, 0.5);
-}
-.bts.night .cf2 { box-shadow: 0 42px 90px -38px rgba(0, 0, 0, 0.75); }
-.bts .cf2 h3 { font: 400 24px/1.1 var(--font-title); margin: 0 0 4px; color: var(--ink); }
-.bts .cf2-sub { font: 400 13px var(--font-ui); color: var(--mut); margin-bottom: 14px; }
-.bts .cf2-sub i {
-    font-style: normal; font: 700 9px var(--font-ui); letter-spacing: 0.08em;
-    text-transform: uppercase; color: #b45309; margin-left: 8px;
-    background: color-mix(in srgb, #f59e0b 14%, transparent);
-    border-radius: 6px; padding: 2px 7px; vertical-align: 1px;
-}
-.bts .cf2-rows > div {
-    display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
-    padding: 8px 0; border-top: 1px solid var(--hair);
-}
-.bts .cf2-rows > div:first-child { border-top: 0; }
-.bts .cf2-rows span { font: 400 13px var(--font-ui); color: var(--mut); }
-.bts .cf2-rows b { font: 600 13.5px var(--font-num); color: var(--ink); text-align: right; }
-.bts .cf2-tot {
-    display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
-    border-top: 1px solid var(--line); margin-top: 2px; padding: 12px 0 2px;
-}
-.bts .cf2-tot span { font: 600 13.5px var(--font-ui); color: var(--ink); }
-.bts .cf2-tot b { font: 700 19px var(--font-num); color: var(--ink); }
-.bts .cf2-rest { font: 400 12px var(--font-ui); color: var(--dim); text-align: right; margin-top: 2px; }
-.bts .cf2-know {
-    font: 400 12.5px/1.55 var(--font-ui); color: var(--mut);
-    background: color-mix(in srgb, var(--acc) 5%, transparent);
-    border-radius: 11px; padding: 10px 13px; margin: 12px 0 16px;
-}
-.bts .cf2-act { display: flex; gap: 10px; }
-.bts .cf2-no {
-    flex: 0 0 auto; border: 1px solid var(--line); background: none; color: var(--mut);
-    font: 600 13.5px var(--font-ui); border-radius: 12px; padding: 12px 18px; cursor: pointer;
-}
-.bts .cf2-no:hover { color: var(--ink); }
-.bts .cf2-go {
-    flex: 1; border: 0; border-radius: 12px; cursor: pointer;
-    font: 700 14px var(--font-ui); color: var(--bg); background: var(--ink);
-    padding: 12px 18px; box-shadow: 0 16px 30px -18px rgba(15, 23, 42, 0.55);
-}
-.bts .cf2-go.sell { background: #b3452e; color: #fff; }
-
 /* подсказка метки исполнения на свечах (▲/▼ рисует оверлей движка) */
 .bts .bts-filltip {
     position: absolute; transform: translateX(-50%); z-index: 9;
@@ -1747,113 +1699,153 @@
 .bts .sct .sct-x:hover { color: #b3452e; background: color-mix(in srgb, #b3452e 10%, transparent); }
 .bts .sct .sct-x.arm { opacity: 1; color: #fff; background: #b3452e; }
 
-/* ═══════ ИТОГ СДЕЛКИ: одна карточка, пять состояний (мокап overview3, экран 24) ═══════
-   Геометрия и вуаль — те же, что у подтверждения (.cf2): человек видит один и тот
-   же прямоугольник до денег и после, меняется только содержимое. Значок состояния
-   в шапке — единственное цветное пятно; кнопки — язык сцены (тихая + чернильная). */
-.bts .cf3 {
+/* ═══════ ДИАЛОГИ ДЕНЕГ: ОДИН скелет .cf (мокап overview3, экраны 23–24) ═══════
+   Вопрос перед деньгами (.cf2) и итог сделки (.cf3) — один и тот же прямоугольник:
+   человек видит ту же карточку до и после. Три зоны на волосках, как в мокапе:
+   шапка со значком состояния · тело · подвал с кнопками у правого края.
+   Порт мокапного .cf/.cf-h/.cf-b/.cf-f — величины взяты один в один. */
+.bts .cf2, .bts .cf3 {
     position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
     z-index: 60; width: 430px; max-width: calc(100% - 48px);
-    max-height: calc(100% - 64px); overflow-y: auto; scrollbar-width: thin;
-    background: var(--card); border: 1px solid var(--line); border-radius: 20px;
-    padding: 22px 26px 20px; box-shadow: 0 42px 90px -38px rgba(15, 23, 42, 0.5);
+    max-height: calc(100% - 64px); overflow: hidden auto; scrollbar-width: thin;
+    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
+    box-shadow: 0 26px 60px -28px rgba(24, 38, 60, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
-.bts.night .cf3 { box-shadow: 0 42px 90px -38px rgba(0, 0, 0, 0.75); }
-.bts .cf3-h { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
-.bts .cf3-ic {
-    flex: none; width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center;
-    font: 700 16px var(--font-ui); color: var(--mut);
-    background: color-mix(in srgb, var(--ink) 7%, transparent);
+.bts.night .cf2, .bts.night .cf3 {
+    box-shadow: 0 26px 60px -28px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
-.bts .cf3-ic.ok { color: var(--grn); background: color-mix(in srgb, var(--grn) 13%, transparent); }
-.bts .cf3-ic.warn { color: #b45309; background: color-mix(in srgb, #f59e0b 15%, transparent); }
-.bts .cf3-ic.bad { color: #b3452e; background: color-mix(in srgb, #b3452e 12%, transparent); }
-.bts .cf3-ic.wait, .bts .cf3-ic.queue { color: var(--acc); background: color-mix(in srgb, var(--acc) 11%, transparent); }
-.bts .cf3-ic.wait { animation: btCf3Spin 1.4s linear infinite; }
-@keyframes btCf3Spin { to { transform: rotate(360deg); } }
-.bts .cf3-t { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.bts .cf3-t b { font: 400 20px/1.15 var(--font-title); color: var(--ink); }
-.bts .cf3-t > span { font: 400 12.5px var(--font-ui); color: var(--mut); }
-.bts .cf3-x {
-    margin-left: auto; flex: none; width: 26px; height: 26px; border: 0; background: none; cursor: pointer;
-    border-radius: 8px; color: var(--dim); font: 400 14px var(--font-ui);
+/* шапка: значок состояния · заголовок с подписью · закрыть */
+.bts .cf2-h, .bts .cf3-h {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 18px; border-bottom: 1px solid var(--hair);
 }
-.bts .cf3-x:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 6%, transparent); }
+.bts .cf2-ic, .bts .cf3-ic {
+    flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+    font: 700 15px var(--font-ui); color: var(--mut);
+    background: rgba(15, 23, 42, 0.06);
+}
+.bts.night .cf2-ic, .bts.night .cf3-ic { background: rgba(255, 255, 255, 0.07); }
+/* мокапный --blu: синий «ждём» отличается от акцента ссылок/кнопок */
+.bts { --blu: #4a6fa5; }
+.bts.night { --blu: #7ea1cc; }
+.bts .cf3-ic.wait, .bts .cf3-ic.queue { background: color-mix(in srgb, var(--blu) 16%, transparent); color: var(--blu); }
+.bts .cf3-ic.ok { background: color-mix(in srgb, var(--grn) 16%, transparent); color: var(--grn); }
+.bts .cf3-ic.warn { background: color-mix(in srgb, var(--amb) 18%, transparent); color: var(--amb); }
+.bts .cf3-ic.bad { background: color-mix(in srgb, var(--red) 15%, transparent); color: var(--red); }
+.bts .cf2-t, .bts .cf3-t { min-width: 0; }
+.bts .cf2-t b, .bts .cf3-t b { display: block; font: 400 17px/1.2 var(--font-title); color: var(--ink); }
+.bts .cf2-t > span, .bts .cf3-t > span { font: 400 11.5px var(--font-ui); color: var(--mut); }
+/* песочница — единственная плашка диалога: она про режим, а не про данные */
+.bts .cf2-t i {
+    font-style: normal; font: 700 9px var(--font-ui); letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--amb); background: color-mix(in srgb, var(--amb) 14%, transparent);
+    border-radius: 6px; padding: 2px 7px; margin-left: 8px; vertical-align: 1px;
+}
+.bts .cf2-x, .bts .cf3-x {
+    margin-left: auto; flex: none; width: 24px; height: 24px; border: 0; background: none; cursor: pointer;
+    border-radius: 7px; color: var(--dim); font: 400 13px var(--font-ui);
+}
+.bts .cf2-x:hover, .bts .cf3-x:hover { color: var(--ink); background: rgba(15, 23, 42, 0.05); }
+.bts.night .cf2-x:hover, .bts.night .cf3-x:hover { background: rgba(255, 255, 255, 0.07); }
+/* тело */
+.bts .cf2-b, .bts .cf3-b { padding: 14px 18px; }
+.bts .cf2-r, .bts .cf3-r {
+    display: flex; justify-content: space-between; gap: 10px;
+    padding: 7px 0; font: 400 12px var(--font-ui); color: var(--mut);
+}
+.bts .cf2-r b, .bts .cf3-r b {
+    font: 700 12px var(--font-num); color: var(--ink); font-variant-numeric: tabular-nums; text-align: right;
+}
+.bts .cf2-tot, .bts .cf3-tot {
+    display: flex; justify-content: space-between; gap: 10px;
+    padding-top: 11px; margin-top: 5px; border-top: 1px solid var(--hair);
+    font: 400 12.5px var(--font-ui); color: var(--mut);
+}
+.bts .cf2-tot b, .bts .cf3-tot b {
+    font: 700 14px var(--font-num); color: var(--ink); font-variant-numeric: tabular-nums;
+}
+.bts .cf2-rest { font: 400 11.5px var(--font-ui); color: var(--dim); text-align: right; margin-top: 4px; }
+/* «что произойдёт» / «что нужно знать» — тот же блок .wn, что у предупреждений */
+.bts .wn {
+    display: flex; align-items: flex-start; gap: 11px; border-radius: 12px; padding: 12px 14px;
+    margin-top: 14px; font: 400 12px/1.5 var(--font-ui); color: var(--mut);
+}
+.bts .wn .ic {
+    flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+    font: 700 12px var(--font-ui);
+}
+.bts .wn b { font-weight: 700; }
+.bts .wn.info { background: rgba(15, 23, 42, 0.045); }
+.bts .wn.info .ic { background: color-mix(in srgb, var(--ink) 10%, transparent); color: var(--mut); }
+.bts .wn.info b { color: var(--ink); }
+.bts.night .wn.info { background: rgba(255, 255, 255, 0.05); }
+.bts .wn.warn { background: color-mix(in srgb, var(--amb) 11%, transparent); }
+.bts .wn.warn .ic { background: color-mix(in srgb, var(--amb) 20%, transparent); color: var(--amb); }
+.bts .wn.warn b { color: var(--amb); }
+.bts .wn.ok { background: color-mix(in srgb, var(--grn) 11%, transparent); }
+.bts .wn.ok .ic { background: color-mix(in srgb, var(--grn) 18%, transparent); color: var(--grn); }
+.bts .wn.ok b { color: var(--grn); }
+.bts .wn.bad { background: color-mix(in srgb, var(--red) 10%, transparent); }
+.bts .wn.bad .ic { background: color-mix(in srgb, var(--red) 16%, transparent); color: var(--red); }
+.bts .wn.bad b { color: var(--red); }
 /* шаги отправки: видно, где именно заявка, а не «крутится спиннер» */
-.bts .cf3-steps { display: flex; flex-direction: column; gap: 2px; }
-.bts .cf3-s {
-    display: flex; align-items: center; gap: 10px; padding: 8px 0;
-    font: 400 13px var(--font-ui); color: var(--dim);
-}
+.bts .cf3-steps { display: flex; flex-direction: column; gap: 9px; }
+.bts .cf3-s { display: flex; align-items: center; gap: 10px; font: 400 12px var(--font-ui); color: var(--dim); }
 .bts .cf3-s i {
     flex: none; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center;
-    font-style: normal; font-size: 10px; color: var(--dim);
-    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ink) 14%, transparent);
+    font-style: normal; font-size: 10px; border: 1px solid var(--line);
 }
 .bts .cf3-s.done { color: var(--mut); }
-.bts .cf3-s.done i { color: #fff; background: var(--grn); box-shadow: none; }
-.bts .cf3-s.now { color: var(--ink); font-weight: 600; }
-.bts .cf3-s.now i { color: var(--acc); box-shadow: inset 0 0 0 1.5px var(--acc); animation: btCf3Spin 1.4s linear infinite; }
-/* строки-факты и итог — те же, что в подтверждении */
-.bts .cf3-rows > div {
-    display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
-    padding: 8px 0; border-top: 1px solid var(--hair);
-}
-.bts .cf3-rows > div:first-child { border-top: 0; }
-.bts .cf3-rows span { font: 400 13px var(--font-ui); color: var(--mut); }
-.bts .cf3-rows b { font: 600 13.5px var(--font-num); color: var(--ink); text-align: right; }
-.bts .cf3-tot {
-    display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
-    border-top: 1px solid var(--line); margin-top: 2px; padding: 12px 0 2px;
-}
-.bts .cf3-tot span { font: 600 13.5px var(--font-ui); color: var(--ink); }
-.bts .cf3-tot b { font: 700 19px var(--font-num); color: var(--ink); }
-/* «что стало с позицией» — ради этой сетки карточка и существует */
+.bts .cf3-s.done i { background: color-mix(in srgb, var(--grn) 16%, transparent); color: var(--grn); border-color: transparent; }
+.bts .cf3-s.now { color: var(--ink); font-weight: 700; }
+.bts .cf3-s.now i { background: color-mix(in srgb, var(--blu) 16%, transparent); color: var(--blu); border-color: transparent; }
+/* «было → стало»: волосок, а не подложка — это продолжение тех же строк */
 .bts .cf3-after {
-    display: flex; flex-direction: column; gap: 1px; margin-top: 14px;
-    background: color-mix(in srgb, var(--ink) 3%, transparent); border-radius: 12px; padding: 4px 14px;
+    display: flex; flex-direction: column; gap: 8px;
+    margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--hair);
 }
-.bts .cf3-a {
-    display: flex; align-items: baseline; gap: 10px; padding: 9px 0;
-    border-top: 1px solid var(--hair); font: 400 12.5px var(--font-ui); color: var(--mut);
+.bts .cf3-a { display: flex; align-items: baseline; gap: 10px; font: 400 12px var(--font-ui); color: var(--mut); }
+.bts .cf3-a b {
+    margin-left: auto; font: 700 12px var(--font-num); color: var(--ink); font-variant-numeric: tabular-nums;
 }
-.bts .cf3-a:first-child { border-top: 0; }
-.bts .cf3-a b { margin-left: auto; font: 700 13px var(--font-num); color: var(--ink); font-variant-numeric: tabular-nums; }
-.bts .cf3-a em { flex: none; width: 96px; text-align: right; font-style: normal; font: 400 11px var(--font-num); color: var(--dim); }
-.bts .cf3-note {
-    display: flex; align-items: flex-start; gap: 9px; margin-top: 14px;
-    font: 400 12.5px/1.5 var(--font-ui); color: var(--mut);
-    border-radius: 11px; padding: 10px 13px;
-    background: color-mix(in srgb, var(--acc) 5%, transparent);
+.bts .cf3-a em {
+    flex: none; width: 110px; text-align: right; font-style: normal;
+    font: 400 10.5px var(--font-num); color: var(--dim);
 }
-.bts .cf3-note .ic {
-    flex: none; width: 17px; height: 17px; border-radius: 50%; display: grid; place-items: center;
-    font: 700 10px var(--font-ui); color: var(--acc); background: color-mix(in srgb, var(--acc) 15%, transparent);
-}
-.bts .cf3-note.ok { background: color-mix(in srgb, var(--grn) 6%, transparent); }
-.bts .cf3-note.ok .ic { color: var(--grn); background: color-mix(in srgb, var(--grn) 16%, transparent); }
-.bts .cf3-note.warn { background: color-mix(in srgb, #f59e0b 8%, transparent); }
-.bts .cf3-note.warn .ic { color: #b45309; background: color-mix(in srgb, #f59e0b 20%, transparent); }
-.bts .cf3-note.bad { background: color-mix(in srgb, #b3452e 7%, transparent); }
-.bts .cf3-note.bad .ic { color: #b3452e; background: color-mix(in srgb, #b3452e 16%, transparent); }
-.bts .cf3-raw { margin-top: 12px; font: 400 11.5px var(--font-ui); color: var(--dim); }
+.bts .cf3-raw { margin: 12px 0 0; font: 400 11px var(--font-ui); color: var(--dim); }
 .bts .cf3-raw summary { cursor: pointer; }
-.bts .cf3-raw code { display: block; margin-top: 6px; font: 400 11px var(--font-num); word-break: break-all; }
-.bts .cf3-act { display: flex; gap: 10px; margin-top: 18px; }
-.bts .cf3-gh {
-    flex: 0 0 auto; border: 1px solid var(--line); background: none; color: var(--mut);
-    font: 600 13.5px var(--font-ui); border-radius: 12px; padding: 12px 18px; cursor: pointer;
+.bts .cf3-raw code { display: block; margin-top: 6px; font: 400 10.5px var(--font-num); word-break: break-all; }
+/* подвал: кнопки у ПРАВОГО края, растянутых нет */
+.bts .cf2-f, .bts .cf3-f {
+    display: flex; align-items: center; gap: 10px;
+    padding: 13px 18px; border-top: 1px solid var(--hair);
 }
-.bts .cf3-gh:hover { color: var(--ink); }
-.bts .cf3-go {
-    flex: 1; border: 0; border-radius: 12px; cursor: pointer;
-    font: 700 14px var(--font-ui); color: var(--bg); background: var(--ink);
-    padding: 12px 18px; box-shadow: 0 16px 30px -18px rgba(15, 23, 42, 0.55);
+.bts .cf2-f .sp, .bts .cf3-f .sp { flex: 1; }
+.bts .cf2-gh, .bts .cf3-gh {
+    border: 0; background: none; cursor: pointer;
+    font: 700 12px var(--font-ui); color: var(--mut); padding: 8px 12px; border-radius: 9px;
 }
-/* «больше не спрашивать» — только у рыночной заявки (мокап, экран 24) */
+.bts .cf2-gh:hover, .bts .cf3-gh:hover { color: var(--ink); background: rgba(15, 23, 42, 0.05); }
+.bts.night .cf2-gh:hover, .bts.night .cf3-gh:hover { background: rgba(255, 255, 255, 0.07); }
+.bts .cf2-go, .bts .cf3-go {
+    border: 0; cursor: pointer; white-space: nowrap;
+    font: 700 12.5px var(--font-ui); color: var(--bg); background: var(--ink);
+    border-radius: 10px; padding: 9px 18px;
+}
+.bts .cf2-go.sell { background: var(--red); color: #fff; }
+/* «больше не спрашивать» — только у рыночной заявки; квадратик рисует ::before */
 .bts .cf2-chk {
-    display: flex; align-items: center; gap: 9px; margin: 0 0 14px; cursor: pointer;
-    font: 400 12px var(--font-ui); color: var(--mut);
+    display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+    font: 400 11px var(--font-ui); color: var(--mut);
 }
-.bts .cf2-chk input { width: 15px; height: 15px; accent-color: var(--acc); cursor: pointer; }
+.bts .cf2-chk::before {
+    content: ''; flex: none; width: 13px; height: 13px; border-radius: 4px;
+    border: 1.5px solid var(--dim); background: none;
+}
+.bts .cf2-chk:has(input:checked)::before {
+    border-color: var(--acc); background: var(--acc);
+    box-shadow: inset 0 0 0 2px var(--card);
+}
+.bts .cf2-chk input { position: absolute; opacity: 0; width: 0; height: 0; }
 .bts .cf2-chk:hover { color: var(--ink); }
+
