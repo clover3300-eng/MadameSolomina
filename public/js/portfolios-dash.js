@@ -948,10 +948,15 @@
         // (одноколоночный .pff-grid и т.п.) и в свободной сетке
         blocks.push({ id: 'fav', name: 'Избранное', htmlFn: function () { return '<div class="pf-topgrid-fav pfd-favwrap">' + favStr + '</div>'; }, span: defSpan });
         if (PF.store.items.length >= 2) {
-            blocks.push({ id: 'sum', name: 'Сводка', htmlFn: function () { return '<div class="pf-topgrid-fav pfd-favwrap">' + PF.summaryCardHtml() + '</div>'; }, span: defSpan });
+            blocks.push({ id: 'sum', name: 'Сводка', htmlFn: function () { return '<div class="pf-topgrid-fav pfd-favwrap">' + PF.summaryCardHtml() + '</div>'; }, span: defSpan, defHidden: true });
         }
         // виджет «Панель управления» (id 'panel') удалён из набора: с R7 панель — постоянный
         // герой-шапка вкладки (pfxHeroHtml), добавлять её на дашборд отдельно больше не нужно
+        // ГЕРОЙ «ОБЗОРА» — первым в наборе и виден по умолчанию (мокап overview3,
+        // экран 02). Он забирает работу трёх блоков сразу: суммы из kpi:cap, дельты
+        // из kpi:day и списка портфелей из тёмной «Сводки», поэтому те уходят
+        // в опт-ин: капитал, напечатанный трижды, — и была главная «каша».
+        blocks.push({ id: 'hero', name: 'Капитал — герой', htmlFn: PF.pfxHeroBlockHtml, span: 12 });
         blocks.push({ id: 'kpi:cap', name: 'KPI · Капитал', htmlFn: function () { return PF.pfdKpiHtml('cap'); }, span: 4, defHidden: true });
         blocks.push({ id: 'kpi:day', name: 'KPI · За сегодня', htmlFn: function () { return PF.pfdKpiHtml('day'); }, span: 4, defHidden: true });
         blocks.push({ id: 'kpi:next', name: 'KPI · Ближайшая выплата', htmlFn: function () { return PF.pfdKpiHtml('next'); }, span: 4, defHidden: true });
@@ -1415,6 +1420,14 @@
             if (byId[id]) { ordered.push(byId[id]); delete byId[id]; }
         });
         blocks.forEach(function (b) { if (byId[b.id]) ordered.push(b); });   // новые блоки — в конец
+        // ГЕРОЙ ВСЕГДА ПЕРВЫЙ. Он отвечает на вопрос, с которого страницу открывают,
+        // и под ним стоит единственное акцентное действие — ниже первого экрана
+        // и то и другое бессмысленно. Правило важнее пользовательского порядка:
+        // без него у всех, кто уже собрал свою раскладку, новый блок молча уехал
+        // бы в конец списка (там он и оказался при первой сборке). Перетащить
+        // остальные блоки это не мешает — закреплён только он.
+        var hi = ordered.findIndex(function (b) { return b.id === 'hero'; });
+        if (hi > 0) ordered.unshift(ordered.splice(hi, 1)[0]);
         var shown = [], hiddenB = [];
         ordered.forEach(function (b) { (pfdIsHidden(b) ? hiddenB : shown).push(b); });
 

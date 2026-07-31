@@ -673,7 +673,11 @@
             return '<button class="pfcap-rb' + (PF.pfdCapRange === r[0] ? ' on' : '') + '" onclick="pfdCapSetRange(\'' + r[0] + '\')">' + r[1] + '</button>';
         }).join('') + '</div>';
     }
-    function pfdCapChartHtml(demoSeries) {
+    // Полотно графика капитала вынесено в отдельную функцию: тот же плот нужен
+    // и виджету «График капитала», и герою «Обзора». Возвращает {hero, body} —
+    // крупную строку стоимости с дельтой и само полотно с осью и подписями дат.
+    function pfdCapParts(demoSeries, opts) {
+        opts = opts || {};
         var full = demoSeries || pfdCapEffectiveSeries();
         var s = demoSeries ? demoSeries.slice() : pfdCapRangeFilter(full);
         var last = s.length ? s[s.length - 1] : null;
@@ -744,11 +748,158 @@
             '<div class="pfcap-x"><span>' + ruDate(s[0].d) + '</span><span>' + ruDate(last.d) + '</span></div>' +
             pfdCapRangesHtml();
         }
-        return '<div class="dash2-card pf-card2 pf-capblk" title="Дневные снимки хранятся на этом устройстве (до 400 дней)">' +
-            PF.pfCardHead('', 'График капитала', 'стоимость всех портфелей', right) +
-            hero +
-            '<div class="pfcap-body">' + body + '</div></div>';
+        return { hero: hero, body: body, right: right, empty: s.length < 2 };
     }
+    function pfdCapChartHtml(demoSeries) {
+        var parts = pfdCapParts(demoSeries);
+        return '<div class="dash2-card pf-card2 pf-capblk" title="Дневные снимки хранятся на этом устройстве (до 400 дней)">' +
+            PF.pfCardHead('', 'График капитала', 'стоимость всех портфелей', parts.right) +
+            parts.hero +
+            '<div class="pfcap-body">' + parts.body + '</div></div>';
+    }
+    // ═══════════ ГЕРОЙ «ОБЗОРА» (мокап overview3, экран 02) ═══════════
+    // До него страница начиналась с трёх KPI-плиток, графика и тёмной карточки
+    // «Суммарный капитал» — и капитал был напечатан ТРИЖДЫ: в плитке, в шапке
+    // графика и в тёмной карточке. Ни одна из трёх не отвечала на вопрос, с
+    // которого человек открывает «Обзор»: что сегодня произошло и надо ли что-то
+    // делать. Герой отвечает: сумма один раз, дельта дня крупно, кто её сделал,
+    // и одна строка вердикта с единственным на странице акцентным действием.
+    function pfxHeroBlockHtml() {
+        var inv = 0, val = 0, dd = 0, hasDd = false, papers = {}, free = 0;
+        PF.store.items.forEach(function (p) {
+            var c = calcPf(p); inv += c.invested; val += c.value;
+            var d = dayDelta(p, c.value); if (d != null) { dd += d; hasDd = true; }
+            (p.holdings || []).forEach(function (h) { if (h.ticker && aggHolding(h).qty > 0) papers[h.ticker] = 1; });
+            free += (+p.cash || 0);
+        });
+        var n = PF.store.items.length;
+        var pnl = val - inv, pnlPct = inv > 0 ? pnl / inv * 100 : 0;
+        var ddPct = hasDd && val - dd > 0 ? dd / (val - dd) * 100 : null;
+        var warm = pfQuotesWarming();
+
+        // крупным идёт самая свежая правда, которая есть: дельта дня, а без неё —
+        // результат за всё время (мокап overview3, экран 12 «Состояния»)
+        var bigCls = hasDd ? (dd >= 0 ? 'pos' : 'neg') : (pnl >= 0 ? 'pos' : 'neg');
+        var big = hasDd
+            ? '<span class="pfh-k">За день</span><b class="' + bigCls + '">' + (dd >= 0 ? '+' : '−') + fmtRub(Math.abs(dd)) +
+              (ddPct != null ? ' <em>' + fmtPct(ddPct) + '</em>' : '') + '</b>'
+            : '<span class="pfh-k">За всё время</span><b class="' + bigCls + '">' + (pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(pnl)) +
+              ' <em>' + fmtPct(pnlPct) + '</em></b>';
+        var small = hasDd
+            ? 'за всё время <b class="' + (pnl >= 0 ? 'pos' : 'neg') + '">' + (pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(pnl)) + '</b> · ' + fmtPct(pnlPct)
+            : 'за день <b>—</b> · дневное изменение ещё не пришло';
+
+        // кто двигал сегодня: тот же расчёт вклада в рублях, что у «Лидеров дня»
+        var byTk = {}, order = [];
+        PF.store.items.forEach(function (p) {
+            (p.holdings || []).forEach(function (h) {
+                if (!h.ticker) return;
+                var q = quotes[h.ticker]; if (!q || q.chgPct == null) return;
+                var k = q.chgPct / 100; if (!(k > -0.999)) return;
+                var v = PF.calcHold(h).value; if (!(v > 0)) return;
+                var r = byTk[h.ticker];
+                if (!r) { r = byTk[h.ticker] = { tk: h.ticker, name: PF.assetDisplayName(h), chg: +q.chgPct, rub: 0 }; order.push(r); }
+                r.rub += v - v / (1 + k);
+            });
+        });
+        order.sort(function (a, b) { return Math.abs(b.rub) - Math.abs(a.rub); });
+        var movers = order.slice(0, 4);
+        var moversHtml = movers.length
+            ? movers.map(function (r) {
+                var pos = r.rub >= 0;
+                return '<div class="pfh-mv"><span class="tk">' + esc(r.tk) + '</span>' +
+                    '<span class="nm">' + esc(r.name) + '</span>' +
+                    '<b class="' + (pos ? 'pos' : 'neg') + '">' + (pos ? '+' : '−') + fmtRub(Math.abs(r.rub)) + '</b>' +
+                    '<i class="' + (pos ? 'pos' : 'neg') + '">' + fmtPct(r.chg) + '</i></div>';
+            }).join('')
+            : '<div class="pfh-none">Дневное изменение ещё не пришло ни по одной бумаге. Столбец наполнится сам, ' +
+              'как только ответит Мосбиржа — задним числом ничего не досчитывается.</div>';
+
+        // ВЕРДИКТ — единственная строка на странице, которая говорит, что делать.
+        // Порядок важности: дрейф за порогом → концентрация → всё спокойно.
+        var verdict = pfxHeroVerdict(val, order);
+
+        var parts = pfdCapParts();
+        var chart = parts.empty
+            ? '<div class="pfh-none" style="margin-top:14px">' +
+              'Линия появится со второго дня наблюдения: стоимость записывается раз в день при живых котировках.</div>'
+            : '<div class="pfcap-body pfh-plot">' + parts.body + '</div>';
+
+        return '<div class="dash2-card pf-card2 pf-heroblk">' +
+            '<div class="pfh-row">' +
+                '<div class="pfh-l">' +
+                    '<div class="pfh-cap">Капитал · ' + n + ' ' + PF.plural(n, 'портфель', 'портфеля', 'портфелей') + '</div>' +
+                    '<div class="pfh-sum">' + (warm ? skelHtml(190, 34) : fmtRub(val)) + '</div>' +
+                    '<div class="pfh-big">' + big + '</div>' +
+                    '<div class="pfh-small">' + small + '</div>' +
+                    '<div class="pfh-line">' +
+                        '<span>Вложено<b>' + fmtRub(inv) + '</b></span>' +
+                        '<span>Свободных денег<b>' + fmtRub(free) + '</b></span>' +
+                        '<span>Бумаг в портфелях<b>' + Object.keys(papers).length + '</b></span>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="pfh-c">' +
+                    '<div class="pfh-ct"><span class="pfh-k">Капитал по дням</span></div>' +
+                    chart +
+                '</div>' +
+                '<div class="pfh-r">' +
+                    '<div class="pfh-k">Кто двигал сегодня</div>' +
+                    '<div class="pfh-mvs">' + moversHtml + '</div>' +
+                '</div>' +
+            '</div>' +
+            '<div class="pfh-foot' + (verdict.warn ? ' warn' : '') + '">' +
+                '<span class="pfh-dot">' + PF.INFO_SVG + '</span>' +
+                '<span class="pfh-say">' + verdict.text + '</span>' +
+                (verdict.cta ? '<button class="pfh-go' + (verdict.warn ? ' acc' : '') + '" onclick="' + verdict.act + '">' + verdict.cta + '</button>' : '') +
+            '</div>' +
+        '</div>';
+    }
+    // Вердикт героя. Дрейф считаем только по портфелям с ЯВНОЙ целью (p.targetBond),
+    // порог — общий PF.DRIFT_THR. Концентрация — доля самой крупной бумаги в капитале.
+    function pfxHeroVerdict(val, movers) {
+        var thr = PF.DRIFT_THR || 3, worst = null;
+        PF.store.items.forEach(function (p) {
+            if (p.targetBond == null) return;
+            var c = calcPf(p), drift = Math.abs(c.bondPct - p.targetBond);
+            if (!worst || drift > worst.drift) worst = { p: p, drift: drift, c: c };
+        });
+        if (worst && worst.drift > thr) {
+            return { warn: true,
+                text: 'Доли в «<b>' + esc(worst.p.name) + '</b>» ушли от цели на <b>' +
+                      worst.drift.toFixed(1).replace('.', ',') + ' п.п.</b> — облигаций ' +
+                      Math.round(worst.c.bondPct) + '% при цели ' + worst.p.targetBond + '%.',
+                cta: 'Ребаланс ›', act: 'pfExpand(\'' + jsArg(worst.p.id) + '\')' };
+        }
+        // концентрация: одна бумага держит слишком много капитала
+        var top = null, byTk = {};
+        PF.store.items.forEach(function (p) {
+            (p.holdings || []).forEach(function (h) {
+                if (!h.ticker) return;
+                var v = PF.calcHold(h).value; if (!(v > 0)) return;
+                byTk[h.ticker] = (byTk[h.ticker] || 0) + v;
+            });
+        });
+        Object.keys(byTk).forEach(function (tk) { if (!top || byTk[tk] > top.v) top = { tk: tk, v: byTk[tk] }; });
+        if (top && val > 0 && top.v / val > 0.4) {
+            var share = Math.round(top.v / val * 100);
+            var mv = movers && movers.length && movers[0].tk === top.tk ? movers[0] : null;
+            var lead = mv && Math.abs(mv.rub) > 0
+                ? 'Сегодня он же дал <b>' + (mv.rub >= 0 ? '+' : '−') + fmtRub(Math.abs(mv.rub)) + '</b>. '
+                : '';
+            return { warn: false,
+                text: '<b>' + share + '% капитала стоит в одной бумаге</b> — ' + esc(top.tk) + '. ' + lead,
+                cta: 'Диверсификация ›', act: 'pfdShowBlock(\'conc\')' };
+        }
+        var noTarget = PF.store.items.filter(function (p) { return p.targetBond == null; }).length;
+        if (noTarget === PF.store.items.length && noTarget > 0) {
+            return { warn: false,
+                text: 'Целевых долей не задано ни у одного портфеля — «Ребаланс» не подскажет, когда сверяться.',
+                cta: 'Задать цель ›', act: 'pfxGoTab(\'rebal\')' };
+        }
+        return { warn: false, text: 'Доли у всех портфелей в пределах порога ' + thr + ' п.п. — <b>сверяться не нужно.</b>',
+            cta: '', act: '' };
+    }
+
     // «График капитала» — два ОТДЕЛЬНЫХ блока-дизайна: cap (линия, pfdCapChartHtml) и
     // cap2 (столбцы, pfdCapChartHtmlB). Оба можно держать на дашборде одновременно.
     // Дизайн B — столбчатый: те же данные/окна/герой, но стоимость показана колонками.
@@ -2735,7 +2886,7 @@
     PF.GO_ARROW_SVG = GO_ARROW_SVG; PF.NOTE_CHECK_SVG = NOTE_CHECK_SVG; PF.NOTE_CLOCK_SVG = NOTE_CLOCK_SVG; PF.NOTE_ICON_SVG = NOTE_ICON_SVG;
     PF.NOTE_TRASH_SVG = NOTE_TRASH_SVG; PF.PFP_SLIDERS_SVG = PFP_SLIDERS_SVG; PF.favHtml = favHtml; PF.favTickers = favTickers;
     PF.newsHtmlCache = newsHtmlCache; PF.pfPlistSparksSoon = pfPlistSparksSoon; PF.pfd2 = pfd2; PF.pfdAllocCompute = pfdAllocCompute;
-    PF.pfdAllocHtml = pfdAllocHtml; PF.pfdAllocScope = pfdAllocScope; PF.pfdCapChartHtml = pfdCapChartHtml; PF.pfdCapChartHtmlB = pfdCapChartHtmlB;
+    PF.pfdAllocHtml = pfdAllocHtml; PF.pfdAllocScope = pfdAllocScope; PF.pfxHeroBlockHtml = pfxHeroBlockHtml; PF.pfdCapChartHtml = pfdCapChartHtml; PF.pfdCapChartHtmlB = pfdCapChartHtmlB;
     PF.pfdCapMaybeRepaint = pfdCapMaybeRepaint; PF.pfdCapRepaint = pfdCapRepaint; PF.pfdCapSeries = pfdCapSeries; PF.pfdFlushNotes = pfdFlushNotes;
     PF.pfdHeatHtml = pfdHeatHtml; PF.pfdHeatRepaintSoon = pfdHeatRepaintSoon; PF.pfdHeatRenderNow = pfdHeatRenderNow; PF.pfdKpiHtml = pfdKpiHtml; PF.pfdNewsHtml = pfdNewsHtml;
     PF.pfdNewsList = pfdNewsList; PF.pfdNoteHtml = pfdNoteHtml; PF.pfdPanelActive = pfdPanelActive; PF.pfwAssetsHtml = pfwAssetsHtml;

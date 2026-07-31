@@ -2382,3 +2382,75 @@ body.dark-mode .rtb-src { color: #6c7a8e; }
     .pf-ratesbar .rtb-row { grid-template-columns: 1fr; }
     .rtb-tail { justify-content: space-between; }
 }
+
+/* ============ 20. ГЕРОЙ «ОБЗОРА» (мокап overview3, экран 02) ============
+   Один блок вместо трёх: сумма печаталась в KPI-плитке, в шапке графика и в
+   тёмной «Сводке». Здесь она одна, рядом — дельта дня крупно, кто её сделал,
+   и строка вердикта с единственным акцентным действием страницы. */
+.pf-heroblk { padding: 0 !important; overflow: hidden; }
+.pfh-row { display: flex; align-items: stretch; }
+.pfh-l { flex: 0 0 330px; min-width: 0; padding: 20px 24px 18px; display: flex; flex-direction: column; }
+.pfh-c { flex: 1 1 auto; min-width: 0; padding: 20px 24px 14px; display: flex; flex-direction: column;
+    border-left: 1px solid rgba(16,24,40,0.08); border-right: 1px solid rgba(16,24,40,0.08); }
+.pfh-r { flex: 0 0 300px; min-width: 0; padding: 20px 24px 18px; display: flex; flex-direction: column; }
+body.dark-mode .pfh-c { border-left-color: rgba(255,255,255,0.08); border-right-color: rgba(255,255,255,0.08); }
+@media (max-width: 1180px) {
+    .pfh-row { flex-wrap: wrap; }
+    .pfh-l, .pfh-r { flex: 1 1 50%; }
+    .pfh-c { flex: 1 1 100%; order: 3; border-left: 0; border-right: 0;
+        border-top: 1px solid rgba(16,24,40,0.08); }
+}
+.pfh-k { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 9.5px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase; color: #94a3b8; }
+.pfh-cap { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 9.5px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase; color: #94a3b8; }
+.pfh-sum { margin-top: 9px; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 38px;
+    font-weight: 700; letter-spacing: -0.025em; line-height: 1; font-variant-numeric: tabular-nums; }
+.pfh-big { margin-top: 13px; }
+.pfh-big b { display: block; margin-top: 5px; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 19px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.pfh-big b em { font-style: normal; font-size: 72%; }
+.pfh-big b.pos { color: #119d5c; } .pfh-big b.neg { color: #c2410c; }
+.pfh-small { margin-top: 10px; font-size: 11.5px; color: #64748b; }
+.pfh-small b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-weight: 700; }
+.pfh-small b.pos { color: #119d5c; } .pfh-small b.neg { color: #c2410c; }
+.pfh-line { margin-top: auto; padding-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+.pfh-line span { display: flex; justify-content: space-between; gap: 10px; font-size: 11px; color: #64748b; }
+.pfh-line b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11.5px; font-weight: 600;
+    color: #1b2433; font-variant-numeric: tabular-nums; }
+body.dark-mode .pfh-line b { color: #e8eef7; }
+.pfh-ct { display: flex; align-items: center; gap: 12px; }
+.pfh-plot { flex: 1; min-height: 132px; margin-top: 10px; }
+.pfh-mvs { margin-top: 12px; }
+.pfh-mv { display: grid; grid-template-columns: 54px 1fr auto 52px; gap: 9px; align-items: baseline;
+    padding: 8px 0; border-bottom: 1px solid rgba(16,24,40,0.06); font-size: 12px; }
+.pfh-mv:last-child { border-bottom: 0; }
+body.dark-mode .pfh-mv { border-bottom-color: rgba(255,255,255,0.07); }
+.pfh-mv .tk { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12px; font-weight: 700; }
+.pfh-mv .nm { color: #94a3b8; font-size: 11px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfh-mv b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12px; font-weight: 700;
+    font-variant-numeric: tabular-nums; }
+.pfh-mv i { font-style: normal; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 10.5px;
+    color: #94a3b8; text-align: right; font-variant-numeric: tabular-nums; }
+.pfh-mv b.pos, .pfh-mv i.pos { color: #119d5c; } .pfh-mv b.neg, .pfh-mv i.neg { color: #c2410c; }
+.pfh-none { font-size: 11.5px; line-height: 1.55; color: #94a3b8; }
+/* подвал-вердикт: единственная строка страницы, которая говорит, что делать */
+.pfh-foot { display: flex; align-items: center; gap: 12px; padding: 13px 24px;
+    border-top: 1px solid rgba(16,24,40,0.08); font-size: 12.5px; color: #64748b; }
+body.dark-mode .pfh-foot { border-top-color: rgba(255,255,255,0.08); }
+.pfh-dot { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+    background: rgba(24,38,60,0.06); color: #64748b; }
+.pfh-dot svg { width: 12px; height: 12px; }
+.pfh-foot.warn .pfh-dot { background: rgba(194,118,10,0.15); color: #c2760a; }
+body.dark-mode .pfh-dot { background: rgba(255,255,255,0.08); color: #93a1b5; }
+.pfh-say { min-width: 0; }
+.pfh-say b { color: #1b2433; font-weight: 700; }
+body.dark-mode .pfh-say b { color: #e8eef7; }
+.pfh-go { margin-left: auto; flex: none; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 12px;
+    font-weight: 700; color: #1b2433; border: 1px solid rgba(24,38,60,0.12); background: rgba(24,38,60,0.035);
+    border-radius: 10px; padding: 8px 15px; white-space: nowrap; transition: background 0.15s; }
+.pfh-go:hover { background: rgba(24,38,60,0.08); }
+.pfh-go.acc { background: #141b26; border-color: #141b26; color: #fff; }
+.pfh-go.acc:hover { opacity: 0.9; }
+body.dark-mode .pfh-go { color: #e8eef7; border-color: rgba(255,255,255,0.14); background: rgba(255,255,255,0.06); }
+body.dark-mode .pfh-go.acc { background: #e8eef7; border-color: #e8eef7; color: #0c1016; }
