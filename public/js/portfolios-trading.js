@@ -6138,16 +6138,16 @@
     // Шапка теперь .wl-top, подпись раздела — .wl-h, как в мокапе.
     function wlHeadHtml() {
         return '<div class="wl-top">' +
-            '<div class="wl-seg" role="tablist" aria-label="Что показывать в рейке">' +
-                '<button type="button" class="wl-seg-b' + (wlMode === 'fav' ? ' on' : '') + '" role="tab" ' +
-                    'aria-selected="' + (wlMode === 'fav') + '" onclick="pftScWlMode(\'fav\')">Избранное</button>' +
-                '<button type="button" class="wl-seg-b' + (wlMode === 'all' ? ' on' : '') + '" role="tab" ' +
-                    'aria-selected="' + (wlMode === 'all') + '" onclick="pftScWlMode(\'all\')">Список</button>' +
+            '<div class="wl-tabs" role="tablist" aria-label="Что показывать в рейке">' +
+                '<b class="' + (wlMode === 'fav' ? 'on' : '') + '" role="tab" tabindex="0" ' +
+                    'aria-selected="' + (wlMode === 'fav') + '" onclick="pftScWlMode(\'fav\')">Мои</b>' +
+                '<b class="' + (wlMode === 'all' ? 'on' : '') + '" role="tab" tabindex="0" ' +
+                    'aria-selected="' + (wlMode === 'all') + '" onclick="pftScWlMode(\'all\')">Расчёт</b>' +
             '</div>' +
             '<button type="button" class="wl-x" onclick="pftScWl()" aria-label="Свернуть полосу">✕</button></div>';
     }
     // подпись раздела рейки — та же, что в мокапе: тихий капс над списком
-    function wlCapHtml(t) { return '<span class="wl-h">' + t + '</span>'; }
+    function wlCapHtml(t) { return '<span class="wl-h">' + t + '</span>'; }   // = .wl-h мокапа
     function scnWlHtml() {
         if (!wlOn()) return '';
         return wlHeadHtml() + (wlMode === 'all' ? scnWlAllHtml() : scnWlFavHtml());
@@ -6175,7 +6175,7 @@
             // спарклайн, имя компании и цена в два этажа делали рейку вчетверо
             // тяжелее задуманного; номер клавиши остался в подсказке, спарклайн
             // и цена — тоже (рейка узкая, ей хватает одной строки на бумагу).
-            return '<div class="wl-r' + (on ? ' on' : '') + '" role="button" tabindex="0" ' +
+            return '<div class="wl-i' + (on ? ' on' : '') + '" role="button" tabindex="0" ' +
                 'onclick="pftScWlGo(\'' + jsArg(tk) + '\')" title="' + esc(nm || tk) +
                 (d && d !== 'busy' && d !== 'err' ? ' · ' + d.last.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' ₽' : '') +
                 ' — в сцену, клавиша ' + (i + 1) + '">' +
@@ -6242,17 +6242,17 @@
             var parts = [];
             byEch.forEach(function (group, ci) {
                 if (!group.length) return;
-                parts.push('<div class="wl-eh">' + WL_ECH_ROMAN[ci] + ' эшелон<i>' + WL_ECH_NAME[ci] + '</i></div>');
+                parts.push(wlCapHtml(WL_ECH_ROMAN[ci] + ' эшелон · ' + WL_ECH_NAME[ci]));
                 group.forEach(function (g) {
                     var a = g.a;
                     var raw = (a.target == null) ? '' : String(a.target).replace(/\s*₽/, '').trim();
                     var pot = (raw && raw !== '—')
                         ? '<b class="wlg' + (g.tier == null ? 2 : g.tier) + '">' + esc(raw) + '</b>'
                         : '<i class="mut">—</i>';
-                    parts.push('<div class="wl-r wl-rl" role="button" tabindex="0" ' +
-                        'onclick="pftScWlGo(\'' + jsArg(a.t) + '\')" title="В сцену: ' + esc(a.t) + '">' +
-                        '<span class="tk"><b>' + esc(a.t) + '</b>' + (a.n && a.n !== a.t ? '<em>' + esc(a.n) + '</em>' : '') + '</span>' +
-                        '<span class="pd wl-pot">' + pot + '</span></div>');
+                    // строка мокапа: тикер и число, имя компании — в подсказку
+                    parts.push('<div class="wl-i" role="button" tabindex="0" ' +
+                        'onclick="pftScWlGo(\'' + jsArg(a.t) + '\')" title="' + esc(a.n || a.t) + ' — в сцену">' +
+                        esc(a.t) + '<em class="pos">' + pot + '</em></div>');
                 });
             });
             stockRows = parts.join('');
@@ -6266,19 +6266,19 @@
                 var yv = (y !== '—')
                     ? '<b class="wlg' + (bdTiers[i] == null ? 2 : bdTiers[i]) + '">' + esc(y) + '</b>'
                     : '<i class="mut">—</i>';
-                return '<div class="wl-r wl-rl" role="button" tabindex="0" ' +
-                    'onclick="pftScWlGo(\'' + jsArg(b.t) + '\')" title="В сцену: ' + esc(b.t) + '">' +
-                    '<span class="tk"><b>' + esc(b.n || b.t) + '</b><em>' + esc(b.t) + '</em></span>' +
-                    '<span class="pd wl-yield">' + yv + '</span></div>';
+                // у облигации мокап ставит метку класса маленькой плашкой .wl-i i
+                return '<div class="wl-i" role="button" tabindex="0" ' +
+                    'onclick="pftScWlGo(\'' + jsArg(b.t) + '\')" title="' + esc(b.n || b.t) + ' — в сцену">' +
+                    '<i>ОФЗ</i>' + esc(String(b.n || b.t).replace(/^ОФЗ\s*/i, '')) +
+                    '<em class="pos">' + yv + '</em></div>';
             }).join('');
         }
         return '<div class="wl-scroll">' +
-            '<div class="wl-sec"><span>Акции</span><i>по эшелонам · потенциал</i></div>' +
-            (stockRows || '<div class="wl-none wl-none-s">нет данных</div>') +
-            '<div class="wl-sec wl-sec-b"><span>Облигации</span><i>доходность</i></div>' +
-            (bondRows || '<div class="wl-none wl-none-s">нет данных</div>') +
-        '</div>' +
-        '<div class="wl-ft">список из таблицы вкладки «Расчёт» · клик — бумага в сцену</div>';
+            wlCapHtml('Акции · потенциал') +
+            (stockRows || '<div class="wl-none">нет данных</div>') +
+            wlCapHtml('Облигации · доходность') +
+            (bondRows || '<div class="wl-none">нет данных</div>') +
+        '</div>';
     }
     // звезда в шапке бумаги: тумблер того же стора stk_fav_v1 (через терминал
     // «Рынка», если он уже загружен — его state не должен разъехаться)
@@ -7255,8 +7255,15 @@
         return { asks: dispAsks, bids: dispBids, sp: spreadInfo(s),
                  askVol: askVol, bidVol: bidVol };
     }
+    // «спред 0,20» — коротко, как в мокапе: процент был вторым числом в строке
+    // и на узкой колонке 206px переносил её на второй этаж. Процент остался в
+    // подсказке — он нужен редко, а места стоил постоянно.
     function scnSpreadTxt(s, sp) {
         if (!sp) return 'спред —';
+        return 'спред ' + fmtPx(sp.ask - sp.bid, s);
+    }
+    function scnSpreadTitle(s, sp) {
+        if (!sp) return '';
         var pct = sp.pct * 100;
         return 'спред ' + fmtPx(sp.ask - sp.bid, s) + ' · ' +
             (pct < 0.005 ? '<0,01' : pct.toLocaleString('ru-RU', { maximumFractionDigits: 2 })) + ' %';
@@ -7268,13 +7275,18 @@
         // патч scnDepthSet ходит по цепочке firstChild БЕЗ пробелов между
         // тегами. Плашка своих лотов — СЛЕВА, у цены с воздухом (владелец
         // 2026-07-23: справа от объёма она жила один раунд)
-        return '<div class="' + l.cls + '" role="button" tabindex="0" data-px="' + l.px + '" data-v="' + l.lots + '" ' +
-            'onclick="pftScRowPx(+this.dataset.px, ' +
-            (l.cls.indexOf('d-ask') >= 0 ? 1 : 0) + ')">' +
+        // СТРОКА МОКАПА (.dep-r): заливка-подложка справа, цена жирным слева,
+        // объём приглушённо у правого края. Порядок узлов НЕСУЩИЙ — точечный
+        // патч scnDepthSet ходит по цепочке firstChild: fill → price → my → vol.
+        var ask = l.cls.indexOf('d-ask') >= 0;
+        return '<div class="dep-r ' + (ask ? 'a' : 'b') + (l.cls.indexOf('d-sel') >= 0 ? ' d-sel' : '') +
+            (l.cls.indexOf('d-cum') >= 0 ? ' d-cum' : '') + (l.cls.indexOf('d-best') >= 0 ? ' d-best' : '') +
+            '" role="button" tabindex="0" data-px="' + l.px + '" data-v="' + l.lots + '" ' +
+            'onclick="pftScRowPx(+this.dataset.px, ' + (ask ? 1 : 0) + ')">' +
             '<i class="d-fill" style="width:' + l.w + '%"></i>' +
-            '<span class="pr">' + fmtPx(l.px, s) + '</span>' +
-            '<span class="d-my">' + (l.my ? l.my + ' ' + PF.plural(l.my, 'лот', 'лота', 'лотов') : '') + '</span>' +
-            '<span class="d-vol">' + l.lots.toLocaleString('ru-RU') + '</span></div>';
+            '<b>' + fmtPx(l.px, s) + '</b>' +
+            '<u class="d-my">' + (l.my ? l.my + ' ' + PF.plural(l.my, 'лот', 'лота', 'лотов') : '') + '</u>' +
+            '<span>' + l.lots.toLocaleString('ru-RU') + '</span></div>';
     }
     // ---- карточный стакан: ОДНА лесенка (владелец 2026-07-24) ----
     // Три вида (Лесенка/Лента/Кривая) убраны как бесполезные. Остаётся лесенка,
@@ -7293,17 +7305,13 @@
     // середина стакана — «что на стыке»: последняя цена сделки крупно, со
     // стрелкой направления (от ленты), спред — мелким подтекстом (владелец
     // 2026-07-24: «раньше был только спред, непонятно какая цена»)
+    // СЕРЕДИНА СТЫКА = .dep-mid мокапа: цена сделки моно 19px и спред мелким,
+    // на волосках сверху и снизу. Стрелка направления и боковые рельсы сняты —
+    // в мокапе их нет, а строка от них выходила в полтора этажа.
     function scnMidBandInner(s, d) {
         var last = sxPrice(s);
-        var t0 = (s.tape || [])[0];
-        var dir = t0 ? (t0.direction === 'TRADE_DIRECTION_BUY' ? 'up' : 'down') : '';
-        var arw = dir === 'up' ? '▲' : dir === 'down' ? '▼' : '·';
-        return '<i class="d-mid-r"></i>' +
-            '<span class="d-mid-c">' +
-                '<b class="d-mid-px ' + dir + '">' + arw + ' ' + (last > 0 ? fmtPx(last, s) : '—') + ' ₽</b>' +
-                '<em>' + scnSpreadTxt(s, d.sp) + '</em>' +
-            '</span>' +
-            '<i class="d-mid-r"></i>';
+        return '<b>' + (last > 0 ? fmtPx(last, s) : '—') + ' ₽</b>' +
+            '<span title="' + esc(scnSpreadTitle(s, d.sp)) + '">' + scnSpreadTxt(s, d.sp) + '</span>';
     }
     // плашка закреплённого свипа: «выкупить/продать до X ₽ — N лотов ≈ M ₽»
     function scnSweepBar(s) {
@@ -7351,13 +7359,13 @@
         var bidPart = d.bids.length
             ? d.bids.map(function (l) { return scnDepthRow(l, s); }).join('')
             : '<div class="eg-empty">покупателей сейчас нет — спред не определён</div>';
-        var ladder = '<div class="d-ladder">' + askPart +
-            '<div class="d-mid" id="btScnMid">' + scnMidBandInner(s, d) + '</div>' +
+        var ladder = '<div class="dep-ladder">' + askPart +
+            '<div class="dep-mid" id="btScnMid">' + scnMidBandInner(s, d) + '</div>' +
             bidPart + '</div>';
         return head + balStrip +
             '<div class="d-sweepw" id="btScnSweep">' + scnSweepBar(s) + '</div>' +
             ladder +
-            '<div class="d-tape-mini"><b class="d-h2">Лента</b>' +
+            '<div class="dep-tape"><b>Лента</b>' +
             '<div class="d-tape-b">' + scnTkTapeRows(s, 24) + '</div></div>';
     }
     // тик стакана: та же структура — патчим ЖИВЫЕ узлы (цены, лоты, ширины
@@ -7378,7 +7386,8 @@
             return;
         }
         if (!d) return;
-        var rows = el.querySelectorAll('.d-row:not(.d-t)');
+        // строки стакана теперь .dep-r (разметка мокапа); лента — .dep-t
+        var rows = el.querySelectorAll('.dep-r');
         var list = d.asks.concat(d.bids);
         if (rows.length !== list.length) { el.__btDSig = null; scnDepthSet(id, s, slim, deep); return; }
         list.forEach(function (l, i) {
@@ -7386,7 +7395,13 @@
             // та же цена в той же строке — значит, перемены на ней ЖИВЫЕ:
             // тающая плашка своих лотов получает вспышку (владелец 2026-07-23)
             var samePx = r.dataset.px === String(l.px);
-            if (r.className !== l.cls) r.className = l.cls;
+            // класс собираем из мокапных: сторона + модификаторы выделения
+            var ask = l.cls.indexOf('d-ask') >= 0;
+            var cn = 'dep-r ' + (ask ? 'a' : 'b') +
+                (l.cls.indexOf('d-sel') >= 0 ? ' d-sel' : '') +
+                (l.cls.indexOf('d-cum') >= 0 ? ' d-cum' : '') +
+                (l.cls.indexOf('d-best') >= 0 ? ' d-best' : '');
+            if (r.className !== cn) r.className = cn;
             if (r.dataset.px !== String(l.px)) r.dataset.px = l.px;
             if (r.dataset.v !== String(l.lots)) r.dataset.v = l.lots;
             var pr = r.firstChild.nextSibling, my = pr.nextSibling, vol = my.nextSibling;
@@ -7409,7 +7424,7 @@
             if (r.firstChild.style.width !== w) r.firstChild.style.width = w;
         });
         // середина стыка: цена сделки + стрелка + спред — целиком тем же тиком
-        var mid = el.querySelector('.d-mid');
+        var mid = el.querySelector('.dep-mid');
         if (mid) {
             var mh = scnMidBandInner(s, d);
             if (mid.__btHtml !== mh) { mid.__btHtml = mh; mid.innerHTML = mh; }
@@ -7447,7 +7462,7 @@
         return rows.map(function (t) {
             var buy = t.direction === 'TRADE_DIRECTION_BUY';
             var tm = t.time ? new Date(t.time).toLocaleTimeString('ru-RU') : '';
-            return '<div class="d-row d-t"><span class="tt">' + esc(tm) + '</span>' +
+            return '<div class="dep-t"><span class="tt">' + esc(tm) + '</span>' +
                 '<span class="pr ' + (buy ? 'g' : 'r') + '">' + fmtPx(q2n(t.price) * bk, s) + '</span>' +
                 '<span class="d-vol">×' + (+t.quantity || 0).toLocaleString('ru-RU') + '</span></div>';
         }).join('');
@@ -7462,12 +7477,12 @@
         return Math.round(v).toLocaleString('ru-RU') + ' ₽';
     }
     window.pftScDepthHov = function (ev) {
-        var r = ev && ev.target && ev.target.closest ? ev.target.closest('.d-row') : null;
+        var r = ev && ev.target && ev.target.closest ? ev.target.closest('.dep-r') : null;
         var box = dq('btScnTkDepth');
         if (!box) return;
         if (!r || r.classList.contains('d-t') || !box.contains(r)) { window.pftScDepthHovOff(); return; }
         var ask = r.classList.contains('d-ask');
-        var rows = Array.prototype.slice.call(box.querySelectorAll(ask ? '.d-row.d-ask' : '.d-row.d-bid'));
+        var rows = Array.prototype.slice.call(box.querySelectorAll(ask ? '.dep-r.a' : '.dep-r.b'));
         var i = rows.indexOf(r);
         if (i < 0) return;
         // аски на экране в обратном порядке (лучший — ПОСЛЕДНИЙ, у спреда),
@@ -7492,7 +7507,7 @@
         var tip = dq('btScnCumTip');
         if (!scnHov || !s || scnHov.uid !== s.uid) { if (tip) tip.remove(); return; }
         var ask = scnHov.side === 'ask';
-        var rows = Array.prototype.slice.call(box.querySelectorAll(ask ? '.d-row.d-ask' : '.d-row.d-bid'));
+        var rows = Array.prototype.slice.call(box.querySelectorAll(ask ? '.dep-r.a' : '.dep-r.b'));
         if (!rows.length) { if (tip) tip.remove(); return; }
         var depth = Math.min(scnHov.depth, rows.length);
         // от спреда: аски — ПОСЛЕДНИЕ N (лучший у спреда — последний), биды — первые N

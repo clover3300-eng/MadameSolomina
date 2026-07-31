@@ -2150,3 +2150,54 @@
 }
 /* шапка стакана без подсказки-строки */
 .bts .tkt-sub-depth .d-h { padding: 0 0 10px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   БЛОКИ 1В1: СТАКАН И РЕЙКА — правила ПЕРЕНЕСЕНЫ ИЗ МОКАПА ДОСЛОВНО
+   Разметка рендереров переписана под мокапные классы (.dep-r/.dep-mid/.dep-tape/
+   .wl-tabs/.wl-h/.wl-i), поэтому правила ниже — копия мокапных с заменой только
+   имён токенов (--fN→--font-num, --up/--dn→--grn/--red). Скоуп #btScene, чтобы
+   они гарантированно перекрывали прежние .bts-правила.
+   ═══════════════════════════════════════════════════════════════════════════ */
+#btScene .bts-wl { flex:none;width:152px;border-radius:14px;background:var(--gl-thin);border:1px solid var(--gl-edge-thin); padding:8px;display:flex;flex-direction:column;gap:3px }
+#btScene .wl-tabs { display:flex;gap:3px;margin-bottom:6px }
+#btScene .wl-tabs b { flex:1;text-align:center;font-size:10.5px;font-weight:700;color:var(--mut);padding:6px 0;border-radius:8px }
+#btScene .wl-tabs b.on { color:var(--ink);background:var(--gl-in) }
+#btScene .wl-h { display:block;font-family:var(--font-num);font-size:8px;font-weight:700;letter-spacing:.1em; text-transform:uppercase;color:var(--dim);padding:8px 6px 5px }
+#btScene .wl-i { display:flex;align-items:baseline;gap:8px;border-radius:9px;padding:7px 8px; font-family:var(--font-num);font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums }
+#btScene .wl-i.on { background:var(--gl-in) }
+#btScene .wl-i em { margin-left:auto;font-style:normal;font-size:10.5px;font-weight:700 }
+#btScene .wl-i i { font-style:normal;font-family:var(--font-ui);font-size:8.5px;font-weight:700;letter-spacing:.05em; color:var(--dim);background:color-mix(in srgb,var(--ink) 7%,transparent);border-radius:5px;padding:1px 5px }
+#btScene .dep-bal i { display:block;height:100%;border-radius:99px }
+#btScene .dep-r { display:flex;align-items:center;gap:8px;padding:3px 6px;border-radius:6px;position:relative; font-family:var(--font-num);font-size:11px;font-variant-numeric:tabular-nums }
+#btScene .dep-r i { position:absolute;top:0;bottom:0;right:0;border-radius:6px }
+#btScene .dep-r.a i { background:color-mix(in srgb,var(--red) 14%,transparent) }
+#btScene .dep-r.b i { background:color-mix(in srgb,var(--grn) 14%,transparent) }
+#btScene .dep-r b { position:relative;font-weight:700 }
+#btScene .dep-r span { position:relative;margin-left:auto;color:var(--mut) }
+#btScene .dep-mid { display:flex;align-items:baseline;gap:8px;padding:9px 6px;margin:6px 0; border-top:1px solid var(--hair);border-bottom:1px solid var(--hair) }
+#btScene .dep-mid b { font-family:var(--font-num);font-size:19px;font-weight:700;font-variant-numeric:tabular-nums }
+#btScene .dep-mid span { font-size:10px;color:var(--mut) }
+#btScene .dep-tape { margin-top:auto;padding-top:10px;border-top:1px solid var(--hair) }
+#btScene .dep-tape b { display:block;font-family:var(--font-num);font-size:8.5px;font-weight:700;letter-spacing:.1em; text-transform:uppercase;color:var(--dim);margin-bottom:6px }
+#btScene .dep-t { display:flex;gap:8px;font-family:var(--font-num);font-size:10.5px;padding:2px 0;font-variant-numeric:tabular-nums }
+#btScene .dep-t span { margin-left:auto;color:var(--mut) }
+/* добавки поверх мокапа — то, чего в статичном мокапе нет, но есть в бою */
+#btScene .dep-ladder { flex: none; min-height: 0; }
+#btScene .dep-r { cursor: pointer; }
+#btScene .dep-r:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+#btScene .dep-r.d-sel { background: color-mix(in srgb, var(--acc) 10%, transparent); }
+#btScene .dep-r.d-cum { background: color-mix(in srgb, var(--ink) 7%, transparent); }
+#btScene .dep-r.d-best b { font-weight: 700; }
+#btScene .dep-r .d-fill { position: absolute; top: 0; bottom: 0; right: 0; border-radius: 6px; }
+#btScene .dep-r.a .d-fill { background: color-mix(in srgb, var(--red) 14%, transparent); }
+#btScene .dep-r.b .d-fill { background: color-mix(in srgb, var(--grn) 14%, transparent); }
+/* свои лоты на уровне — тихая плашка у цены; пустая скрыта */
+#btScene .dep-r .d-my {
+    position: relative; text-decoration: none; font: 700 9px var(--font-num);
+    color: var(--acc); background: color-mix(in srgb, var(--acc) 12%, transparent);
+    border-radius: 5px; padding: 1px 5px; margin-left: 6px;
+}
+#btScene .dep-r .d-my:empty { display: none; }
+#btScene .dep-tape .d-tape-b { display: flex; flex-direction: column; }
+#btScene .tkt-sub-depth { display: flex; flex-direction: column; }
+#btScene .d-sweepw:empty { display: none; }
