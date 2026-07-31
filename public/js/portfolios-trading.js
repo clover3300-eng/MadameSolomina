@@ -3322,7 +3322,7 @@
                 uid: s.uid, side: s.side, sl: +s.protSl || 0, tp: +s.protTp || 0
             };
         }
-        req.then(function () {
+        req.then(function (resp) {
             s.busy = false;
             T.sent.push(Date.now());
             // тейк/стоп уехали снимком в pendingProt — черновик тикета чистим
@@ -3343,7 +3343,10 @@
                 : (s.kind === 'limit' ? fmtPx(price, s) + ' ₽' : 'рыночная');
             A().logEvent('order_submit', (s.side === 'buy' ? 'покупка ' : 'продажа ') + s.meta.ticker +
                 ' · ' + lots + ' лот · ' + kindTxt);
-            toast((isStop ? 'Стоп-заявка' : 'Заявка') + ' выставлена: ' + s.meta.ticker);
+            // карточка итога открыта — её шаги и говорят, что заявка ушла;
+            // тост поверх неё был бы вторым голосом об одном событии
+            if (scnFlow) scnFlowSent((resp && resp.orderId) || null, resp);
+            else toast((isStop ? 'Стоп-заявка' : 'Заявка') + ' выставлена: ' + s.meta.ticker);
             // выставленная заявка блокирует деньги/бумаги — «доступно» изменилось
             pollOrders(); pollPos(); pollMaxLots(n);
             repaintSlot(n);
@@ -3353,7 +3356,8 @@
             A().logEvent('order_error', s.meta.ticker + ' · ' + (e.message || '').slice(0, 120));
             // на сцене отказ брокера говорит словами человека (экран 11);
             // старым карточкам терминала остаётся прежний тост
-            if (sceneLive()) scnOrderFail(e);
+            if (scnFlow) scnFlowFinish('fail', { message: (e && e.message) || '' });
+            else if (sceneLive()) scnOrderFail(e);
             else toast(e.message || 'Заявка не прошла', true);
             var b = dqs('Submit', n); if (b) b.disabled = false;
             repaintTicketBits(n);
@@ -8218,6 +8222,11 @@
     // тик данных: цена, факты, график, тикет и чипы — точечно, поле ввода не трогаем
     function sxTick() {
         if (!sceneLive()) return;
+        // Карточка итога живёт ВНУТРИ #btScene, а сцену целиком пересобирает
+        // renderPortfolios (например из syncBrokerCard после исполнения) — и
+        // человек в этот момент как раз читает, что стало с его деньгами.
+        // Восстанавливаем на месте по снимку состояния.
+        if (scnFlow && scnFlow.state && !dq('btScnFl')) scnFlowRender(scnFlow.state, scnFlow.data);
         var n = sxSlot(), s = S(n);
         // бумагу сцены сменили под живым реплеем — плёнка честно выключается.
         // ВМЕСТЕ СО СЦЕНОЙ: без пересборки на экране оставался хром реплея над
@@ -8396,8 +8405,19 @@
         else s.kind = 'market';
         ensureOrderId(s, ['sx', s.uid, s.side, s.kind, c.lots].join('|'));
         saveSlots();
+        // «Больше не спрашивать» — ТОЛЬКО для рыночных (мокап, экран 24, п. 1):
+        // у них сумма известна заранее и вопрос ничего не уточняет. У лимитки
+        // и в аукционе цена — решение, и его подтверждают всегда.
+        if (s.kind === 'market' && noAsk() && dq('btScene')) {
+            scnFlowOpen(n, s, c, buy);
+            submitOrder(n, c.lots, c.px, c.total);
+            return;
+        }
         sxConfirm(n, s, c, buy);
     };
+    // согласие пропускать вопрос живёт локально: это привычка человека за этим
+    // экраном, а не настройка аккаунта — в облако ей незачем
+    function noAsk() { try { return localStorage.getItem('bt_noask_v1') === '1'; } catch (e) { return false; } }
     loadFills();
 
     // подтверждение — карточка САМОЙ СЦЕНЫ (владелец 2026-07-23: язык сцены,
@@ -8436,6 +8456,9 @@
                 '<div class="cf2-know">' + (s.kind === 'limit'
                     ? 'Исполнится по вашей цене или лучше — когда рынок до неё дойдёт. Пока заявка ждёт, деньги заблокированы; отменить можно в любой момент.'
                     : 'Исполнится по лучшей цене на бирже в этот момент — обычно разница в копейки, на редких бумагах бывает заметнее.') + '</div>' +
+                (s.kind === 'market'
+                    ? '<label class="cf2-chk"><input type="checkbox" id="btScnCfAsk">' +
+                        'Больше не спрашивать для рыночных заявок</label>' : '') +
                 '<div class="cf2-act">' +
                     '<button type="button" class="cf2-no" id="btScnCfNo">Отмена</button>' +
                     '<button type="button" class="cf2-go' + (buy ? '' : ' sell') + '" id="btScnCfYes">' +
@@ -8458,7 +8481,12 @@
             // продублирован в карточке (закон раунда 1)
             var late = scnSubmitBlock(n);
             if (late) { closeCf(); toast(late + ': проверьте цену заново, заявка не отправлена', true); return; }
+            var ask = dq('btScnCfAsk');
+            if (ask && ask.checked) { try { localStorage.setItem('bt_noask_v1', '1'); } catch (e2) {} }
             closeCf();
+            // карточка итога открывается ДО отправки: шаг «проверили деньги» уже
+            // пройден (его и делал этот гвард), дальше человек видит путь заявки
+            scnFlowOpen(n, s, c, buy);
             submitOrder(n, c.lots, c.px, c.total);
         });
         setTimeout(function () {
@@ -8466,6 +8494,233 @@
             if (f) try { f.focus(); } catch (e) {}
         }, 30);
     }
+
+    // ══════ ИТОГ СДЕЛКИ: одна карточка, пять состояний (мокап overview3, экран 24) ══════
+    // Судьба заявки жила по кускам и в трёх разных языках: «Отправляем…» надписью
+    // на кнопке, «Заявка выставлена» тостом, отказ — модалкой КОНСТРУКТОРА
+    // (.bk-card, чужой язык посреди сцены), а «исполнено» вообще только звоночком.
+    // Человек тратил деньги и не видел, что с ними стало.
+    // Теперь один экран сцены: отправка ШАГАМИ (видно, где застряло), потом
+    // исполнено · частично · в очереди · отказ. Карточку можно закрыть в любой
+    // момент — звоночек и «Заявки» никуда не делись (правило мокапа: «модалка —
+    // не единственный путь»). Стоп-заявкам карточка не нужна: у них нет
+    // исполнения, за которым стоит следить, — им остаётся прежний тост.
+    var scnFlow = null;   // {n, buy, s, c, steps, before, timer, tries, done}
+    var FLOW_STEPS = ['Проверили деньги и лимиты', 'Отправили в Т-Инвестиции',
+        'Ждём ответ биржи', 'Записываем в историю'];
+    // Снимок «до»: позиция и свободные деньги ДО отправки — без него «куплено» так
+    // и остаётся словом. Считаем «стало» арифметикой по факту исполнения, а не ждём
+    // поллер: он придёт позже и поправит живые узлы сам.
+    function flowBefore(s) {
+        var p = null;
+        (T.port.list || []).forEach(function (x) { if (x.uid === s.uid) p = x; });
+        return { qty: p ? p.qty : 0, avg: p ? p.avg : 0, money: T.pos.money };
+    }
+    function flowIcHtml(cls) {
+        var g = { wait: '◐', ok: '✓', warn: '◐', bad: '✕', queue: '⋯' };
+        return '<span class="cf3-ic ' + cls + '">' + (g[cls] || '·') + '</span>';
+    }
+    function flowRows(list) {
+        return '<div class="cf3-rows">' + list.map(function (r) {
+            return '<div><span>' + r[0] + '</span><b>' + r[1] + '</b></div>';
+        }).join('') + '</div>';
+    }
+    // «было → стало»: единственная строка, ради которой карточка вообще нужна
+    function flowAfter(list) {
+        return '<div class="cf3-after">' + list.map(function (a) {
+            return '<div class="cf3-a"><span>' + a[0] + '</span><b>' + a[1] + '</b>' +
+                (a[2] ? '<em>было ' + a[2] + '</em>' : '') + '</div>';
+        }).join('') + '</div>';
+    }
+    function flowStepsHtml(at) {
+        return '<div class="cf3-steps">' + FLOW_STEPS.map(function (t, i) {
+            var cls = i < at ? 'done' : (i === at ? 'now' : '');
+            return '<div class="cf3-s ' + cls + '"><i>' + (i < at ? '✓' : (i === at ? '◐' : '')) + '</i>' + t + '</div>';
+        }).join('') + '</div>';
+    }
+    function flowNote(cls, html) {
+        return '<div class="cf3-note ' + cls + '"><span class="ic">' +
+            (cls === 'ok' ? '✓' : (cls === 'bad' ? '!' : (cls === 'warn' ? '!' : 'i'))) + '</span><span>' + html + '</span></div>';
+    }
+    function flowFoot(btns) {
+        return '<div class="cf3-act">' + btns.map(function (b) {
+            return '<button type="button" class="' + (b.pri ? 'cf3-go' : 'cf3-gh') + '" data-fl="' + b.act + '">' + b.t + '</button>';
+        }).join('') + '</div>';
+    }
+    function scnFlowRender(state, d) {
+        var f = scnFlow; if (!f) return;
+        var sc = dq('btScene'); if (!sc) return;
+        d = d || {};
+        f.state = state; f.data = d;   // снимок для восстановления после ре-рендера сцены
+        var s = f.s, tk = esc(s.meta.ticker);
+        var head, body, foot = '', cls = 'wait', closable = true;
+        if (state === 'sending') {
+            head = ['Отправляем', 'заявка ушла брокеру · ' + tk];
+            body = flowStepsHtml(f.at) +
+                flowNote('info', 'Окно можно закрыть — <b>результат придёт звоночком</b>, а заявка будет видна в «Заявках».');
+        } else if (state === 'done') {
+            cls = 'ok';
+            head = [(f.buy ? 'Куплено ' : 'Продано ') + d.lots + ' ' + PF.plural(d.lots, 'лот', 'лота', 'лотов'),
+                flowTime() + ' · ' + tk];
+            body = flowRows([
+                    ['Исполнено', d.lots + ' из ' + f.c.lots + ' ' + PF.plural(f.c.lots, 'лота', 'лотов', 'лотов')],
+                    ['Средняя цена', fmtPx(d.px, s) + ' ₽'],
+                    ['Комиссия', fmtKop(d.fee)]
+                ]) +
+                '<div class="cf3-tot"><span>' + (f.buy ? 'Списано' : 'Получено') + '</span><b>' + fmtKop(d.total) + '</b></div>' +
+                flowAfter(d.after);
+            foot = flowFoot([{ t: 'В историю', act: 'hist' }, { t: 'Готово', act: 'close', pri: 1 }]);
+        } else if (state === 'part') {
+            cls = 'warn';
+            head = ['Исполнено частично', d.lots + ' из ' + f.c.lots + ' ' + PF.plural(f.c.lots, 'лота', 'лотов', 'лотов') + ' · остаток в очереди'];
+            body = flowRows([
+                    ['Исполнено', d.lots + ' ' + PF.plural(d.lots, 'лот', 'лота', 'лотов') + ' · ' + (d.lots * f.lot).toLocaleString('ru-RU') + ' шт'],
+                    ['Средняя цена', fmtPx(d.px, s) + ' ₽'],
+                    ['Осталось в заявке', (f.c.lots - d.lots) + ' ' + PF.plural(f.c.lots - d.lots, 'лот', 'лота', 'лотов')],
+                    ['Комиссия с исполненного', fmtKop(d.fee)]
+                ]) +
+                '<div class="cf3-tot"><span>' + (f.buy ? 'Списано' : 'Получено') + '</span><b>' + fmtKop(d.total) + '</b></div>' +
+                flowNote('ok', '<b>Остаток живёт в «Заявках»</b> и доисполнится сам. Звоночек придёт, когда это случится; снять заявку можно там же.');
+            foot = flowFoot([{ t: 'Открыть заявки', act: 'orders' }, { t: 'Понятно', act: 'close', pri: 1 }]);
+        } else if (state === 'queued') {
+            cls = 'queue';
+            head = ['Заявка в стакане', (f.c.lots) + ' ' + PF.plural(f.c.lots, 'лот', 'лота', 'лотов') + ' · ' + tk];
+            body = flowRows([
+                    ['Ваша цена', fmtPx(f.c.px, s) + ' ₽'],
+                    ['Количество', f.c.lots + ' ' + PF.plural(f.c.lots, 'лот', 'лота', 'лотов')],
+                    ['Заблокировано', fmtKop(f.c.total)]
+                ]) +
+                flowNote('info', 'Исполнится, когда рынок дойдёт до вашей цены. <b>Звоночек придёт сам</b> — окно можно закрыть, заявка видна в «Заявках».');
+            foot = flowFoot([{ t: 'Открыть заявки', act: 'orders' }, { t: 'Понятно', act: 'close', pri: 1 }]);
+        } else {   // fail
+            cls = 'bad';
+            head = ['Заявка отклонена', d.code ? 'биржа не приняла · ' + esc(d.code) : 'биржа не приняла заявку'];
+            body = flowNote('bad', '<b>' + esc(d.msg) + '</b>') +
+                flowRows([['Что списано', 'ничего'], ['Что изменилось', 'ничего']]) +
+                '<div class="cf3-tot"><span>Позиция и деньги</span><b>без изменений</b></div>' +
+                (d.raw ? '<details class="cf3-raw"><summary>Ответ брокера — для письма в поддержку</summary><code>' + esc(d.raw) + '</code></details>' : '');
+            foot = flowFoot([{ t: 'Закрыть', act: 'close' },
+                (s.kind === 'limit' ? { t: 'Понятно', act: 'close', pri: 1 } : { t: 'Поставить лимитную', act: 'limit', pri: 1 })]);
+        }
+        var html = '<div class="veil" id="btScnFlV"></div>' +
+            '<div class="cf3" id="btScnFl" role="dialog" aria-modal="true" aria-label="' + esc(head[0]) + '">' +
+                '<div class="cf3-h">' + flowIcHtml(cls) +
+                    '<span class="cf3-t"><b>' + head[0] + '</b><span>' + head[1] + '</span></span>' +
+                    (closable ? '<button type="button" class="cf3-x" data-fl="close" aria-label="Закрыть">✕</button>' : '') +
+                '</div>' +
+                '<div class="cf3-b">' + body + '</div>' + foot +
+            '</div>';
+        var old = dq('btScnFl'), oldV = dq('btScnFlV');
+        if (old && oldV) {                       // перерисовка на месте: без мигания вуали
+            var tmp = document.createElement('div'); tmp.innerHTML = html;
+            old.parentNode.replaceChild(tmp.lastChild, old);
+        } else {
+            if (old) old.remove(); if (oldV) oldV.remove();
+            sc.insertAdjacentHTML('beforeend', html);
+            dq('btScnFlV').addEventListener('click', scnFlowClose);
+        }
+        dq('btScnFl').addEventListener('click', function (e) {
+            var b = e.target.closest && e.target.closest('[data-fl]'); if (!b) return;
+            var act = b.getAttribute('data-fl');
+            if (act === 'close') scnFlowClose();
+            else if (act === 'hist') { scnFlowClose(); if (window.pftScDeck) window.pftScDeck('hist'); }
+            else if (act === 'orders') { scnFlowClose(); if (window.pftScDeck) window.pftScDeck('orders'); }
+            else if (act === 'limit') {   // выход из отказа: рыночная не прошла — ставим лимитку
+                scnFlowClose();
+                if (window.pftScKind) window.pftScKind(1);   // аргумент — флаг «в лимит», не строка
+                var inp = dq('btScnLimIn'); if (inp) try { inp.focus(); } catch (e2) {}
+            }
+        });
+    }
+    function flowTime() {
+        var d = new Date();
+        return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) + ', ' +
+            d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    function scnFlowClose() {
+        if (scnFlow && scnFlow.timer) clearTimeout(scnFlow.timer);
+        scnFlow = null;
+        var v = dq('btScnFlV'), k = dq('btScnFl');
+        if (v) v.remove(); if (k) k.remove();
+        document.removeEventListener('keydown', flowKey, true);
+    }
+    function flowKey(e) { if (e.key === 'Escape') { e.stopPropagation(); scnFlowClose(); } }
+    function scnFlowOpen(n, s, c, buy) {
+        scnFlowClose();
+        var lot = (s.meta && s.meta.lot) || 1;
+        scnFlow = { n: n, s: s, c: c, buy: buy, at: 1, lot: lot, tries: 0, timer: null,
+            before: flowBefore(s) };
+        document.addEventListener('keydown', flowKey, true);
+        scnFlowRender('sending');
+    }
+    // шаг «отправили» закрыт — дальше ждём биржу
+    function scnFlowSent(orderId, resp) {
+        var f = scnFlow; if (!f) return;
+        f.orderId = orderId; f.at = 2;
+        var st = resp && resp.executionReportStatus;
+        var done = +((resp || {}).lotsExecuted) || 0;
+        if (st === FILL_ST || done >= f.c.lots) { scnFlowFinish('done', resp); return; }
+        scnFlowRender('sending');
+        flowPoll();
+    }
+    // Ждём ровно эту заявку, а не общий поллер: он тикает раз в несколько секунд
+    // и рассказал бы про судьбу с опозданием. 12 попыток по секунде — дальше
+    // рыночная уже не «летит», а лимитка честно называется «в стакане».
+    function flowPoll() {
+        var f = scnFlow; if (!f || !f.orderId) return;
+        var c = conn(); if (!c) { scnFlowFinish('queued'); return; }
+        f.timer = setTimeout(function () {
+            if (!scnFlow || scnFlow !== f) return;
+            A().call('GetOrderState', { accountId: c.accountId, orderId: f.orderId }, { interactive: false })
+                .then(function (o) {
+                    if (!scnFlow || scnFlow !== f) return;
+                    var st = o.executionReportStatus, done = +o.lotsExecuted || 0;
+                    if (st === FILL_ST || done >= f.c.lots) { scnFlowFinish('done', o); return; }
+                    if (st === 'EXECUTION_REPORT_STATUS_REJECTED') {
+                        scnFlowFinish('fail', { message: o.message || '', code: o.executionReportStatus }); return;
+                    }
+                    if (st === 'EXECUTION_REPORT_STATUS_CANCELLED') {
+                        scnFlowFinish('fail', { message: 'Заявка снята до исполнения.', cancelled: 1 }); return;
+                    }
+                    if (++f.tries >= 12) { scnFlowFinish(done > 0 ? 'part' : 'queued', o); return; }
+                    flowPoll();
+                }, function () {
+                    if (!scnFlow || scnFlow !== f) return;
+                    if (++f.tries >= 12) { scnFlowFinish('queued'); return; }
+                    flowPoll();
+                });
+        }, 1000);
+    }
+    function scnFlowFinish(state, o) {
+        var f = scnFlow; if (!f) return;
+        if (f.timer) { clearTimeout(f.timer); f.timer = null; }
+        f.at = 4;
+        if (state === 'fail') {
+            var raw = String((o && (o.message || o.raw)) || '').slice(0, 200);
+            scnFlowRender('fail', { msg: (o && o.cancelled) ? o.message : humanErr(raw), raw: raw, code: (o || {}).code });
+            return;
+        }
+        if (state === 'queued') { scnFlowRender('queued'); return; }
+        var q2n = A().q2n, s = f.s;
+        var lots = +((o || {}).lotsExecuted) || f.c.lots;
+        var px = (o && (q2n(o.averagePositionPrice) || q2n(o.executedOrderPrice))) || f.c.px;
+        px = px * bondK(s);   // брокер котирует облигации в % от номинала; у акций k = 1
+        var shares = lots * f.lot;
+        var part = lots / (f.c.lots || 1);
+        var fee = f.c.fee * part, total = f.c.total * part;
+        var b = f.before;
+        var qtyAfter = b.qty + (f.buy ? shares : -shares);
+        // средняя меняется только докупкой: продажа списывает бумаги по той же средней
+        var avgAfter = f.buy && qtyAfter > 0 ? (b.qty * b.avg + shares * px) / qtyAfter : b.avg;
+        var after = [
+            ['Позиция ' + esc(s.meta.ticker), qtyAfter.toLocaleString('ru-RU') + ' шт', b.qty ? b.qty.toLocaleString('ru-RU') + ' шт' : '0 шт'],
+            ['Средняя цена', avgAfter > 0 ? fmtPx(avgAfter, s) + ' ₽' : '—', b.avg > 0 ? fmtPx(b.avg, s) + ' ₽' : '']
+        ];
+        if (b.money != null) after.push(['Свободно',
+            fmtKop(b.money + (f.buy ? -total : total)), fmtKop(b.money)]);
+        scnFlowRender(state, { lots: lots, px: px, fee: fee, total: total, after: after });
+    }
+
     function sxConfirmModal(n, s, c, buy) {
         var cn = conn() || {};
         var free = T.pos.money;

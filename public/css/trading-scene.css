@@ -1746,3 +1746,114 @@
 .bts .sct:hover .sct-x { opacity: 1; }
 .bts .sct .sct-x:hover { color: #b3452e; background: color-mix(in srgb, #b3452e 10%, transparent); }
 .bts .sct .sct-x.arm { opacity: 1; color: #fff; background: #b3452e; }
+
+/* ═══════ ИТОГ СДЕЛКИ: одна карточка, пять состояний (мокап overview3, экран 24) ═══════
+   Геометрия и вуаль — те же, что у подтверждения (.cf2): человек видит один и тот
+   же прямоугольник до денег и после, меняется только содержимое. Значок состояния
+   в шапке — единственное цветное пятно; кнопки — язык сцены (тихая + чернильная). */
+.bts .cf3 {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    z-index: 60; width: 430px; max-width: calc(100% - 48px);
+    max-height: calc(100% - 64px); overflow-y: auto; scrollbar-width: thin;
+    background: var(--card); border: 1px solid var(--line); border-radius: 20px;
+    padding: 22px 26px 20px; box-shadow: 0 42px 90px -38px rgba(15, 23, 42, 0.5);
+}
+.bts.night .cf3 { box-shadow: 0 42px 90px -38px rgba(0, 0, 0, 0.75); }
+.bts .cf3-h { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+.bts .cf3-ic {
+    flex: none; width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center;
+    font: 700 16px var(--font-ui); color: var(--mut);
+    background: color-mix(in srgb, var(--ink) 7%, transparent);
+}
+.bts .cf3-ic.ok { color: var(--grn); background: color-mix(in srgb, var(--grn) 13%, transparent); }
+.bts .cf3-ic.warn { color: #b45309; background: color-mix(in srgb, #f59e0b 15%, transparent); }
+.bts .cf3-ic.bad { color: #b3452e; background: color-mix(in srgb, #b3452e 12%, transparent); }
+.bts .cf3-ic.wait, .bts .cf3-ic.queue { color: var(--acc); background: color-mix(in srgb, var(--acc) 11%, transparent); }
+.bts .cf3-ic.wait { animation: btCf3Spin 1.4s linear infinite; }
+@keyframes btCf3Spin { to { transform: rotate(360deg); } }
+.bts .cf3-t { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.bts .cf3-t b { font: 400 20px/1.15 var(--font-title); color: var(--ink); }
+.bts .cf3-t > span { font: 400 12.5px var(--font-ui); color: var(--mut); }
+.bts .cf3-x {
+    margin-left: auto; flex: none; width: 26px; height: 26px; border: 0; background: none; cursor: pointer;
+    border-radius: 8px; color: var(--dim); font: 400 14px var(--font-ui);
+}
+.bts .cf3-x:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 6%, transparent); }
+/* шаги отправки: видно, где именно заявка, а не «крутится спиннер» */
+.bts .cf3-steps { display: flex; flex-direction: column; gap: 2px; }
+.bts .cf3-s {
+    display: flex; align-items: center; gap: 10px; padding: 8px 0;
+    font: 400 13px var(--font-ui); color: var(--dim);
+}
+.bts .cf3-s i {
+    flex: none; width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center;
+    font-style: normal; font-size: 10px; color: var(--dim);
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--ink) 14%, transparent);
+}
+.bts .cf3-s.done { color: var(--mut); }
+.bts .cf3-s.done i { color: #fff; background: var(--grn); box-shadow: none; }
+.bts .cf3-s.now { color: var(--ink); font-weight: 600; }
+.bts .cf3-s.now i { color: var(--acc); box-shadow: inset 0 0 0 1.5px var(--acc); animation: btCf3Spin 1.4s linear infinite; }
+/* строки-факты и итог — те же, что в подтверждении */
+.bts .cf3-rows > div {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
+    padding: 8px 0; border-top: 1px solid var(--hair);
+}
+.bts .cf3-rows > div:first-child { border-top: 0; }
+.bts .cf3-rows span { font: 400 13px var(--font-ui); color: var(--mut); }
+.bts .cf3-rows b { font: 600 13.5px var(--font-num); color: var(--ink); text-align: right; }
+.bts .cf3-tot {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
+    border-top: 1px solid var(--line); margin-top: 2px; padding: 12px 0 2px;
+}
+.bts .cf3-tot span { font: 600 13.5px var(--font-ui); color: var(--ink); }
+.bts .cf3-tot b { font: 700 19px var(--font-num); color: var(--ink); }
+/* «что стало с позицией» — ради этой сетки карточка и существует */
+.bts .cf3-after {
+    display: flex; flex-direction: column; gap: 1px; margin-top: 14px;
+    background: color-mix(in srgb, var(--ink) 3%, transparent); border-radius: 12px; padding: 4px 14px;
+}
+.bts .cf3-a {
+    display: flex; align-items: baseline; gap: 10px; padding: 9px 0;
+    border-top: 1px solid var(--hair); font: 400 12.5px var(--font-ui); color: var(--mut);
+}
+.bts .cf3-a:first-child { border-top: 0; }
+.bts .cf3-a b { margin-left: auto; font: 700 13px var(--font-num); color: var(--ink); font-variant-numeric: tabular-nums; }
+.bts .cf3-a em { flex: none; width: 96px; text-align: right; font-style: normal; font: 400 11px var(--font-num); color: var(--dim); }
+.bts .cf3-note {
+    display: flex; align-items: flex-start; gap: 9px; margin-top: 14px;
+    font: 400 12.5px/1.5 var(--font-ui); color: var(--mut);
+    border-radius: 11px; padding: 10px 13px;
+    background: color-mix(in srgb, var(--acc) 5%, transparent);
+}
+.bts .cf3-note .ic {
+    flex: none; width: 17px; height: 17px; border-radius: 50%; display: grid; place-items: center;
+    font: 700 10px var(--font-ui); color: var(--acc); background: color-mix(in srgb, var(--acc) 15%, transparent);
+}
+.bts .cf3-note.ok { background: color-mix(in srgb, var(--grn) 6%, transparent); }
+.bts .cf3-note.ok .ic { color: var(--grn); background: color-mix(in srgb, var(--grn) 16%, transparent); }
+.bts .cf3-note.warn { background: color-mix(in srgb, #f59e0b 8%, transparent); }
+.bts .cf3-note.warn .ic { color: #b45309; background: color-mix(in srgb, #f59e0b 20%, transparent); }
+.bts .cf3-note.bad { background: color-mix(in srgb, #b3452e 7%, transparent); }
+.bts .cf3-note.bad .ic { color: #b3452e; background: color-mix(in srgb, #b3452e 16%, transparent); }
+.bts .cf3-raw { margin-top: 12px; font: 400 11.5px var(--font-ui); color: var(--dim); }
+.bts .cf3-raw summary { cursor: pointer; }
+.bts .cf3-raw code { display: block; margin-top: 6px; font: 400 11px var(--font-num); word-break: break-all; }
+.bts .cf3-act { display: flex; gap: 10px; margin-top: 18px; }
+.bts .cf3-gh {
+    flex: 0 0 auto; border: 1px solid var(--line); background: none; color: var(--mut);
+    font: 600 13.5px var(--font-ui); border-radius: 12px; padding: 12px 18px; cursor: pointer;
+}
+.bts .cf3-gh:hover { color: var(--ink); }
+.bts .cf3-go {
+    flex: 1; border: 0; border-radius: 12px; cursor: pointer;
+    font: 700 14px var(--font-ui); color: var(--bg); background: var(--ink);
+    padding: 12px 18px; box-shadow: 0 16px 30px -18px rgba(15, 23, 42, 0.55);
+}
+/* «больше не спрашивать» — только у рыночной заявки (мокап, экран 24) */
+.bts .cf2-chk {
+    display: flex; align-items: center; gap: 9px; margin: 0 0 14px; cursor: pointer;
+    font: 400 12px var(--font-ui); color: var(--mut);
+}
+.bts .cf2-chk input { width: 15px; height: 15px; accent-color: var(--acc); cursor: pointer; }
+.bts .cf2-chk:hover { color: var(--ink); }
