@@ -160,19 +160,49 @@ body.dark-mode #panel-portfolios .pff3-row:hover .pff3-act { background: rgba(20
 #panel-portfolios .pf-fav .pf-ch-s { display: block; line-height: 1.45; }
 /* стрелка ↗ — сразу после даты, а не у дальнего края меты */
 #panel-portfolios .pff3-news .pff-news-go { margin-left: 2px; }
-/* строка управления между шапкой и списком: инфо-кружок слева, сортировка справа */
-#panel-portfolios .pff3-bar { display: flex; align-items: center; gap: 10px; padding: 2px 22px 12px; }
-#panel-portfolios .pff3-bar .pff-info span { display: none; }
-#panel-portfolios .pff3-bar .pff-info { width: 30px; height: 30px; padding: 0; justify-content: center; border-radius: 50%; }
-/* поповер «что такое потенциал» теперь у ЛЕВОГО края — раскрываем вправо от иконки */
-#panel-portfolios .pff3-bar .pff-tipbox { left: 0; right: auto; }
-#panel-portfolios .pff3-bar .pff-tipbox::before { left: 10px; right: auto; }
-#panel-portfolios .pff3-sortwrap { margin-left: auto; display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
-#panel-portfolios .pff3-sortl { font-size: 12.5px; color: #64748b; flex: none; }
-body.dark-mode #panel-portfolios .pff3-sortl { color: #8b98ad; }
-/* активная пилюля сортировки — чернильная заливка (мокап), не акцент */
-#panel-portfolios .pff3-bar .pff-sort-b.on { background: #141b26; color: #fff; box-shadow: none; }
-body.dark-mode #panel-portfolios .pff3-bar .pff-sort-b.on { background: #e8eef7; color: #10161f; }
+/* сегмент сортировки — контрол виджета в правом слоте шапки (мокап, экран 13):
+   тихие моно-пилюли, как у карты рынка и «Дивидендов», а не отдельный этаж хрома */
+#panel-portfolios .pf-fav .pff-sort { background: transparent; border: 0; padding: 0; gap: 2px; }
+#panel-portfolios .pf-fav .pff-sort-b { font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 10px; font-weight: 600; color: #94a3b8; padding: 3px 9px; border-radius: 8px; }
+#panel-portfolios .pf-fav .pff-sort-b:hover { color: #46586e; }
+#panel-portfolios .pf-fav .pff-sort-b.on { background: rgba(24, 38, 60, 0.06); color: #1b2433; box-shadow: none; }
+body.dark-mode #panel-portfolios .pf-fav .pff-sort-b.on { background: rgba(255, 255, 255, 0.09); color: #eef3f9; }
+/* заголовок раздела внутри виджета: имя · пояснение · переход */
+#panel-portfolios .pff-sec { display: flex; align-items: baseline; gap: 9px; padding: 14px 22px 8px; }
+#panel-portfolios .pff-sec b { font-family: var(--font-title, Georgia, serif); font-weight: 400; font-size: 14px; color: #1b2433; }
+#panel-portfolios .pff-sec span { font-size: 11px; color: #94a3b8; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#panel-portfolios .pff-sec .go { margin-left: auto; flex: none; font-size: 11.5px; font-weight: 700; color: #1b2433; cursor: pointer; }
+body.dark-mode #panel-portfolios .pff-sec b, body.dark-mode #panel-portfolios .pff-sec .go { color: #eef3f9; }
+/* строки подбора «Расчёта»: класс бумаги · тикер с пояснением · число · цена */
+#panel-portfolios .pff-cxlist { display: flex; flex-direction: column; padding: 0 22px; }
+#panel-portfolios .pff-cx { display: flex; align-items: center; gap: 10px; padding: 9px 0; cursor: pointer;
+    border-bottom: 1px solid rgba(24, 38, 60, 0.07); font-size: 12px; }
+#panel-portfolios .pff-cx:last-child { border-bottom: 0; }
+body.dark-mode #panel-portfolios .pff-cx { border-bottom-color: rgba(255, 255, 255, 0.07); }
+#panel-portfolios .pff-cx .cl { flex: none; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 8.5px; font-weight: 700; letter-spacing: 0.08em; padding: 3px 6px; border-radius: 6px; }
+#panel-portfolios .pff-cx .cl.bd { color: #4a6fa5; background: rgba(74, 111, 165, 0.12); }
+#panel-portfolios .pff-cx .cl.st { color: #c2760a; background: rgba(194, 118, 10, 0.12); }
+#panel-portfolios .pff-cx .tx { min-width: 0; }
+#panel-portfolios .pff-cx .tx b { display: block; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 12.5px; font-weight: 700; color: #1b2433; }
+#panel-portfolios .pff-cx .tx span { display: block; font-size: 10.5px; color: #94a3b8;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#panel-portfolios .pff-cx .up { margin-left: auto; flex: none; text-align: right; }
+#panel-portfolios .pff-cx .up b { display: block; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+#panel-portfolios .pff-cx .up b.pos { color: #119d5c; }
+#panel-portfolios .pff-cx .up span { display: block; font-size: 10px; color: #94a3b8; }
+#panel-portfolios .pff-cx .px { flex: none; width: 78px; text-align: right;
+    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11.5px; color: #64748b;
+    font-variant-numeric: tabular-nums; }
+body.dark-mode #panel-portfolios .pff-cx .tx b { color: #e8eef7; }
+/* инфо-кружок «что такое потенциал» уехал в подвал виджета */
+#panel-portfolios .pf-fav .pf-wf .pff-info { padding: 0; border: 0; background: none; color: #94a3b8; }
+#panel-portfolios .pf-fav .pf-wf .pff-info span { font-size: 11.5px; }
+#panel-portfolios .pf-fav .pf-wf .pff-tipbox { left: 0; right: auto; }
+#panel-portfolios .pf-fav .pf-wf .pff-tipbox::before { left: 10px; right: auto; }
 /* ---- узкий виджет (<460px контейнера: классическая правая колонка 280–340px,
    узкие ячейки конструктора): спарклайн скрыт, потенциал в строке тикера,
    новость во всю ширину под пунктирным волоском; подпись «Сортировка:» лишняя ---- */
@@ -187,13 +217,12 @@ body.dark-mode #panel-portfolios .pff3-bar .pff-sort-b.on { background: #e8eef7;
     #panel-portfolios .pff3-news .pff-news-inner { left: 0; top: 8px; }
     #panel-portfolios .pff3-news.link:hover .pff-news-inner { left: -8px; right: -8px; top: -2px; padding: 9px 10px 11px; }
     #panel-portfolios .pff3-news .pff-news-t { -webkit-line-clamp: 1; }
-    #panel-portfolios .pff3-sortl { display: none; }
     /* корзина/«Купить» — к правому ВЕРХНЕМУ углу: низ занят новостью */
     #panel-portfolios .pff3-act { bottom: auto; top: 9px; }
 }
 /* Поля — как у «Заметки» (.pf-noteblk: карточка 0 22px 20px, шапка без своих боковых полей):
    заголовок, подзаголовок и строки списка стоят на ОДНОЙ вертикали 22px от края карточки.
-   Боковые поля живут на .pf-ch/.pff3-bar/.pff-body, а не на карточке:
+   Боковые поля живут на .pf-ch/.pff-body/.pff-sec, а не на карточке:
    .pff-body — скролл-контейнер, его фон обязан доходить до скруглённого края. */
 #panel-portfolios .pf-fav > .pf-ch,
 #panel-portfolios .pf-topgrid-fav .pf-fav > .pf-ch { padding: 22px 22px 10px; }
@@ -1172,7 +1201,6 @@ body.dark-mode .dm-news b { color: #e8eef7; }
     background: #241b1c; border-color: rgba(217,119,87,0.55);
     box-shadow: 0 16px 26px -18px rgba(0,0,0,0.7); }
 /* R10: новые элементы строк-карточек в терракотовой теме виджета */
-#panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff3-sortl { color: #8f9db0; }
 #panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff3-badge { color: #34d399; background: rgba(52,211,153,0.14); }
 #panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff3-row.pff3-top1,
 #panel-portfolios .pfd-item.pfd-thm-dark .pf-fav .pff3-row.pff3-top1:hover { background: linear-gradient(135deg, rgba(52,211,153,0.1), rgba(255,255,255,0.028) 62%); }

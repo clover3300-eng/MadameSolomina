@@ -2173,6 +2173,67 @@
         var h = 0; for (var i = 0; i < tk.length; i++) h = (h * 31 + tk.charCodeAt(i)) % 997;
         return FAV_LOGO_COLORS[h % FAV_LOGO_COLORS.length];
     }
+    // ── ВТОРОЙ РАЗДЕЛ «ИЗ РАСЧЁТА» (мокап overview3, экран 17) ──
+    // «Избранное» — не реестр звёздочек, а лента поводов посмотреть на бумагу.
+    // Половину поводов даёт «Расчёт»: облигации по доходности к погашению и
+    // акции по потенциалу. Раньше их приходилось искать на другой вкладке.
+    // Источник тот же, что у «Расчёта» и мастера ребаланса, — без своих расчётов.
+    function favCalcBonds(n) {
+        var out = [];
+        try {
+            if (PF.rbOfzMarket && PF.rbOfzCand) {
+                (PF.rbOfzMarket() || []).forEach(function (b) {
+                    if (!(b.price > 0)) return;
+                    var cd = PF.rbOfzCand(b);
+                    var y = (cd && cd.econ && isFinite(cd.econ.annual)) ? cd.econ.annual : toNum(b.sheetYield);
+                    if (!isFinite(y)) return;
+                    out.push({ cls: 'bd', tag: 'ОФЗ', tk: b.n || b.t, sub: 'к погашению без реинвеста',
+                        val: fmtPct(y), lbl: 'доходность', px: b.price + (b.nkd || 0) });
+                });
+            }
+        } catch (e) { }
+        return out.sort(function (a, b) { return parseFloat(b.val) - parseFloat(a.val); }).slice(0, n);
+    }
+    function favCalcStocks(n) {
+        var out = [];
+        try {
+            // Источник — ИМЕННО таблица эшелонов «Расчёта» (echelonTableData), а не
+            // весь список компаний: раздел называется «Из „Расчёта"» и обязан
+            // показывать его подбор. По всем 207 бумагам сверху всплывали
+            // +809% у неликвида — это артефакт данных, а не рекомендация.
+            // Пока таблица не подгрузилась (она живёт на своей вкладке), половина
+            // с акциями просто пуста — облигационная половина работает всегда.
+            // ВАЖНО: echelonTableData объявлена через let в core.js — на window её нет,
+            // достучаться можно только голым идентификатором (так же делает мастер
+            // ребаланса в allEch). window.echelonTableData всегда undefined.
+            var ed = (typeof echelonTableData !== 'undefined' && Array.isArray(echelonTableData)) ? echelonTableData : [];
+            ed.forEach(function (arr) {
+                (arr || []).forEach(function (a) {
+                    var tk = a && a.t; if (!tk) return;
+                    var pot = toNum(a.target); if (!isFinite(pot)) pot = potentialOf(tk);
+                    if (pot == null || !isFinite(pot) || pot <= 0) return;
+                    out.push({ cls: 'st', tag: 'АКЦ', tk: tk, sub: a.n || 'акция',
+                        val: fmtPct(pot), lbl: 'потенциал', px: (quotes[tk] || {}).price });
+                });
+            });
+        } catch (e) { }
+        return out.sort(function (a, b) { return parseFloat(b.val) - parseFloat(a.val); }).slice(0, n);
+    }
+    function favCalcRowsHtml(list) {
+        return list.map(function (c) {
+            return '<div class="pff-cx" role="button" onclick="pfOpenTicker(\'' + jsArg(c.tk) + '\')">' +
+                '<span class="cl ' + c.cls + '">' + c.tag + '</span>' +
+                '<span class="tx"><b>' + esc(c.tk) + '</b><span>' + esc(c.sub) + '</span></span>' +
+                '<span class="up"><b class="pos">' + c.val + '</b><span>' + c.lbl + '</span></span>' +
+                '<span class="px">' + (c.px > 0 ? PF.fmtPrice(c.px) : '—') + '</span>' +
+            '</div>';
+        }).join('');
+    }
+    // заголовок раздела внутри виджета: имя · пояснение · переход
+    function favSecHtml(title, sub, go) {
+        return '<div class="pff-sec"><b>' + title + '</b><span>' + sub + '</span>' +
+            (go ? '<span class="go" onclick="' + go.onclick + '">' + esc(go.label) + ' ›</span>' : '') + '</div>';
+    }
     var FAV_ARROW_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><polyline points="5 12 12 5 19 12"/></svg>';
     var FAV_STAR_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
     function favHtml(showHide) {
@@ -2230,8 +2291,22 @@
                 '</div>';
             }).join('') + '</div>';
         }
+        // второй раздел: подбор «Расчёта». Показываем по две строки каждого класса —
+        // виджет остаётся лентой поводов, а не вторым терминалом
+        var cb = favCalcBonds(2), cs = favCalcStocks(2);
+        var calcN = cb.length + cs.length;
+        var calcSec = calcN
+            ? favSecHtml('Из «Расчёта»', 'подбор под ваш профиль риска',
+                { label: 'Открыть расчёт', onclick: "switchTab('calc')" }) +
+              '<div class="pff-cxlist">' + favCalcRowsHtml(cb.concat(cs)) + '</div>'
+            : '';
+        var mySec = favs.length
+            ? favSecHtml('Мои звёздочки', 'отмечены в «Рынок · Акции»',
+                { label: 'Все акции', onclick: "pfGoTerminal(event)" })
+            : '';
         return '<div class="dash2-card pf-card2 pf-fav">' +
-            PF.pfCardHead('', 'Избранное', 'главное по вашим акциям: потенциал аналитиков и свежие новости',
+            PF.pfCardHead(favs.length + (calcN ? ' + ' + calcN : ''), 'Избранное',
+                'что вы отметили сами и что подобрал «Расчёт»',
                 // «+» → терминал стоит НАПРОТИВ заголовка (голый плюс, без плашки).
                 // R9.3: шестерёнка и корзина конструктора — СЛЕВА от «+», в потоке шапки
                 // (PFD_OWN_CHROME). Угловой оверлей ложился ровно на «+» (замерено: обе
@@ -2239,24 +2314,21 @@
                 // .pff-hide — действие то же (pfdHideBlock), но пара «настройки+удалить»
                 // такая же, как у всех виджетов конструктора.
                 (showHide ? pfdInChromeHtml('fav') : '') +
-                '<button class="pff-add" type="button" onclick="pfGoTerminal(event)" aria-label="Открыть терминал" title="Открыть терминал — все акции и облигации в таблице">' +
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>' +
-                '</button>') +
-            // R10: строка управления МЕЖДУ шапкой и списком (мокап): инфо-кружок слева,
-            // сортировка справа. Раньше оба жили в .pff-head-r внутри шапки.
-            '<div class="pff3-bar">' +
-                // кастомный поповер вместо нативного title: тот всплывает с секундной
-                // задержкой и в системном стиле — свой показывается мгновенно и в тоне приложения
-                '<span class="pff-info-wrap"><button class="pff-info" type="button" aria-label="Что такое потенциал">' + PF.INFO_SVG + '<span>Что такое потенциал?</span></button>' +
-                '<span class="pff-tipbox" role="tooltip">' + esc(POT_TIP) + '</span></span>' +
-                '<div class="pff3-sortwrap"><span class="pff3-sortl">Сортировка:</span>' +
-                    '<div class="pff-sort" role="tablist">' +
-                        '<button class="pff-sort-b' + (favSort === 'pot' ? ' on' : '') + '" onclick="pfSetFavSort(\'pot\')" title="Сначала с наибольшим потенциалом">Потенциал</button>' +
-                        '<button class="pff-sort-b' + (favSort === 'news' ? ' on' : '') + '" onclick="pfSetFavSort(\'news\')" title="Сначала со свежими новостями">Новизна</button>' +
-                    '</div>' +
-                '</div>' +
-            '</div>' +
-            '<div class="pff-body" data-skey="fav">' + inner + '</div></div>';
+                // ОДИН контрол виджета — сортировка, и он в правом слоте шапки, как у
+                // всех (мокап, экран 13). Прежняя строка .pff3-bar между шапкой и
+                // списком была отдельным этажом хрома ни для чего.
+                '<div class="pff-sort" role="tablist">' +
+                    '<button class="pff-sort-b' + (favSort === 'pot' ? ' on' : '') + '" onclick="pfSetFavSort(\'pot\')" title="Сначала с наибольшим потенциалом">По потенциалу</button>' +
+                    '<button class="pff-sort-b' + (favSort === 'news' ? ' on' : '') + '" onclick="pfSetFavSort(\'news\')" title="Сначала со свежими новостями">По свежести</button>' +
+                '</div>') +
+            '<div class="pff-body" data-skey="fav">' + mySec + inner + calcSec + '</div>' +
+            // пояснение «что такое потенциал» переехало в подвал: оно про колонку
+            // чисел, а не про действие, и в шапке занимало место контрола
+            PF.pfCardFoot('<span class="pff-info-wrap"><button class="pff-info" type="button" aria-label="Что такое потенциал">' + PF.INFO_SVG +
+                    '<span>Что такое потенциал?</span></button>' +
+                    '<span class="pff-tipbox" role="tooltip">' + esc(POT_TIP) + '</span></span>', '',
+                { label: 'Весь подбор', onclick: "switchTab('calc')" }) +
+        '</div>';
     }
     // Готовый HTML новости + ссылку складываем в кэш (новость = клик по ссылке, не карточка)
     function buildNewsEntry(news) {
