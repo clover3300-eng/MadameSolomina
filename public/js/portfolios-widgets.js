@@ -709,25 +709,175 @@
         var key = bench + '|' + from + '|' + till;
         return pfdCmpCache[key] === 'load' ? 'load' : (pfdCmpCache[key] === 'err' ? 'err' : 'ok');
     }
-    // Кнопка живёт в ШАПКЕ виджета, рядом с периодами: и то и другое про то,
-    // «что показывать», и стоять им положено вместе (мокап, экран 19).
-    function pfdCapCmpBtnHtml() {
-        var on = !!PF.pfdCapCmp;
-        return '<button type="button" class="pfcap-cmp' + (on ? ' on' : '') + '" onclick="pfdCapCmpToggle(event)" ' +
-            'title="Наложить кривую индекса — обе считаются в процентах от начала окна">⊕ Сравнить' +
-            (on ? '<i>' + esc(PF.pfdCapCmp) + '</i>' : '') + '</button>';
-    }
     // Индекс по составу: чисто облигационному портфелю IMOEX не соперник — ему RGBI.
     function pfdCapBench() {
         var bond = 0, all = 0;
         PF.store.items.forEach(function (p) { var c = calcPf(p); bond += c.bondVal; all += c.value; });
         return all > 0 && bond / all > 0.7 ? 'RGBI' : 'IMOEX';
     }
-    window.pfdCapCmpToggle = function (ev) {
-        if (ev) ev.stopPropagation();
-        PF.pfdCapCmp = PF.pfdCapCmp ? null : pfdCapBench();
+    // ---- ЧЕТЫРЕ БАЗЫ СРАВНЕНИЯ (мокап overview3, экран 19) ----
+    // Индекс отвечает «а рынок как?», другой портфель — «а другая моя стратегия?»,
+    // вложенные деньги и вклад — «а стоило ли вообще шевелиться». Последние две —
+    // прямые линии, и это их смысл: они не про рынок, а про альтернативу ему.
+    // Ставка вклада берётся из тикера ставок — той же цифры, что видит человек
+    // в виджете «Ставки рынка»; нет цифры — нет и строки в меню.
+    function pfdDepRate() {
+        var rd = window.ratesData || {};
+        var e = dq('val-deposit-rate'), t = e ? (e.textContent || '').trim() : '';
+        if (!t || !/\d/.test(t) || t.indexOf('#') >= 0) t = String(rd.depositRate == null ? '' : rd.depositRate);
+        var m = t.replace(',', '.').match(/-?\d+(\.\d+)?/);
+        var v = m ? parseFloat(m[0]) : NaN;
+        return (isFinite(v) && v > 0 && v < 100) ? v : null;
+    }
+    function pfdCmpBases() {
+        var idx = pfdCapBench();
+        var out = [{ k: idx, n: idx, s: idx === 'RGBI' ? 'индекс гособлигаций' : 'индекс МосБиржи' }];
+        // «любой из ваших четырёх» рисуем не одной строкой с подменю, а строкой на
+        // портфель: их максимум четыре, и вложенное меню тут дороже самого выбора
+        if (visibleItems().length > 1) {
+            visibleItems().forEach(function (p) {
+                out.push({ k: 'pf:' + p.id, n: p.name, s: 'ваш портфель', c: p.color });
+            });
+        }
+        out.push({ k: 'inv', n: 'Вложенные деньги', s: 'сколько было бы без движения цен' });
+        var dep = pfdDepRate();
+        if (dep) out.push({ k: 'dep', n: 'Вклад под ' + fmtPct(dep).replace('+', ''), s: 'ставка из тикера ставок' });
+        return out;
+    }
+    function pfdCmpBaseOf(k) { return pfdCmpBases().filter(function (b) { return b.k === k; })[0] || null; }
+    // Синтетическая стоимость базы в системе координат графика: массив той же длины,
+    // что серия капитала, в рублях от той же стартовой точки. Так обе кривые ложатся
+    // на одну шкалу процентов без пересчёта осей.
+    function pfdCmpCurve(s, k) {
+        var n = s.length, base = s[0].v, last = s[n - 1], i;
+        if (k === 'inv') {
+            // «без движения цен»: старт плюс всё, что довнесли за окно (или минус
+            // то, что продали). Ступеньки — дни покупок, между ними прямая.
+            var inv0 = pfdInvestedAt(s[0].d), arr = [];
+            for (i = 0; i < n; i++) arr.push(base + (pfdInvestedAt(s[i].d) - inv0));
+            return { pts: arr, state: 'ok' };
+        }
+        if (k === 'dep') {
+            var r = pfdDepRate(); if (!r) return { pts: null, state: 'err' };
+            var t0 = new Date(s[0].d).getTime(), pts = [];
+            for (i = 0; i < n; i++) {
+                var days = Math.max(0, (new Date(s[i].d).getTime() - t0) / 86400000);
+                pts.push(base * Math.pow(1 + r / 100, days / 365));
+            }
+            return { pts: pts, state: 'ok' };
+        }
+        if (k.indexOf('pf:') === 0) {
+            // другой портфель — по его же дневным снимкам, перебазированным к старту
+            var m = snaps[k.slice(3)] || {}, prev = null, arr2 = [], b0 = null, got = 0;
+            for (i = 0; i < n; i++) {
+                var v = m[s[i].d]; if (v == null) v = prev; else prev = v;
+                if (v == null) { arr2.push(null); continue; }
+                if (b0 == null) b0 = v;
+                if (!(b0 > 0)) { arr2.push(null); continue; }
+                arr2.push(base * (v / b0)); got++;
+            }
+            return got > 1 ? { pts: arr2, state: 'ok' } : { pts: null, state: 'err' };
+        }
+        // индекс: тянем историю MOEX тем же путём, что вкладка «Тест»
+        var st = pfdCmpState(k, s[0].d, last.d);
+        var rows = pfdCmpSeries(k, s[0].d, last.d);
+        if (!rows || rows.length < 2) return { pts: null, state: st === 'load' ? 'load' : 'err' };
+        var byD = {}; rows.forEach(function (row) { byD[row.d] = row.c; });
+        var c0 = null, pc = null, arr3 = [], any = false;
+        for (i = 0; i < n; i++) {
+            var c = byD[s[i].d]; if (c == null) c = pc; else pc = c;
+            if (c == null) { arr3.push(null); continue; }
+            if (c0 == null) c0 = c;
+            arr3.push(base * (c / c0)); any = true;
+        }
+        return any ? { pts: arr3, state: 'ok' } : { pts: null, state: 'err' };
+    }
+    // Сколько денег было вложено на дату: сумма лотов, купленных не позже неё.
+    // Продажи в модели уменьшают количество, поэтому считаем по тем же лотам,
+    // что и calcPf — просто с отсечкой по дате.
+    function pfdInvestedAt(iso) {
+        var sum = 0;
+        visibleItems().forEach(function (p) {
+            (p.holdings || []).forEach(function (h) {
+                PF.ensureLots(h).forEach(function (l) {
+                    if (!(+l.qty > 0) || !l.buyDate || l.buyDate > iso) return;
+                    sum += (+l.qty) * (+l.price || 0);
+                });
+            });
+        });
+        return sum;
+    }
+    // ИТОГ СРАВНЕНИЯ — строкой под графиком. Разница в процентных пунктах и есть
+    // то единственное, ради чего сравнение включают; заставлять вычитать её
+    // глазами по двум кривым нельзя (мокап, экран 19, п. 3).
+    function pfdCmpDiffHtml(s, pts, base, days) {
+        var n = s.length, b0 = s[0].v, li = -1;
+        // считаем на последнем дне, где база ЕСТЬ: у чужого портфеля хвост бывает пустым,
+        // и сравнивать его старое значение с нашим сегодняшним — подлог
+        for (var i = n - 1; i >= 0; i--) { if (pts[i] != null) { li = i; break; } }
+        if (li < 1 || !(b0 > 0)) return '';
+        var mine = (s[li].v / b0 - 1) * 100, other = (pts[li] / b0 - 1) * 100, diff = mine - other;
+        function cell(l, v, cls) {
+            return '<span><em>' + l + '</em><b class="' + cls + '">' + v + '</b></span>';
+        }
+        return '<div class="pfcap-diff">' +
+            cell('Ваш капитал за ' + days + ' дн', fmtPct(mine), mine >= 0 ? 'pos' : 'neg') +
+            cell(esc(base.n) + ' за тот же срок', fmtPct(other), other >= 0 ? 'pos' : 'neg') +
+            '<span class="pfcap-diff-r"><em>Разница</em><b class="' + (diff >= 0 ? 'pos' : 'neg') + '">' +
+                (diff >= 0 ? '+' : '−') + Math.abs(diff).toFixed(1).replace('.', ',') + ' п.п.</b></span>' +
+        '</div>';
+    }
+    // Кнопка живёт в ШАПКЕ виджета, рядом с периодами: и то и другое про то,
+    // «что показывать», и стоять им положено вместе (мокап, экран 19).
+    // Само сравнение не загорается: две кривые на стекле спорят, вторая
+    // появляется только по выбору человека.
+    function pfdCapCmpBtnHtml() {
+        var cur = PF.pfdCapCmp ? pfdCmpBaseOf(PF.pfdCapCmp) : null;
+        var rows = pfdCmpBases().map(function (b) {
+            var on = PF.pfdCapCmp === b.k;
+            return '<button type="button" class="pfcap-cmpr' + (on ? ' on' : '') +
+                '" onclick="pfdCapCmpPick(\'' + jsArg(b.k) + '\', event)">' +
+                '<i class="pfcap-cmpd"' + (b.c ? ' style="--c:' + esc(b.c) + '"' : '') + '></i>' +
+                '<span><b>' + esc(b.n) + '</b><em>' + esc(b.s) + '</em></span>' +
+                (on ? '<u>✓</u>' : '') + '</button>';
+        }).join('');
+        return '<span class="pfcap-cmpwrap' + (PF.pfdCapCmpOpen ? ' open' : '') + '" id="pfcapCmpWrap">' +
+            '<button type="button" class="pfcap-cmp' + (cur ? ' on' : '') + '" onclick="pfdCapCmpMenu(event)" ' +
+            'title="Наложить вторую кривую — обе считаются в процентах от начала окна">⊕ Сравнить' +
+            (cur ? '<i>' + esc(cur.n) + '</i>' : '') + '</button>' +
+            '<div class="pfcap-cmpop"><div class="pfcap-cmpop-t">Сравнить с</div>' + rows +
+            (PF.pfdCapCmp ? '<button type="button" class="pfcap-cmpr off" onclick="pfdCapCmpPick(\'\', event)">' +
+                '<i class="pfcap-cmpd"></i><span><b>Без сравнения</b><em>одна кривая на полотне</em></span></button>' : '') +
+            '</div></span>';
+    }
+    PF.pfdCapCmpOpen = false;
+    function pfdCapCmpClose() {
+        PF.pfdCapCmpOpen = false;
+        Array.prototype.forEach.call(document.querySelectorAll('.pfcap-cmpwrap.open'),
+            function (x) { x.classList.remove('open'); });
+    }
+    // Открываем КЛАССОМ, а не ре-рендером: полный своп заново рисует полотно
+    // (и гасит меню в тот же кадр) — та же ловушка, что у меню периодов карточки.
+    window.pfdCapCmpMenu = function (ev) {
+        if (ev) { ev.stopPropagation(); ev.preventDefault(); }
+        var el = ev && ev.target && ev.target.closest ? ev.target.closest('.pfcap-cmpwrap') : null;
+        if (!el) return;
+        var on = !el.classList.contains('open');
+        pfdCapCmpClose();
+        if (on) { el.classList.add('open'); PF.pfdCapCmpOpen = true; }
+    };
+    window.pfdCapCmpPick = function (k, ev) {
+        if (ev) { ev.stopPropagation(); ev.preventDefault(); }
+        PF.pfdCapCmp = k || null;
+        pfdCapCmpClose();
         pfdRerender();
     };
+    document.addEventListener('click', function (e) {
+        if (!PF.pfdCapCmpOpen) return;
+        if (e.target && e.target.closest && e.target.closest('.pfcap-cmpwrap')) return;
+        pfdCapCmpClose();
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') pfdCapCmpClose(); });
 
     // ═══════════ ПОЛОСА ВЫПЛАТ ПОД ПОЛОТНОМ (мокап overview3, экран 18) ═══════════
     // «Показывает, что доход бывает не только от цены». Расписание берём то же,
@@ -811,26 +961,14 @@
             // вторая кривая (индекс) в тех же процентах: base × (idx_i / idx_0).
             // Считаем ДО расчёта span — ось обязана вместить обе, иначе индекс
             // вылезал бы за полотно или упирался в кромку.
-            var bench = opts.noCmp ? null : PF.pfdCapCmp, cmpPts = null, cmpState = null;
-            if (bench && !demoSeries) {
-                var from = s[0].d, till = last.d;
-                cmpState = pfdCmpState(bench, from, till);
-                var rows = pfdCmpSeries(bench, from, till);
-                if (rows && rows.length > 1) {
-                    var byD = {}; rows.forEach(function (r) { byD[r.d] = r.c; });
-                    var base0 = null, prev = null, arr = [];
-                    s.forEach(function (pt) {
-                        var c = byD[pt.d];
-                        if (c == null) c = prev;          // выходной/пропуск — тянем прошлое значение
-                        if (c == null) { arr.push(null); return; }
-                        prev = c;
-                        if (base0 == null) base0 = c;
-                        arr.push(s[0].v * (c / base0));
-                    });
-                    if (arr.some(function (v) { return v != null; })) {
-                        cmpPts = arr;
-                        arr.forEach(function (v) { if (v == null) return; if (v < min) min = v; if (v > max) max = v; });
-                    }
+            var cmpKey = opts.noCmp ? null : PF.pfdCapCmp, cmpBase = null, cmpPts = null, cmpState = null;
+            if (cmpKey && !demoSeries) {
+                cmpBase = pfdCmpBaseOf(cmpKey);
+                var cv = pfdCmpCurve(s, cmpKey);
+                cmpState = cv.state;
+                if (cv.pts) {
+                    cmpPts = cv.pts;
+                    cmpPts.forEach(function (v) { if (v == null) return; if (v < min) min = v; if (v > max) max = v; });
                 }
             }
             var span = Math.max(1, max - min);
@@ -846,7 +984,7 @@
             // base/cmp — для подсказки перекрестия: она печатает процент от начала
             // окна (тот же отсчёт, что у шкалы) и вторую строку по наложенной кривой
             pfdCapState = { s: s, min: min, span: span, n: n, inx: INX, pt: PT, pb: PB,
-                base: s[0].v || 0, cmp: cmpPts, bench: bench };
+                base: s[0].v || 0, cmp: cmpPts, bench: cmpBase ? cmpBase.n : '' };
             // ШКАЛА В ПРОЦЕНТАХ ОТ СТАРТА ПЕРИОДА (мокап overview3, экран 19).
             // Была шкала в рублях: «19,1 млн / 18,6 млн / 18,1 млн» — три почти
             // одинаковых числа, по которым нельзя прикинуть, много ли «вот столько».
@@ -917,12 +1055,13 @@
             '</div>' +
             (pay ? pfdPayBandHtml(s, pay) : '') +
             '<div class="pfcap-x"><span>' + ruDate(s[0].d) + '</span><span>' + ruDate(last.d) + '</span></div>' +
-            (bench || pay ? '<div class="pfcap-leg"><span><i class="pfcap-lp" style="background:' + col + '"></i>капитал</span>' +
-                (bench ? '<span><i class="pfcap-li"></i>' + esc(bench) +
+            (cmpBase || pay ? '<div class="pfcap-leg"><span><i class="pfcap-lp" style="background:' + col + '"></i>капитал</span>' +
+                (cmpBase ? '<span><i class="pfcap-li"></i>' + esc(cmpBase.n) +
                     (cmpState === 'load' ? ' <em>грузим…</em>' : cmpState === 'err' ? ' <em>нет данных</em>' : '') + '</span>' : '') +
                 (pay ? '<span><i class="pfcap-lg"></i>выплаты по дням <em>' + esc(fmtRub(pay.total)) + '</em></span>' : '') +
-                '<span class="pfcap-leg-r">' + (bench ? 'обе кривые — в процентах от начала окна' : 'шкала — от начала окна') +
+                '<span class="pfcap-leg-r">' + (cmpBase ? 'обе кривые — в процентах от начала окна' : 'шкала — от начала окна') +
                 '</span></div>' : '') +
+            (cmpPts ? pfdCmpDiffHtml(s, cmpPts, cmpBase, daysShown) : '') +
             pfdCapRangesHtml();
             if (!opts.noCmp) right = pfdCapCmpBtnHtml();
         }

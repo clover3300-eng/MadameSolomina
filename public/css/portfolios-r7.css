@@ -2476,6 +2476,45 @@ body.dark-mode .pfcap-cmp:hover, body.dark-mode .pfcap-cmp.on { color: #e8eef7; 
     background: repeating-linear-gradient(90deg, #4a6fa5 0 4px, transparent 4px 7px); }
 .pfcap-lg { width: 8px; height: 8px; border-radius: 2px; background: rgba(18, 163, 92, 0.6); }
 
+/* ---- меню баз сравнения: индекс, чужой портфель, вложенные деньги, вклад ---- */
+.pfcap-cmpwrap { position: relative; display: inline-flex; }
+.pfcap-cmpop { display: none; position: absolute; top: calc(100% + 7px); right: 0; z-index: 20;
+    min-width: 244px; padding: 10px; border-radius: 14px; background: #fff;
+    border: 1px solid rgba(24, 38, 60, 0.1); box-shadow: 0 22px 48px -18px rgba(15, 23, 42, 0.4); }
+.pfcap-cmpwrap.open .pfcap-cmpop { display: block; }
+.pfcap-cmpop-t { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 9px; font-weight: 700;
+    letter-spacing: 0.12em; text-transform: uppercase; color: #94a3b8; padding: 2px 9px 8px; }
+.pfcap-cmpr { display: flex; width: 100%; align-items: center; gap: 9px; padding: 8px 9px; border-radius: 10px;
+    background: none; border: 0; cursor: pointer; text-align: left; font-family: 'Inter', sans-serif; }
+.pfcap-cmpr:hover { background: rgba(15, 23, 42, 0.05); }
+.pfcap-cmpr.on { background: rgba(15, 23, 42, 0.06); }
+.pfcap-cmpd { flex: none; width: 16px; height: 2px; border-radius: 2px;
+    background: repeating-linear-gradient(90deg, var(--c, #4a6fa5) 0 3px, transparent 3px 6px); }
+.pfcap-cmpr.off .pfcap-cmpd { background: rgba(148, 163, 184, 0.5); }
+.pfcap-cmpr span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.pfcap-cmpr b { font-size: 12px; font-weight: 600; color: #1b2433; }
+.pfcap-cmpr.on b { font-weight: 700; }
+.pfcap-cmpr em { font-style: normal; font-size: 10.5px; font-weight: 400; color: #94a3b8; }
+.pfcap-cmpr u { margin-left: auto; text-decoration: none; color: #1b2433; font-size: 12px; }
+body.dark-mode .pfcap-cmpop { background: #1a232f; border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 18px 40px -14px rgba(0, 0, 0, 0.7); }
+body.dark-mode .pfcap-cmpr b, body.dark-mode .pfcap-cmpr u { color: #eef3f9; }
+body.dark-mode .pfcap-cmpr:hover, body.dark-mode .pfcap-cmpr.on { background: rgba(255, 255, 255, 0.07); }
+
+/* ---- итог сравнения строкой под графиком (экран 19, п. 3) ---- */
+.pfcap-diff { display: flex; align-items: center; gap: 22px; flex-wrap: wrap;
+    margin: 10px 0 0 52px; padding-top: 9px; border-top: 1px solid rgba(24, 38, 60, 0.07); }
+.pfcap-diff span { display: inline-flex; align-items: baseline; gap: 8px; }
+.pfcap-diff em { font-style: normal; font-family: 'Inter', sans-serif; font-size: 11px; color: #7b8798; }
+.pfcap-diff b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12px; font-weight: 700;
+    font-variant-numeric: tabular-nums; }
+.pfcap-diff b.pos { color: #0f7a48; } .pfcap-diff b.neg { color: #c2410c; }
+.pfcap-diff-r { margin-left: auto; }
+.pfcap-diff-r em { color: #46586e; font-weight: 700; }
+body.dark-mode .pfcap-diff { border-top-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .pfcap-diff-r em { color: #d3dcea; }
+body.dark-mode .pfcap-diff b.pos { color: #34d399; } body.dark-mode .pfcap-diff b.neg { color: #fb923c; }
+
 /* ---- пик и дно + полоса выплат (мокап overview3, экран 18) ----
    Подписи стоят НА полотне у своих точек: шкала слева даёт высоту, а имя
    у крайних значений не даёт никто. Пик подписан сверху точки, дно — снизу,
