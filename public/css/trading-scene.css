@@ -2179,8 +2179,19 @@
 #btScene .dep-mid span { font-size:10px;color:var(--mut) }
 #btScene .dep-tape { margin-top:auto;padding-top:10px;border-top:1px solid var(--hair) }
 #btScene .dep-tape b { display:block;font-family:var(--font-num);font-size:8.5px;font-weight:700;letter-spacing:.1em; text-transform:uppercase;color:var(--dim);margin-bottom:6px }
-#btScene .dep-t { display:flex;gap:8px;font-family:var(--font-num);font-size:10.5px;padding:2px 0;font-variant-numeric:tabular-nums }
-#btScene .dep-t span { margin-left:auto;color:var(--mut) }
+/* ЛЕНТА. Мокапная строка — flex с margin-left:auto на КАЖДОМ span: в мокапе
+   значение одно, а в бою их три (время·цена·объём), и свободное место делилось
+   между ними по-разному в каждой строке — колонки гуляли (владелец 2026-07-31:
+   «выровнять данные в ленте»). Сетку держит КОНТЕЙНЕР, строки — display:contents:
+   треки общие на все строки, поэтому столбцы стоят ровно. Шрифт, кегль, отступы
+   и цвета — мокапные. */
+#btScene .dep-tape .d-tape-b { display:grid;grid-template-columns:auto 1fr auto;column-gap:8px;align-items:baseline }
+#btScene .dep-t { display:contents }
+#btScene .dep-t > span { font-family:var(--font-num);font-size:10.5px;padding:2px 0;font-variant-numeric:tabular-nums }
+#btScene .dep-t .tt { color:var(--dim) }
+#btScene .dep-t .pr { text-align:right;color:var(--ink) }
+#btScene .dep-t .d-vol { text-align:right;color:var(--mut) }
+#btScene .dep-tape .bts-cnote { grid-column:1/-1 }
 /* добавки поверх мокапа — то, чего в статичном мокапе нет, но есть в бою */
 #btScene .dep-ladder { flex: none; min-height: 0; }
 #btScene .dep-r { cursor: pointer; }
@@ -2198,6 +2209,8 @@
     border-radius: 5px; padding: 1px 5px; margin-left: 6px;
 }
 #btScene .dep-r .d-my:empty { display: none; }
-#btScene .dep-tape .d-tape-b { display: flex; flex-direction: column; }
 #btScene .tkt-sub-depth { display: flex; flex-direction: column; }
+/* шапка сжатого стакана — ровно мокапная: padding:0 0 10px и волосок, без
+   отбивки снизу (у общей .tkt-h она есть, здесь эти 10px нужны ленте) */
+#btScene .dep-hd { padding: 0 0 10px; margin-bottom: 0; flex: none; }
 #btScene .d-sweepw:empty { display: none; }

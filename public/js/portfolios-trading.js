@@ -4193,7 +4193,7 @@
         if (!sceneLive()) return;
         var st = document.querySelector('#pftBar .bts-link');
         if (st) st.outerHTML = scnLinkHtml();
-        scnSet('btScnFresh', scnFreshInner());
+        scnSet('btScnFresh', scnFreshInner()); scnSet('btScnFreshD', scnFreshInner());
         scnTicketBits();
     }
 
@@ -5688,7 +5688,7 @@
             var s = S(sxSlot());
             scnSet('btScnChart', rpChartHtml(s));
             scnSet('btScnPrice', scnPriceHtml(s));
-            scnSet('btScnFresh', scnFreshInner());
+            scnSet('btScnFresh', scnFreshInner()); scnSet('btScnFreshD', scnFreshInner());
             scnTicketBits();
         }
         rpBarPatch();
@@ -7184,18 +7184,35 @@
     // Брокер отдаёт аски от лучшего — на экран идут в ОБРАТНОМ порядке.
     var SCN_DEPTH = 6;        // плоскость «Разгона»/«Контроля»: высота делится с графиком
     var SCN_DEPTH_CARD = 10;  // стакан карточной высоты («Стакан»/«Сплит» на «Старте»)
-    // уровней на сторону — ПО ФАКТИЧЕСКОЙ высоте карточного стакана: поджатый
-    // «Счётом» тикет не должен ни резать ряды, ни оставлять пустоту (владелец
-    // 2026-07-24). ~118px — шапка + сегмент видов + спред, ряд 24px.
-    // Лесенка делит высоту с мини-лентой снизу, «Кривая» — с горой сверху
+    var SCN_DEPTH_MIN = 5;    // на сторону в сжатой колонке (владелец 2026-07-31: было 3)
+    var SCN_TAPE = 5;         // строк ленты — ровно столько, сколько заказано
+    // мерки в CSS-пикселях (offsetHeight!) после переноса разметки мокапа:
+    // ряд 20, середина стыка 60 (44 + поля 6+6 + волоски), полоса баланса 15 (5 + 10),
+    // шапка сплита 30 (мокапная .tkt-h), лента ровно 5 строк 118. ЛОВУШКА десктопа:
+    // getBoundingClientRect отдаёт экранные px (zoom .9) — с clientHeight их
+    // сравнивать нельзя, лесенка тогда съедает ленту
+    var SCN_TAPE_H = 118, SCN_ROW_H = 20, SCN_MID_H = 60, SCN_BAL_H = 15, SCN_DHEAD_H = 30;
+    var SCN_TAPE_ROW = 18, SCN_TAPE_CHROME = 29;  // строка ленты и её обвязка (паддинг+волосок+подпись)
+    // уровней на сторону. «Сплит» — сжатая колонка: ровно 5, как заказано,
+    // лишний воздух уходит вниз (лента прижата margin-top:auto). Стакан во всю
+    // карточку растёт по фактической высоте — до SCN_DEPTH_CARD
     function scnDepthDeep() {
+        if (!RP && scnTktView() === 'split') return SCN_DEPTH_MIN;
         var el = dq('btScnTkDepth');
         if (!el || !el.clientHeight) return SCN_DEPTH_CARD;
-        // одна лесенка: сверху полоса баланса (~44), середина стыка (~48),
-        // шапка (~40), а лента растёт снизу — оставляем ей минимум ~160.
-        // Лесенка занимает верх карточки по числу рядов, лишнее — ленте
-        var per = Math.floor((el.clientHeight - 40 - 44 - 48 - 160) / 24 / 2);
-        return Math.max(3, Math.min(SCN_DEPTH_CARD, per));
+        var head = el.querySelector('.dep-hd') ? SCN_DHEAD_H : 0;
+        var free = el.clientHeight - head - SCN_BAL_H - SCN_MID_H - SCN_TAPE_H;
+        return Math.max(SCN_DEPTH_MIN, Math.min(SCN_DEPTH_CARD, Math.floor(free / SCN_ROW_H / 2)));
+    }
+    // строк ленты: цель — 5, но короткой колонке отдаём столько, сколько влезло
+    // после лесенки. Обрезанная по живому строка выглядит хуже непоказанной
+    function scnTapeN(deep) {
+        var el = dq('btScnTkDepth');
+        if (!el || !el.clientHeight) return SCN_TAPE;
+        var head = el.querySelector('.dep-hd') ? SCN_DHEAD_H : 0;
+        var free = el.clientHeight - head - SCN_BAL_H - SCN_MID_H - SCN_TAPE_CHROME -
+            (deep || SCN_DEPTH_MIN) * 2 * SCN_ROW_H;
+        return Math.max(1, Math.min(SCN_TAPE, Math.floor(free / SCN_TAPE_ROW)));
     }
     // данные стакана для рендера И для точечного патча (scnDepthSet):
     // sqrt-шкала ширины (видны и средние объёмы, не только «стена»),
@@ -7334,9 +7351,13 @@
         // Шапка мокапа — только имя и свежесть: подсказку жеста «клик — выбрать
         // уровень» убрал, она занимала строку в узкой колонке и вылезала полосой
         // над лесенкой. Жест раскрывается ховером и плашкой свипа.
+        // ШАПКА СЖАТОГО СТАКАНА = .tkt-h мокапа (заголовок + свежесть на волоске,
+        // padding 0 0 10px). Прежняя .d-h стоила 46px против мокапных 30 — на них
+        // и не хватало пятой строки ленты. Свой id: #btScnFresh занят «Заявкой»
         var head = slim
             ? ''
-            : '<div class="d-h"><b>Стакан</b></div>';
+            : '<div class="tkt-h dep-hd"><b class="tkt-title">Стакан</b>' +
+              '<span class="freshw" id="btScnFreshD">' + scnFreshInner() + '</span></div>';
         if (!s.ob) return head + '<div class="bts-cnote">Ждём стакан…</div>';
         var d = scnDepthData(s, deep || SCN_DEPTH);
         var bal = scnBalTxt(d);
@@ -7366,7 +7387,7 @@
             '<div class="d-sweepw" id="btScnSweep">' + scnSweepBar(s) + '</div>' +
             ladder +
             '<div class="dep-tape"><b>Лента</b>' +
-            '<div class="d-tape-b">' + scnTkTapeRows(s, 24) + '</div></div>';
+            '<div class="d-tape-b">' + scnTkTapeRows(s, scnTapeN(deep)) + '</div></div>';
     }
     // тик стакана: та же структура — патчим ЖИВЫЕ узлы (цены, лоты, ширины
     // заливок), а не innerHTML: css-transition ширины даёт стакану «дышать».
@@ -7447,24 +7468,29 @@
         // мини-лента сделок снизу живёт теми же тиками
         var tb = el.querySelector('.d-tape-b');
         if (tb) {
-            var th = scnTkTapeRows(s, 24);
+            var th = scnTkTapeRows(s, scnTapeN(deep || SCN_DEPTH));
             if (tb.__btHtml !== th) { tb.__btHtml = th; tb.innerHTML = th; }
         }
         // ховер «до сюда»: патч выше стёр .d-cum (className=l.cls) — вернуть его
         // на закреплённые уровни и пересчитать сумму по свежим ценам
         scnApplyHov(el, s);
     }
+    // СТРОКА ЛЕНТЫ = .dep-t мокапа: цена обычным цветом, объём со знаком
+    // направления приглушённо у правого края («273,78 +120» / «273,70 −40»).
+    // Отступление от мокапа названо владельцу: третьей колонкой СЛЕВА стоит
+    // время — в статичном мокапе ленты его нет, а в живой он нужен.
     function scnTkTapeRows(s, lim) {
-        // рядов с запасом на весь пробел карточки; лишнее срежет overflow
-        var rows = (s.tape || []).slice(0, lim || 20);
+        var rows = (s.tape || []).slice(0, lim || SCN_TAPE);
         if (!rows.length) return '<div class="bts-cnote">Сделки подтянутся через секунду…</div>';
         var q2n = A().q2n, bk = bondK(s);   // облигации: % → ₽
         return rows.map(function (t) {
             var buy = t.direction === 'TRADE_DIRECTION_BUY';
             var tm = t.time ? new Date(t.time).toLocaleTimeString('ru-RU') : '';
-            return '<div class="dep-t"><span class="tt">' + esc(tm) + '</span>' +
-                '<span class="pr ' + (buy ? 'g' : 'r') + '">' + fmtPx(q2n(t.price) * bk, s) + '</span>' +
-                '<span class="d-vol">×' + (+t.quantity || 0).toLocaleString('ru-RU') + '</span></div>';
+            var v = +t.quantity || 0;
+            return '<div class="dep-t">' +
+                '<span class="tt">' + esc(tm) + '</span>' +
+                '<span class="pr">' + fmtPx(q2n(t.price) * bk, s) + '</span>' +
+                '<span class="d-vol">' + (buy ? '+' : '−') + v.toLocaleString('ru-RU') + '</span></div>';
         }).join('');
     }
     // ---- кумулятивная глубина по ховеру (владелец 2026-07-23) ----
@@ -8397,7 +8423,7 @@
             return;
         }
         if (s.meta) {
-            scnSet('btScnFresh', scnFreshInner());
+            scnSet('btScnFresh', scnFreshInner()); scnSet('btScnFreshD', scnFreshInner());
             scnTicketBits();
             scnSet('btScnPrice', scnPriceHtml(s));
             // свечи живут своим канвасом (движок), innerHTML их убил бы;
