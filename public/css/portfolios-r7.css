@@ -2338,7 +2338,6 @@ body.dark-mode .pfpl-sort-cap { color: #93a2b8; }
    уедет к краю, а кнопки останутся висеть у заголовка посреди шапки. Тот же приём,
    что у карточек терминала (broker.css). Заголовкам с flex:1 (fav) auto не мешает. */
 #panel-portfolios .pf-ch > .pfd-inchrome { margin-left: auto; }
-#panel-portfolios .pf-ch > .pfd-inchrome ~ .pfhm-go,
 #panel-portfolios .pf-ch > .pfd-inchrome ~ .pff-add,
 #panel-portfolios .pf-ch > .pfd-inchrome ~ .pf-ch-go { margin-left: 8px; }
 /* «Избранное»: пара шестерёнка+корзина и «+» должны читаться ОДНИМ кластером —

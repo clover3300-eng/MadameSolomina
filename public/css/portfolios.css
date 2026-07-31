@@ -3343,7 +3343,22 @@ body.dark-mode .pfl-pv-add.is-added { background: rgba(18, 163, 92, 0.16); color
 .pfhm-tile b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11px; font-weight: 700; letter-spacing: 0.02em; line-height: 1.1; }
 .pfhm-tile i { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 9.5px; font-weight: 600; font-style: normal; opacity: 0.82; line-height: 1.2; }
 .pfhm-tile:hover { filter: brightness(1.04) saturate(1.1); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.65); transform: scale(1.02); z-index: 2; }
-.pfhm-go svg { width: 12px; height: 12px; margin-left: 4px; }
+/* сегмент режима карты — один контрол виджета, в правом слоте шапки */
+.pfhm-seg { display: inline-flex; gap: 2px; }
+.pfhm-seg button { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 10px; font-weight: 600;
+    color: #94a3b8; padding: 3px 9px; border-radius: 8px; border: 0; background: transparent; cursor: pointer; white-space: nowrap; }
+.pfhm-seg button:hover { color: #46586e; }
+.pfhm-seg button.on { color: #1b2433; background: rgba(24, 38, 60, 0.06); }
+/* шкала цвета под картой: без неё «зелёное» и «красное» — настроение, а не проценты */
+.pfhm-sc { display: flex; align-items: center; gap: 7px; padding: 9px 0 2px;
+    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 9.5px; color: #94a3b8; }
+.pfhm-sc u { flex: 0 0 84px; height: 5px; border-radius: 99px; text-decoration: none;
+    background: linear-gradient(90deg, oklch(0.72 0.115 44), oklch(0.955 0.012 44), oklch(0.955 0.012 158), oklch(0.72 0.115 158)); }
+.pfhm-sc em { font-family: 'Inter', sans-serif; font-style: normal; font-size: 10.5px; margin-left: 8px; }
+.pfhm-sc .pfhm-go2 { margin-left: auto; font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700;
+    color: #1b2433; cursor: pointer; white-space: nowrap; }
+body.dark-mode .pfhm-seg button.on { color: #eef3f9; background: rgba(255, 255, 255, 0.09); }
+body.dark-mode .pfhm-sc .pfhm-go2 { color: #eef3f9; }
 body.dark-mode .pfhm-box { background: #0b1220; }
 body.dark-mode .pfhm-tile { color: #e7eef7; }
 body.dark-mode .pfhm-tile:hover { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.28); }

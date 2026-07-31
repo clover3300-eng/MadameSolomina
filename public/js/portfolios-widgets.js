@@ -1407,18 +1407,55 @@
     // Рисует home-register.js (window.hgHeatRepaint): контейнеру достаточно класса
     // .gx-heat — тот же приём, что у заглушек вкладок (tab-gates). Обновляется тем же
     // 60-секундным циклом Главной (он ищет .gx-heat на активной вкладке).
+    // Режим карты: индекс целиком или только ваши бумаги (мокап overview3, экран 13).
+    // Один контрол виджета — сегмент в правом слоте шапки, рядом с хромом.
+    function pfdHeatMode() { return PF.dashCfg.heatMode === 'pf' ? 'pf' : 'idx'; }
+    window.pfdHeatSetMode = function (m) {
+        if (pfdHeatMode() === m) return;
+        PF.dashCfg.heatMode = m; saveDashCfg(); pfdRerender();
+    };
+    // Плитки «моего портфеля»: размер — стоимость позиции, цвет — дневное
+    // изменение из тех же котировок, что кормят карточки (quotes[tk].chgPct).
+    function pfdHeatOwnItems() {
+        var m = {};
+        visibleItems().forEach(function (p) {
+            (p.holdings || []).forEach(function (h) {
+                if (!h.ticker || h.type === 'bond') return;
+                var v = PF.calcHold ? PF.calcHold(h).value : 0;
+                if (!(v > 0)) return;
+                m[h.ticker] = (m[h.ticker] || 0) + v;
+            });
+        });
+        return Object.keys(m).map(function (tk) { return { tk: tk, value: m[tk] }; })
+            .sort(function (a, b) { return b.value - a.value; });
+    }
     function pfdHeatHtml() {
+        var mode = pfdHeatMode();
+        var seg = '<span class="pfhm-seg">'
+            + '<button type="button" class="' + (mode === 'idx' ? 'on' : '') + '" onclick="pfdHeatSetMode(\'idx\')">Индекс</button>'
+            + '<button type="button" class="' + (mode === 'pf' ? 'on' : '') + '" onclick="pfdHeatSetMode(\'pf\')">Мой портфель</button>'
+            + '</span>';
         return '<div class="dash2-card pf-card2 pf-heatblk">' +
-            PF.pfCardHead('', 'Карта рынка', 'индекс Мосбиржи · размер — вес, цвет — за день',
-                // кнопки конструктора — в потоке шапки ПЕРЕД «Открыть» (PFD_OWN_CHROME)
-                pfdInChromeHtml('heat') +
-                '<button class="d3-quick ghost pfhm-go" onclick="switchTab(\'market\')">Открыть' + GO_ARROW_SVG + '</button>') +
+            PF.pfCardHead('', 'Карта рынка',
+                mode === 'pf' ? 'ваши акции · размер — стоимость позиции, цвет — за день'
+                              : 'IMOEX · размер плитки — вес в индексе, цвет — за день',
+                // кнопки конструктора — в потоке шапки ПЕРЕД сегментом (PFD_OWN_CHROME)
+                pfdInChromeHtml('heat') + seg) +
             // заглушка «Загружаем…» — только при ПЕРВОЙ загрузке (данных ещё нет).
             // При любом ре-рендере вкладки с закэшированными данными бокс остаётся
             // пустым на долю кадра и тут же наполняется синхронно (pfdHeatRenderNow
             // в renderPortfolios) — текст заглушки мигал бы на каждом переключении.
             '<div class="pfhm-box">' + (pfdHeatW && pfdHeatC ? '' : '<div class="pfhm-state">Загружаем карту рынка…</div>') + '</div>' +
+            // шкала цвета: без неё «зелёное» и «красное» — просто настроение,
+            // а не −3 % и +3 % (мокап overview3, экран 13)
+            '<div class="pfhm-sc"><span>−3%</span><u></u><span>+3%</span>' +
+                '<em>данные MOEX ISS' + (pfdHeatTs ? ' · ' + pfhmTime(pfdHeatTs) : '') + '</em>' +
+                '<span class="pfhm-go2" onclick="switchTab(\'market\')">Рынок ›</span></div>' +
         '</div>';
+    }
+    function pfhmTime(ts) {
+        var d = new Date(ts);
+        return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
     }
     // ---- собственный squarified-treemap (свои плитки, а не декоративный фон Главной):
     // живые цвета по дневному %, тикер+% на плитке, hover-подсветка. Данные — те же
@@ -1471,13 +1508,22 @@
         }
         var W = box.clientWidth, H = box.clientHeight; if (W < 4 || H < 4) return;
         var MAX = W * H > 180000 ? 40 : 26;
-        var tiles = pfhmSquarify(pfdHeatW.slice(0, MAX), W, H);
+        var own = pfdHeatMode() === 'pf';
+        var src = own ? pfdHeatOwnItems() : pfdHeatW;
+        if (own && !src.length) {
+            box.innerHTML = '<div class="pfhm-state">В портфелях нет акций — карте нечего показать. Переключитесь на «Индекс».</div>';
+            return;
+        }
+        var tiles = pfhmSquarify(src.slice(0, MAX), W, H);
         var html = '';
         tiles.forEach(function (t) {
-            var chg = pfdHeatC[t.tk]; if (chg != null && isNaN(+chg)) chg = null; else if (chg != null) chg = +chg;
+            // в режиме портфеля дневное изменение берём из своих котировок:
+            // там есть и бумаги вне индекса, которых в выгрузке ISS нет
+            var chg = own ? ((quotes[t.tk] || {}).chgPct) : pfdHeatC[t.tk];
+            if (chg != null && isNaN(+chg)) chg = null; else if (chg != null) chg = +chg;
             var x = t.x + 1.5, y = t.y + 1.5, w = Math.max(0, t.w - 3), h = Math.max(0, t.h - 3);
             var big = w > 52 && h > 34, mid = w > 34 && h > 22;
-            var pctTxt = chg == null ? '' : (chg >= 0 ? '+' : '−') + Math.abs(chg).toFixed(1) + '%';
+            var pctTxt = chg == null ? '' : (chg >= 0 ? '+' : '−') + Math.abs(chg).toFixed(1).replace('.', ',') + '%';
             var label = big ? '<b>' + esc(t.tk) + '</b><i>' + pctTxt + '</i>' : (mid ? '<b>' + esc(t.tk) + '</b>' : '');
             // нативный title убран: по наведению всплывает своё мини-превью (pfdHeatPvShow)
             var tip = esc(t.tk) + (chg == null ? '' : ' · ' + pctTxt + ' за день');
