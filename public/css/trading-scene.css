@@ -313,8 +313,7 @@
 /* при открытом «Счёте» прячем «средняя станет» + «останется» (обе .sum-sub) и
    «что нужно знать» (.know/.know2) — чтобы кнопка «Купить» влезла; квитанция со
    «Спишется» и защита остаются (владелец 2026-07-24) */
-.bts[data-acct="1"] .tkt .sum-sub,
-.bts[data-acct="1"] .tkt .know,
+.bts[data-acct="1"] .tkt .tk-know,
 .bts[data-acct="1"] .tkt .know2 { display: none; }
 /* сплит + счёт: жмётся ТОЛЬКО карточка сделки — стакан держит полную
    высоту, дыры под ним нет (владелец 2026-07-24, скрин). Высота сделки =
@@ -2214,3 +2213,173 @@
    отбивки снизу (у общей .tkt-h она есть, здесь эти 10px нужны ленте) */
 #btScene .dep-hd { padding: 0 0 10px; margin-bottom: 0; flex: none; }
 #btScene .d-sweepw:empty { display: none; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   БЛОК 1В1: ЗАЯВКА — правила ПЕРЕНЕСЕНЫ ИЗ МОКАПА ДОСЛОВНО (dealInner)
+   Разметка рендереров переписана под мокапные классы (.tk-side/.tk-types/
+   .tk-zone/.tk-zt/.tk-pair/.tk-cell/.tk-lab/.tk-big/.tk-pre/.tk-sl/.tk-row/
+   .tk-know/.ctaw/.tk-go/.tk-cap/.wn), заменены только имена токенов
+   (--fN→--font-num, --fU→--font-ui, --up→--grn, --dn→--red).
+   ═══════════════════════════════════════════════════════════════════════════ */
+#btScene .tk-side { display:flex;gap:4px;margin-bottom:12px }
+#btScene .tk-side b { flex:1;text-align:center;font-size:12.5px;font-weight:700;padding:9px 0;border-radius:10px;
+    color:var(--mut);border:1px solid var(--gl-in-edge) }
+#btScene .tk-side b.on { background:color-mix(in srgb,var(--grn) 16%,transparent);color:#0f7a52;border-color:transparent }
+#btScene.night .tk-side b.on { color:#4fb98c }
+#btScene .tk-types { display:flex;gap:4px;margin-bottom:12px }
+#btScene .tk-types b { flex:1;text-align:center;font-size:11.5px;font-weight:700;padding:7px 0;border-radius:9px;
+    color:var(--mut);border:1px solid var(--gl-in-edge) }
+#btScene .tk-types b.on { color:var(--ink);background:var(--gl-in);border-color:color-mix(in srgb,var(--ink) 24%,transparent) }
+#btScene .tk-pre { display:flex;gap:5px;margin-top:6px }
+#btScene .tk-pre b { font-family:var(--font-num);font-size:10.5px;font-weight:600;color:var(--mut);
+    border:1px solid var(--gl-in-edge);border-radius:7px;padding:3px 8px }
+#btScene .tk-pre b.on { color:var(--ink);background:var(--gl-in) }
+#btScene .tk-row { display:flex;justify-content:space-between;font-size:11.5px;color:var(--mut);padding:5px 0 }
+#btScene .tk-row b { font-family:var(--font-num);font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums }
+#btScene .ctaw { margin-top:auto;display:flex;flex-direction:column;gap:8px }
+#btScene .tk-go { display:flex;align-items:center;justify-content:center;gap:9px;border-radius:13px;
+    font-size:14.5px;font-weight:700;color:#fff;background:var(--ink);padding:13px 0;
+    box-shadow:0 16px 34px -20px rgba(15,23,42,.55) }
+#btScene.night .tk-go { color:#0d141b;background:#e9eef7;box-shadow:0 16px 34px -20px rgba(0,0,0,.65) }
+#btScene .tk-go::before { content:'';width:7px;height:7px;border-radius:50%;background:var(--grn);flex:none }
+#btScene .tk-go.sell::before { background:var(--red) }
+#btScene .tk-go.dis { background:var(--gl-in);color:var(--dim);box-shadow:none }
+#btScene .tk-go.dis::before { display:none }
+#btScene .tk-cap { font-size:10px;color:var(--dim);text-align:center }
+#btScene .tk-zone { border:1px solid var(--gl-in-edge);border-radius:12px;overflow:hidden;margin-bottom:11px }
+#btScene .tk-zt { display:flex;align-items:baseline;gap:8px;padding:8px 11px;border-bottom:1px solid var(--hair);
+    font-size:11.5px;font-weight:700 }
+#btScene .tk-zt em { font-style:normal;font-family:var(--font-num);font-size:10px;font-weight:600;color:var(--dim);margin-left:auto }
+#btScene .tk-pair { display:flex }
+#btScene .tk-cell { flex:1;min-width:0;padding:9px 11px }
+#btScene .tk-cell + .tk-cell { border-left:1px solid var(--hair) }
+#btScene .tk-lab { display:flex;align-items:baseline;gap:8px;font-family:var(--font-num);font-size:9px;font-weight:700;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--dim) }
+#btScene .tk-lab span { margin-left:auto;letter-spacing:0;text-transform:none;font-size:10px;font-weight:600 }
+#btScene .tk-big { display:flex;align-items:baseline;gap:6px;margin-top:5px;font-family:var(--font-num);font-size:19px;
+    font-weight:700;font-variant-numeric:tabular-nums }
+#btScene .tk-big small { font-size:56%;font-weight:600;color:var(--mut) }
+#btScene .tk-big u { margin-left:auto;text-decoration:none;font-family:var(--font-ui);font-size:10px;font-weight:600;color:var(--dim) }
+#btScene .tk-sl { height:4px;border-radius:99px;background:var(--gl-in);margin-top:9px;position:relative }
+#btScene .tk-sl i { display:block;height:100%;border-radius:99px;background:color-mix(in srgb,var(--ink) 45%,transparent) }
+#btScene .tk-sl u { position:absolute;top:-4px;width:12px;height:12px;border-radius:50%;background:var(--ink);
+    border:2px solid var(--gl-hero) }
+#btScene .tk-know { display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:11px;margin-bottom:11px;
+    background:var(--gl-in);font-size:11.5px;color:var(--mut) }
+#btScene .tk-know u { margin-left:auto;text-decoration:none;font-weight:700;color:var(--ink) }
+#btScene .tk-know svg { width:15px;height:15px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8 }
+/* в узкой колонке сплита цена и сумма встают друг под друга, а не рядом */
+#btScene .tkt-sub-deal .tk-pair { flex-direction:column }
+#btScene .tkt-sub-deal .tk-cell + .tk-cell { border-left:0;border-top:1px solid var(--hair) }
+/* предупреждения — тот же .wn, что у мастера и подтверждений */
+#btScene .wn { display:flex;align-items:flex-start;gap:11px;border-radius:12px;padding:12px 14px;font-size:12px;
+    line-height:1.5;margin-top:12px }
+#btScene .wn .ic { flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px }
+#btScene .wn .ic svg { width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round }
+#btScene .wn b { font-weight:700 }
+#btScene .wn.warn { background:color-mix(in srgb,var(--amb) 11%,transparent);color:var(--mut) }
+#btScene .wn.warn .ic { background:color-mix(in srgb,var(--amb) 20%,transparent);color:var(--amb) }
+#btScene .wn.warn b { color:var(--amb) }
+#btScene .wn.info { background:var(--gl-in);color:var(--mut) }
+#btScene .wn.info .ic { background:color-mix(in srgb,var(--ink) 10%,transparent);color:var(--mut) }
+#btScene .wn.info b { color:var(--ink) }
+#btScene .wn.bad { background:color-mix(in srgb,var(--red) 10%,transparent);color:var(--mut) }
+#btScene .wn.bad .ic { background:color-mix(in srgb,var(--red) 16%,transparent);color:var(--red) }
+#btScene .wn.bad b { color:var(--red) }
+
+/* добавки поверх мокапа — то, чего в статичном мокапе нет, но есть в бою */
+#btScene .tk-side b, #btScene .tk-types b, #btScene .tk-pre b { cursor: pointer; user-select: none; }
+#btScene .tk-side b:hover, #btScene .tk-types b:hover, #btScene .tk-pre b:hover { color: var(--ink); }
+#btScene .tk-side b.on.sell { background: color-mix(in srgb, var(--red) 14%, transparent); color: var(--red); }
+#btScene.night .tk-side b.on.sell { color: #ff8a8a; }
+#btScene .tk-pre b.off { opacity: .45; cursor: default; }
+#btScene .tk-pre:empty, #btScene .tk-sl:empty, #btScene .tk-warnw:empty { display: none; }
+/* редактируемые поля цены и суммы — числом мокапа: инпут неотличим от текста */
+#btScene .tk-big .tk-in {
+    min-width: 0; border: 0; padding: 0; margin: 0; background: none; color: inherit;
+    font: inherit; font-variant-numeric: inherit; text-align: left;
+}
+#btScene .tk-big #btSxSum { flex: 1; }
+#btScene .tk-big #btScnLimIn { width: 5.5em; }
+#btScene .tk-big .tk-in:focus { outline: none; }
+#btScene .tk-big .tk-in::placeholder { color: var(--dim); }
+#btScene .tk-cell.err .tk-lab { color: var(--red); }
+#btScene .tk-cell.err .tk-big .tk-in { color: var(--red); }
+/* «по рынку» и «по лимиту» — слово вместо числа: заголовочная антиква, как в мокапе */
+#btScene .tk-big .tk-w { font: 400 19px var(--font-title); letter-spacing: -0.01em; color: var(--ink); }
+#btScene .tk-big .tk-w.sm { font-size: 15px; }
+#btScene .tk-big u[role="button"] { cursor: pointer; }
+#btScene .tk-big u[role="button"]:hover { color: var(--ink); }
+#btScene .tk-sl { cursor: pointer; }
+#btScene .tk-know { cursor: pointer; }
+#btScene .tk-know:hover { background: color-mix(in srgb, var(--ink) 8%, transparent); }
+#btScene .tk-go:not(.dis) { cursor: pointer; border: 0; width: 100%; font-family: var(--font-ui); }
+#btScene .tk-go.dis { border: 0; width: 100%; font-family: var(--font-ui); cursor: default; }
+#btScene .wn u { margin-left: auto; text-decoration: none; font-weight: 700; color: var(--acc); white-space: nowrap; cursor: pointer; }
+#btScene .tk-cap b { font-family: var(--font-num); font-weight: 700; color: var(--mut); }
+/* подпись под ячейкой стопа: в мокапе инлайном text-align:left;margin-top:6px */
+#btScene .tk-cap-l { text-align: left; margin-top: 6px; }
+/* защита позиции: ячейки-кнопки и режим правки */
+#btScene .prot-c { cursor: pointer; }
+#btScene .prot-c:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
+#btScene .prot-c .prot-x { font-style: normal; margin-left: 6px; cursor: pointer; }
+#btScene .prot-c .prot-x:hover { color: var(--red); }
+#btScene .tk-cell.prot-e { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+#btScene .prot-e label { display: flex; align-items: baseline; gap: 6px; font: 400 11px var(--font-ui); color: var(--mut); }
+#btScene .prot-e input {
+    width: 5.5em; border: 1px solid var(--gl-in-edge); background: var(--gl-in); border-radius: 8px;
+    padding: 4px 7px; font: 700 12.5px var(--font-num); color: var(--ink);
+}
+#btScene .prot-e input:focus { outline: none; border-color: color-mix(in srgb, var(--acc) 45%, transparent); }
+#btScene .prot-e u { margin-left: auto; text-decoration: none; font: 700 11px var(--font-ui); color: var(--acc); cursor: pointer; }
+/* переключатель вида карточки = .tkt-tabs мокапа */
+#btScene .tkt-tabs { display:flex;gap:2px;border:1px solid var(--gl-in-edge);border-radius:8px;padding:2px;margin-left:auto }
+#btScene .tkt-tabs i { width:28px;height:22px;border-radius:6px;display:grid;place-items:center;font-style:normal;
+    color:var(--mut);cursor:pointer }
+#btScene .tkt-tabs i.on { background:var(--gl-in);color:var(--ink) }
+#btScene .tkt-tabs i:hover { color:var(--ink) }
+#btScene .tkt-tabs i svg { width:15px;height:15px;display:block }
+/* ЛОВУШКА: карточка заявки — флекс-колонка, а у .tk-zone overflow:hidden.
+   Такой блок теряет автоминимум и на тесной колонке схлопывается в 1px рамки —
+   зоны «Сколько и почём» и «Защита» просто исчезали. Растягиваться им тоже
+   незачем: высоту даёт содержимое. Не влезло — колонка прокручивается, а не
+   режет кнопку. */
+#btScene .tk-zone { flex: none; }
+#btScene .tkt-sub-deal { overflow-y: auto; }
+#btScene .tkt-sub-deal::-webkit-scrollbar { width: 6px; }
+#btScene .tkt-sub-deal::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ink) 18%, transparent); border-radius: 99px; }
+#btScene .tkt-sub-deal::-webkit-scrollbar-track { background: transparent; }
+/* пустая защита — приглашение в одну строку, теми же чипами, что .tk-pre */
+#btScene .prot-inv { display: flex; gap: 5px; padding: 9px 11px; }
+#btScene .prot-inv b {
+    font-family: var(--font-num); font-size: 10.5px; font-weight: 600; color: var(--mut);
+    border: 1px solid var(--gl-in-edge); border-radius: 7px; padding: 3px 8px; cursor: pointer;
+}
+#btScene .prot-inv b:hover { color: var(--ink); background: var(--gl-in); }
+/* кнопка не уезжает за край прокрутки: липнет ко дну колонки заявки */
+#btScene .tkt-sub-deal .ctaw {
+    position: sticky; bottom: 0; padding-top: 8px; margin-bottom: -2px;
+    background: linear-gradient(to bottom, transparent, var(--gl-work) 14px);
+}
+/* заявка во всю карточку — та же прокрутка и та же липкая кнопка, что в сплите:
+   на невысоком экране низ карточки резался и кнопка «Купить» уходила за край */
+#btScene .tkt:not(.tkt-x2) { overflow-y: auto; }
+#btScene .tkt:not(.tkt-x2) > .ctaw {
+    position: sticky; bottom: 0; padding-top: 8px;
+    background: linear-gradient(to bottom, transparent, var(--gl-work) 14px);
+}
+#btScene .tkt::-webkit-scrollbar { width: 6px; }
+#btScene .tkt::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--ink) 18%, transparent); border-radius: 99px; }
+#btScene .tkt::-webkit-scrollbar-track { background: transparent; }
+/* шапка карточки ЗАЯВКИ — мокапные padding:0 0 12px и без отбивки
+   (общая .bts .tkt-h даёт 10+10; у стакана свой .dep-hd на 10) */
+#btScene .tkt-h:not(.dep-hd) { padding: 0 0 12px; margin-bottom: 0; }
+/* .tk-go у нас <button>: у него UA-выравнивание center, у div мокапа — start */
+#btScene .tk-go { text-align: start; }
+/* квитанция: обёртка #btScnSum — цель точечного патча, но в мокапе .tk-row
+   стоят прямыми детьми карточки. display:contents убирает обёртку из потока */
+#btScene .sum { display: contents; }
+/* «в узкой колонке сплита цена и сумма встают друг под друга» — это правило
+   мокапа про УЗКУЮ колонку. Карточка во всю ширину (462px) держит их рядом */
+#btScene .tkt:not(.tkt-x2) .tk-pair { flex-direction: row; }
+#btScene .tkt:not(.tkt-x2) .tk-cell + .tk-cell { border-left: 1px solid var(--hair); border-top: 0; }

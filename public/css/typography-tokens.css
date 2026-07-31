@@ -29,8 +29,8 @@
 :root {
     /* Семейства */
     --font-title: Georgia, 'Times New Roman', serif;   /* заголовки, вес 400 */
-    --font-ui:   'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-text: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-ui:   'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-text: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --font-num:  'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
     /* Размеры */
