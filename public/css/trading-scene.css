@@ -14,25 +14,76 @@
    нет): без этого паддинги тикета съедали задуманный зазор 52px до графика */
 .bts, .bts *, .bts *::before, .bts *::after { box-sizing: border-box; }
 
+/* ═══════ МАТЕРИАЛ СЦЕНЫ = «ВИТРАЖ» (мокап overview3, экраны 03 и 22) ═══════
+   Сцена была плоской: непрозрачные белые карточки на ровном #f4f6fa. Мокап
+   этого раунда весь про материал — ЦВЕТНОЙ ГРАДИЕНТ под сценой и стекло ТРЁХ
+   ГЛУБИН поверх него: герой .66, рабочее (тикет, счёт, росток) .52, тонкое
+   (рейка, строка среды, полоса) .36. Без фона стекло не существует — оно
+   белое по белому, поэтому градиент несущий, а не украшение.
+   Токены названы как в мокапе: --gl-hero/--gl-work/--gl-thin + кромки. */
 .bts {
-    --ink: #0f172a; --mut: #64748b; --dim: #94a3b8;
-    --line: #e7ecf3; --hair: rgba(15, 23, 42, 0.07);
-    --bg: #f4f6fa; --card: #fff;
-    --acc: #4453ef; --grn: #16a34a; --red: #dc2626; --amb: #d97706;
+    --ink: #101828; --mut: #5c6a7d; --dim: #8d9aad;
+    --hair: rgba(16, 24, 40, 0.1); --line: rgba(16, 24, 40, 0.12);
+    --gl-hero: rgba(255, 255, 255, 0.66);
+    --gl-work: rgba(255, 255, 255, 0.52);
+    --gl-thin: rgba(255, 255, 255, 0.36);
+    --gl-edge: rgba(255, 255, 255, 0.78);
+    --gl-edge-thin: rgba(255, 255, 255, 0.55);
+    --gl-in: rgba(255, 255, 255, 0.44);
+    --gl-in-edge: rgba(255, 255, 255, 0.62);
+    --bg: #e8ebf2; --card: var(--gl-work);
+    --acc: #4453ef; --grn: #17a86b; --red: #d8452b; --amb: #c2760a;
     position: relative;
+    display: flex; flex-direction: column;   /* ПОТОК мокапа, не слои */
     height: 100vh;              /* уточняет scnFit по факту (zoom 0.9!) */
     min-height: 480px;
-    background: var(--bg);
     color: var(--ink);
     font-family: var(--font-ui);
     overflow: hidden;
+    background:
+        radial-gradient(760px 520px at 6% 8%, rgba(196, 226, 224, 0.8) 0%, rgba(196, 226, 224, 0) 60%),
+        radial-gradient(820px 560px at 78% 4%, rgba(214, 214, 240, 0.75) 0%, rgba(214, 214, 240, 0) 62%),
+        linear-gradient(160deg, #E5EDEF 0%, #E8EBF2 50%, #E5ECEE 100%);
 }
 .bts.night {
-    --ink: #e9eef8; --mut: #93a1b8; --dim: #5e6c84;
-    --line: rgba(255, 255, 255, 0.08); --hair: rgba(255, 255, 255, 0.06);
-    --bg: #0a0e15; --card: #121722;
-    --acc: #7c8cff; --grn: #34d399; --red: #f87171; --amb: #f0a63a;
+    --ink: #e9eef7; --mut: #93a1b5; --dim: #6a788f;
+    --hair: rgba(255, 255, 255, 0.1); --line: rgba(255, 255, 255, 0.14);
+    --gl-hero: rgba(28, 39, 53, 0.66);
+    --gl-work: rgba(28, 39, 53, 0.55);
+    --gl-thin: rgba(28, 39, 53, 0.4);
+    --gl-edge: rgba(255, 255, 255, 0.15);
+    --gl-edge-thin: rgba(255, 255, 255, 0.1);
+    --gl-in: rgba(255, 255, 255, 0.06);
+    --gl-in-edge: rgba(255, 255, 255, 0.13);
+    --bg: #111520; --card: var(--gl-work);
+    --acc: #7c8cff; --grn: #4fb98c; --red: #f0836a; --amb: #f0a63a;
+    background:
+        radial-gradient(760px 520px at 6% 8%, rgba(31, 58, 68, 0.8) 0%, rgba(31, 58, 68, 0) 60%),
+        radial-gradient(820px 560px at 78% 4%, rgba(43, 44, 80, 0.75) 0%, rgba(43, 44, 80, 0) 62%),
+        linear-gradient(160deg, #0D141B 0%, #111520 50%, #0C141A 100%);
 }
+/* ГЛУБИНЫ СТЕКЛА: герой · рабочее · тонкое. Каждая карточка сцены — одна из трёх */
+.bts .bts-hero {
+    background: var(--gl-hero); border: 1px solid var(--gl-edge);
+    -webkit-backdrop-filter: blur(22px) saturate(1.35); backdrop-filter: blur(22px) saturate(1.35);
+    box-shadow: 0 26px 60px -28px rgba(24, 38, 60, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+.bts.night .bts-hero { box-shadow: 0 26px 60px -28px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1); }
+.bts .tkt, .bts .acct, .bts .dock {
+    background: var(--gl-work); border: 1px solid var(--gl-edge);
+    -webkit-backdrop-filter: blur(18px) saturate(1.3); backdrop-filter: blur(18px) saturate(1.3);
+    box-shadow: 0 20px 46px -24px rgba(24, 38, 60, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+.bts.night .tkt, .bts.night .acct, .bts.night .dock {
+    box-shadow: 0 20px 46px -24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+}
+.bts .bts-wl, .bts .pos-strip, .bts .bts-top {
+    background: var(--gl-thin); border-color: var(--gl-edge-thin);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+}
+/* «карточка» внутри стекла — это внутреннее стекло, а не белая плита */
+.bts .pair, .bts .zone { background: var(--gl-in); border-color: var(--gl-in-edge); }
+.bts .zone { background: transparent; }
 .bts-glow {
     position: absolute; left: 16%; top: 6%;
     width: 640px; height: 420px; border-radius: 50%;
@@ -42,9 +93,10 @@
 
 /* ---------- строка среды 52px ---------- */
 .bts-top {
-    position: absolute; left: 0; right: 0; top: 0; height: 64px;
+    flex: none; height: 64px;
     display: flex; align-items: center; gap: 16px;
     padding: 0 24px; z-index: 30;
+    border-bottom: 1px solid var(--hair);
 }
 .bts-back {
     display: inline-flex; align-items: center; gap: 8px;
@@ -144,9 +196,15 @@
 .bts-top .pftb-find-row { color: var(--ink); }
 .bts-top .pftb-find-row span { color: var(--mut); }
 
+/* ---------- тело сцены: рейка | герой | колонка заявки (раскладка мокапа) ---------- */
+.bts .bts-body {
+    flex: 1; min-height: 0; display: flex; align-items: stretch; gap: 12px; padding: 12px;
+}
+.bts .tkt-col { flex: none; width: 462px; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
+.bts .tkt-col .tkt { width: 100%; flex: 1; min-height: 0; }
 /* ---------- герой бумаги ---------- */
 .bts-hero {
-    position: absolute; left: 56px; right: 488px; top: 108px; bottom: 96px;
+    flex: 1; min-width: 0; border-radius: 16px; padding: 16px 18px;
     display: flex; flex-direction: column; z-index: 5;
 }
 .bts .ih { display: flex; align-items: center; gap: 14px; }
@@ -236,11 +294,8 @@
 
 /* ---------- тикет-колонка ---------- */
 .bts .tkt {
-    position: absolute; right: 36px; top: 122px; bottom: 96px; width: 400px;
-    background: var(--card); border: 1px solid var(--line); border-radius: 18px;
-    padding: 20px; display: flex; flex-direction: column; gap: 13px;
-    backdrop-filter: blur(14px);
-    box-shadow: 0 24px 54px -30px rgba(24, 38, 60, 0.45);
+    border-radius: 16px;
+    padding: 12px 14px; display: flex; flex-direction: column; gap: 12px;
     /* overflow видимый: тултипы («средняя», глоссарий лота) не режутся
        (владелец 2026-07-24); поджатый тикет прячет лишнее сам (data-acct) */
     z-index: 10; overflow: visible;
@@ -249,7 +304,10 @@
    Кнопка «Купить» обязана остаться видимой и рабочей: вторичные строки
    («что нужно знать», разбивка, средняя, распорка) прячутся — деньги,
    цена, защита и кнопка остаются (владелец 2026-07-24) */
-.bts[data-acct="1"] .tkt { bottom: var(--bts-acct, 330px); overflow: hidden; }
+/* «Счёт» стоит В КОЛОНКЕ под тикетом — поток ужимает карточку заявки сам,
+   двигать её вручную больше не нужно. Прячем только вторичные строки, чтобы
+   кнопке сделки хватило места (закон «контент подстраивается под размер»). */
+.bts[data-acct="1"] .tkt { overflow: hidden; }
 /* распорка ОСТАЁТСЯ: кнопка прижата к низу карточки, не висит в середине
    (владелец 2026-07-24); при нехватке высоты flex сожмёт её сам */
 /* при открытом «Счёте» прячем «средняя станет» + «останется» (обе .sum-sub) и
@@ -261,11 +319,7 @@
 /* сплит + счёт: жмётся ТОЛЬКО карточка сделки — стакан держит полную
    высоту, дыры под ним нет (владелец 2026-07-24, скрин). Высота сделки =
    контейнер минус счёт с зазором (--bts-acct = высота счёта + 96 + 12) */
-.bts[data-acct="1"][data-tkt="split"] .tkt { bottom: 96px; overflow: visible; }
-.bts[data-acct="1"][data-tkt="split"] .tkt-sub-deal {
-    height: calc(100% - var(--bts-acct, 330px) + 96px);
-    align-self: flex-start; overflow: hidden;
-}
+.bts[data-acct="1"][data-tkt="split"] .tkt { overflow: visible; }
 .bts.night .tkt { box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.55); background: color-mix(in srgb, var(--card) 92%, transparent); }
 /* шапка карточки = .tkt-h мокапа: на волоске, отступы 12×14, свежесть моно 10px */
 .bts .tkt-h {
@@ -464,27 +518,18 @@
     font-size: 13px; line-height: 1; padding: 2px 4px; border-radius: 6px;
 }
 .bts .d-sweep u:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
-/* сплит: карточка раздваивается на стакан + заявку; ширину контейнера и
-   сжатие героя ведут transition (контент слева поджимается, как от сайдбара) */
-.bts .tkt { transition: width 0.45s cubic-bezier(0.25, 0.9, 0.3, 1), bottom 0.45s cubic-bezier(0.25, 0.9, 0.3, 1); }
-.bts-hero { transition: right 0.45s cubic-bezier(0.25, 0.9, 0.3, 1); }
-.bts[data-stage="start"][data-tkt="split"] .tkt {
-    width: 754px;                          /* 340 стакан + 14 + 400 заявка */
-    background: none; border: 0; padding: 0;
-    box-shadow: none; backdrop-filter: none; overflow: visible;
-    flex-direction: row; justify-content: flex-end; gap: 14px;
+/* СПЛИТ ПО МОКАПУ: стакан и заявка делят ОДНУ карточку 462px (у мокапа
+   .tkt-sub-depth 206 + заявка на остаток), а не раздвигают колонку наружу.
+   Прежняя раскладка растила .tkt до 754px и отодвигала героя — в потоке это
+   выбрасывало карточку за край экрана. */
+.bts[data-tkt="split"] .tkt { flex-direction: row; padding: 0; gap: 0; overflow: hidden; }
+.bts .tkt-sub { min-width: 0; display: flex; flex-direction: column; padding: 12px 14px; }
+.bts .tkt-sub-deal { flex: 1; min-width: 0; }
+.bts .tkt-sub-depth {
+    flex: none; width: 206px; min-width: 0; overflow: hidden;
+    border-right: 1px solid var(--hair);
+    animation: btSplitIn 0.5s cubic-bezier(0.25, 0.9, 0.3, 1) backwards;
 }
-.bts[data-stage="start"][data-tkt="split"] .bts-hero { right: 842px; }   /* 36+754+52 */
-.bts .tkt-sub {
-    background: var(--card); border: 1px solid var(--line); border-radius: 18px;
-    padding: 20px; display: flex; flex-direction: column; gap: 13px;
-    backdrop-filter: blur(14px); min-height: 0;
-    box-shadow: 0 24px 54px -30px rgba(24, 38, 60, 0.45);
-}
-.bts.night .tkt-sub { box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.55); background: color-mix(in srgb, var(--card) 92%, transparent); }
-/* заявка держит свою ширину у правого края; стакан вырастает слева из-под неё */
-.bts .tkt-sub-deal { flex: 0 0 400px; min-width: 0; }   /* min-content шире 400 — не даём распухать */
-.bts .tkt-sub-depth { flex: 1 1 auto; min-width: 0; overflow: hidden; animation: btSplitIn 0.5s cubic-bezier(0.25, 0.9, 0.3, 1) backwards; }
 @keyframes btSplitIn { from { opacity: 0; } 40% { opacity: 0; } }
 .bts .fresh { display: inline-flex; align-items: center; gap: 6px; font: 600 10px var(--font-ui); color: var(--grn); white-space: nowrap; }
 .bts .fresh i { width: 6px; height: 6px; border-radius: 50%; background: var(--grn); }
@@ -628,19 +673,15 @@
 .bts .bts-wlb:hover { color: var(--amb); }
 .bts .bts-wlb.on { color: var(--amb); border-color: color-mix(in srgb, var(--amb) 45%, transparent); }
 .bts-wl {
-    position: absolute; left: 20px; top: 64px; bottom: 64px; width: 262px;
-    background: var(--card); border: 1px solid var(--line); border-radius: 16px;
-    padding: 12px; display: flex; flex-direction: column; gap: 3px; z-index: 26;
-    box-shadow: 0 20px 44px -26px rgba(24, 38, 60, 0.4);
-    overflow: hidden;
+    flex: none; width: 152px; border-radius: 14px;
+    padding: 8px; display: flex; flex-direction: column; gap: 3px;
+    overflow: hidden auto; scrollbar-width: thin;
 }
 .bts.night .bts-wl { box-shadow: 0 20px 44px -26px rgba(0, 0, 0, 0.55); }
 .bts-wl:empty { display: none; }
 /* герой, полоса позиций и росток-«карточка позиций» уступают рейке место —
    .dock тоже сдвигается влево, иначе рейка на него наезжает (левый край 56) */
-.bts[data-wl="1"] .bts-hero { left: 314px; }
-.bts[data-wl="1"] .dock { left: 314px; }
-.bts[data-wl="1"] .pos-strip { left: 294px; }
+/* рейка — флекс-колонка: соседи расступаются сами, сдвигать их нечем */
 .bts .wl-h { display: flex; align-items: center; gap: 8px; padding: 2px 6px 8px; flex: none; }
 .bts .wl-h b { font: 400 15px var(--font-title); }
 .bts .wl-h kbd {
@@ -919,17 +960,14 @@
 
 /* ---------- полоса позиций ---------- */
 .bts .pos-strip {
-    position: absolute; left: 20px; right: 456px; bottom: 14px;
-    display: flex; align-items: center; gap: 9px; z-index: 25; min-height: 0;
+    flex: none; min-height: 56px; display: flex; align-items: center; gap: 14px;
+    padding: 0 14px; border-top: 1px solid var(--hair); z-index: 25;
 }
 .bts .pos-strip:empty { display: none; }
 /* ручка «Счёта» — по центру карточки заявки (владелец 2026-07-24): обёртка
    повторяет геометрию тикета (right 36 + ширина 400), кнопка центрируется.
    В сплите правая карточка — та же «Заявка» 400px у правого края */
-.bts .ps-acctw {
-    position: absolute; right: 36px; bottom: 14px; width: 400px;
-    display: flex; justify-content: center; z-index: 25; pointer-events: none;
-}
+.bts .ps-acctw { flex: none; margin-left: auto; display: flex; z-index: 25; }
 .bts .ps-acctw:empty { display: none; }
 .bts .ps-acctw .ps-acct { pointer-events: auto; }
 /* ярлыки полосы — ручки ростка: клик раскрывает панель вверх.
@@ -1457,26 +1495,19 @@
    позиций в колонке героя, герой поджимается по высоте (--bts-dock ставит
    scnDockFit); пустой узел — свёрнутое состояние, полоса и есть его ярлык */
 .bts .dock {
-    position: absolute; left: 56px; right: 488px; bottom: 96px;
-    background: var(--card); border: 1px solid var(--line); border-radius: 18px;
-    padding: 14px 20px 14px; z-index: 25; backdrop-filter: blur(16px);
-    box-shadow: 0 30px 64px -32px rgba(24, 38, 60, 0.55);
+    flex: none; margin: 0 12px 12px; border-radius: 14px;
+    padding: 12px 14px; z-index: 25; overflow: hidden;
     animation: btDeckUp 0.45s cubic-bezier(0.25, 0.9, 0.3, 1) backwards;
-    transition: right 0.45s cubic-bezier(0.25, 0.9, 0.3, 1);
 }
 .bts.night .dock { box-shadow: 0 30px 64px -30px rgba(0, 0, 0, 0.65); }
 /* сплит раздвигает карточку тикета влево — росток поджимается вместе с героем,
    а не ныряет под карточку стакана (владелец 2026-07-23) */
-.bts[data-tkt="split"] .dock { right: 842px; }
 .bts .dock:empty { display: none; animation: none; }
 @keyframes btDeckUp { from { opacity: 0; transform: translateY(14px); } }
 /* «Счёт» — выезжающий блок правого нижнего угла (владелец 2026-07-23):
    низ карточки = низ ростка позиций (96), растёт вверх из-под тикета */
 .bts .acct {
-    position: absolute; right: 36px; bottom: 96px; width: 400px;
-    background: var(--card); border: 1px solid var(--line); border-radius: 18px;
-    padding: 16px 20px 10px; z-index: 26; backdrop-filter: blur(16px);
-    box-shadow: 0 30px 64px -32px rgba(24, 38, 60, 0.55);
+    flex: none; border-radius: 14px; padding: 12px 14px; z-index: 26;
     animation: btDeckUp 0.45s cubic-bezier(0.25, 0.9, 0.3, 1) backwards;
 }
 .bts.night .acct { box-shadow: 0 30px 64px -30px rgba(0, 0, 0, 0.65); }
@@ -1510,7 +1541,7 @@
 .bts .ac-r.sum { border-top: 1px dashed var(--line); }
 .bts .ac-r.sum b { font: 700 15px var(--font-num); }
 .bts-hero { transition: right 0.45s cubic-bezier(0.25, 0.9, 0.3, 1), bottom 0.45s cubic-bezier(0.25, 0.9, 0.3, 1); }
-.bts[data-deck="1"] .bts-hero { bottom: var(--bts-dock, 262px); }
+/* росток — этаж ПОД телом сцены: тело ужимается потоком, а не отступом */
 /* вкладки панелей — тем же языком, что вкладки карточки тикета (засечки,
    неактивные полутоном): панели перестают выглядеть чужими (владелец 2026-07-24) */
 .bts .dock-tabs { display: flex; align-items: baseline; gap: 16px; border-bottom: 1px solid var(--hair); padding-bottom: 10px; }
@@ -1683,16 +1714,10 @@
    Зазор тикет↔сцена держим ЯВНО: right героя = right тикета + ширина + гэп */
 @media (max-width: 1360px) {
     .bts-hero { left: 32px; right: 468px; }                     /* Старт: 24+400+44 */
-    .bts .tkt { right: 24px; }
-    .bts .pos-strip { right: 444px; }
-    .bts .ps-acctw { right: 24px; }
-    .bts .dock { left: 32px; right: 468px; }
-    .bts .acct { right: 24px; }
+    /* колонка заявки на узком экране уже — поток двигает соседей сам */
+    .bts .tkt-col { width: 400px; }
+    .bts .tkt-sub-depth { width: 180px; }
     .bts-omni { width: 340px; }
-    /* сплит «Старта» на узком: 316 стакан + 14 + 400 заявка */
-    .bts[data-stage="start"][data-tkt="split"] .tkt { width: 730px; }
-    .bts[data-stage="start"][data-tkt="split"] .bts-hero { right: 798px; }   /* 24+730+44 */
-    .bts[data-tkt="split"] .dock { right: 798px; }
 }
 
 /* ═══════ полировка №8 (владелец 2026-07-23) ═══════ */

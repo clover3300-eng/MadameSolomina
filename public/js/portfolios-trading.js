@@ -2748,7 +2748,7 @@
         // Сцена «Эволюции» живёт без карточек терминала (.btr-card), но данные
         // ей нужны те же — стакан для цены, портфель для чипов позиций
         if (sceneLive()) {
-            sxWire(); scnFit(); startPolling();
+            sxWire(); scnFit(); scnHeroObserve(); startPolling();
             scnKMount();   // свечи сцены: движок и канвас переживают ре-рендер
             return;
         }
@@ -8286,20 +8286,33 @@
         var n = sxSlot(), s = S(n);
         if (s.uid) sxLoadCandles(s.uid);
         var tktVw = RP ? 'deal' : scnTktView();
+        // РАСКЛАДКА МОКАПА (экран 22): сцена — ПОТОК, а не слои друг на друге.
+        // Строка среды · тело (рейка | герой | колонка заявки со «Счётом» под ней)
+        // · росток этажом · полоса позиций. Раскрытая панель ДВИГАЕТ контент:
+        // герой и тикет ужимаются, кнопка сделки остаётся на месте, ничего не
+        // ложится поверх. Прежде всё висело position:absolute, а «Счёт» и росток
+        // выезжали НАД тикетом — из-за этого сцена и не читалась как мокап.
         var body = s.meta
-            ? scnHeroHtml(n, s) +
-              '<aside class="tkt' + (tktVw === 'split' ? ' tkt-x2' : '') + '" id="btScnTicket">' + scnTicketHtml(n) + '</aside>' +
-              (RP ? '' : '<div class="dock" id="btScnDock">' + scnDockHtml() + '</div>' +
-                         '<div class="acct" id="btScnAcct">' + scnAcctHtml() + '</div>')
-            : scnHelloHtml();
+            ? '<div class="bts-body">' +
+                  '<aside class="bts-wl" id="btScnWl">' + scnWlHtml() + '</aside>' +
+                  scnHeroHtml(n, s) +
+                  '<div class="tkt-col">' +
+                      '<aside class="tkt' + (tktVw === 'split' ? ' tkt-x2' : '') + '" id="btScnTicket">' +
+                          scnTicketHtml(n) + '</aside>' +
+                      (RP ? '' : '<div class="acct" id="btScnAcct">' + scnAcctHtml() + '</div>') +
+                  '</div>' +
+              '</div>' +
+              (RP ? '' : '<div class="dock" id="btScnDock">' + scnDockHtml() + '</div>')
+            : '<div class="bts-body">' +
+                  '<aside class="bts-wl" id="btScnWl">' + scnWlHtml() + '</aside>' +
+                  scnHelloHtml() +
+              '</div>';
         // реплей: полосу позиций подменяет плёнка-бар (живой брокер спит),
         // росток и «Счёт» закрыты — их данные из настоящего, не из прошлого
         return '<div class="bts' + (sceneNight() ? ' night' : '') + '" id="btScene" data-stage="start" ' +
             'data-tkt="' + tktVw + '" data-deck="' + (!RP && st.layers.deck ? 1 : 0) + '" ' +
             'data-acct="' + (!RP && st.layers.acct ? 1 : 0) + '" data-wl="' + (st.layers.wl ? 1 : 0) + '">' +
             envRowHtml() +
-            '<div class="bts-glow"></div>' +
-            '<aside class="bts-wl" id="btScnWl">' + scnWlHtml() + '</aside>' +
             body +
             (RP
                 ? '<div class="rp-bar" id="btScnRp">' + rpBarHtml() + '</div>' +
@@ -8432,6 +8445,20 @@
         if (h > 480) el.style.height = h + 'px';
         scnDockFit();
         scnAcctFit();
+        // Сцена стала ПОТОКОМ (раскладка мокапа): открытая рейка, «Счёт» или
+        // росток теперь МЕНЯЮТ ширину и высоту героя, а движок графика сам
+        // такого не замечает — холст остался бы прежнего размера в новом окне.
+        scnKResizeSoon();
+    }
+    // размер героя меняют не только окно, но и панели: следим за ним напрямую,
+    // иначе после каждого раскрытия график висит обрезанным до следующего тика
+    var scnHeroRO = null;
+    function scnHeroObserve() {
+        var hero = document.querySelector('#btScene .bts-hero');
+        if (!hero || !window.ResizeObserver) return;
+        if (scnHeroRO) scnHeroRO.disconnect();
+        scnHeroRO = new ResizeObserver(function () { scnKResizeSoon(); });
+        scnHeroRO.observe(hero);
     }
     // низ героя — от фактической высоты открытого ростка: она меняется
     // вкладкой дока, а зазор к ней обязан оставаться воздухом 12px
