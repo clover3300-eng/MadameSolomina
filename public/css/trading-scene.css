@@ -267,9 +267,13 @@
     align-self: flex-start; overflow: hidden;
 }
 .bts.night .tkt { box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.55); background: color-mix(in srgb, var(--card) 92%, transparent); }
-.bts .tkt-h { display: flex; align-items: center; gap: 9px; }
+/* шапка карточки = .tkt-h мокапа: на волоске, отступы 12×14, свежесть моно 10px */
+.bts .tkt-h {
+    display: flex; align-items: center; gap: 10px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--hair); margin-bottom: 12px;
+}
 .bts .tkt-h b { font: 400 16px var(--font-title); }
-.bts .freshw { margin-left: auto; }
+.bts .freshw { margin-left: auto; font: 400 10px var(--font-num); color: var(--dim); }
 /* вкладки карточки «Старта»: Сделка / Стакан / Сплит — СЕГМЕНТОМ в идиоме
    «Купить/Продать» ниже. Они основные (владелец 2026-07-24) — сегмент
    растянут на ширину, вкладки равные и крупные, активная с заливкой */
@@ -293,7 +297,7 @@
 }
 /* иконочный переключатель (владелец 2026-07-24): заголовок режима слева, значки
    справа; активный залит акцентом (стакан — зелёным), слов «Сплит» в UI нет */
-.bts .tkt-h .tkt-title { font: 400 17px var(--font-title); letter-spacing: -0.01em; color: var(--ink); }
+.bts .tkt-h .tkt-title { font: 400 16px var(--font-title); letter-spacing: -0.01em; color: var(--ink); }
 .bts .tkt-h .iseg { margin-left: 6px; }
 .bts .iseg {
     display: inline-flex; gap: 3px; flex: none;
@@ -316,54 +320,94 @@
     background: var(--grn);
     box-shadow: 0 5px 13px -6px color-mix(in srgb, var(--grn) 90%, transparent);
 }
-/* ---- тело карточки: «Сколько и почём» одним блоком + квитанция «Итог»
-   (владелец 2026-07-24): цена и сумма — один вопрос с делителем; apx/avg/rest
-   свёрнуты в один чек ---- */
-.bts .zone { display: flex; flex-direction: column; gap: 8px; }
-.bts .zone-t { display: flex; align-items: baseline; gap: 8px; font: 400 12.5px var(--font-title); color: var(--mut); }
-.bts .zone-t em { font-style: normal; margin-left: auto; font: 600 10.5px var(--font-num); color: var(--dim); }
-.bts .pair { border: 1px solid var(--line); border-radius: 14px; background: var(--card); overflow: hidden; }
-.bts .pair .row { padding: 11px 14px; }
-.bts .pair .row + .row { border-top: 1px solid var(--line); }
-.bts .pair .lab { display: flex; align-items: center; font: 600 11px var(--font-ui); color: var(--mut); margin-bottom: 4px; }
+/* ═══════ ТЕЛО КАРТОЧКИ ЗАЯВКИ — порт .tk-* мокапа overview3 (экраны 22–23) ═══════
+   Было наследие раунда 4c (мокапы trading5): заголовок зоны серифом СНАРУЖИ рамки,
+   подписи полей гротеском 11px, значения 20–22px, слайдер-волосок с акцентной ручкой.
+   Мокап «Витража» говорит иначе: рамка обнимает ЗОНУ ЦЕЛИКОМ вместе с заголовком,
+   подпись поля — капс моноширинный 9px, значение моно 19px, слайдер 4px с чернильной
+   ручкой. Величины ниже взяты из .tk-zone/.tk-zt/.tk-cell/.tk-lab/.tk-big/.tk-sl
+   один в один; --gl-in/--gl-in-edge (белое стекло) на непрозрачной карточке
+   переведены в чернильную заливку — общий приём проекта. */
+.bts .zone { border: 1px solid rgba(15, 23, 42, 0.09); border-radius: 12px; overflow: hidden; }
+.bts.night .zone { border-color: rgba(255, 255, 255, 0.1); }
+.bts .zone-t {
+    display: flex; align-items: baseline; gap: 8px;
+    padding: 8px 11px; border-bottom: 1px solid var(--hair);
+    font: 700 11.5px var(--font-ui); color: var(--ink);
+}
+.bts .zone-t em { font-style: normal; margin-left: auto; font: 600 10px var(--font-num); color: var(--dim); }
+.bts .pair { background: var(--card); }
+.bts .pair .row { padding: 9px 11px; }
+.bts .pair .row + .row { border-top: 1px solid var(--hair); }
+/* подпись поля — КАПС МОНО, как в мокапе: она метка, а не текст */
+.bts .pair .lab {
+    display: flex; align-items: baseline; gap: 8px;
+    font: 700 9px var(--font-num); letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim);
+}
 .bts .pair .row.err .lab { color: var(--red); }
-.bts .pair .big { display: flex; align-items: baseline; gap: 6px; }
-/* «По рынку» — не число, а фраза: серифом, как заголовки (владелец 2026-07-24) */
-.bts .pair .big .big-v { font: 400 22px var(--font-title); letter-spacing: -0.01em; color: var(--ink); }
-.bts .pair .big .big-in { min-width: 0; border: 0; background: none; padding: 0; color: var(--ink); font: 700 20px var(--font-num); font-variant-numeric: tabular-nums; }
+.bts .pair .lab .lab-r, .bts .pair .lab .fld-cap {
+    margin-left: auto; letter-spacing: 0; text-transform: none;
+    font: 600 10px var(--font-num); color: var(--dim); font-variant-numeric: tabular-nums;
+}
+.bts .pair .big {
+    display: flex; align-items: baseline; gap: 6px; margin-top: 5px;
+    font: 700 19px var(--font-num); font-variant-numeric: tabular-nums; color: var(--ink);
+}
+/* «По рынку» — ФРАЗА, не число (решение владельца 2026-07-24): серифом, но в
+   мокапном кегле 19px, чтобы строка не выпирала над соседними значениями */
+.bts .pair .big .big-v { font: 400 19px var(--font-title); letter-spacing: -0.01em; color: var(--ink); }
+.bts .pair .big .big-v.sm { font-size: 15px; }
+.bts .pair .big .big-in {
+    min-width: 0; border: 0; background: none; padding: 0; color: var(--ink);
+    font: 700 19px var(--font-num); font-variant-numeric: tabular-nums;
+}
 .bts .pair .big #btSxSum { flex: 1; }
 .bts .pair .big #btScnLimIn { width: 5.5em; }
 .bts .pair .big .big-in:focus { outline: none; }
 .bts .pair .big .big-in::placeholder { color: var(--dim); }
-.bts .pair .big small { font: 600 12px var(--font-num); color: var(--mut); }
-.bts .pair .big .gh { margin-left: auto; font: 600 11px var(--font-num); color: var(--dim); white-space: nowrap; }
+.bts .pair .big small { font: 600 56% var(--font-num); color: var(--mut); }
+/* правый хвост значения — «в лотах ⇄», «шаг 0,01 ⇅»: гротеск 10px, не моно */
+.bts .pair .big .gh, .bts .pair .big .fld-sw {
+    margin-left: auto; font: 600 10px var(--font-ui); color: var(--dim); white-space: nowrap;
+}
+.bts .pair .big .fld-sw, .bts .pair .big .gh[role="button"] { cursor: pointer; }
+.bts .pair .big .fld-sw:hover, .bts .pair .big .gh[role="button"]:hover { color: var(--ink); }
 .bts .pair .row.err .big .big-in { color: var(--red); }
-/* Рынок/Лимит компактным сегментом в подписи */
-/* .seg2 «Рынок|Лимит» в строке цены удалён: тип заявки живёт своим рядом .types */
-/* тонкий слайдер доли: волосяная дорожка, клик ставит сумму */
-.bts .slider { height: 14px; margin: 12px 2px 3px; position: relative; cursor: pointer; display: flex; align-items: center; }
+.bts .pair .row-cap { margin-top: 6px; font: 400 10.5px var(--font-ui); color: var(--dim); }
+/* слайдер доли — мокапный .tk-sl: дорожка 4px, чернильная ручка 12px */
+.bts .slider { position: relative; cursor: pointer; margin: 9px 0 0; }
 .bts .slider:empty { display: none; }
-.bts .slider .track { height: 2px; border-radius: 999px; background: var(--line); position: relative; flex: 1; }
-.bts .slider .track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; background: var(--acc); }
-.bts .slider .track b { position: absolute; top: 50%; width: 11px; height: 11px; border-radius: 50%; background: var(--card); border: 2px solid var(--acc); transform: translate(-50%, -50%); box-shadow: 0 2px 6px -2px rgba(0, 0, 0, 0.35); }
+.bts .slider .track { height: 4px; border-radius: 99px; background: rgba(15, 23, 42, 0.07); position: relative; }
+.bts.night .slider .track { background: rgba(255, 255, 255, 0.09); }
+.bts .slider .track i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; background: color-mix(in srgb, var(--ink) 45%, transparent); }
+.bts .slider .track b {
+    position: absolute; top: -4px; width: 12px; height: 12px; border-radius: 50%;
+    background: var(--ink); border: 2px solid var(--card); transform: translateX(-50%);
+}
 .bts .pair .presets { margin-top: 6px; }
-/* квитанция «Итог» */
-.bts .sum { display: flex; flex-direction: column; gap: 8px; }
+/* Квитанция = ряды .tk-row мокапа: 11.5px, значение моно-жирным, БЕЗ серифного
+   заголовка и без итога в 20px. Итог был громче всего в карточке и дублировал
+   сумму на самой кнопке — в мокапе он такая же тихая строка, как остальные,
+   а крупные числа в карточке только те, что человек вводит. */
+.bts .sum { display: flex; flex-direction: column; }
 .bts .sum:empty { display: none; }
-.bts .sum-hint { font: 400 12.5px/1.5 var(--font-ui); color: var(--mut); }
-.bts .sum-hint b { font: 600 13px var(--font-num); color: var(--ink); }
+.bts .sum-hint { font: 400 11.5px/1.5 var(--font-ui); color: var(--mut); padding: 5px 0; }
+.bts .sum-hint b { font: 700 11.5px var(--font-num); color: var(--ink); }
 .bts .sum-hint .mut { color: var(--dim); }
-.bts .sum-lead { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; font: 400 15px var(--font-title); color: var(--ink); }
-.bts .sum-lead b { font-family: var(--font-num); font-weight: 700; }
-.bts .sum-lots { margin-left: auto; font: 400 11px var(--font-ui); color: var(--dim); white-space: nowrap; }
+.bts .sum-lead {
+    display: flex; align-items: baseline; gap: 8px;
+    font: 400 11.5px var(--font-ui); color: var(--mut); padding: 5px 0;
+}
+.bts .sum-lead b { font: 700 11.5px var(--font-num); color: var(--ink); font-variant-numeric: tabular-nums; }
+.bts .sum-lots { margin-left: auto; font: 400 10px var(--font-ui); color: var(--dim); white-space: nowrap; }
 .bts .sum-lines { display: flex; flex-direction: column; }
-.bts .sum-line { display: flex; align-items: baseline; font: 400 12px var(--font-ui); color: var(--mut); padding: 3px 0; }
-.bts .sum-line b { margin-left: auto; font: 600 12.5px var(--font-num); color: var(--ink); }
-.bts .sum-total { display: flex; align-items: baseline; border-top: 1px solid var(--line); margin-top: 3px; padding-top: 8px; }
-.bts .sum-total > span { font: 600 12px var(--font-ui); color: var(--mut); }
-.bts .sum-total > b { margin-left: auto; font: 700 20px var(--font-num); color: var(--ink); }
-.bts .sum-sub { font: 400 11.5px var(--font-ui); color: var(--mut); }
-.bts .sum-sub b { font-family: var(--font-num); color: var(--ink); font-weight: 700; }
+.bts .sum-line { display: flex; align-items: baseline; font: 400 11.5px var(--font-ui); color: var(--mut); padding: 5px 0; }
+.bts .sum-line b { margin-left: auto; font: 700 11.5px var(--font-num); color: var(--ink); font-variant-numeric: tabular-nums; }
+.bts .sum-total { display: flex; align-items: baseline; padding: 5px 0; }
+.bts .sum-total > span { font: 400 11.5px var(--font-ui); color: var(--mut); }
+.bts .sum-total > b { margin-left: auto; font: 700 11.5px var(--font-num); color: var(--ink); font-variant-numeric: tabular-nums; }
+.bts .sum-sub { font: 400 10.5px var(--font-ui); color: var(--dim); padding: 3px 0 0; }
+.bts .sum-sub b { font-family: var(--font-num); color: var(--mut); font-weight: 700; }
 /* стакан на всю карточку (вид «Стакан») */
 .bts .tkt-depth { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 /* заголовок стакана в карточках — тем же кеглем, что вкладки заявки */
@@ -446,13 +490,19 @@
 .bts .fresh i { width: 6px; height: 6px; border-radius: 50%; background: var(--grn); }
 .bts .fresh.amber { color: var(--amb); }
 .bts .fresh.amber i { background: var(--amb); }
-.bts .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+/* Купить/Продать = .tk-side мокапа: две отдельные кнопки со своими рамками,
+   а не сегмент в общей коробке; активная — заливка в цвет стороны */
+.bts .seg { display: flex; gap: 4px; }
 .bts .seg span {
-    text-align: center; font: 700 13.5px var(--font-ui); color: var(--dim);
-    border-radius: 9px; padding: 8px 0; cursor: pointer; user-select: none;
+    flex: 1; text-align: center; font: 700 12.5px var(--font-ui); color: var(--mut);
+    padding: 9px 0; border-radius: 10px; cursor: pointer; user-select: none;
+    border: 1px solid rgba(15, 23, 42, 0.09);
 }
-.bts .seg span.on { background: color-mix(in srgb, var(--grn) 16%, transparent); color: var(--grn); }
-.bts .seg span.on.sell { background: color-mix(in srgb, var(--red) 14%, transparent); color: var(--red); }
+.bts.night .seg span { border-color: rgba(255, 255, 255, 0.1); }
+.bts .seg span:hover { color: var(--ink); }
+.bts .seg span.on { background: color-mix(in srgb, var(--grn) 16%, transparent); color: #0f7a52; border-color: transparent; }
+.bts.night .seg span.on { color: #4fb98c; }
+.bts .seg span.on.sell { background: color-mix(in srgb, var(--red) 14%, transparent); color: var(--red); border-color: transparent; }
 .bts .fld { border: 1px solid var(--line); border-radius: 12px; padding: 9px 13px; }
 /* «не хватает денег»: поле краснеет вместе с подписью (мокап 08) */
 .bts .fld.err { border-color: color-mix(in srgb, var(--red) 50%, transparent); }
@@ -1256,13 +1306,15 @@
 .bts .lim-edit input:focus { outline: none; }
 .bts .lim-edit u { text-decoration: none; font: 400 13px var(--font-ui); color: var(--mut); }
 /* «что нужно знать» свёрнуто в строку («Разгон»+) */
+/* свёрнутое «что нужно знать» = .tk-know мокапа: плашка с тихой заливкой,
+   а не строка на волоске; «3 факта ›» — чернильные, не акцентные */
 .bts .know {
-    display: flex; align-items: center; gap: 8px;
-    font: 400 12.5px var(--font-ui); color: var(--mut);
-    border-top: 1px solid var(--hair); padding-top: 10px;
+    display: flex; align-items: center; gap: 9px; cursor: pointer;
+    padding: 10px 12px; border-radius: 11px; background: rgba(15, 23, 42, 0.045);
+    font: 400 11.5px var(--font-ui); color: var(--mut);
 }
-.bts .know { cursor: pointer; }
-.bts .know u { text-decoration: none; margin-left: auto; color: var(--acc); font-weight: 600; cursor: pointer; }
+.bts.night .know { background: rgba(255, 255, 255, 0.05); }
+.bts .know u { text-decoration: none; margin-left: auto; color: var(--ink); font-weight: 700; cursor: pointer; }
 /* «что нужно знать» РАСКРЫТО — три факта с иконками (владелец 2026-07-24):
    короткий жирный вывод + тихая расшифровка, глаз цепляет за секунду */
 /* know2 — flex-колонка: при нехватке высоты сжимается ЗА СЧЁТ прокрутки фактов
