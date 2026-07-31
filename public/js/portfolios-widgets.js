@@ -673,6 +673,16 @@
             return '<button class="pfcap-rb' + (PF.pfdCapRange === r[0] ? ' on' : '') + '" onclick="pfdCapSetRange(\'' + r[0] + '\')">' + r[1] + '</button>';
         }).join('') + '</div>';
     }
+    // «Что показать на полотне» (мокап overview3, экран 16): пик и дно, полоса
+    // выплат. Обе по умолчанию включены и живут в раскладке — это свойство
+    // виджета, а не сессии. Сравнение сюда не входит намеренно: две кривые на
+    // стекле спорят, и вторая появляется только по нажатию (экран 18, п. 10).
+    function pfdCapShow(k) { return (PF.dashCfg.capShow || {})[k] !== 0; }
+    window.pfdCapShowToggle = function (k) {
+        var m = PF.dashCfg.capShow || (PF.dashCfg.capShow = {});
+        m[k] = pfdCapShow(k) ? 0 : 1;
+        saveDashCfg(); pfdRerender();
+    };
     // ═══════════ СРАВНЕНИЕ ГРАФИКА КАПИТАЛА С ИНДЕКСОМ ═══════════
     // (мокап overview3, экран 19). Шкала графика уже в процентах от старта окна,
     // поэтому вторая кривая ложится на неё без пересчёта осей: индекс переводим
@@ -719,6 +729,68 @@
         pfdRerender();
     };
 
+    // ═══════════ ПОЛОСА ВЫПЛАТ ПОД ПОЛОТНОМ (мокап overview3, экран 18) ═══════════
+    // «Показывает, что доход бывает не только от цены». Расписание берём то же,
+    // что кормит «Календарь выплат»: купоны — по датам зачисления, дивиденды — по
+    // дате отсечки. Пока расписание грузится, полосы просто нет: ensureSchedule по
+    // приходе дёргает softRerender, и она появляется сама.
+    function pfdPayByDate(from, till) {
+        var map = {}, total = 0, max = 0;
+        visibleItems().forEach(function (p) {
+            (p.holdings || []).forEach(function (h) {
+                if (!h.ticker || !(aggHolding(h).qty > 0)) return;
+                var isB = h.type === 'bond', sched;
+                if (isB) {
+                    var full = PF.fullBondId(h.ticker);
+                    if (!(full in PF.coupSched)) { PF.ensureSchedule('bond', full); return; }
+                    sched = PF.coupSched[full];
+                } else {
+                    if (!(h.ticker in PF.divSched)) { PF.ensureSchedule('div', h.ticker); return; }
+                    sched = PF.divSched[h.ticker];
+                }
+                if (!sched) return;
+                sched.forEach(function (cp) {
+                    if (!(+cp.v > 0) || cp.d < from || cp.d > till) return;
+                    var q = PF.qtyAtDate(h, cp.d); if (!(q > 0)) return;
+                    map[cp.d] = (map[cp.d] || 0) + cp.v * q;
+                    total += cp.v * q;
+                });
+            });
+        });
+        Object.keys(map).forEach(function (k) { if (map[k] > max) max = map[k]; });
+        return { map: map, total: total, max: max };
+    }
+    // Полоса под полотном: столбик на день. Дней в окне бывает и 400 — тогда бы
+    // столбики стали уже пикселя, поэтому раскладываем по колонкам (не больше 60)
+    // и выплату суммируем в ту колонку, в чей день она попала. Пустые колонки —
+    // насечка-основание высотой 3px: она показывает шкалу дней, а не «немного
+    // денег каждый день» (сумму и дату говорит подсказка на колонке).
+    var PFD_PAY_COLS = 60;
+    function pfdPayBandHtml(s, pay) {
+        var n = s.length, cols = Math.min(n, PFD_PAY_COLS);
+        var sum = new Array(cols), when = new Array(cols), i;
+        for (i = 0; i < cols; i++) { sum[i] = 0; when[i] = []; }
+        var byIdx = {}; s.forEach(function (pt, k) { byIdx[pt.d] = k; });
+        Object.keys(pay.map).forEach(function (d) {
+            var k = byIdx[d];
+            if (k == null) {                                  // выплата в день без снимка —
+                for (var j = 0; j < n; j++) {                 // кладём в ближайший прошлый
+                    if (s[j].d <= d) k = j; else break;
+                }
+            }
+            if (k == null) k = 0;
+            var c = cols > 1 ? Math.round(k / (n - 1) * (cols - 1)) : 0;
+            sum[c] += pay.map[d]; when[c].push(d);
+        });
+        var bars = '';
+        for (i = 0; i < cols; i++) {
+            if (!(sum[i] > 0)) { bars += '<i style="height:3px"></i>'; continue; }
+            var hgt = Math.max(5, Math.round(sum[i] / pay.max * 15));
+            bars += '<i class="on" style="height:' + hgt + 'px" title="' +
+                esc(when[i].map(ruDate).join(', ')) + ' · ' + esc(fmtRub(sum[i])) + '"></i>';
+        }
+        return '<div class="pfcap-pay">' + bars + '</div>';
+    }
     // Полотно графика капитала вынесено в отдельную функцию: тот же плот нужен
     // и виджету «График капитала», и герою «Обзора». Возвращает {hero, body} —
     // крупную строку стоимости с дельтой и само полотно с осью и подписями дат.
@@ -771,7 +843,10 @@
             var delta = last.v - s[0].v, dPct = s[0].v > 0 ? delta / s[0].v * 100 : 0;
             var up = delta >= 0, col = up ? '#12a35c' : '#e0592b';
             var daysShown = Math.max(1, Math.round((new Date(last.d).getTime() - new Date(s[0].d).getTime()) / 86400000));
-            pfdCapState = { s: s, min: min, span: span, n: n, inx: INX, pt: PT, pb: PB };
+            // base/cmp — для подсказки перекрестия: она печатает процент от начала
+            // окна (тот же отсчёт, что у шкалы) и вторую строку по наложенной кривой
+            pfdCapState = { s: s, min: min, span: span, n: n, inx: INX, pt: PT, pb: PB,
+                base: s[0].v || 0, cmp: cmpPts, bench: bench };
             // ШКАЛА В ПРОЦЕНТАХ ОТ СТАРТА ПЕРИОДА (мокап overview3, экран 19).
             // Была шкала в рублях: «19,1 млн / 18,6 млн / 18,1 млн» — три почти
             // одинаковых числа, по которым нельзя прикинуть, много ли «вот столько».
@@ -798,6 +873,25 @@
                     pctLabel(tp) + '</span>';
             });
             var lx = xP(n - 1).toFixed(2), ly = yP(last.v).toFixed(2);
+            // ПОДПИСИ ПИКА И ДНА (мокап overview3, экран 18): две даты с суммами
+            // прямо на полотне. Шкала даёт всю высоту, но не называет ни одной
+            // точки; подписи называют ровно те две, о которых спрашивают. Рисуем
+            // только когда точек хватает и пик со дном — разные дни.
+            var marks = '';
+            if (pfdCapShow('peak') && n >= 4) {
+                var iMax = 0, iMin = 0;
+                s.forEach(function (pt, i) { if (pt.v > s[iMax].v) iMax = i; if (pt.v < s[iMin].v) iMin = i; });
+                if (iMax !== iMin) {
+                    marks = [[iMax, 'hi'], [iMin, 'low']].map(function (m) {
+                        var pt = s[m[0]];
+                        return '<span class="pfcap-mk ' + m[1] + '" style="left:' +
+                            clamp(xP(m[0]), 9, 91).toFixed(1) + '%;top:' + yP(pt.v).toFixed(1) + '%">' +
+                            '<b>' + fmtRub(pt.v) + '</b> · ' + ruDate(pt.d).slice(0, 5) + '</span>';
+                    }).join('');
+                }
+            }
+            var pay = pfdCapShow('pay') && !demoSeries ? pfdPayByDate(s[0].d, last.d) : null;
+            if (pay && !(pay.total > 0)) pay = null;
             // герой: крупная текущая стоимость + пилюля дельты + за сколько дней
             hero = '<div class="pfcap-hero"><span class="pfcap-val">' + fmtRub(last.v) + '</span>' +
                 '<span class="pfcap-delta ' + (up ? 'pos' : 'neg') + '">' + (up ? '▲' : '▼') + ' ' + fmtRub(Math.abs(delta)) + ' · ' + fmtPct(dPct) + '</span>' +
@@ -817,15 +911,18 @@
                     '<path d="' + line + '" fill="none" stroke="' + col + '" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>' +
                 '</svg>' +
                 '<span class="pfcap-end" style="left:' + lx + '%;top:' + ly + '%;--cc:' + col + '"></span>' +
-                yTicks +
+                yTicks + marks +
                 '<div class="pfcap-cursor"></div><span class="pfcap-cdot"></span><div class="pfcap-tip"></div>' +
                 '<div class="pfcap-hit" onmousemove="pfdCapHover(event)" onmouseleave="pfdCapHoverEnd(event)"></div>' +
             '</div>' +
+            (pay ? pfdPayBandHtml(s, pay) : '') +
             '<div class="pfcap-x"><span>' + ruDate(s[0].d) + '</span><span>' + ruDate(last.d) + '</span></div>' +
-            (bench ? '<div class="pfcap-leg"><span><i class="pfcap-lp" style="background:' + col + '"></i>капитал</span>' +
-                '<span><i class="pfcap-li"></i>' + esc(bench) +
-                (cmpState === 'load' ? ' <em>грузим…</em>' : cmpState === 'err' ? ' <em>нет данных</em>' : '') + '</span>' +
-                '<span class="pfcap-leg-r">обе кривые — в процентах от начала окна</span></div>' : '') +
+            (bench || pay ? '<div class="pfcap-leg"><span><i class="pfcap-lp" style="background:' + col + '"></i>капитал</span>' +
+                (bench ? '<span><i class="pfcap-li"></i>' + esc(bench) +
+                    (cmpState === 'load' ? ' <em>грузим…</em>' : cmpState === 'err' ? ' <em>нет данных</em>' : '') + '</span>' : '') +
+                (pay ? '<span><i class="pfcap-lg"></i>выплаты по дням <em>' + esc(fmtRub(pay.total)) + '</em></span>' : '') +
+                '<span class="pfcap-leg-r">' + (bench ? 'обе кривые — в процентах от начала окна' : 'шкала — от начала окна') +
+                '</span></div>' : '') +
             pfdCapRangesHtml();
             if (!opts.noCmp) right = pfdCapCmpBtnHtml();
         }
@@ -1063,7 +1160,18 @@
         var cur = plot.querySelector('.pfcap-cursor'), cdot = plot.querySelector('.pfcap-cdot'), tip = plot.querySelector('.pfcap-tip');
         if (cur) { cur.style.left = lx + '%'; cur.classList.add('on'); }
         if (cdot) { cdot.style.left = lx + '%'; cdot.style.top = ly + '%'; cdot.classList.add('on'); }
-        if (tip) { tip.innerHTML = '<b>' + fmtRub(pt.v) + '</b><i>' + ruDate(pt.d) + '</i>'; tip.style.left = clamp(lx, 13, 87) + '%'; tip.classList.add('on'); }
+        if (tip) {
+            // процент — от начала окна, тем же отсчётом, что шкала слева: «−4,3%»
+            // в подсказке и «−5%» на шкале обязаны говорить об одном (экран 18)
+            var pct = st.base > 0 ? (pt.v / st.base - 1) * 100 : null;
+            var html = '<b>' + fmtRub(pt.v) + '</b><i>' + ruDate(pt.d) +
+                (pct == null ? '' : ' · ' + fmtPct(pct)) + '</i>';
+            // вторая строка — только когда сравнение включено И индекс за этот день есть
+            if (st.cmp && st.cmp[i] != null && st.base > 0) {
+                html += '<i>' + esc(st.bench) + ' за тот же срок · ' + fmtPct((st.cmp[i] / st.base - 1) * 100) + '</i>';
+            }
+            tip.innerHTML = html; tip.style.left = clamp(lx, 13, 87) + '%'; tip.classList.add('on');
+        }
     };
     window.pfdCapHoverEnd = function (ev) {
         var plot = ev.currentTarget && ev.currentTarget.parentNode; if (!plot) return;

@@ -2474,3 +2474,24 @@ body.dark-mode .pfcap-cmp:hover, body.dark-mode .pfcap-cmp.on { color: #e8eef7; 
 .pfcap-lp { width: 14px; height: 2px; border-radius: 2px; }
 .pfcap-li { width: 14px; height: 2px; border-radius: 2px;
     background: repeating-linear-gradient(90deg, #4a6fa5 0 4px, transparent 4px 7px); }
+.pfcap-lg { width: 8px; height: 8px; border-radius: 2px; background: rgba(18, 163, 92, 0.6); }
+
+/* ---- пик и дно + полоса выплат (мокап overview3, экран 18) ----
+   Подписи стоят НА полотне у своих точек: шкала слева даёт высоту, а имя
+   у крайних значений не даёт никто. Пик подписан сверху точки, дно — снизу,
+   поэтому они не сталкиваются с кривой между ними. */
+.pfcap-mk { position: absolute; white-space: nowrap; pointer-events: none; z-index: 2;
+    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 9.5px; font-weight: 500;
+    color: #94a3b8; font-variant-numeric: tabular-nums; }
+.pfcap-mk b { font-weight: 700; color: #46586e; }
+.pfcap-mk.hi { transform: translate(-50%, -160%); }
+.pfcap-mk.low { transform: translate(-50%, 60%); }
+body.dark-mode .pfcap-mk b, .pfd-item.pfd-thm-dark .pfcap-mk b { color: #d3dcea; }
+/* полоса выплат: столбик на колонку дней. Пустая колонка — насечка-основание
+   3px (шкала дней), колонка с деньгами — зелёный столбик до 15px и подсказка
+   с датой и суммой; масштаб полосы свой, от крупнейшей выплаты окна. */
+.pfcap-pay { display: flex; align-items: flex-end; gap: 3px; height: 16px; margin: 7px 0 0 52px; }
+.pfcap-pay i { flex: 1; min-width: 0; border-radius: 2px 2px 0 0; background: rgba(18, 163, 92, 0.22); }
+.pfcap-pay i.on { background: rgba(18, 163, 92, 0.62); }
+body.dark-mode .pfcap-pay i { background: rgba(52, 211, 153, 0.18); }
+body.dark-mode .pfcap-pay i.on { background: rgba(52, 211, 153, 0.55); }
