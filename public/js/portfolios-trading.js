@@ -5143,19 +5143,21 @@
             return '<b class="' + (v > 0 && +simpleSum === v ? 'on' : '') + (off ? ' off' : '') +
                 '" role="button" tabindex="0" onclick="' + fn + '">' + lab + '</b>';
         }
-        if (buy) {
-            var free = scnFree();
-            return pch('5 000', 5000, 'pftSxQuick(5000)') +
-                pch('15 000', 15000, 'pftSxQuick(15000)') +
-                pch('30 000', 30000, 'pftSxQuick(30000)') +
-                // «Максимум» — все свободные деньги; делитель расчёта уже включает
-                // комиссию, поэтому итог не вылезет за них (закон раунда 1)
-                pch('Макс', free > 0 ? Math.floor(free) : 0, 'pftSxMax()', !(free > 0));
+        // ДОЛИ, А НЕ СУММЫ (мокап «Витража»: «10 % · 25 % · 50 % · Всё»).
+        // Круглые рубли «5 000 / 15 000 / 30 000 / Макс» были длиннее колонки
+        // сплита и ломали ряд на два этажа; доля к тому же честнее — она про
+        // ваши деньги, а не про абстрактную сумму
+        var base = buy ? scnFree() : haveQty(s);
+        var ok = base > 0;
+        function frac(lab, k) {
+            var v = Math.floor(base * k);
+            return pch(lab, v, ok ? 'pftSxQuick(' + v + ')' : '', !ok || !(v > 0));
         }
-        var have = haveQty(s);
-        return pch('Четверть', Math.floor(have / 4), 'pftSxQuick(' + Math.floor(have / 4) + ')', !(have >= 4)) +
-            pch('Половина', Math.floor(have / 2), 'pftSxQuick(' + Math.floor(have / 2) + ')', !(have >= 2)) +
-            pch('Всё', have, 'pftSxQuick(' + have + ')', !(have > 0));
+        return frac('10 %', 0.1) + frac('25 %', 0.25) + frac('50 %', 0.5) +
+            // «Всё» у покупки — все свободные деньги: делитель расчёта уже
+            // включает комиссию, поэтому итог не вылезет за них (закон раунда 1)
+            (buy ? pch('Всё', ok ? Math.floor(base) : 0, 'pftSxMax()', !ok)
+                 : pch('Всё', base, 'pftSxQuick(' + base + ')', !ok));
     }
     function scnRestHtml(n) {
         var s = S(n), buy = s.side !== 'sell';
@@ -5192,7 +5194,7 @@
             if (blk.indexOf('Биржа закрыта') === 0) note = 'Черновик переживёт ночь в тикете — утром цена будет свежей';
         } else if (short > 0) {
             label = 'Не хватает ' + fmtRub(short);
-            note = 'Пресет «Макс» подставит достижимую сумму';
+            note = 'Пресет «Всё» подставит достижимую сумму';
         } else if (sellOver) {
             label = 'У вас только ' + have.toLocaleString('ru-RU') + ' шт';
             note = 'Пресет «Всё» подставит всю позицию';
@@ -8547,11 +8549,14 @@
     }
     // высота сцены — по факту, как sxFit раунда 1: сверху набегает переменный
     // хром, а zoom 0.9 отдаёт rect в экранных пикселях (делим на zoom)
+    var SCN_INSET = 10;   // поля панели сцены — тот же --bts-inset в CSS
     function scnFit() {
         var el = dq('btScene');
         if (!el) return;
         var z = parseFloat(getComputedStyle(document.body).zoom) || 1;
-        var h = (window.innerHeight - el.getBoundingClientRect().top) / z;
+        // сцена — панель с полями (SCN_INSET): низ обязан оставить своё поле,
+        // иначе панель уезжает под край окна и тень снизу срезается
+        var h = (window.innerHeight - el.getBoundingClientRect().top) / z - SCN_INSET;
         if (h > 480) el.style.height = h + 'px';
         scnDockFit();
         scnAcctFit();
