@@ -467,28 +467,13 @@
 /* заголовок стакана в карточках — тем же кеглем, что вкладки заявки */
 .bts .tkt .d-h b, .bts .tkt-sub .d-h b { font-size: 16px; }
 .bts .d-tape-b { margin-top: 2px; }
-/* ЛИНИЯ БАЛАНСА спроса/предложения над лесенкой (владелец 2026-07-24): не горы,
-   а одна тонкая мерная полоса — зелёная слева по доле спроса, красная справа,
-   стык на балансе; доли подписаны по краям */
-.bts .d-bal { flex: none; margin-bottom: 10px; display: flex; flex-direction: column; gap: 5px; }
-.bts .d-bal-cap { display: flex; justify-content: space-between; font: 400 10.5px var(--font-ui); color: var(--dim); }
-.bts .d-bal-cap b { font: 700 11px var(--font-num); }
-.bts .d-bal-b { color: var(--grn); }
-.bts .d-bal-a { color: var(--red); }
-.bts .d-balbar {
-    position: relative; height: 8px; border-radius: 999px; overflow: hidden;
-    background: linear-gradient(90deg,
-        color-mix(in srgb, var(--grn) 82%, transparent) 0 var(--split),
-        color-mix(in srgb, var(--red) 82%, transparent) var(--split) 100%);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 6%, transparent);
-    transition: none;
-}
-/* мягкий стык-делитель на балансе */
-.bts .d-balbar::after {
-    content: ''; position: absolute; top: -2px; bottom: -2px; left: var(--split);
-    width: 2px; transform: translateX(-50%);
-    background: var(--card); box-shadow: 0 0 4px color-mix(in srgb, var(--ink) 25%, transparent);
-}
+/* ПОЛОСА БАЛАНСА = .dep-bal мокапа: 5px из двух сегментов с зазором 2px,
+   красный слева по доле предложения, зелёный справа по доле спроса. Подписей
+   «спрос N% / N% предложение» нет — они читались лишней полосой над лесенкой. */
+.bts .d-bal { display: flex; height: 5px; border-radius: 99px; overflow: hidden; gap: 2px; margin-bottom: 10px; flex: none; }
+.bts .d-bal i { display: block; height: 100%; border-radius: 99px; }
+.bts .d-bal .d-bal-a { background: color-mix(in srgb, var(--red) 55%, transparent); }
+.bts .d-bal .d-bal-b { background: color-mix(in srgb, var(--grn) 55%, transparent); }
 /* лесенка уровней — по высоте контента (flex:none): лента растёт СЛЕДОМ и
    занимает низ, без большого пробела (владелец 2026-07-24) */
 .bts .d-ladder { flex: none; min-height: 0; }
@@ -694,35 +679,19 @@
 }
 .bts .wl-x:hover { color: var(--ink); }
 .bts .wl-none { font: 400 11.5px var(--font-ui); color: var(--mut); line-height: 1.55; padding: 4px 6px; }
+/* СТРОКА РЕЙКИ = .wl-i мокапа: тикер и процент одной строкой. Прежняя несла
+   клавишу-цифру, спарклайн, имя компании и цену в два этажа — рейка выходила
+   вчетверо тяжелее и ни на что не была похожа. */
 .bts .wl-r {
-    display: flex; align-items: center; gap: 8px; border-radius: 10px;
+    display: flex; align-items: baseline; gap: 8px; border-radius: 9px;
     padding: 7px 8px; cursor: pointer; flex: none;
+    font: 700 11.5px var(--font-num); font-variant-numeric: tabular-nums; color: var(--ink);
 }
-.bts .wl-r:hover { background: color-mix(in srgb, var(--acc) 6%, transparent); }
-.bts .wl-r.on {
-    background: color-mix(in srgb, var(--acc) 8%, transparent);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--acc) 35%, transparent);
-}
-.bts .wl-r kbd {
-    flex: none; width: 18px; height: 18px; border-radius: 5px;
-    border: 1px solid var(--line); font: 500 10.5px var(--font-num); color: var(--dim);
-    display: grid; place-items: center;
-}
-.bts .wl-r .tk { width: 92px; min-width: 0; }
-.bts .wl-r .tk b { display: block; font: 700 12.5px var(--font-num); }
-.bts .wl-r .tk em {
-    display: block; font: 400 10px var(--font-ui); font-style: normal; color: var(--dim);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.bts .wl-sp { flex: none; }
-.bts .wl-sp polyline { fill: none; stroke-width: 1.5; stroke-linejoin: round; opacity: 0.75; }
-.bts .wl-sp polyline.g { stroke: var(--grn); }
-.bts .wl-sp polyline.r { stroke: var(--red); }
-.bts .wl-r .pd { margin-left: auto; font: 600 11px var(--font-num); text-align: right; white-space: nowrap; }
-.bts .wl-r .pd b { display: block; font-size: 12.5px; color: var(--ink); }
-.bts .wl-r .pd i { font-style: normal; }
-.bts .wl-r .pd i.g { color: var(--grn); }
-.bts .wl-r .pd i.r { color: var(--red); }
+.bts .wl-r:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+.bts .wl-r.on { background: var(--gl-in); }
+.bts .wl-r em { margin-left: auto; font-style: normal; font: 700 10.5px var(--font-num); }
+.bts .wl-r em.pos { color: var(--grn); }
+.bts .wl-r em.neg { color: var(--red); }
 .bts .wl-ft {
     margin-top: auto; font: 400 10.5px var(--font-ui); color: var(--dim); line-height: 1.45;
     border-top: 1px solid var(--hair); padding: 9px 6px 0; flex: none;
@@ -1565,16 +1534,23 @@
 .bts .dock-tabs .shev { border: 0; background: none; color: var(--dim); cursor: pointer; font-size: 12px; padding: 0; text-align: start; margin-left: auto; }
 /* колонки уже, панель выше (владелец 2026-07-23 «больше и уже»):
    в сплите росток делит ширину с двумя карточками — таблице хватает 90-х */
+/* СЕТКА МОКАПА (.dk-hd/.dk-r): 120 90 150 90 110 1fr 90. Прежние колонки были
+   уже, и «−1 526 440,00 ₽» в «Прибыли» ломалось на вторую строку.
+   ГЛАВНОЕ: .dk-hd — прямой ребёнок .dock, а .dk-r лежит внутри .dk-body —
+   это ДВА РАЗНЫХ грида, колонки шапки и строк физически не могли совпасть.
+   Лечится display:contents у обёртки-прокрутки. */
 .bts .dk-hd, .bts .dk-r {
-    display: grid; grid-template-columns: 100px 70px 1fr 84px 84px 100px 80px;
-    gap: 10px; align-items: center; font: 400 12px var(--font-ui);
+    display: grid; grid-template-columns: 120px 90px 150px 90px 110px 1fr 90px;
+    gap: 12px; align-items: center; padding: 7px 14px;
+    font: 400 11.5px var(--font-num); font-variant-numeric: tabular-nums;
 }
 .bts .dk-hd {
-    font: 800 10px var(--font-ui); letter-spacing: 0.09em; text-transform: uppercase;
-    color: var(--dim); padding: 8px 0 6px;
+    font: 700 9px var(--font-num); letter-spacing: 0.11em; text-transform: uppercase;
+    color: var(--dim); border-bottom: 1px solid var(--hair); padding: 7px 14px;
 }
-.bts .dk-body { max-height: 224px; overflow-y: auto; scrollbar-width: thin; }
-.bts .dk-r { height: 34px; border-top: 1px solid var(--hair); color: var(--mut); border-radius: 7px; }
+.bts .dk-body { display: contents; }
+.bts .dk-r { border-bottom: 1px solid var(--hair); color: var(--mut); border-radius: 0; height: auto; }
+.bts .dk-r:last-child { border-bottom: 0; }
 .bts .dk-r:hover { background: color-mix(in srgb, var(--acc) 4%, transparent); }
 .bts .dk-r b { font: 600 12px var(--font-num); color: var(--ink); }
 .bts .dk-r .g { color: var(--grn); }
@@ -2166,3 +2142,11 @@
    получить высоту явно, иначе холст схлопывается в ноль (поймано сверкой) */
 .bts .bts-chart { display: block; position: relative; }
 .bts .bts-chart > * { height: 100%; }
+/* заголовок ленты сделок = .dep-tape мокапа: капс-моно 8.5px над строками */
+.bts .d-tape-mini { margin-top: auto; padding-top: 10px; border-top: 1px solid var(--hair); border-top-style: solid; }
+.bts .d-tape-mini .d-h2 {
+    display: block; font: 700 8.5px var(--font-num); letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--dim); margin-bottom: 6px; padding: 0;
+}
+/* шапка стакана без подсказки-строки */
+.bts .tkt-sub-depth .d-h { padding: 0 0 10px; }

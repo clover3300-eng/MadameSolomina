@@ -6116,17 +6116,7 @@
             }, function () { wlData[tk] = 'err'; wlPaint(); })
             .catch(function () { wlData[tk] = 'err'; wlPaint(); });
     }
-    function wlSpark(closes, up) {
-        var W = 46, H = 20;
-        var min = Math.min.apply(null, closes), max = Math.max.apply(null, closes);
-        var span = (max - min) || 1;
-        var pts = closes.map(function (v, i) {
-            return (i * W / (closes.length - 1)).toFixed(1) + ',' +
-                (H - 2 - (v - min) / span * (H - 4)).toFixed(1);
-        }).join(' ');
-        return '<svg class="wl-sp" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">' +
-            '<polyline points="' + pts + '" class="' + (up ? 'g' : 'r') + '"/></svg>';
-    }
+    // спарклайн рейки удалён вместе с тяжёлой строкой (мокап: тикер + процент)
     // Рейка F знает два режима: «Избранное» (стор stk_fav_v1) и «Список» —
     // все бумаги из таблицы вкладки «Расчёт» (глобали bonds/echelonTableData,
     // загруженные data.js): акции с потенциалом и эшелоном, облигации с
@@ -6178,19 +6168,22 @@
             var right = '';
             if (d && d !== 'busy' && d !== 'err') {
                 var up = d.d >= 0;
-                right = wlSpark(d.closes, up) +
-                    '<span class="pd"><b>' + d.last.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + '</b>' +
-                    '<i class="' + (up ? 'g' : 'r') + '">' + (up ? '+' : '−') +
-                    Math.abs(d.d).toLocaleString('ru-RU', { maximumFractionDigits: 1 }) + ' %</i></span>';
-            } else if (d === 'err') right = '<span class="pd"><i>—</i></span>';
+                right = '<em class="' + (up ? 'pos' : 'neg') + '">' + (up ? '+' : '−') +
+                    Math.abs(d.d).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + '%</em>';
+            } else if (d === 'err') right = '<em>—</em>';
+            // СТРОКА МОКАПА (.wl-i): тикер и процент — всё. Клавиша-цифра,
+            // спарклайн, имя компании и цена в два этажа делали рейку вчетверо
+            // тяжелее задуманного; номер клавиши остался в подсказке, спарклайн
+            // и цена — тоже (рейка узкая, ей хватает одной строки на бумагу).
             return '<div class="wl-r' + (on ? ' on' : '') + '" role="button" tabindex="0" ' +
-                'onclick="pftScWlGo(\'' + jsArg(tk) + '\')" title="В сцену — клавиша ' + (i + 1) + '">' +
-                '<kbd>' + (i + 1) + '</kbd>' +
-                '<span class="tk"><b>' + esc(tk) + '</b>' + (nm ? '<em>' + esc(nm) + '</em>' : '') + '</span>' +
-                right + '</div>';
+                'onclick="pftScWlGo(\'' + jsArg(tk) + '\')" title="' + esc(nm || tk) +
+                (d && d !== 'busy' && d !== 'err' ? ' · ' + d.last.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' ₽' : '') +
+                ' — в сцену, клавиша ' + (i + 1) + '">' +
+                esc(tk) + right + '</div>';
         }).join('');
-        return '<div class="wl-scroll">' + wlCapHtml('Отмечено звездой') + rows + '</div>' +
-            '<div class="wl-ft">звезда ☆ у имени бумаги добавляет её сюда · клавиши 1–9 работают и при закрытой рейке</div>';
+        // подвала-абзаца в мокапе нет: он занимал четверть рейки. Правило про
+        // звезду и клавиши переехало в подсказку самой рейки (title у заголовка).
+        return '<div class="wl-scroll">' + wlCapHtml('Отмечено звездой') + rows + '</div>';
     }
     // «Список»: акции и облигации из таблицы вкладки «Расчёт». data.js кладёт
     // их в глобали echelonTableData ([[I],[II],[III],[IV]], элемент {t,n,target})
@@ -7330,20 +7323,26 @@
         // slim — стакан внутри карточки тикета «Старта»: слово «Стакан» уже
         // на вкладке карточки, остаётся только подсказка жеста.
         // deep — уровней на сторону: карточной высоте есть куда расти
+        // Шапка мокапа — только имя и свежесть: подсказку жеста «клик — выбрать
+        // уровень» убрал, она занимала строку в узкой колонке и вылезала полосой
+        // над лесенкой. Жест раскрывается ховером и плашкой свипа.
         var head = slim
-            ? '<div class="d-h"><em>клик — выбрать уровень «до сюда»</em></div>'
-            : '<div class="d-h"><b>Стакан</b><em>клик — выбрать уровень «до сюда»</em></div>';
+            ? ''
+            : '<div class="d-h"><b>Стакан</b></div>';
         if (!s.ob) return head + '<div class="bts-cnote">Ждём стакан…</div>';
         var d = scnDepthData(s, deep || SCN_DEPTH);
         var bal = scnBalTxt(d);
         // ЛИНИЯ БАЛАНСА спроса/предложения (владелец 2026-07-24: не горы, а
         // одна красивая линия): тонкая мерная полоса — зелёная слева по доле
         // спроса, красная справа, стык на балансе; доли подписаны по краям
-        var balStrip = '<div class="d-bal">' +
-            '<div class="d-bal-cap"><span class="d-bal-b">спрос <b id="btScnBalB">' + bal.bid + '%</b></span>' +
-            '<span class="d-bal-a"><b id="btScnBalA">' + bal.ask + '%</b> предложение</span></div>' +
-            '<div class="d-balbar" id="btScnBalBar" style="--split:' + bal.bid + '%"></div>' +
-        '</div>';
+        // ПОЛОСА БАЛАНСА мокапа (.dep-bal): 5px из ДВУХ сегментов — красный слева
+        // по доле предложения, зелёный справа по доле спроса, зазор 2px. Подписи
+        // «спрос 52% / 48% предложение» сняты: они и были той «полосой сверху»,
+        // а доли и так читаются длиной сегментов (title оставляем для точности).
+        var balStrip = '<div class="d-bal" id="btScnBalBar" title="спрос ' + bal.bid +
+            ' % · предложение ' + bal.ask + ' %">' +
+            '<i class="d-bal-a" style="width:' + bal.ask + '%"></i>' +
+            '<i class="d-bal-b" style="width:' + bal.bid + '%"></i></div>';
         // пустую сторону неликвида показываем, не прячем (экран 11): рыночной
         // цены без неё не существует — кнопку тикета гасит scnSubmitBlock
         var askPart = d.asks.length
@@ -7358,7 +7357,7 @@
         return head + balStrip +
             '<div class="d-sweepw" id="btScnSweep">' + scnSweepBar(s) + '</div>' +
             ladder +
-            '<div class="d-tape-mini"><div class="d-h2">Лента сделок</div>' +
+            '<div class="d-tape-mini"><b class="d-h2">Лента</b>' +
             '<div class="d-tape-b">' + scnTkTapeRows(s, 24) + '</div></div>';
     }
     // тик стакана: та же структура — патчим ЖИВЫЕ узлы (цены, лоты, ширины
@@ -7415,13 +7414,15 @@
             var mh = scnMidBandInner(s, d);
             if (mid.__btHtml !== mh) { mid.__btHtml = mh; mid.innerHTML = mh; }
         }
-        // линия баланса: доля спроса → ширина зелёной части + подписи
+        // полоса баланса: два сегмента — ширина каждого по своей доле
         var bal = scnBalTxt(d);
-        var bb = el.querySelector('#btScnBalB'), ba = el.querySelector('#btScnBalA'),
-            bar = el.querySelector('#btScnBalBar');
-        if (bb) { var bbt = bal.bid + '%'; if (bb.textContent !== bbt) bb.textContent = bbt; }
-        if (ba) { var bat = bal.ask + '%'; if (ba.textContent !== bat) ba.textContent = bat; }
-        if (bar) { var sp2 = bal.bid + '%'; if (bar.style.getPropertyValue('--split') !== sp2) bar.style.setProperty('--split', sp2); }
+        var bar = el.querySelector('#btScnBalBar');
+        if (bar) {
+            var sa = bar.querySelector('.d-bal-a'), sb = bar.querySelector('.d-bal-b');
+            if (sa && sa.style.width !== bal.ask + '%') sa.style.width = bal.ask + '%';
+            if (sb && sb.style.width !== bal.bid + '%') sb.style.width = bal.bid + '%';
+            bar.title = 'спрос ' + bal.bid + ' % · предложение ' + bal.ask + ' %';
+        }
         // плашка свипа: сумма пути живёт тиком (лоты у уровня меняются)
         var swW = el.querySelector('#btScnSweep');
         if (swW) {
