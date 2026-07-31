@@ -2503,3 +2503,88 @@
 #btScene .ps-chip .act.sell { color: var(--red); }
 #btScene .acct:empty { display: none; }
 #btScene .ac-h .shev { border: 0; background: none; cursor: pointer; padding: 0; font-family: var(--font-ui); }
+/* рейка закрывается ЦЕЛИКОМ: дословный перенос `#btScene .bts-wl{display:flex}`
+   перебил прежнее `.bts-wl:empty{display:none}` (id против класса), и выключенное
+   «Избранное» оставалось пустой стеклянной колонкой в 152px */
+#btScene .bts-wl:empty { display: none; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   БЛОК 1В1: ГЕРОЙ БУМАГИ — ПРАВИЛА ИЗ МОКАПА ДОСЛОВНО
+   Разметка рендереров уже мокапная (.ih/.ih-nm/.ih-r/.ih-per/.ih-ind/.ih-bell/
+   .price-row/.price-big/.day-chip/.bts-chart) — переносим величины.
+   НЕ переносим .bts-prof: в мокапе это столбики-<i>, у нас канвас профиля
+   объёма со своей геометрией (ширину и позицию ведёт JS).
+   ═══════════════════════════════════════════════════════════════════════════ */
+#btScene .bts-hero { flex:1;min-width:0;border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;
+    background:var(--gl-hero);border:1px solid var(--gl-edge);
+    -webkit-backdrop-filter:blur(20px) saturate(1.35);backdrop-filter:blur(20px) saturate(1.35);
+    box-shadow:0 20px 46px -24px rgba(24,38,60,.3), inset 0 1px 0 rgba(255,255,255,.7) }
+#btScene.night .bts-hero { box-shadow:0 20px 46px -24px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.1) }
+#btScene .ih { display:flex;align-items:flex-start;gap:14px }
+#btScene .ih h3 { font-family:var(--font-title);font-weight:400;font-size:21px;display:flex;align-items:center;gap:9px;margin:0 }
+#btScene .ih-fav { font-size:14px;color:var(--dim) }
+#btScene .ih em { display:block;font-style:normal;font-family:var(--font-num);font-size:10.5px;color:var(--mut);
+    margin-top:3px;letter-spacing:normal }
+#btScene .ih-r { margin-left:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end }
+#btScene .ih-per { display:flex;gap:2px;border:1px solid var(--gl-in-edge);border-radius:8px;padding:2px;background:none }
+#btScene .ih-per span { font-family:var(--font-num);font-size:10px;font-weight:600;color:var(--dim);padding:3px 8px;border-radius:6px }
+#btScene .ih-per span.on { color:var(--ink);background:var(--gl-in) }
+#btScene .ih-ind { display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--mut);
+    border:1px solid var(--gl-in-edge);background:var(--gl-in);border-radius:8px;padding:5px 10px }
+#btScene .ih-ind.on { color:var(--ink);border-color:color-mix(in srgb,var(--ink) 26%,transparent) }
+#btScene .ih-ind i { font-style:normal;font-family:var(--font-num);font-size:9px;font-weight:700;background:var(--ink);
+    color:#fff;border-radius:99px;padding:1px 5px }
+#btScene.night .ih-ind i { background:#e9eef7;color:#0d141b }
+#btScene .ih-bell { width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:var(--dim);
+    border:1px solid var(--gl-in-edge);background:none;padding:0 }
+#btScene .ih-bell svg { width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8 }
+#btScene .price-row { display:flex;align-items:baseline;gap:14px;margin-top:12px }
+#btScene .price-big { font-family:var(--font-num);font-size:52px;font-weight:700;letter-spacing:-.03em;line-height:1;
+    font-variant-numeric:tabular-nums }
+#btScene .price-big small { font-size:38%;font-weight:600;color:var(--mut) }
+#btScene .day-chip { display:inline-flex;align-items:baseline;gap:7px;font-family:var(--font-num);font-size:13px;
+    font-weight:700;border-radius:9px;padding:5px 11px;font-variant-numeric:tabular-nums }
+#btScene .day-chip.dn { background:color-mix(in srgb,var(--red) 13%,transparent);color:var(--red) }
+#btScene .day-chip em { font-style:normal;font-family:var(--font-ui);font-size:10.5px;font-weight:600;color:var(--mut) }
+#btScene .bts-chart { flex:1;min-height:0;margin-top:14px;position:relative }
+#btScene .bts-chart svg { display:block;width:100%;height:100% }
+#btScene .bts-ohlc { position:absolute;left:0;top:0;display:flex;gap:12px;font-family:var(--font-num);font-size:10px;
+    color:var(--mut);font-variant-numeric:tabular-nums }
+#btScene .bts-ohlc b { color:var(--ink);font-weight:700 }
+
+/* добавки поверх мокапа — то, чего в статичном мокапе нет, но есть в бою */
+#btScene .ih-fav, #btScene .ih-bell, #btScene .ih-ind, #btScene .ih-per span {
+    cursor: pointer; font-family: var(--font-ui); text-align: start;
+}
+#btScene .ih-per span { font-family: var(--font-num); }
+#btScene .ih-fav { border: 0; background: none; padding: 0; }
+#btScene .ih-fav.on { color: var(--amb); }
+#btScene .ih-fav:hover { color: var(--amb); }
+#btScene .ih-bell.on { color: var(--acc); border-color: color-mix(in srgb, var(--acc) 40%, transparent); }
+#btScene .ih-ind:hover, #btScene .ih-per span:hover { color: var(--ink); }
+#btScene .day-chip:not(.dn) { background: color-mix(in srgb, var(--grn) 13%, transparent); color: var(--grn); }
+/* движок и слои графика живут В .bts-chart: им нужна вся его площадь */
+#btScene .bts-chart > .bts-kmount { position: absolute; inset: 0; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   БЛОК 1В1: КАРТОЧКА ТИКЕТА И СПЛИТ «СТАКАН + ЗАЯВКА» — ИЗ МОКАПА ДОСЛОВНО
+   ═══════════════════════════════════════════════════════════════════════════ */
+#btScene .tkt { flex:none;width:462px;border-radius:16px;display:flex;flex-direction:column;
+    background:var(--gl-work);border:1px solid var(--gl-edge);
+    -webkit-backdrop-filter:blur(18px) saturate(1.3);backdrop-filter:blur(18px) saturate(1.3);
+    box-shadow:0 20px 46px -24px rgba(24,38,60,.28), inset 0 1px 0 rgba(255,255,255,.65) }
+#btScene.night .tkt { box-shadow:0 20px 46px -24px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.09) }
+#btScene .tkt-x2 { display:flex;flex-direction:row }
+#btScene .tkt-sub { flex:1;min-width:0;display:flex;flex-direction:column }
+#btScene .tkt-sub-depth { flex:none;width:206px;border-right:1px solid var(--hair);padding:12px 12px }
+#btScene .tkt-sub-deal { padding:12px 14px }
+#btScene .tkt-title { font-family:var(--font-title);font-weight:400;font-size:16px }
+#btScene .freshw { font-family:var(--font-num);font-size:10px;color:var(--dim);margin-left:auto }
+#btScene .tkt-tabs i { font-size:11px }
+/* колонка тикета ведёт ширину карточки: 462 — величина мокапа, а не «сколько дали» */
+#btScene .tkt-col .tkt { width:100%;flex:1;min-height:0 }
+/* дошлифовка героя: то, что перебивали общие правила проекта */
+#btScene .ih h3 { line-height: normal; }
+#btScene .ih-fav { font-family: inherit; }
+#btScene .price-big small { line-height: 1; }
+#btScene .bts-chart { flex-direction: row; }

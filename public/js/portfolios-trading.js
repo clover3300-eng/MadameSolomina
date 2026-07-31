@@ -6103,7 +6103,11 @@
     function wlOutside(e) {
         if (!wlOn()) { document.removeEventListener('click', wlOutside, true); return; }
         var t = e.target;
-        if (t && t.closest && (t.closest('#btScnWl') || t.closest('.bts-wlb'))) return;
+        // .bts-star — кнопка звезды (звалась .bts-wlb до переноса разметки
+        // мокапа). Промах здесь и есть «избранное не закрывается»: закрывашка
+        // в capture-фазе считала клик по самой звезде «кликом снаружи», гасила
+        // рейку и убивала кнопку до её onclick — тот включал рейку обратно
+        if (t && t.closest && (t.closest('#btScnWl') || t.closest('.bts-star'))) return;
         document.removeEventListener('click', wlOutside, true);
         var o = stageObj();
         o.layers.wl = 0;
