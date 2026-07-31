@@ -738,35 +738,42 @@ body.dark-mode .pfx-bg.on .pfx-bg-tx b { color: #c7d2fe; }
 .pfl2-search input::placeholder { color: #94a3b8; }
 .pfl2-search:focus-within { border-color: #a5b4fc; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12); }
 .pfl2-cats { flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: thin; display: flex; flex-direction: column; gap: 3px; }
+/* Строка категории — ТОТ ЖЕ РАНГ, что строка сайдбара (мокап overview3, экран 16):
+   13px, глиф в квадрате 26px, счётчик моноширинным справа. Раньше строка была
+   мельче навигации и вся в индиго — каталог кричал громче, чем главное меню
+   приложения, хотя это его подраздел. */
 .pfl2-cat {
-    display: flex; align-items: center; gap: 9px; width: 100%; text-align: left; cursor: pointer;
-    border: 1px solid transparent; border-radius: 11px; background: transparent; padding: 10px 11px;
+    display: flex; align-items: center; gap: 11px; width: 100%; text-align: left; cursor: pointer;
+    border: 1px solid transparent; border-radius: 11px; background: transparent; padding: 9px 10px;
     transition: background 0.12s, border-color 0.12s;
 }
-.pfl2-cat:hover { background: #f4f7fb; }
-.pfl2-cat.on { background: #eef1ff; border-color: #dfe4fb; }
-.pfl2-cat-ic { display: inline-flex; width: 16px; height: 16px; color: #4453ef; flex-shrink: 0; }
-.pfl2-cat-ic svg { width: 16px; height: 16px; }
-.pfl2-cat-n { flex: 1; min-width: 0; font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pfl2-cat.on .pfl2-cat-n { color: #3730a3; }
+.pfl2-cat:hover { background: rgba(24, 38, 60, 0.04); }
+.pfl2-cat.on { background: rgba(24, 38, 60, 0.06); }
+.pfl2-cat-ic { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 9px;
+    color: #94a3b8; flex-shrink: 0; }
+.pfl2-cat-ic svg { width: 15px; height: 15px; }
+.pfl2-cat.on .pfl2-cat-ic { color: #1b2433; }
+.pfl2-cat-n { flex: 1; min-width: 0; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfl2-cat.on .pfl2-cat-n { color: #1b2433; font-weight: 700; }
 .pfl2-cat-c {
-    flex-shrink: 0; font-style: normal; font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 700;
-    color: #64748b; background: #eef2f7; min-width: 20px; text-align: center; padding: 2px 6px; border-radius: 999px;
+    flex-shrink: 0; font-style: normal; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 10.5px; font-weight: 600; color: #94a3b8;
 }
-.pfl2-cat.on .pfl2-cat-c { color: #fff; background: #4453ef; }
+.pfl2-cat.on .pfl2-cat-c { color: #46586e; }
+/* подсказка внизу колонки — такая же строка, как категории, только тихая:
+   плашка-карточка в индиго спорила с самим каталогом за внимание */
 .pfl2-hint {
-    flex-shrink: 0; display: flex; align-items: center; gap: 10px;
-    padding: 11px 12px; border-radius: 12px; background: #eef1ff; border: 1px solid #e0e7ff;
+    flex-shrink: 0; display: flex; align-items: center; gap: 11px; padding: 9px 10px;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; color: #94a3b8; line-height: 1.4;
 }
-.pfl2-hint-ic { display: inline-flex; width: 18px; height: 18px; color: #4453ef; flex-shrink: 0; }
-.pfl2-hint-ic svg { width: 18px; height: 18px; }
-.pfl2-hint span:last-child { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.pfl2-hint b { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 800; color: #3730a3; }
-.pfl2-hint i { font-family: 'Inter', sans-serif; font-style: normal; font-size: 10.5px; font-weight: 600; color: #6470a8; }
+.pfl2-hint-ic { display: grid; place-items: center; width: 26px; height: 26px; color: #b6c2d1; flex-shrink: 0; }
+.pfl2-hint-ic svg { width: 15px; height: 15px; }
 /* центр: сетка карточек-виджетов */
 .pfl2-main { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; scrollbar-width: thin; padding: 16px 18px; background: #f8fafc; }
 .pfl2-main-t { font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 800; color: #0f172a; margin-bottom: 12px; }
-.pfl2-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+/* две колонки, а не auto-fill: карточка с настоящей миниатюрой виджета требует
+   ширины, иначе миниатюра врёт о том, как виджет выглядит на полотне */
+.pfl2-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .pfl2-none { padding: 24px 4px; font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; color: #94a3b8; }
 .pfl2-card {
     position: relative; display: flex; flex-direction: column; gap: 4px; cursor: pointer;
@@ -817,7 +824,24 @@ body.dark-mode .pfl2-gate:hover { background: rgba(255, 255, 255, 0.08); color: 
 /* правая колонка: настройки */
 .pfl2-set { flex: 0 0 236px; min-height: 0; overflow-y: auto; scrollbar-width: thin; padding: 16px; border-left: 1px solid #eef2f7; display: flex; flex-direction: column; gap: 7px; }
 .pfl2-set-t { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
-.pfl2-lbl { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 700; color: #64748b; margin-top: 8px; }
+/* подпись раздела — надстрочная, а не второй заголовок: она называет группу
+   контролов, а не спорит с ними за внимание (мокап overview3, экран 16) */
+.pfl2-lbl { display: block; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 9px;
+    font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #94a3b8; margin: 7px 0 -1px; }
+/* строка-тумблер раздела «Что показать на полотне»: у каждой два состояния и
+   они независимы, поэтому это строки с галочкой, а не селект и не сегменты */
+.pfl2-tgl {
+    display: flex; width: 100%; align-items: center; gap: 8px; cursor: pointer;
+    border: 1px solid #e2e8f0; border-radius: 10px; background: #fff; padding: 8px 11px;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #46586e;
+    transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.pfl2-tgl:hover { background: #f4f7fb; }
+.pfl2-tgl.on { color: #1b2433; font-weight: 700; border-color: rgba(24, 38, 60, 0.24); }
+.pfl2-tgl span { margin-left: auto; font-size: 10px; color: #94a3b8; }
+.pfl2-tgl.on span { color: #1b2433; }
+body.dark-mode .pfl2-tgl { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.12); color: #93a1b5; }
+body.dark-mode .pfl2-tgl.on, body.dark-mode .pfl2-tgl.on span { color: #e8eef7; }
 .pfl2-select {
     width: 100%; box-sizing: border-box; padding: 9px 11px; cursor: pointer;
     border: 1px solid #e2e8f0; border-radius: 10px; background: #fff;
@@ -845,11 +869,15 @@ body.dark-mode .pfl2-gate:hover { background: rgba(255, 255, 255, 0.08); color: 
 .pfl2-sel b { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; }
 .pfl2-sel span { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pfl2-foot-r { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
-.pfl2-addbtn { background: linear-gradient(#5563f6, #4453ef) !important; padding: 11px 18px; }
-.pfl2-addbtn:hover { background: linear-gradient(#6672f8, #4f5ef4) !important; }
+/* кнопка чернильная, а не индиговая: акцентный цвет в «Витраже» отдан данным,
+   а единственное действие панели опознаётся заливкой, а не оттенком */
+.pfl2-addbtn { background: #141b26 !important; border-color: #141b26 !important; padding: 11px 18px; }
+.pfl2-addbtn:hover { background: #232d3c !important; }
 /* ничего не отмечено — кнопке нечего добавлять */
 .pfl2-addbtn[disabled] { opacity: 0.4; cursor: default; box-shadow: none; }
-.pfl2-addbtn[disabled]:hover { background: linear-gradient(#5563f6, #4453ef) !important; }
+.pfl2-addbtn[disabled]:hover { background: #141b26 !important; }
+body.dark-mode .pfl2-addbtn { background: #e8eef7 !important; border-color: #e8eef7 !important; color: #0c1016 !important; }
+body.dark-mode .pfl2-addbtn:hover { background: #fff !important; }
 /* список отмеченных в подвале может быть длинным — пусть переносится, а не обрезается */
 .pfl2-foot .pfl2-sel span { white-space: normal; overflow: visible; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 /* пикер в тёмной теме */
@@ -857,13 +885,13 @@ body.dark-mode .pfl2-side { border-right-color: #22304a; }
 body.dark-mode .pfl2-search { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.12); }
 body.dark-mode .pfl2-search input { color: #f4f8fd; }
 body.dark-mode .pfl2-cat:hover { background: rgba(255, 255, 255, 0.05); }
-body.dark-mode .pfl2-cat.on { background: rgba(99, 102, 241, 0.16); border-color: rgba(129, 140, 248, 0.3); }
-body.dark-mode .pfl2-cat-n { color: #cbd6e4; }
-body.dark-mode .pfl2-cat.on .pfl2-cat-n { color: #c7d2fe; }
-body.dark-mode .pfl2-cat-c { background: rgba(255, 255, 255, 0.08); color: #aab6c8; }
-body.dark-mode .pfl2-hint { background: rgba(99, 102, 241, 0.12); border-color: rgba(129, 140, 248, 0.25); }
-body.dark-mode .pfl2-hint b { color: #c7d2fe; }
-body.dark-mode .pfl2-hint i { color: #93a2c8; }
+body.dark-mode .pfl2-cat.on { background: rgba(255, 255, 255, 0.08); }
+body.dark-mode .pfl2-cat-n { color: #93a2b8; }
+body.dark-mode .pfl2-cat.on .pfl2-cat-n, body.dark-mode .pfl2-cat.on .pfl2-cat-ic { color: #eef3f9; }
+body.dark-mode .pfl2-cat-c { color: #7d8ba0; }
+body.dark-mode .pfl2-cat.on .pfl2-cat-c { color: #cbd6e4; }
+body.dark-mode .pfl2-hint { color: #7d8ba0; }
+body.dark-mode .pfl2-hint-ic { color: #5c6a80; }
 body.dark-mode .pfl2-main { background: #0d1626; }
 body.dark-mode .pfl2-main-t { color: #e8eef7; }
 body.dark-mode .pfl2-card { background: #131c2e; border-color: #26324c; }

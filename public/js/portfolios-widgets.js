@@ -3215,6 +3215,8 @@
     PF.NOTE_TRASH_SVG = NOTE_TRASH_SVG; PF.PFP_SLIDERS_SVG = PFP_SLIDERS_SVG; PF.favHtml = favHtml; PF.favTickers = favTickers;
     PF.newsHtmlCache = newsHtmlCache; PF.pfPlistSparksSoon = pfPlistSparksSoon; PF.pfd2 = pfd2; PF.pfdAllocCompute = pfdAllocCompute;
     PF.pfdAllocHtml = pfdAllocHtml; PF.pfdAllocScope = pfdAllocScope; PF.pfxHeroBlockHtml = pfxHeroBlockHtml; PF.pfdCapChartHtml = pfdCapChartHtml; PF.pfdCapChartHtmlB = pfdCapChartHtmlB;
+    // для раздела «Что показать на полотне» в магазине виджетов (pfl2CanvasToggle)
+    PF.pfdCapShow = pfdCapShow; PF.pfdCapBench = pfdCapBench;
     PF.pfdCapMaybeRepaint = pfdCapMaybeRepaint; PF.pfdCapRepaint = pfdCapRepaint; PF.pfdCapSeries = pfdCapSeries; PF.pfdFlushNotes = pfdFlushNotes;
     PF.pfdHeatHtml = pfdHeatHtml; PF.pfdHeatRepaintSoon = pfdHeatRepaintSoon; PF.pfdHeatRenderNow = pfdHeatRenderNow; PF.pfdKpiHtml = pfdKpiHtml; PF.pfdNewsHtml = pfdNewsHtml;
     PF.pfdNewsList = pfdNewsList; PF.pfdNoteHtml = pfdNoteHtml; PF.pfdPanelActive = pfdPanelActive; PF.pfwAssetsHtml = pfwAssetsHtml;

@@ -1642,15 +1642,14 @@
     // R7: пикер-модал по референсу — категории слева, карточки виджетов с ДЕМО-превью
     // в центре, настройки выбранного виджета справа, бар выбора снизу. Вся логика —
     // в секции «ПИКЕР "ДОБАВИТЬ ВИДЖЕТ"» ниже (pfl2*).
-    var PFL2_STAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2.8 14.9 9 21.7 9.9 16.8 14.5 18 21.2 12 18 6 21.2 7.2 14.5 2.3 9.9 9.1 9"/></svg>';
     var PFL2_LOUPE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg>';
     function pflPanelHtml() {
         return '<div class="pfl-panel pfl2" id="pflPanel">' +
             '<div class="pfl-head">' +
                 '<div class="pfl-head-t">' +
-                    '<span class="pfl-head-ic">' + PFL2_STAR + '</span>' +
-                    '<div class="pfl-head-tx"><b>Добавить виджет</b>' +
-                        '<span>Виджеты добавятся на подвкладку «' + esc(pfxTabLabel(PF.dashTab)) + '» — выберите и настройте</span></div>' +
+                    '<span class="pfl-head-ic">' + PFD_PLUS_SVG + '</span>' +
+                    '<div class="pfl-head-tx"><b>Магазин виджетов</b>' +
+                        '<span>добавятся на «' + esc(pfxTabLabel(PF.dashTab)) + '» — выберите и настройте</span></div>' +
                 '</div>' +
                 '<button type="button" class="pfl-x" onclick="pfLayoutClose()" aria-label="Закрыть">' + PF.XMARK_SVG + '</button>' +
             '</div>' +
@@ -1660,7 +1659,8 @@
                         '<input type="text" id="pfl2Qinp" placeholder="Поиск виджетов" value="' + esc(pfl2Q) + '" oninput="pfl2Search(this.value)">' +
                     '</div>' +
                     '<div class="pfl2-cats" id="pfl2Cats">' + pfl2CatsHtml() + '</div>' +
-                    '<div class="pfl2-hint"><span class="pfl2-hint-ic">' + PF.PFDGRID_SVG + '</span><span><b>Порядок можно изменить</b><i>Просто перетаскивайте виджеты</i></span></div>' +
+                    '<div class="pfl2-hint"><span class="pfl2-hint-ic">' + PF.PFDGRID_SVG + '</span>' +
+                        '<span>Перетаскивайте виджеты, чтобы менять порядок</span></div>' +
                 '</aside>' +
                 '<div class="pfl2-main" id="pfl2Main">' + pfl2MainHtml() + '</div>' +
                 '<aside class="pfl2-set" id="pfl2Set">' + pfl2SetHtml() + '</aside>' +
@@ -3677,6 +3677,23 @@
         var curSel = '<label class="pfl2-lbl">Валюта</label>' +
             '<select class="pfl2-select" disabled title="Пока только рубль"><option>₽ Рубль</option></select>';
         var viewSeg = '<label class="pfl2-lbl">Вид графика</label>' + seg('view', [['line', PFD_ICO_CAP], ['bars', PFD_ICO_KPI]]);
+        // «ЧТО ПОКАЗАТЬ НА ПОЛОТНЕ» (мокап overview3, экран 16, п. 5) — ровно те
+        // фишки, что живут на графике: пик и дно, полоса выплат, вторая кривая.
+        // Строки-тумблеры, а не селекты: у каждой два состояния и они независимы.
+        // Настройки общие для графика капитала (он на полотне один), поэтому
+        // тумблер сразу правит и уже стоящий виджет — это видно тут же.
+        var canvasRows = '';
+        if (w.chart) {
+            var bench = PF.pfdCapBench ? PF.pfdCapBench() : 'IMOEX';
+            canvasRows = '<label class="pfl2-lbl">Что показать на полотне</label>' +
+                [['peak', 'Пик и дно', !!(PF.pfdCapShow && PF.pfdCapShow('peak'))],
+                 ['pay', 'Выплаты', !!(PF.pfdCapShow && PF.pfdCapShow('pay'))],
+                 ['cmp', 'Бенчмарк ' + bench, !!PF.pfdCapCmp]].map(function (r) {
+                    return '<button type="button" class="pfl2-tgl' + (r[2] ? ' on' : '') +
+                        '" onclick="pfl2CanvasToggle(\'' + r[0] + '\')">' + esc(r[1]) +
+                        '<span>' + (r[2] ? '✓' : '—') + '</span></button>';
+                }).join('');
+        }
         // «Составы портфелей» при 2+ портфелях СПРАШИВАЮТ, чей состав показывать
         // (просьба 2026-07-30): раньше виджет молча добавлял таблицы всех сразу.
         // Выбор хранится в PF.dashCfg.pdPf (см. pfl2Add) — как allocPf у «Распределения»
@@ -3696,10 +3713,13 @@
         var sizeSeg ='<label class="pfl2-lbl">Высота виджета</label>' + seg('size', [['s', 'S'], ['m', 'M'], ['l', 'L']]);
         // подпись, что настройки — этого виджета: в пачке выбранных их несколько,
         // и «Высота» без имени читалась бы как общая для всех
+        // порядок разделов — как в мокапе: период, вид, что на полотне, размер,
+        // валюта. Валюта внизу не случайно: она пока одна и спорить в ней не о чем
         return '<div class="pfl2-set-t">Настройки · ' + esc(w.name) + '</div>' +
-            (w.chart ? periodSel + curSel + viewSeg : '') +
+            (w.chart ? periodSel + viewSeg + canvasRows : '') +
             pfSel +
             sizeSeg +
+            (w.chart ? curSel : '') +
             '<div class="pfl2-set-hint">Настройки — у каждого виджета свои. Размеры и место всегда можно поменять позже — просто перетащите виджет или потяните за кромку.</div>';
     }
     function pfl2SizeLabel(id) { var s = pfl2OptsOf(id).size; return s === 's' ? 'Компактный' : s === 'l' ? 'Большой' : 'Средний размер'; }
@@ -3714,8 +3734,11 @@
             : n === 1 ? esc(names[0]) + ' · ' + pfl2SizeLabel(pfl2SelIds[0])
             : esc(names.join(', '));
         var title = !n ? 'Виджеты не выбраны'
+            : n === 1 ? 'Выбран 1 виджет'
             : 'Выбрано ' + n + ' ' + PF.plural(n, 'виджет', 'виджета', 'виджетов');
-        var btnLbl = n > 1 ? 'Добавить ' + n + ' ' + PF.plural(n, 'виджет', 'виджета', 'виджетов') : 'Добавить виджет';
+        // Кнопка называет МЕСТО, куда всё поедет, а не действие вообще: у пикера
+        // одна кнопка, и вопрос у человека ровно один — «куда добавится?»
+        var btnLbl = 'Добавить на «' + esc(pfxTabLabel(PF.dashTab)) + '»';
         return '<div class="pfl2-sel"><b>' + title + '</b><span>' + sub + '</span></div>' +
             '<div class="pfl2-foot-r">' +
                 (n ? '<button type="button" class="pfl-btn ghost" onclick="pfl2ClearSel()">Снять выбор</button>' : '') +
@@ -3757,6 +3780,17 @@
         fn();
         main = dq('pfl2Main'); if (main) main.scrollTop = st;
     }
+    // Тумблеры «Что показать на полотне» правят настройки САМОГО графика (они у
+    // него на дашборде одни), а не заготовку в pfl2OptMap — поэтому уходят в
+    // модуль виджетов, а обратно нам нужна только перерисовка колонки настроек.
+    window.pfl2CanvasToggle = function (k) {
+        if (k === 'cmp') {
+            if (window.pfdCapCmpPick) pfdCapCmpPick(PF.pfdCapCmp ? '' : (PF.pfdCapBench ? PF.pfdCapBench() : 'IMOEX'));
+        } else if (window.pfdCapShowToggle) {
+            pfdCapShowToggle(k);
+        }
+        pfl2Paint(['set']);
+    };
     window.pfl2SetOpt = function (k, v) {
         if (!pfl2Sel) return;
         pfl2OptsOf(pfl2Sel)[k] = v;
