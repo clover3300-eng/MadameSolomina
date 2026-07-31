@@ -255,8 +255,11 @@
         if (r === 'day') {
             var dd = dayDelta(p, c.value);
             if (dd == null) return { rub: null, pct: null,
-                tip: 'Нет вчерашней цены — дельта дня появится после следующего закрытия торгов' };
-            return { rub: dd, pct: c.value - dd > 0 ? dd / (c.value - dd) * 100 : null, tip: null };
+                tip: 'Дневное изменение неизвестно: вчерашнего снимка ещё нет, а котировки не отдали изменение к прошлому закрытию' };
+            // источник цифры называем честно: снимок прошлого дня или котировки
+            var src = PF.dayDeltaSrc ? PF.dayDeltaSrc(p, c.value) : 'snap';
+            return { rub: dd, pct: c.value - dd > 0 ? dd / (c.value - dd) * 100 : null,
+                tip: src === 'quotes' ? 'Посчитано по дневному изменению котировок MOEX — вчерашнего снимка портфеля ещё нет' : null };
         }
         if (r === 'all') return { rub: c.pnl, pct: c.pnlPct, tip: null };
         var raw = PF.chartRaw[p.id], from = rangeFromStr(r), q = null;

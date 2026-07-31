@@ -108,13 +108,49 @@
         Object.keys(snaps).forEach(function (pid) { if (!findPf(pid)) { delete snaps[pid]; changed = true; } });
         if (changed) try { localStorage.setItem(SNAP_KEY, JSON.stringify(snaps)); } catch (e) {}
     }
-    // Изменение стоимости за сегодня: текущая стоимость − последний снимок прошлых дней
+    // Изменение стоимости за сегодня: текущая стоимость − последний снимок прошлых дней.
+    // ЗАПАСНОЙ ПУТЬ — из котировок (мокап overview3, метка 6 экрана 01). Снимок
+    // появляется только со второго дня наблюдения, и до него «за день» стояло
+    // прочерком сразу в пяти местах — хотя дневное изменение всё это время лежало
+    // в quotes[tk].chgPct (MOEX LASTTOPREVPRICE). Считаем вклад каждой бумаги:
+    // при цене P и изменении k вчерашняя стоимость позиции = V / (1 + k), значит
+    // сегодняшний прирост = V − V / (1 + k). Складываем по всем бумагам, у которых
+    // изменение известно; если не известно ни у одной — по-прежнему null.
+    function dayDeltaFromQuotes(p) {
+        var sum = 0, any = false;
+        (p.holdings || []).forEach(function (h) {
+            if (!h.ticker) return;
+            var q = quotes[h.ticker];
+            if (!q || q.chgPct == null) return;
+            var k = q.chgPct / 100;
+            if (!(k > -0.999)) return;              // −100% и хуже: делить не на что
+            var v = calcHold(h).value;
+            if (!(v > 0)) return;
+            sum += v - v / (1 + k);
+            any = true;
+        });
+        return any ? sum : null;
+    }
     function dayDelta(p, curValue) {
-        var m = snaps[p.id]; if (!m) return null;
-        var today = todayStr(), best = null;
-        for (var d in m) if (d < today && (best == null || d > best)) best = d;
-        if (best == null || !(curValue > 0)) return null;
-        return curValue - m[best];
+        var m = snaps[p.id];
+        if (m && curValue > 0) {
+            var today = todayStr(), best = null;
+            for (var d in m) if (d < today && (best == null || d > best)) best = d;
+            if (best != null) return curValue - m[best];
+        }
+        return dayDeltaFromQuotes(p);
+    }
+    // Откуда взялась дельта дня: 'snap' — из вчерашнего снимка, 'quotes' — из
+    // дневного изменения котировок, null — неоткуда. Нужна подписям («за день»
+    // против «по котировкам»), сама цифра в обоих случаях честная.
+    function dayDeltaSrc(p, curValue) {
+        var m = snaps[p.id];
+        if (m && curValue > 0) {
+            var today = todayStr(), best = null;
+            for (var d in m) if (d < today && (best == null || d > best)) best = d;
+            if (best != null) return 'snap';
+        }
+        return dayDeltaFromQuotes(p) == null ? null : 'quotes';
     }
     // Самое сильное дневное движение среди акций портфеля (LASTTOPREVPRICE из котировок)
     function topMover(p) {
@@ -1367,7 +1403,7 @@
     // — модель и расчёт —
     PF.saveStore = saveStore; PF.makePortfolio = makePortfolio; PF.findPf = findPf; PF.findHold = findHold; PF.visibleItems = visibleItems;
     PF.colorVal = colorVal; PF.ensureLots = ensureLots; PF.aggHolding = aggHolding; PF.calcHold = calcHold; PF.calcPf = calcPf;
-    PF.dayDelta = dayDelta; PF.topMover = topMover; PF.recordSnapshots = recordSnapshots; PF.snaps = snaps;
+    PF.dayDelta = dayDelta; PF.dayDeltaSrc = dayDeltaSrc; PF.topMover = topMover; PF.recordSnapshots = recordSnapshots; PF.snaps = snaps;
     PF.pfAllBoughtToday = pfAllBoughtToday; PF.quoteMissing = quoteMissing;
     // — котировки —
     PF.quotes = quotes; PF.ensureQuotes = ensureQuotes; PF.liveBond = liveBond; PF.bondFace = bondFace; PF.bondQuotes = bondQuotes;
