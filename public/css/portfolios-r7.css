@@ -1879,8 +1879,9 @@ body.dark-mode .pfps-lp { color: #e8eef7; }
 .pfps-lv { flex: none; font-style: normal; font-family: var(--font-num, 'JetBrains Mono', monospace);
     font-size: 10.5px; color: #8494a7; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-/* — «Сводные показатели»: плитки 2×2 — */
-.pfsm-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 8px; }
+/* Плитка-показатель и чип при ней: остались у «Состава» (portfolios-tabs.js)
+   и у строк «Моих портфелей» (.pfpl-kpi). У «Сводных показателей» их больше
+   нет — виджет собран листом фактов, см. .pfsm-list ниже. */
 .pfsm-tile {
     display: flex; flex-direction: column; gap: 5px; min-width: 0;
     padding: 15px 16px 13px; border: 1px solid #eef2f7; border-radius: 14px; background: #fbfcfe;
@@ -1904,10 +1905,37 @@ body.dark-mode .pfsm-tile b { color: #f4f8fd; }
 body.dark-mode .pfsm-chip { background: rgba(255, 255, 255, 0.07); color: #b7c2d3; }
 .pfsm-chip.pos { color: #0f7a44; background: rgba(18, 163, 92, 0.1); }
 .pfsm-chip.neg { color: #b0421c; background: rgba(224, 89, 43, 0.1); }
-/* grid-auto-rows: 1fr — без него align-content:stretch не тянул РЯДЫ: сетка вырастала
-   на всю высоту, а плитки оставались по содержимому и жались к шапке (замерено 170px
-   пустоты снизу при высоте блока 620). Ряды равными долями — плитки растут вместе с блоком. */
-.pfd-item.pfd-hset .pf-psumblk .pfsm-grid { flex: 1 1 auto; min-height: 0; align-content: stretch; grid-auto-rows: 1fr; }
+
+/* — «Сводные показатели»: ЛИСТ фактов мокапа (.hx-line) — метка тихо слева,
+   число моно справа, уточнение за ним. Были четыре плитки с рамкой, фоном,
+   капс-эйбрау и цветной пилюлей — карточки внутри карточки. — */
+.pfsm-list { display: flex; flex-direction: column; margin-top: 6px; }
+.pfsm-r {
+    display: flex; align-items: baseline; gap: 10px; font-size: 12px; color: #8494a7;
+    padding: 11px 2px; border-bottom: 1px solid rgba(24, 38, 60, 0.07);
+}
+.pfsm-r:last-child { border-bottom: 0; }
+body.dark-mode .pfsm-r { border-bottom-color: rgba(255, 255, 255, 0.07); }
+.pfsm-r i { font-style: normal; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfsm-r b {
+    margin-left: auto; flex: none; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 12.5px; font-weight: 700; color: #1b2433; font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+body.dark-mode .pfsm-r b { color: #f4f8fd; }
+.pfsm-r b.pos { color: #119d5c; }
+.pfsm-r b.neg { color: #c2410c; }
+.pfsm-r em {
+    flex: none; width: 116px; text-align: right; font-style: normal; font-size: 10.5px;
+    color: #8494a7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pfsm-r em.pos { color: #119d5c; }
+.pfsm-r em.neg { color: #c2410c; }
+/* при заданной высоте блока строки расходятся по ней, а не жмутся к шапке */
+.pfd-item.pfd-hset .pf-psumblk .pfsm-list { flex: 1 1 auto; min-height: 0; justify-content: space-between; }
+/* узкая карточка: хвост уточнения уходит — метка и число важнее */
+@container pfw (max-width: 380px) {
+    .pfsm-r em { display: none; }
+}
 
 /* — пустая подвкладка: приглашение собрать дашборд — */
 .pfx-emptytab {
