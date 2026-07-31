@@ -1521,7 +1521,7 @@
     font-style: normal; font: 700 9px var(--font-ui);
     letter-spacing: 0.09em; text-transform: uppercase; color: var(--amb);
 }
-.bts .ac-h .shev { margin-left: auto; border: 0; background: none; color: var(--dim); cursor: pointer; font-size: 13px; }
+.bts .ac-h .shev { margin-left: auto; border: 0; background: none; color: var(--dim); cursor: pointer; font-size: 12px; padding: 0; text-align: start; }
 .bts .ac-r {
     display: flex; justify-content: space-between; align-items: baseline;
     font: 400 12.5px var(--font-ui); color: var(--mut);
@@ -1562,7 +1562,7 @@
     background: none; padding: 3px 8px; cursor: pointer;
     font: 400 10.5px var(--font-num); color: var(--dim);
 }
-.bts .dock-tabs .shev { border: 0; background: none; color: var(--dim); cursor: pointer; font-size: 13px; }
+.bts .dock-tabs .shev { border: 0; background: none; color: var(--dim); cursor: pointer; font-size: 12px; padding: 0; text-align: start; margin-left: auto; }
 /* колонки уже, панель выше (владелец 2026-07-23 «больше и уже»):
    в сплите росток делит ширину с двумя карточками — таблице хватает 90-х */
 .bts .dk-hd, .bts .dk-r {
@@ -2120,3 +2120,49 @@
 .bts .cta { text-align: start; }
 .bts .d-mid { gap: 8px; }
 .bts .d-tape-mini { padding-top: 10px; }
+
+/* ── второй проход сверки: обход ВСЕХ узлов сцены, не выборки ──
+   ГЛАВНОЕ: сцена наследовала line-height сайта (1.6 → 22.4px) там, где у мокапа
+   он `normal`. Это треть всех расхождений и высота КАЖДОЙ строки: ряды стакана,
+   полосы, ростка и тикета были выше задуманных на несколько пикселей каждый. */
+.bts, .bts * { line-height: normal; }
+/* обратно — там, где перенос строки реально нужен */
+.bts .know2 .k2t, .bts .wn, .bts .cf2-b, .bts .cf3-b, .bts .sum-hint,
+.bts .wl-ft, .bts .wl-none, .bts .eg-bannerw { line-height: 1.5; }
+.bts .price-big { line-height: 1; }
+.bts .ih-nm h3 { line-height: 1.1; }
+
+/* ── строка среды ── */
+.bts .bts-right { gap: 8px; }
+.bts .sc-tabs { align-items: normal; }
+
+/* ── герой ── */
+.bts .ih-r { justify-content: flex-end; }
+.bts .ih-fav { font-size: 14px; padding: 0; text-align: start; line-height: normal; }
+.bts .price-row { align-items: baseline; }
+.bts .day-chip { align-items: baseline; }
+/* OHLC-легенда: моно 10px строкой, без плашки — как в мокапе */
+.bts .bts-ohlc {
+    font: 400 10px var(--font-num); border-radius: 0; padding: 0; gap: 12px;
+    align-items: normal; background: none; border: 0; box-shadow: none;
+}
+.bts .bts-ohlc b { font-weight: 700; }
+/* профиль объёма прижат к краям по высоте */
+.bts .bts-prof { padding: 4px 0; justify-content: space-between; }
+
+/* ── квитанция и стакан ── */
+.bts .sum-line { align-items: normal; justify-content: space-between; }
+.bts .d-mid { align-items: baseline; }
+.bts .d-row.d-t { align-items: normal; }
+/* обёртка плиток позиций (мокап .ps-chips): свой зазор и отступ от пилюль */
+.bts .ps-chips { display: flex; gap: 8px; margin-left: 6px; align-items: center; }
+/* хвост второго прохода */
+.bts .ac-r { align-items: normal; }
+.bts .ps-chips { align-items: normal; }
+.bts .shev { font-size: 12px; padding: 0; text-align: start; line-height: normal; }
+.bts .iseg { border-radius: 8px; padding: 2px; gap: 2px; }
+.bts .pair { display: flex; flex-direction: column; }
+/* мокапный .bts-chart — block c position:relative; монтаж движка внутри обязан
+   получить высоту явно, иначе холст схлопывается в ноль (поймано сверкой) */
+.bts .bts-chart { display: block; position: relative; }
+.bts .bts-chart > * { height: 100%; }

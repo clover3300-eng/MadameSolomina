@@ -5473,7 +5473,9 @@
             ? '<button type="button" class="ps-more" onclick="pftSceneBack()" ' +
               'title="Полный разбор позиций — в «Портфелях»">ещё ' + (list.length - POS_CHIPS) + ' →</button>'
             : '';
-        return pills + chips + more;
+        // обёртка .ps-chips — из мокапа: она держит свой зазор между плитками
+        // и отступ от ряда пилюль, а не наследует общий gap полосы
+        return pills + '<span class="ps-chips">' + chips + more + '</span>';
     }
     // ручка «Счёта» — своим узлом ПО ЦЕНТРУ карточки заявки (владелец
     // 2026-07-24; раньше висела в хвосте полосы позиций и к карточке не
