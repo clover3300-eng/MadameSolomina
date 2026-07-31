@@ -498,8 +498,8 @@
    data-tkt встаёт ДО перерисовки), движку ширину сообщает ResizeObserver героя. */
 #btScene[data-tkt="split"] .tkt-col { width: 668px; }   /* 206 стакан + 462 заявка */
 .bts .tkt-col { transition: width 0.45s cubic-bezier(0.25, 0.9, 0.3, 1); }
-/* «Счёт» под тикетом остаётся шириной заявки — стоит под ней, у правого края */
-#btScene[data-tkt="split"] .acct { width: 462px; margin-left: auto; }
+/* «Счёт» под тикетом растягивается вместе с колонкой (владелец 2026-07-31:
+   вариант «462 у правого края» оставлял дыру слева от карточки при сплите) */
 .bts[data-tkt="split"] .tkt { flex-direction: row; padding: 0; gap: 0; overflow: hidden; }
 .bts .tkt-sub { min-width: 0; display: flex; flex-direction: column; padding: 12px 14px; }
 .bts .tkt-sub-deal { flex: 1; min-width: 0; }
@@ -2569,3 +2569,11 @@
    2026-07-31: «иконки убегают с правого угла»). Стакан во всю карточку без
    обёртки — ему паддинг карточки остаётся. */
 #btScene .tkt:has(> .tkt-sub) { padding: 0; }
+/* сумма на ручке счёта (владелец 2026-07-31 поверх мокапного «Счёт ⌃») */
+#btScene .ps-acctw .ps-acct b { font: 700 12px var(--font-num); font-variant-numeric: tabular-nums; }
+/* омнибокс — правее (владелец 2026-07-31): мокапный centered margin:0 auto
+   держал его над графиком; теперь он прижат к правому кластеру с воздухом 14px.
+   auto у кластера снят — иначе два auto делили свободное место пополам и
+   омнибокс вставал лишь на полпути */
+#btScene .bts-omni { margin: 0 14px 0 auto; }
+#btScene .bts-right { margin-left: 0; }

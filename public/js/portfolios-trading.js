@@ -3865,17 +3865,19 @@
         // РАЗМЕТКА МОКАПА: .bts-b «Портфели» · .bts-star · .sc-tabs · .bts-omni
         // (по центру, flex:1 max 420) · .bts-right (связь · песочница · .bts-th ·
         // ⋯ той же .bts-b · аватар). Прежние .bts-back/.bts-wlb/.bts-omni-s ушли
+        // звезда — рейка избранного (клавиша F). Живёт в ПРАВОМ кластере
+        // (владелец 2026-07-31): рейка открывается справа, кнопка — над ней
+        var star = '<button type="button" class="bts-star' + (wlOn() ? ' on' : '') + '" onclick="pftScWl()" ' +
+            'title="Полоса избранного — клавиша F" aria-label="Полоса избранного" ' +
+            'aria-pressed="' + wlOn() + '">' + (wlOn() ? '★' : '☆') + '</button>';
         return '<div class="bts-top" id="pftBar">' +
             '<button type="button" class="bts-b" onclick="pftSceneBack()">' + IC_BACK + '<span>Портфели</span></button>' +
-            // звезда — рейка избранного (раунд 3); та же клавиша F
-            '<button type="button" class="bts-star' + (wlOn() ? ' on' : '') + '" onclick="pftScWl()" ' +
-                'title="Полоса избранного — клавиша F" aria-label="Полоса избранного" ' +
-                'aria-pressed="' + wlOn() + '">' + (wlOn() ? '★' : '☆') + '</button>' +
             '<span class="sc-tabs" id="btScnScr">' + scnScreensHtml() + '</span>' +
             // омнибокс ⌘K (этап 6) пока открывает готовый поиск бумаг раунда 1
             '<button type="button" class="bts-omni" onclick="pftFsSearch()" title="Найти бумагу">' + IC_LENS +
                 '<span>Бумага или команда</span><kbd>⌘K</kbd></button>' +
             '<span class="bts-right">' +
+                star +
                 scnLinkHtml() +
                 (RP ? '<span class="bts-sand rp">Реплей · ' + esc(RP.label) + '</span>'
                     : (c && c.sandbox ? '<span class="bts-sand">Песочница</span>' : '')) +
@@ -5450,15 +5452,17 @@
     // ручка «Счёта» — своим узлом ПО ЦЕНТРУ карточки заявки (владелец
     // 2026-07-24; раньше висела в хвосте полосы позиций и к карточке не
     // привязывалась). Обёртка .ps-acctw повторяет геометрию тикета в CSS
-    // РУЧКА МОКАПА: «Счёт ⌃» — слово и шеврон, без чисел. Свободные деньги
-    // жили тут с 2026-07-24, но мокап «Витража» называет их только в самой
-    // карточке — числу в полосе места не нашлось (отступление названо владельцу)
+    // РУЧКА СЧЁТА: «Счёт N ₽ ⌃» — сумма вернулась на ручку (владелец
+    // 2026-07-31 поверх мокапного голого «Счёт ⌃»). Число — свободные деньги:
+    // это то, чем можно торговать прямо сейчас, а стоимость позиций уже
+    // называет соседняя пилюля «Позиции»
     function scnAcctBtnHtml() {
         var free = T.pos.money;
         var acctOn = !!stageObj().layers.acct;
         return '<button type="button" class="ps-acct' + (acctOn ? ' on' : '') + '" onclick="pftScAcct()" ' +
             'title="Деньги и итог счёта' + (free != null ? ' · свободно ' + fmtRub(free) : '') + '">' +
-            'Счёт <i>' + (acctOn ? '⌄' : '⌃') + '</i></button>';
+            'Счёт' + (free != null ? ' <b>' + fmtRub(free) + '</b>' : '') +
+            ' <i>' + (acctOn ? '⌄' : '⌃') + '</i></button>';
     }
     window.pftScChip = function (uid) {
         loadInstrument(sxSlot(), uid, function () {
@@ -7158,9 +7162,10 @@
     // ЛОВУШКА мокапа: лучшая продажа стоит У СПРЕДА, дорогие аски — сверху.
     // Брокер отдаёт аски от лучшего — на экран идут в ОБРАТНОМ порядке.
     var SCN_DEPTH = 6;        // плоскость «Разгона»/«Контроля»: высота делится с графиком
-    var SCN_DEPTH_CARD = 10;  // стакан карточной высоты («Стакан»/«Сплит» на «Старте»)
+    var SCN_DEPTH_CARD = 14;  // потолок «в полный рост» (владелец 2026-07-31: было 10 — половина карточки пустовала)
     var SCN_DEPTH_MIN = 5;    // на сторону в сжатой колонке (владелец 2026-07-31: было 3)
-    var SCN_TAPE = 5;         // строк ленты — ровно столько, сколько заказано
+    var SCN_TAPE = 5;         // строк ленты в СЖАТОЙ колонке сплита
+    var SCN_TAPE_MAX = 12;    // потолок ленты «в полный рост»: остаток высоты после лесенки
     // мерки в CSS-пикселях (offsetHeight!) после переноса разметки мокапа:
     // ряд 20, середина стыка 60 (44 + поля 6+6 + волоски), полоса баланса 15 (5 + 10),
     // шапка сплита 30 (мокапная .tkt-h), лента ровно 5 строк 118. ЛОВУШКА десктопа:
@@ -7179,15 +7184,18 @@
         var free = el.clientHeight - head - SCN_BAL_H - SCN_MID_H - SCN_TAPE_H;
         return Math.max(SCN_DEPTH_MIN, Math.min(SCN_DEPTH_CARD, Math.floor(free / SCN_ROW_H / 2)));
     }
-    // строк ленты: цель — 5, но короткой колонке отдаём столько, сколько влезло
-    // после лесенки. Обрезанная по живому строка выглядит хуже непоказанной
+    // строк ленты — остаток высоты после лесенки. В сжатой колонке сплита
+    // потолок 5 (заказ владельца), «в полный рост» — до SCN_TAPE_MAX: лесенка
+    // берёт своё первой, лента дорастает до дна. Обрезанная по живому строка
+    // выглядит хуже непоказанной
     function scnTapeN(deep) {
+        var cap = (!RP && scnTktView() === 'split') ? SCN_TAPE : SCN_TAPE_MAX;
         var el = dq('btScnTkDepth');
         if (!el || !el.clientHeight) return SCN_TAPE;
         var head = el.querySelector('.dep-hd') ? SCN_DHEAD_H : 0;
         var free = el.clientHeight - head - SCN_BAL_H - SCN_MID_H - SCN_TAPE_CHROME -
             (deep || SCN_DEPTH_MIN) * 2 * SCN_ROW_H;
-        return Math.max(1, Math.min(SCN_TAPE, Math.floor(free / SCN_TAPE_ROW)));
+        return Math.max(1, Math.min(cap, Math.floor(free / SCN_TAPE_ROW)));
     }
     // данные стакана для рендера И для точечного патча (scnDepthSet):
     // sqrt-шкала ширины (видны и средние объёмы, не только «стена»),
@@ -8333,13 +8341,19 @@
         // РОСТОК — В КОЛОНКЕ ГЕРОЯ, не этажом под всей сценой (владелец
         // 2026-07-31): он кончается там, где начинается «Счёт», а колонка заявки
         // держит полную высоту тела — стакану и заявке достаётся эта высота
+        // «ИЗБРАННОЕ» — В ПРАВОЙ ЧАСТИ (идея владельца 2026-07-31): рейка стоит
+        // МЕЖДУ графиком и колонкой заявки, а не у левого края. Так все
+        // выдвижные панели (рейка, стакан сплита, счёт) живут справа одним
+        // семейством, место им уступает всегда график, а заявка не сдвигается
+        // ни на пиксель. Кнопка ★ — в правом кластере строки среды, над местом,
+        // где рейка появляется
         var body = s.meta
             ? '<div class="bts-body">' +
-                  '<aside class="bts-wl" id="btScnWl">' + scnWlHtml() + '</aside>' +
                   '<div class="bts-main">' +
                       scnHeroHtml(n, s) +
                       (RP ? '' : '<div class="dock" id="btScnDock">' + scnDockHtml() + '</div>') +
                   '</div>' +
+                  '<aside class="bts-wl" id="btScnWl">' + scnWlHtml() + '</aside>' +
                   '<div class="tkt-col">' +
                       '<aside class="tkt' + (tktVw === 'split' ? ' tkt-x2' : '') + '" id="btScnTicket">' +
                           scnTicketHtml(n) + '</aside>' +
@@ -8347,8 +8361,8 @@
                   '</div>' +
               '</div>'
             : '<div class="bts-body">' +
-                  '<aside class="bts-wl" id="btScnWl">' + scnWlHtml() + '</aside>' +
                   scnHelloHtml() +
+                  '<aside class="bts-wl" id="btScnWl">' + scnWlHtml() + '</aside>' +
               '</div>';
         // реплей: полосу позиций подменяет плёнка-бар (живой брокер спит),
         // росток и «Счёт» закрыты — их данные из настоящего, не из прошлого
@@ -8504,16 +8518,20 @@
     }
     // низ героя — от фактической высоты открытого ростка: она меняется
     // вкладкой дока, а зазор к ней обязан оставаться воздухом 12px
+    // высота ростка ОДНА И ТА ЖЕ с открытым «Счётом» и без него (владелец
+    // 2026-07-31: раньше одиночный росток открывался ниже и прыгал при
+    // открытии счёта). Открытый счёт меряем и запоминаем; пока не меряли —
+    // стартовая прикидка равна его типовой карточке из четырёх строк
+    var scnAcctHMem = 208;
     function scnDockFit() {
         var el = dq('btScene'), d = dq('btScnDock');
         if (!el) return;
         // 96 — низ ростка выровнен с низом карточки сделки (владелец 2026-07-23)
         if (d && d.childElementCount) {
-            // при открытом «Счёте» верх ростка — на линии верха его карточки
-            // (владелец 2026-07-24): низы у обоих 96, равняем высоты
             var a = dq('btScnAcct');
             var ah = a && a.childElementCount ? a.offsetHeight : 0;
-            d.style.minHeight = ah ? ah + 'px' : '';
+            if (ah) scnAcctHMem = ah;
+            d.style.minHeight = (ah || scnAcctHMem) + 'px';
             el.style.setProperty('--bts-dock', (d.offsetHeight + 96 + 12) + 'px');
         } else {
             if (d) d.style.minHeight = '';
