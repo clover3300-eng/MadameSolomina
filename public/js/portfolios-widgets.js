@@ -1383,9 +1383,13 @@
                     (d.cash > 0 ? pfdAllocLegRow('Кэш', d.cash, d.total, 'csh') : '') +
                 '</div></div>';
         }
+        // область охвата и переход в «Ребаланс» — подвалом, а не подписью: подвал
+        // прижат к низу и даёт ряду общую нижнюю грань (мокап, экран 13, п. 2)
+        var foot = demo ? '' : PF.pfCardFoot(esc(subName), '',
+            { label: 'Ребаланс', onclick: "pfxGoTab('rebal')" });
         return '<div class="dash2-card pf-card2 pf-allocblk">' +
-            PF.pfCardHead('', 'Распределение активов', subName, null) +
-            sel + body + '</div>';
+            PF.pfCardHead('', 'Распределение активов', '', null) +
+            sel + body + foot + '</div>';
     }
     window.pfdAllocPick = function (id) {
         if (PF.dashCfg.allocPf === id) return;
@@ -2511,7 +2515,8 @@
             }).join('') + '</div>';
         }
         return '<div class="dash2-card pf-card2 pf-assetsblk">' +
-            PF.pfCardHead('', 'Список активов', 'все бумаги по убыванию стоимости позиции', null) + body + '</div>';
+            // счётчик у имени вместо фразы в подписи (мокап, экран 13, п. 5)
+            PF.pfCardHead(rows.length || '', 'Список активов', 'по убыванию стоимости позиции', null) + body + '</div>';
     }
 
     // «Позиции у брокера»: живой портфель счёта из T-Invest API (js/broker-api.js,
@@ -2561,7 +2566,9 @@
                 : '<div class="pfbrk-skel">' + skelHtml(150, 18) + skelHtml(210, 18) + skelHtml(180, 18) + '</div>') + '</div>';
         }
         return '<div class="dash2-card pf-card2 pf-brokerblk">' +
-            PF.pfCardHead('Т-Инвестиции', 'Позиции у брокера', sub, right) + body + '</div>';
+            // счётчик — число позиций на счёте; имя счёта уехало в подпись
+            PF.pfCardHead((brokerCache.data && brokerCache.data.rows) ? brokerCache.data.rows.length : '',
+                'Позиции у брокера', 'Т-Инвестиции' + (sub ? ' · ' + sub : ''), right) + body + '</div>';
     }
 
     function pfwBrokerRowsHtml() {
@@ -2843,15 +2850,16 @@
         if (!(year > 0)) {
             body = '<div class="pfal-empty">Добавьте облигации или дивидендные акции — посчитаем ваш пассивный доход.</div>';
         } else {
-            body = '<div class="pfpv-hero"><b>+' + fmtRub(monthly) + '</b><span>в среднем в месяц · по выплатам на год вперёд</span></div>' +
-                '<div class="pfpv-rows">' +
-                    '<div class="pfpv-row"><span>Ближайшие 30 дней</span><b class="pos">' + (soon > 0 ? '+' + fmtRub(soon) : '—') + '</b></div>' +
-                    '<div class="pfpv-row"><span>За год вперёд</span><b class="pos">+' + fmtRub(year) + '</b></div>' +
-                    '<div class="pfpv-row"><span>Доходность выплатами</span><b>' + fmtPct(yPct).replace('+', '') + ' годовых</b></div>' +
-                '</div>';
+            // Крупно — год, под ним доходность к капиталу, месяц ушёл в подвал
+            // (мокап, экран 13): одно число в теле, одно в подвале, дублей нет.
+            body = '<div class="pfpv-hero"><b class="pos">+' + fmtRub(year) + '</b>' +
+                    '<span class="pos">' + fmtPct(yPct).replace('+', '') + '<em>к капиталу</em></span></div>' +
+                (soon > 0 ? '<div class="pfpv-rows"><div class="pfpv-row"><span>Ближайшие 30 дней</span>' +
+                    '<b class="pos">+' + fmtRub(soon) + '</b></div></div>' : '');
         }
         return '<div class="dash2-card pf-card2 pf-passiveblk">' +
-            PF.pfCardHead('', 'Пассивный доход', 'купоны и дивиденды в пересчёте на месяц', null) + body + '</div>';
+            PF.pfCardHead('', 'Пассивный доход', 'ожидаемые выплаты за 12 месяцев', null) + body +
+            (year > 0 ? PF.pfCardFoot('в месяц', '+' + fmtRub(monthly), null, 'pos') : '') + '</div>';
     }
     // «Диверсификация»: доли топ-5 позиций и вердикт о концентрации
     function pfwConcHtml() {
@@ -3051,13 +3059,14 @@
             '</div>';
         }).join('') + '</div>';
         return '<div class="dash2-card pf-card2 pf-plistblk">' +
-            PF.pfCardHead('', 'Список портфелей', 'всего ' + PF.store.items.length + ' ' + PF.plural(PF.store.items.length, 'портфель', 'портфеля', 'портфелей') + ' · ' + fmtRub(total),
+            PF.pfCardHead(PF.store.items.length, 'Список портфелей', 'стоимость, доходность и мини-график',
                 // подпись у сегмента — иначе «Стоимость|Доходность|Имя» читается как
                 // фильтр или вкладки, а не сортировка (просьба 2026-07-16).
                 // Кнопки виджета — ПЕРВЫМИ в ряду (слева от сортировки), а не в углу
                 '<div class="pfpl-head-r">' + pfdInChromeHtml('plist') +
                     '<span class="pfpl-sort-cap">Сортировка</span>' + seg + add + '</div>',
-                'pfpl:sub') + body + '</div>';
+                'pfpl:sub') + body +
+            PF.pfCardFoot('всего по портфелям', '<span data-live="pfpl:tot">' + fmtRub(total) + '</span>', null) + '</div>';
     }
 
     // ---- точечный фоновый апдейт «Списка портфелей» (роадмап №6) ----
@@ -3073,7 +3082,7 @@
         if (!vis.length) return;
         var total = 0, cs = {};
         vis.forEach(function (p) { var c = calcPf(p); cs[p.id] = c; total += c.value; });
-        PF.liveSet('pfpl:sub', { text: 'всего ' + PF.store.items.length + ' ' + PF.plural(PF.store.items.length, 'портфель', 'портфеля', 'портфелей') + ' · ' + fmtRub(total) });
+        PF.liveSet('pfpl:tot', { text: fmtRub(total) });
         function chip(cls, tx) { return '<span class="pfsm-chip ' + cls + '">' + tx + '</span>'; }
         function absPct(x) { return Math.abs(x).toFixed(1).replace('.', ',') + '%'; }
         vis.forEach(function (p) {

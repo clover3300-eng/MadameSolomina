@@ -1096,13 +1096,11 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 .pfd-item.pfd-thm-dark .pfnw-pk:hover { border-color: #34425c; color: #f4f8fd; }
 .pfd-item.pfd-thm-dark .pfnw-addinput { background: #0f1826; color: #e7eef7; }
 /* Календарь · месяц — дополнение к зеркалам §16 */
-.pfd-item.pfd-thm-dark .pfcm-foot-tot b,
 .pfd-item.pfd-thm-dark .pfcm-next em,
 .pfd-item.pfd-thm-dark .pfcm-day-h span, .pfd-item.pfd-thm-dark .pfcm-day-r b { color: #34d399; }
 .pfd-item.pfd-thm-dark .pfcm-next { border-color: rgba(255,255,255,0.1); }
 .pfd-item.pfd-thm-dark .pfcm-next:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.16); }
 .pfd-item.pfd-thm-dark .pfcm-next strong { color: #f4f8fd; }
-.pfd-item.pfd-thm-dark .pfcm-foot-tot.empty b { color: #8fa2b8; }
 .pfd-item.pfd-thm-dark .pfcm-d.today { box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.2); }
 .pfd-item.pfd-thm-dark .pfcm-d.today .pfcm-n,
 .pfd-item.pfd-thm-dark .pfcm-d.multi .pfcm-n { color: #f4f8fd; }
@@ -1178,9 +1176,11 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 /* Семейство/вес заголовков задаёт ОБЩИЙ список в typography-tokens.css (сериф 400) —
    здесь только РАЗМЕРЫ, они у «Портфелей» свои: заголовок панели старше заголовков
    виджетов под ним, и на гротеске эта иерархия читалась перевёрнутой. */
-#panel-portfolios .pf-ch-t,
+/* мокап overview3, экран 13: заголовок виджета — сериф 17.5px/400. Был 22px и
+   спорил по весу с числами внутри; теперь имя называет виджет, а кричат данные. */
+#panel-portfolios .pf-ch-t { font-size: 17.5px; }
 #panel-portfolios .pfnt-title,
-#panel-portfolios .pfnt-name-edit { font-size: 22px; }
+#panel-portfolios .pfnt-name-edit { font-size: 15px; }
 /* ============ 16. Виджет «Календарь выплат · месяц» (.pfcm-) ============
    Месячная сетка выплат: рядом со списочным «Календарём выплат» (.pfpc-) — тот отвечает
    на «что и когда», этот на «как выплаты разложены по месяцу». Язык тот же, что у
@@ -1193,7 +1193,6 @@ body.dark-mode .dm-news b { color: #e8eef7; }
    строку целиком, заголовок получает всю ширину. Тот же приём, что у карточки
    графика (.btc-card .pf-ch). Базис 190px у заголовка — порог переноса. */
 .pf-calmblk > .pf-ch { padding-left: 0; padding-right: 0; flex-wrap: wrap; row-gap: 8px; }
-.pf-calmblk > .pf-ch > .pf-ch-l { flex: 1 1 190px; min-width: 0; }
 /* R9.3: прежде здесь шестерёнка и корзина были ВИДНЫ ВСЕГДА и прибиты на top:22.5px —
    угловой оверлей выныривал по ховеру на 7px выше пилюли «за месяц» и ломал ровный ряд,
    и это лечили постоянной видимостью. Теперь кнопки живут В ПОТОКЕ шапки перед пилюлей
@@ -1215,7 +1214,7 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 
 /* нижняя строка: ‹ месяц › слева, итог месяца справа (вместо большого ряда навигации
    и пилюли в шапке) */
-.pfcm-foot { display: flex; align-items: center; gap: 2px; margin-top: 10px; }
+.pfcm-nav { display: inline-flex; align-items: center; gap: 2px; }
 .pfcm-mon { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 700; color: #64748b; margin: 0 3px; }
 .pfcm-arw {
     width: 22px; height: 22px; flex-shrink: 0; border-radius: 7px; border: 0; background: none;
@@ -1226,9 +1225,6 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 .pfcm-arw.prev svg { transform: rotate(180deg); }
 .pfcm-arw:hover:not([disabled]) { background: #eef2f7; color: #1b2433; }
 .pfcm-arw[disabled] { opacity: 0.35; cursor: default; }
-.pfcm-foot-tot { margin-left: auto; display: inline-flex; align-items: baseline; gap: 5px; white-space: nowrap; font-family: 'Inter', sans-serif; font-size: 10.5px; color: #9aa7b8; }
-.pfcm-foot-tot b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11.5px; font-weight: 700; color: #12a35c; }
-.pfcm-foot-tot.empty b { color: #9aa7b8; font-weight: 600; font-family: 'Inter', sans-serif; }
 
 /* сетка */
 .pfcm-wds, .pfcm-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
@@ -1296,12 +1292,10 @@ body.dark-mode .pfcm-d.one .pfcm-n { color: color-mix(in srgb, var(--c) 55%, #e8
 body.dark-mode .pfcm-d.has.today, body.dark-mode .pfcm-d.sel { box-shadow: inset 0 0 0 2px #fff; }
 body.dark-mode .pfcm-day, body.dark-mode .pfcm-day-r { border-color: rgba(255,255,255,0.08); }
 body.dark-mode .pfcm-day-h b, body.dark-mode .pfcm-day-tk { color: #e8eef7; }
-body.dark-mode .pfcm-foot-tot b, body.dark-mode .pfcm-next em,
 body.dark-mode .pfcm-day-h span, body.dark-mode .pfcm-day-r b { color: #34d399; }
 body.dark-mode .pfcm-next { border-color: rgba(255,255,255,0.1); }
 body.dark-mode .pfcm-next:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.16); }
 body.dark-mode .pfcm-next strong { color: #f4f8fd; }
-body.dark-mode .pfcm-foot-tot.empty b { color: #8fa2b8; }
 /* тёмный ВИДЖЕТ (настройка «Тема: тёмная» в пикере) — те же правила, но по классу блока */
 .pfd-item.pfd-thm-dark .pfcm-mon { color: #a9b6c6; }
 .pfd-item.pfd-thm-dark .pfcm-day-h b, .pfd-item.pfd-thm-dark .pfcm-day-tk { color: #e8eef7; }
@@ -2322,7 +2316,6 @@ body.dark-mode #pfActBar .pfab-hr { background: rgba(255, 255, 255, 0.14); }
 #pfActBar .pf-impmenu.open { transform: translateY(0); }
 
 /* ============ R9.1. Шапка «Моих портфелей»: инструменты справа ============ */
-.pf-plistblk > .pf-ch > .pf-ch-l { flex: 1 1 auto; }
 .pfpl-sort-cap { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #8494a7; }
 body.dark-mode .pfpl-sort-cap { color: #93a2b8; }
 

@@ -263,7 +263,6 @@ body.dark-mode .pfbrk-state-tx, .pfd-thm-dark .pfbrk-state-tx { color: #9fb1c6; 
 /* узкий виджет: кикер не переносим, кнопка сжимается до иконки —
    иначе заголовок «Позиции у брокера» ломается на три строки */
 .pf-brokerblk { container-type: inline-size; }
-.pf-brokerblk .pf-ch-k { white-space: nowrap; }
 @container (max-width: 380px) {
     .pf-brokerblk .pfbrk-go span { display: none; }
     .pf-brokerblk .pfbrk-go { padding: 6px 8px; }

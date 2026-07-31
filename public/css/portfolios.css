@@ -176,7 +176,6 @@ body.dark-mode .pf-sumcard {
 /* Заголовок-колонка ужимается по flex-basis:0, а не тянется по содержимому: иначе в узкой
    правой колонке длинный подзаголовок занимал всю строку и «+» (margin-left:auto при
    flex-wrap) переносился ПОД заголовок. Так «+» остаётся на строке названия при любой ширине. */
-.pf-fav .pf-ch-l { flex: 1 1 0; }
 /* пустое состояние («Нет избранных акций») центрируем по высоте карточки, а не прижимаем
    к верху — иначе в высокой карточке под ним останется пустая полоса */
 .pf-fav .pff-body:has(.pff-empty) { display: flex; }
@@ -322,27 +321,53 @@ body.dark-mode .pfc-act { border-color: rgba(255,255,255,0.09); background: rgba
 body.dark-mode .pfc-act:hover { background: rgba(255,255,255,0.09); color: #f4f8fd; }
 body.dark-mode .pfc-act.on { background: #0c1118; color: #7ee2a8; }
 
-/* шапка вторичных карточек (Избранное / Сравнение) — eyebrow + заголовок */
-.pf-ch { display: flex; align-items: flex-start; gap: 12px; padding: 22px 24px 14px; }
+/* ЕДИНЫЙ СКЕЛЕТ ВИДЖЕТА (мокап overview3, экран 13)
+   шапка: имя · счётчик · правый слот (один контрол + хром) — всё по базовой линии;
+   подпись отдельной строкой ниже; тело на волосках; подвал-итог прижат к низу.
+   Заголовок серифный, числа моноширинные — два голоса на весь проект, третьего
+   (капс-эйбрау над именем) нет ни у кого. */
+.pf-ch { display: flex; align-items: baseline; gap: 10px; min-height: 24px; padding: 18px 24px 0; }
 .pf-ch-l { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 /* Шапка виджета адаптируется под РЕАЛЬНУЮ ширину виджета (а не вьюпорта): .pf-card2 —
    общая карточка всех виджетов дашборда — становится query-контейнером. Безопасно:
    карточка уже position:relative + overflow:visible, а высоту (block-size) inline-size
    не контейнит (masonry-замер offsetHeight не страдает). */
 .pf-card2 { container-type: inline-size; container-name: pfw; }
-/* В самом узком виджете подпись под заголовком (.pf-ch-s) должна занимать ВСЮ ширину,
-   а не ужиматься в левую колонку рядом с кнопкой действия. Отдаём левому блоку шапки
-   полную строку — заголовок и подпись растекаются во всю ширину карточки, а кнопки
-   конструктора и действие («Открыть»/«+»/«Рынок») переносятся строкой ниже. Правило
-   общее для ВСЕХ виджетов с подписью (единый pfCardHead). */
+/* В самом узком виджете правый слот шапки (контрол + хром) переносится строкой
+   ниже: имя со счётчиком остаётся первой строкой во всю ширину. Правило общее
+   для ВСЕХ виджетов — шапка у них одна (pfCardHead). */
 @container pfw (max-width: 300px) {
     #panel-portfolios .pf-ch { flex-wrap: wrap; row-gap: 10px; }
-    #panel-portfolios .pf-ch > .pf-ch-l { flex-basis: 100%; }
+    #panel-portfolios .pf-ch > .pf-ch-r { flex-basis: 100%; margin-left: 0; }
 }
-.pf-ch-k { font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #97a3b4; }
-.pf-ch-t { font-family: 'Inter', sans-serif; font-size: 21px; font-weight: 800; color: #1b2433; letter-spacing: -0.015em; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.pf-ch-t { font-family: var(--font-title, Georgia, serif); font-size: 17.5px; font-weight: 400;
+    line-height: 1.2; color: #1b2433; letter-spacing: 0; min-width: 0;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 body.dark-mode .pf-ch-t { color: #f4f8fd; }
-.pf-ch-s { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #97a3b4; letter-spacing: 0; }
+/* счётчик у имени заменяет «Позиции · 4» и «показано 5 из 23» внутри тела */
+.pf-ch-c { flex: none; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 10.5px;
+    font-weight: 700; color: #5d6b7e; background: rgba(24, 38, 60, 0.06); border-radius: 99px; padding: 2px 8px; }
+body.dark-mode .pf-ch-c { color: #aab6c8; background: rgba(255, 255, 255, 0.08); }
+/* правый слот: один контрол виджета и хром конструктора — у всех в одном месте */
+.pf-ch-r { margin-left: auto; flex: none; display: flex; align-items: center; gap: 8px; }
+.pf-ch-s { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 400; color: #8b98aa;
+    letter-spacing: 0; padding: 3px 24px 0; }
+/* подвал-итог: он и даёт ряду общую нижнюю грань */
+.pf-wf { position: relative; margin-top: auto; padding: 12px 24px 18px;
+    display: flex; align-items: baseline; gap: 10px;
+    font-family: 'Inter', sans-serif; font-size: 11.5px; color: #7b8798; }
+/* волосок подвала идёт по КРОМКЕ КОНТЕНТА, а не карточки: у части виджетов
+   горизонтальные отступы держит сама карточка, у части — шапка и подвал */
+.pf-wf::before { content: ''; position: absolute; left: 24px; right: 24px; top: 0; height: 1px;
+    background: rgba(24, 38, 60, 0.07); }
+.pf-wf b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-weight: 700; color: #1b2433;
+    font-variant-numeric: tabular-nums; }
+.pf-wf b.pos { color: #0f7a48; } .pf-wf b.neg { color: #c2410c; }
+.pf-wf-go { margin-left: auto; font-weight: 700; color: #1b2433; cursor: pointer; white-space: nowrap; }
+.pf-wf-go u { text-decoration: none; color: #94a3b8; margin-left: 5px; }
+body.dark-mode .pf-ch-s { color: #7d8ba0; }
+body.dark-mode .pf-wf b, body.dark-mode .pf-wf-go { color: #eef3f9; }
+body.dark-mode .pf-wf::before { background: rgba(255, 255, 255, 0.08); }
 .pf-ch-go { margin-left: auto; align-self: center; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(24,38,60,0.1); background: #fff; border-radius: 10px; padding: 8px 13px; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; color: #46566e; white-space: nowrap; transition: background 0.15s, color 0.15s; }
 .pf-ch-go svg { width: 14px; height: 14px; }
 .pf-ch-go:hover { background: #1b2433; color: #fff; border-color: transparent; }
@@ -3161,6 +3186,11 @@ body.dark-mode .pfl-btn.primary.done { background: rgba(18, 163, 92, 0.14); colo
    чтобы заголовок и тело выровнялись по одной вертикали. */
 .pf-capblk, .pf-heatblk, .pf-newsblk, .pf-noteblk, .pf-allocblk { padding: 0 22px 20px; }
 .pf-capblk > .pf-ch, .pf-heatblk > .pf-ch, .pf-newsblk > .pf-ch, .pf-noteblk > .pf-ch, .pf-allocblk > .pf-ch { padding-left: 0; padding-right: 0; }
+.pf-capblk > .pf-wf, .pf-heatblk > .pf-wf, .pf-newsblk > .pf-wf, .pf-noteblk > .pf-wf, .pf-allocblk > .pf-wf { padding-left: 0; padding-right: 0; }
+.pf-capblk > .pf-wf::before, .pf-heatblk > .pf-wf::before, .pf-newsblk > .pf-wf::before,
+.pf-noteblk > .pf-wf::before, .pf-allocblk > .pf-wf::before { left: 0; right: 0; }
+.pf-capblk > .pf-ch-s, .pf-heatblk > .pf-ch-s, .pf-newsblk > .pf-ch-s,
+.pf-noteblk > .pf-ch-s, .pf-allocblk > .pf-ch-s { padding-left: 0; padding-right: 0; }
 .pfd-item.pfd-hset .pf-capblk,
 .pfd-item.pfd-hset .pf-heatblk,
 .pfd-item.pfd-hset .pf-newsblk,
@@ -3527,7 +3557,8 @@ body.dark-mode .pfhm-pv-hint { border-top-color: rgba(255, 255, 255, 0.12); colo
 .pf-noteblk.pfnt-fill-full .pfnt-due { background: color-mix(in srgb, var(--nt) 6%, #fff); }
 /* шапка: единый цветной значок-иконка (он же выбор цвета) + подпись + «+» справа */
 .pfnt-head { align-items: center; }
-.pfnt-head .pf-ch-l { display: flex; flex-direction: row; align-items: center; gap: 10px; }
+.pf-ch.pfnt-head { align-items: center; }
+.pfnt-head .pf-ch-l { display: flex; flex-direction: row; align-items: center; gap: 10px; min-width: 0; flex: 1; }
 .pfnt-colorwrap { position: relative; display: inline-flex; flex-shrink: 0; }
 .pfnt-badge {
     width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px; border: 0; padding: 0; cursor: pointer;

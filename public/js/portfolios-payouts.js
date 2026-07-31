@@ -229,6 +229,7 @@
         var cls = 'dash2-card pf-card2 pf-paycal' + (asCell ? ' pf-paycal--cell' : '') + (asCell && span === 2 ? ' pf-paycal--span2' : '');
         var held = allHeldBonds(), heldS = allHeldStocks();
         var head = PF.pfCardHead('', 'Календарь выплат', SUB, '<div class="pfpc-head-r">' + calFilterHtml() + '</div>');
+        // счётчик и итог считаются ниже, когда события собраны (collectUpcomingPayouts)
         if (!held.length && !heldS.length) return '<div class="' + cls + '">' + head + payCalStateHtml('nobonds') + '</div>';
         var missing = held.some(function (x) { return !bondDetail(x.h.ticker); });
         if (missing) ensureAllBondDetails(function () { PF.softRerender(); });
@@ -279,8 +280,12 @@
             }
             rowsHtml += payCalRowHtml(e, multiPf);
         });
-        return '<div class="' + cls + '">' + PF.pfCardHead('', 'Календарь выплат', SUB, right) +
+        // сумма ближайших 90 дней — подвалом; счётчик выплат — у имени (мокап, экран 13)
+        var lim90 = Date.now() + 90 * 86400000, sum90 = 0;
+        evs.forEach(function (e) { if (e.date.getTime() <= lim90) sum90 += e.amount; });
+        return '<div class="' + cls + '">' + PF.pfCardHead(evs.length, 'Календарь выплат', SUB, right) +
             '<div class="pfpc-body" data-skey="paycal" onscroll="pfPayCalScroll(this)"><div class="pfpc-list">' + rowsHtml + '</div>' + more + '</div>' +
+            (sum90 > 0 ? PF.pfCardFoot('за 90 дней', '+' + fmtRub(sum90), null, 'pos') : '') +
         '</div>';
     }
     window.pfTogglePayCal = function () { payCalFull = !payCalFull; PF.renderPortfolios(); };
@@ -371,6 +376,9 @@
     var PFCM_WD = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
     var PFCM_MON = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
         'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    // предложный падеж для подвала-итога: «в августе», а не «в Август»
+    var PFCM_MON_IN = ['январе', 'феврале', 'марте', 'апреле', 'мае', 'июне',
+        'июле', 'августе', 'сентябре', 'октябре', 'ноябре', 'декабре'];
     var pfcmOffset = 0;    // смещение показанного месяца от текущего (стрелки ‹ ›)
     var pfcmSelKey = null; // выбранный день (YYYY-M-D) — под сеткой раскрывается его список
     function pfcmKey(d) { return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate(); }
@@ -460,14 +468,16 @@
         var CH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
         // R11 (мокап «Обзора» 2026-07-22): большой ряд навигации и пилюля «за месяц»
         // в шапке ушли — месяц со стрелками и итог живут одной тихой строкой ПОД сеткой
-        var foot = '<div class="pfcm-foot">' +
+        // ОДИН КОНТРОЛ В ПРАВОМ СЛОТЕ ШАПКИ (мокап overview3, экран 13, п. 1):
+        // стрелки месяца — это и есть контрол виджета, им место рядом с хромом,
+        // а не отдельной строкой под сеткой. Итог месяца ушёл в подвал-итог.
+        var nav = '<span class="pfcm-nav">' +
             '<button type="button" class="pfcm-arw prev"' + (pfcmOffset <= 0 && !demoMap ? ' disabled' : '') + ' aria-label="Предыдущий месяц" onclick="pfcmNav(-1, event)">' + CH + '</button>' +
             '<span class="pfcm-mon">' + PFCM_MON[m] + ' ' + y + '</span>' +
             '<button type="button" class="pfcm-arw next"' + (pfcmOffset >= 12 && !demoMap ? ' disabled' : '') + ' aria-label="Следующий месяц" onclick="pfcmNav(1, event)">' + CH + '</button>' +
-            (monthCnt
-                ? '<span class="pfcm-foot-tot">за месяц<b>+' + fmtRub(monthSum) + '</b></span>'
-                : '<span class="pfcm-foot-tot empty">за месяц<b>выплат нет</b></span>') +
-        '</div>';
+        '</span>';
+        var foot = PF.pfCardFoot('в ' + PFCM_MON_IN[m], monthCnt ? '+' + fmtRub(monthSum) : 'выплат нет',
+            { label: 'Все выплаты', onclick: "pfxGoTab('overview')" }, monthCnt ? 'pos' : '');
         // «Ближайшая выплата» — заголовок виджета (мокап «Обзора»): дата и бумага крупно,
         // сумма зелёным; несколько выплат в один день — счётчик и сумма за день.
         // Клик подсвечивает этот день в сетке (переключая месяц, если он дальше).
@@ -511,8 +521,8 @@
         return '<div class="dash2-card pf-card2 pf-calmblk">' +
             // кнопки конструктора — в потоке шапки (PFD_OWN_CHROME): подзаголовок и пилюля
             // «за месяц» ушли по мокапу «Обзора», но свой хром виджету по-прежнему нужен
-            PF.pfCardHead('', 'Календарь выплат', '',
-                '<div class="pfcm-head-r">' + PF.pfdInChromeHtml('calm') + '</div>') +
+            PF.pfCardHead(monthCnt || '', 'Календарь выплат', '',
+                '<div class="pfcm-head-r">' + nav + PF.pfdInChromeHtml('calm') + '</div>') +
             next +
             '<div class="pfcm-wds">' + PFCM_WD.map(function (w) { return '<span class="pfcm-wd">' + w + '</span>'; }).join('') + '</div>' +
             '<div class="pfcm-grid">' + cells + '</div>' +

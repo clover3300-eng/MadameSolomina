@@ -1522,12 +1522,28 @@
     // subLive (опционально) — ключ data-live на подзаголовке: сабтитул с живым
     // числом (напр. общая сумма «Списка портфелей») обновляется точечно фоновым
     // тиком, текст по-прежнему экранируется
-    function pfCardHead(k, t, sub, right, subLive) {
+    // ЕДИНЫЙ СКЕЛЕТ ВИДЖЕТА (мокап overview3, экран 13): шапка = имя · счётчик ·
+    // правый слот (один контрол + хром конструктора), подпись — ОТДЕЛЬНОЙ строкой
+    // под шапкой, а не второй половиной заголовка. Капс-эйбрау над именем нет ни у
+    // кого: на весь проект два голоса — серифный заголовок и моноширинные числа.
+    // Первый параметр раньше был этим самым эйбрау, теперь это счётчик у имени
+    // (4, 23) — он заменяет фразы «Позиции · 4» и «показано 5 из 23» в теле.
+    function pfCardHead(cnt, t, sub, right, subLive) {
         return '<div class="pf-ch">' +
-            '<div class="pf-ch-l">' +
-                (k ? '<span class="pf-ch-k">' + esc(k) + '</span>' : '') +
-                '<span class="pf-ch-t">' + esc(t) + (sub ? '<span class="pf-ch-s"' + (subLive ? ' data-live="' + subLive + '"' : '') + '>' + esc(sub) + '</span>' : '') + '</span>' +
-            '</div>' + (right || '') + '</div>';
+                '<span class="pf-ch-t">' + esc(t) + '</span>' +
+                (cnt || cnt === 0 ? '<span class="pf-ch-c">' + esc(cnt) + '</span>' : '') +
+                (right ? '<span class="pf-ch-r">' + right + '</span>' : '') +
+            '</div>' +
+            (sub ? '<div class="pf-ch-s"' + (subLive ? ' data-live="' + subLive + '"' : '') + '>' + esc(sub) + '</div>' : '');
+    }
+    // ПОДВАЛ-ИТОГ, ПРИЖАТЫЙ К НИЗУ (margin-top:auto) — именно он даёт ряду общую
+    // нижнюю грань, даже когда виджеты внутри разной высоты. Слева подпись, рядом
+    // итог моноширинным, справа — ссылка «куда пойти дальше».
+    function pfCardFoot(label, value, go, tone) {
+        return '<div class="pf-wf"><span>' + label + '</span>' +
+            (value ? '<b' + (tone ? ' class="' + tone + '"' : '') + '>' + value + '</b>' : '') +
+            (go ? '<span class="pf-wf-go" onclick="' + go.onclick + '">' + esc(go.label) + '<u>›</u></span>' : '') +
+            '</div>';
     }
 
 
@@ -2512,6 +2528,6 @@
     // Состояние шторки настроек (PF.openMenu и др.) и PF.pfNoScrollKeep
     // объявлены в каркасе рендера свойствами PF — алиасы запрещены.
     PF.XMARK_SVG = XMARK_SVG; PF.assetDisplayName = assetDisplayName; PF.cardHtml = cardHtml; PF.closeImpMenus = closeImpMenus;
-    PF.menuHtml = menuHtml; PF.paintPfChartMini = paintPfChartMini; PF.pfCardHead = pfCardHead;
+    PF.menuHtml = menuHtml; PF.paintPfChartMini = paintPfChartMini; PF.pfCardHead = pfCardHead; PF.pfCardFoot = pfCardFoot;
     PF.pfConfirm = pfConfirm; PF.pfImpOutside = pfImpOutside; PF.repaintMiniCharts = repaintMiniCharts;
 })();
