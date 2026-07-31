@@ -2611,8 +2611,18 @@ body.dark-mode .pfpc-kind.kind-red { color: #93c5fd; background: rgba(61,111,209
 .pfd-grid:not(.pfd-masonry) .pfal-body,
 .pfd-grid:not(.pfd-masonry) .pff-body,
 .pfd-grid:not(.pfd-masonry) .pft-body,
+.pfd-grid:not(.pfd-masonry) .pfnw-body,
 .pfd-grid:not(.pfd-masonry) .pfcap-body,
+.pfd-grid:not(.pfd-masonry) .pfas-list,
+.pfd-grid:not(.pfd-masonry) .pfop-list,
+.pfd-grid:not(.pfd-masonry) .pfpl-list,
+.pfd-grid:not(.pfd-masonry) .pfsn-list,
 .pfd-grid:not(.pfd-masonry) .pfc-normal { flex: 1; min-height: 0; }
+/* Виджет-«одна фигура» (кольцо распределения) ростом не пользуется: список у него
+   короткий, и лишняя высота собиралась пустотой ПОД кольцом — 310px на ряде в 750.
+   Центрируем: пустота расходится поровну сверху и снизу и читается как поле,
+   а не как обрыв. Списочные виджеты выше этого правила не касаются — им рост нужен. */
+.pfd-grid:not(.pfd-masonry) .pfal-body { justify-content: center; }
 /* ручная высота: карточка заполняет блок и СКРОЛЛИТСЯ ВНУТРИ своей области-списка
    (шапка и рамка карточки закреплены). Раньше прокручивался сам .pfd-body — он уносил
    карту ЦЕЛИКОМ, и при прокрутке верхняя граница/шапка уезжали под обрез («пропадает
