@@ -3576,13 +3576,13 @@ body.dark-mode .pfhm-pv-hint { border-top-color: rgba(255, 255, 255, 0.12); colo
 .pfnt-head .pf-ch-l { display: flex; flex-direction: row; align-items: center; gap: 10px; min-width: 0; flex: 1; }
 .pfnt-colorwrap { position: relative; display: inline-flex; flex-shrink: 0; }
 .pfnt-badge {
-    width: 30px; height: 30px; flex-shrink: 0; border-radius: 9px; border: 0; padding: 0; cursor: pointer;
+    width: 26px; height: 26px; flex-shrink: 0; border-radius: 8px; border: 0; padding: 0; cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center; color: var(--nt);
     background: color-mix(in srgb, var(--nt) 15%, transparent);
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nt) 22%, transparent);
     transition: transform 0.13s, box-shadow 0.15s, background 0.15s;
 }
-.pfnt-badge svg { width: 17px; height: 17px; }
+.pfnt-badge svg { width: 14px; height: 14px; }
 .pfnt-badge:hover { transform: translateY(-1px); background: color-mix(in srgb, var(--nt) 22%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nt) 32%, transparent), 0 3px 10px -4px color-mix(in srgb, var(--nt) 60%, transparent); }
 .pfnt-colorpop {
     position: absolute; top: calc(100% + 9px); left: -6px; z-index: 240; display: none; flex-direction: column; gap: 5px;
@@ -3617,15 +3617,17 @@ body.dark-mode .pfhm-pv-hint { border-top-color: rgba(255, 255, 255, 0.12); colo
 .pfnt-fillb span { white-space: nowrap; }
 .pfnt-fillb:hover { color: var(--nt); border-color: color-mix(in srgb, var(--nt) 40%, #e6ebf2); }
 .pfnt-fillb.on { color: var(--nt); border-color: var(--nt); background: color-mix(in srgb, var(--nt) 12%, #fff); }
-/* заголовок заметки — ТОГО ЖЕ размера, что у «Избранного»/карточек (.pf-ch-t: 21px/800) */
+/* Заголовок заметки — тот же голос, что у остальных виджетов (серифный .pf-ch-t),
+   но 15px: рядом стоит цветной значок, и полный кегль его перевешивал.
+   Было Inter 21px/800 — единственное место в проекте, где имя виджета кричало. */
 .pfnt-title {
-    font-family: 'Inter', sans-serif; font-size: 21px; font-weight: 800; letter-spacing: -0.015em; cursor: text;
-    color: color-mix(in srgb, var(--nt) 42%, #1b2433); border-radius: 6px; padding: 2px 5px; margin: -2px -5px;
+    font-family: var(--font-title, Georgia, serif); font-size: 15px; font-weight: 400; line-height: 1.2; cursor: text;
+    color: #1b2433; border-radius: 6px; padding: 2px 5px; margin: -2px -5px;
     transition: background 0.12s, box-shadow 0.12s; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .pfnt-title:hover { background: color-mix(in srgb, var(--nt) 8%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nt) 20%, transparent); }
 .pfnt-name-edit {
-    font-family: 'Inter', sans-serif; font-size: 21px; font-weight: 800; letter-spacing: -0.015em; color: #1e293b;
+    font-family: var(--font-title, Georgia, serif); font-size: 15px; font-weight: 400; color: #1e293b;
     width: 200px; max-width: 200px; padding: 2px 6px; border-radius: 7px; outline: none;
     border: 1px solid var(--nt); background: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--nt) 16%, transparent);
 }
@@ -3640,73 +3642,78 @@ body.dark-mode .pfhm-pv-hint { border-top-color: rgba(255, 255, 255, 0.12); colo
 .pfnt-trash:hover { color: #e0592b; background: rgba(224, 89, 43, 0.1); }
 .pfnt-plus.pff-add { color: #9aa6b4; }
 .pfnt-plus.pff-add:hover { color: var(--nt); }
-/* строки заметки */
-.pfnt-list { display: flex; flex-direction: column; gap: 1px; margin-top: 12px; }
-.pfnt-row { display: flex; align-items: flex-start; gap: 8px; padding: 3px 3px; border-radius: 8px; transition: background 0.12s; }
+/* строки заметки (мокап overview3: .note-b/.note-r — 12px, отметка 14px) */
+.pfnt-list { display: flex; flex-direction: column; gap: 2px; margin-top: 12px; }
+.pfnt-row { display: flex; align-items: flex-start; gap: 9px; padding: 3px 3px; border-radius: 8px; transition: background 0.12s; }
 .pfnt-row:hover { background: color-mix(in srgb, var(--nt) 6%, transparent); }
-.pfnt-dash { flex-shrink: 0; width: 11px; height: 2px; border-radius: 2px; margin-top: 11px; background: color-mix(in srgb, var(--nt) 60%, #94a3b8); }
+/* «—» пункта списка: та же ширина 14px, что у квадратика задачи, — метки стоят в одной колонке */
+.pfnt-dash { flex-shrink: 0; width: 14px; height: 1.5px; border-radius: 2px; margin-top: 10px; background: color-mix(in srgb, var(--nt) 55%, #8d9aad); }
 .pfnt-check {
-    flex-shrink: 0; width: 18px; height: 18px; margin-top: 2px; border-radius: 50%; padding: 0; cursor: pointer;
+    flex-shrink: 0; width: 14px; height: 14px; margin-top: 3px; border-radius: 5px; padding: 0; cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center; color: #fff; background: transparent;
-    border: 2px solid color-mix(in srgb, var(--nt) 42%, #cbd5e1); transition: background 0.14s, border-color 0.14s;
+    border: 1.5px solid color-mix(in srgb, var(--nt) 42%, #8d9aad); transition: background 0.14s, border-color 0.14s;
 }
-.pfnt-check svg { width: 11px; height: 11px; opacity: 0; transform: scale(0.4); transition: opacity 0.13s, transform 0.13s; }
+.pfnt-check svg { width: 9px; height: 9px; opacity: 0; transform: scale(0.4); transition: opacity 0.13s, transform 0.13s; }
 .pfnt-check:hover { border-color: var(--nt); }
 .pfnt-check.on { background: var(--nt); border-color: var(--nt); }
 .pfnt-check.on svg { opacity: 1; transform: scale(1); }
 .pfnt-tx {
-    flex: 1; min-width: 0; padding: 2px 0; outline: none; word-break: break-word; white-space: pre-wrap;
-    font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; line-height: 1.55; color: #1e293b;
+    flex: 1; min-width: 0; padding: 1px 0; outline: none; word-break: break-word; white-space: pre-wrap;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 400; line-height: 1.45; color: #101828;
 }
-.pfnt-row--text .pfnt-tx { font-weight: 600; }
 .pfnt-tx:empty::before { content: attr(data-ph); color: #a5b3c4; pointer-events: none; }
 .pfnt-row.done .pfnt-tx { color: #94a3b8; text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--nt) 55%, #cbd5e1); }
 .pfnt-del {
-    flex-shrink: 0; width: 20px; height: 20px; margin-top: 2px; border: 0; background: none; padding: 0; cursor: pointer;
+    flex-shrink: 0; width: 18px; height: 18px; margin-top: 1px; border: 0; background: none; padding: 0; cursor: pointer;
     display: inline-flex; align-items: center; justify-content: center; color: #c3cdd9; border-radius: 6px;
     opacity: 0; transition: opacity 0.12s, color 0.12s, background 0.12s;
 }
 .pfnt-row:hover .pfnt-del { opacity: 1; }
 .pfnt-del:hover { color: #e0592b; background: rgba(224, 89, 43, 0.1); }
 .pfnt-del svg { width: 12px; height: 12px; }
-/* панель добавления строк */
-.pfnt-toolbar { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+/* Панель добавления строк отделена волоском: выше — сама заметка, ниже — чем её
+   дописать. Кнопка = знак строки + слово, пунктирную рамку сменила общая
+   «стеклянная» плашка проекта (мокап overview3: .note-tb). */
+.pfnt-toolbar { display: flex; gap: 5px; margin-top: 12px; padding-top: 11px; flex-wrap: wrap;
+    border-top: 1px solid rgba(16, 24, 40, 0.09); }
+/* Плашка мокапа — белое стекло (--gl-in) поверх цветного фона. Карточка заметки
+   непрозрачно-белая, и белое по белому не видно вовсе: тот же вес даёт лёгкая
+   чернильная заливка — общий приём проекта (ср. .pff-sort). */
 .pfnt-tb {
-    display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border-radius: 9px; cursor: pointer;
-    border: 1px dashed #d3dbe6; background: transparent; color: #64748b;
-    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; transition: border-color 0.13s, color 0.13s, background 0.13s;
+    display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 9px; cursor: pointer;
+    border: 1px solid rgba(24, 38, 60, 0.09); background: rgba(24, 38, 60, 0.045); color: #5c6a7d;
+    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; transition: border-color 0.13s, color 0.13s, background 0.13s;
 }
-.pfnt-tb svg { width: 14px; height: 14px; }
-.pfnt-tb:hover { border-style: solid; border-color: var(--nt); color: var(--nt); background: color-mix(in srgb, var(--nt) 7%, transparent); }
-/* срок выполнения: чип с живым отсчётом + СВОЙ календарь-поповер */
-.pfnt-duewrap { position: relative; margin-top: 11px; }
+.pfnt-tb i { font-style: normal; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11px; color: #8d9aad; }
+.pfnt-tb:hover { border-color: var(--nt); color: var(--nt); background: color-mix(in srgb, var(--nt) 7%, transparent); }
+.pfnt-tb:hover i { color: var(--nt); }
+/* Срок — фраза в пилюле: «срок 2 сентября · осталось 34 дня». Дата моноширинная,
+   отсчёт цветной; ширину держит текст, а не карточка. + СВОЙ календарь-поповер */
+.pfnt-duewrap { position: relative; margin-top: 11px; display: flex; }
 .pfnt-due {
-    position: relative; display: flex; align-items: center; gap: 8px; width: 100%; box-sizing: border-box; padding: 8px 11px;
-    border-radius: 11px; border: 1px solid #e6ebf2; background: #f8fafc; font: inherit; text-align: left; color: inherit;
+    position: relative; display: inline-flex; align-items: center; gap: 6px; max-width: 100%; box-sizing: border-box; padding: 5px 12px;
+    border-radius: 99px; border: 1px solid rgba(24, 38, 60, 0.09); background: rgba(24, 38, 60, 0.045);
+    font-family: 'Inter', sans-serif; font-size: 11.5px; text-align: left; color: #5c6a7d;
     transition: border-color 0.14s, background 0.14s;
 }
-.pfnt-due-empty { cursor: pointer; }
+.pfnt-due-empty { cursor: pointer; font-weight: 600; }
 .pfnt-due:hover { border-color: #c7d2e0; background: #f1f5fb; }
 .pfnt-due-ic { display: inline-flex; flex-shrink: 0; color: #94a3b8; }
-.pfnt-due-ic svg { width: 15px; height: 15px; }
-.pfnt-due-add { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #8494a7; }
-.pfnt-due-chev { margin-left: auto; display: inline-flex; color: #b7c2d0; }
-.pfnt-due-chev svg { width: 14px; height: 14px; }
-.pfnt-due-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; line-height: 1.2; text-align: left; border: 0; background: none; padding: 0; cursor: pointer; font: inherit; }
-.pfnt-due-date { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700; color: #334155; }
-.pfnt-cd { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11px; font-weight: 600; color: #64748b; }
+.pfnt-due-ic svg { width: 13px; height: 13px; }
+.pfnt-due-main { min-width: 0; line-height: 1.35; text-align: left; border: 0; background: none; padding: 0; cursor: pointer;
+    font: inherit; color: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfnt-due-main b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11px; font-weight: 700; color: #101828; }
+.pfnt-cd, .pfnt-cd-static { font-style: normal; font-weight: 700; color: color-mix(in srgb, var(--nt) 72%, #5c6a7d); }
 .pfnt-due-clr {
-    position: relative; z-index: 2; flex-shrink: 0; width: 20px; height: 20px; border: 0; background: none;
+    position: relative; z-index: 2; flex-shrink: 0; width: 16px; height: 16px; margin-right: -4px; border: 0; background: none;
     cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; color: #a9b4c2; border-radius: 6px;
-    transition: color 0.12s, background 0.12s;
+    opacity: 0; transition: opacity 0.12s, color 0.12s, background 0.12s;
 }
+.pf-noteblk:hover .pfnt-due-clr { opacity: 1; }
 .pfnt-due-clr:hover { color: #e0592b; background: rgba(224, 89, 43, 0.1); }
-.pfnt-due-clr svg { width: 12px; height: 12px; }
-.pfnt-due.set.soon { border-color: color-mix(in srgb, #f59e0b 45%, #e6ebf2); background: #fff9ee; }
-.pfnt-due.set.soon .pfnt-due-ic, .pfnt-due.set.soon .pfnt-cd { color: #b45309; }
-.pfnt-due.set.over { border-color: color-mix(in srgb, #ef4444 50%, #e6ebf2); background: #fef2f2; }
-.pfnt-due.set.over .pfnt-due-ic, .pfnt-due.set.over .pfnt-cd { color: #dc2626; }
-.pfnt-due.set.ok .pfnt-due-ic { color: color-mix(in srgb, var(--nt) 68%, #94a3b8); }
+.pfnt-due-clr svg { width: 11px; height: 11px; }
+.pfnt-due.set.soon .pfnt-cd { color: #b45309; }
+.pfnt-due.set.over .pfnt-cd { color: #dc2626; }
 /* календарь-поповер: раскрывается ВВЕРХ поверх контента заметки */
 .pfnt-cal {
     position: absolute; left: 0; bottom: calc(100% + 8px); z-index: 260; width: 258px; max-width: 100%;
@@ -3850,15 +3857,14 @@ body.dark-mode .pfnt-row.done .pfnt-tx { color: #64748b; }
 body.dark-mode .pfnt-check { border-color: color-mix(in srgb, var(--nt) 48%, #3a475c); }
 body.dark-mode .pfnt-dash { background: color-mix(in srgb, var(--nt) 68%, #64748b); }
 body.dark-mode .pfnt-del { color: #5c6c82; }
-body.dark-mode .pfnt-tb { border-color: #2b374a; color: #93a1b5; }
-body.dark-mode .pfnt-due { border-color: #27324a; background: #131c2b; }
+body.dark-mode .pfnt-toolbar { border-top-color: rgba(255, 255, 255, 0.1); }
+body.dark-mode .pfnt-tb { border-color: rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.05); color: #93a1b5; }
+body.dark-mode .pfnt-tb i { color: #6a788f; }
+body.dark-mode .pfnt-due { border-color: rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.05); color: #93a1b5; }
 body.dark-mode .pfnt-due:hover { border-color: #34425c; background: #172233; }
-body.dark-mode .pfnt-due-date { color: #dbe6f2; }
-body.dark-mode .pfnt-due-add, body.dark-mode .pfnt-cd { color: #93a1b5; }
-body.dark-mode .pfnt-due.set.soon { border-color: #6b4a12; background: #241a09; }
-body.dark-mode .pfnt-due.set.soon .pfnt-due-ic, body.dark-mode .pfnt-due.set.soon .pfnt-cd { color: #fbbf24; }
-body.dark-mode .pfnt-due.set.over { border-color: #7f1d1d; background: #2a1113; }
-body.dark-mode .pfnt-due.set.over .pfnt-due-ic, body.dark-mode .pfnt-due.set.over .pfnt-cd { color: #f87171; }
+body.dark-mode .pfnt-due-main b { color: #e9eef7; }
+body.dark-mode .pfnt-due.set.soon .pfnt-cd { color: #e0a33e; }
+body.dark-mode .pfnt-due.set.over .pfnt-cd { color: #f0836a; }
 /* тёмная тема — новые элементы заметок (заголовок, заливка, трэш, календарь) */
 body.dark-mode .pfnt-name-edit { color: #e8f0fb; background: #0f1826; }
 body.dark-mode .pfnt-pop-fills { border-top-color: rgba(255, 255, 255, 0.08); }
@@ -3867,7 +3873,6 @@ body.dark-mode .pfnt-fillb.on { background: color-mix(in srgb, var(--nt) 26%, #1
 body.dark-mode .pf-noteblk.pfnt-fill-full { background: color-mix(in srgb, var(--nt) 16%, #101826); border-color: color-mix(in srgb, var(--nt) 34%, #27324a); }
 body.dark-mode .pf-noteblk.pfnt-fill-full .pfnt-due { background: color-mix(in srgb, var(--nt) 12%, #101826); }
 body.dark-mode .pfnt-trash { color: #5c6c82; }
-body.dark-mode .pfnt-due-chev { color: #5c6c82; }
 body.dark-mode .pfnt-cal { background: #16202e; border-color: rgba(255, 255, 255, 0.1); box-shadow: 0 22px 50px -18px rgba(0, 0, 0, 0.6); }
 body.dark-mode .pfnt-cal-mon { color: #e8f0fb; }
 body.dark-mode .pfnt-cal-nav { background: #101826; border-color: #27324a; color: #9fb1c6; }

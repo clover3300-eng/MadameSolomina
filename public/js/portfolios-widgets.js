@@ -220,9 +220,12 @@
         var d = new Date(ts); function p(n) { return String(n).padStart(2, '0'); }
         return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
     }
+    // «2 сентября, 09:30» — месяц СЛОВОМ (мокап overview3: «срок 2 сентября»).
+    // У периода месяц остаётся сокращённым: двумя словами строка «2 сентября —
+    // 9 сентября, 09:30» переносится в узком виджете.
     function pfdDueDateText(ts) {
         var d = new Date(ts);
-        return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) + ', ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' }) + ', ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
     }
     // текст чипа срока: однодневный «12 июл, 09:30» или ПЕРИОД «12 июл — 19 июл, 09:30»
     function pfdDueText(nt) {
@@ -232,11 +235,15 @@
         var tm = b.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
         return a.toLocaleDateString('ru-RU', dm) + ' — ' + b.toLocaleDateString('ru-RU', dm) + ', ' + tm;
     }
+    // Отсчёт словами, как в мокапе: «осталось 34 дня». Дни склоняются; часы и
+    // минуты показываем только когда до срока меньше суток — иначе «34 дн 5 ч»
+    // соревнуется с датой рядом, хотя за сутки эти пять часов ничего не решают.
     function pfdDueCountdown(ts) {
         var diff = ts - Date.now(), over = diff < 0, a = Math.abs(diff);
         var d = Math.floor(a / 86400000), h = Math.floor(a % 86400000 / 3600000), m = Math.floor(a % 3600000 / 60000), s = Math.floor(a % 60000 / 1000);
-        var body = d > 0 ? (d + ' дн ' + h + ' ч') : (h > 0 ? (h + ' ч ' + m + ' мин') : (m + ' мин ' + s + ' с'));
-        return { txt: (over ? 'просрочено · ' + body : 'осталось ' + body), cls: over ? 'over' : (diff < 86400000 ? 'soon' : 'ok') };
+        var body = d > 0 ? (d + ' ' + PF.plural(d, 'день', 'дня', 'дней'))
+            : (h > 0 ? (h + ' ч ' + m + ' мин') : (m + ' мин ' + s + ' с'));
+        return { txt: (over ? 'просрочено на ' + body : 'осталось ' + body), cls: over ? 'over' : (diff < 86400000 ? 'soon' : 'ok') };
     }
     function pfdReplaceDue(nt) {
         var card = pfdNoteCard(nt.id), wrap = card && card.querySelector('.pfnt-duewrap');
@@ -2035,9 +2042,6 @@
     var NOTE_CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
     var NOTE_X_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>';
     var NOTE_CLOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
-    var NOTE_TB_TEXT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>';
-    var NOTE_TB_BULLET = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h3M4 12h3M4 17h3M10 7h10M10 12h10M10 17h10"/></svg>';
-    var NOTE_TB_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="7" r="2.4"/><path d="M11 7h9"/><circle cx="6" cy="17" r="2.4"/><path d="M11 17h9"/></svg>';
     var NOTE_TRASH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>';
     // иконки заливки: кант слева (рамка + жирная левая грань) | залить всю карточку (заполненный прямоугольник)
     var NOTE_FILL_EDGE_SVG = '<svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="14" rx="2.5" stroke="currentColor" stroke-width="1.8"/><rect x="4" y="5" width="4.5" height="14" rx="1.6" fill="currentColor"/></svg>';
@@ -2058,21 +2062,20 @@
             '<button type="button" class="pfnt-del" tabindex="-1" onclick="pfdNoteDelItem(\'' + jsArg(nid) + '\',\'' + jsArg(it.id) + '\',event)" aria-label="Удалить строку" title="Удалить строку">' + NOTE_X_SVG + '</button>' +
         '</div>';
     }
+    // Срок — не форма на всю ширину, а ФРАЗА в пилюле: «срок 2 сентября ·
+    // осталось 34 дня» (мокап overview3, экран заметки). Часы-иконку убрали:
+    // слово «срок» говорит то же самое и не спорит с цветным значком шапки.
     function pfdNoteDueHtml(nt) {
         var chip;
         if (nt.due == null) {
             chip = '<button type="button" class="pfnt-due pfnt-due-empty" onclick="pfdCalOpen(\'' + jsArg(nt.id) + '\',event)" aria-label="Задать срок выполнения">' +
-                '<span class="pfnt-due-ic">' + NOTE_CLOCK_SVG + '</span>' +
-                '<span class="pfnt-due-add">Срок выполнения</span>' +
-                '<span class="pfnt-due-chev">' + NOTE_CHEV_SVG + '</span>' +
-            '</button>';
+                '<span class="pfnt-due-ic">' + NOTE_CLOCK_SVG + '</span>поставить срок</button>';
         } else {
             var cd = pfdDueCountdown(nt.due);
             chip = '<div class="pfnt-due set ' + cd.cls + '">' +
-                '<span class="pfnt-due-ic">' + NOTE_CLOCK_SVG + '</span>' +
                 '<button type="button" class="pfnt-due-main" onclick="pfdCalOpen(\'' + jsArg(nt.id) + '\',event)" title="Изменить срок">' +
-                    '<span class="pfnt-due-date">' + esc(pfdDueText(nt)) + '</span>' +
-                    '<span class="pfnt-cd" data-due="' + nt.due + '">' + esc(cd.txt) + '</span></button>' +
+                    'срок <b>' + esc(pfdDueText(nt)) + '</b> · ' +
+                    '<em class="pfnt-cd" data-due="' + nt.due + '">' + esc(cd.txt) + '</em></button>' +
                 '<button type="button" class="pfnt-due-clr" onclick="pfdNoteClearDue(\'' + jsArg(nt.id) + '\',event)" aria-label="Убрать срок" title="Убрать срок">' + NOTE_X_SVG + '</button>' +
             '</div>';
         }
@@ -2119,10 +2122,17 @@
             '</span>' +
         '</div>';
         var rows = (nt.items || []).map(function (it) { return pfdNoteRowHtml(nt.id, it); }).join('');
+        // Метка кнопки — сам знак строки (¶ — ☐) моноширинным, а не иконка: знак
+        // ОДИН к одному повторяет то, что появится в списке, и рисовать его
+        // отдельной картинкой незачем (мокап overview3: .note-tb b > i).
+        function tb(type, glyph, label, title) {
+            return '<button type="button" class="pfnt-tb" onclick="pfdNoteAddItem(\'' + jsArg(nt.id) + '\',\'' + type + '\')" title="' + attr(title) + '">' +
+                '<i>' + glyph + '</i>' + label + '</button>';
+        }
         var toolbar = '<div class="pfnt-toolbar">' +
-            '<button type="button" class="pfnt-tb" onclick="pfdNoteAddItem(\'' + jsArg(nt.id) + '\',\'text\')" title="Абзац текста">' + NOTE_TB_TEXT + '<span>Текст</span></button>' +
-            '<button type="button" class="pfnt-tb" onclick="pfdNoteAddItem(\'' + jsArg(nt.id) + '\',\'bullet\')" title="Пункт списка (—)">' + NOTE_TB_BULLET + '<span>Пункт</span></button>' +
-            '<button type="button" class="pfnt-tb" onclick="pfdNoteAddItem(\'' + jsArg(nt.id) + '\',\'check\')" title="Задача с чекбоксом">' + NOTE_TB_CHECK + '<span>Задача</span></button>' +
+            tb('text', '¶', 'Текст', 'Абзац текста') +
+            tb('bullet', '—', 'Пункт', 'Пункт списка (—)') +
+            tb('check', '☐', 'Задача', 'Задача с чекбоксом') +
         '</div>';
         return '<div class="dash2-card pf-card2 pf-noteblk pfnt-c-' + color + ' pfnt-fill-' + fill + '" data-nid="' + esc(nt.id) + '">' +
             head +

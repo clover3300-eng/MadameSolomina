@@ -1153,8 +1153,10 @@
                 '<div class="pfnt-row pfnt-row--bullet"><span class="pfnt-dash"></span><div class="pfnt-tx">Докупить ОФЗ на просадке</div></div>' +
                 '<div class="pfnt-row pfnt-row--check done"><span class="pfnt-check on">' + PF.NOTE_CHECK_SVG + '</span><div class="pfnt-tx">Ребаланс раз в квартал</div></div>' +
             '</div>' +
-            '<div class="pfnt-duewrap"><div class="pfnt-due set soon"><span class="pfnt-due-ic">' + PF.NOTE_CLOCK_SVG + '</span>' +
-                '<span class="pfnt-due-main"><span class="pfnt-due-date">через 3 дня</span><span class="pfnt-cd-static">осталось 3 дн</span></span></div></div>' +
+            '<div class="pfnt-toolbar"><span class="pfnt-tb"><i>¶</i>Текст</span>' +
+                '<span class="pfnt-tb"><i>—</i>Пункт</span><span class="pfnt-tb"><i>☐</i>Задача</span></div>' +
+            '<div class="pfnt-duewrap"><div class="pfnt-due set soon">' +
+                '<span class="pfnt-due-main">срок <b>2 сентября</b> · <em class="pfnt-cd-static">осталось 3 дня</em></span></div></div>' +
         '</div>';
     }
     function pfdShelfBlockById(id) { return pfdShelfBlocks.filter(function (b) { return b.id === id; })[0] || null; }
