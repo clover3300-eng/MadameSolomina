@@ -6141,8 +6141,11 @@
         try { localStorage.setItem(WL_MODE_KEY, m); } catch (e) {}
         wlPaint();
     };
+    // ВНИМАНИЕ: класс .wl-h в мокапе занят ПОДПИСЬЮ РАЗДЕЛА («ОТМЕЧЕНО ЗВЕЗДОЙ»,
+    // капс-моно 8px), а не шапкой рейки — у нас он стоял на шапке и ломал сверку.
+    // Шапка теперь .wl-top, подпись раздела — .wl-h, как в мокапе.
     function wlHeadHtml() {
-        return '<div class="wl-h">' +
+        return '<div class="wl-top">' +
             '<div class="wl-seg" role="tablist" aria-label="Что показывать в рейке">' +
                 '<button type="button" class="wl-seg-b' + (wlMode === 'fav' ? ' on' : '') + '" role="tab" ' +
                     'aria-selected="' + (wlMode === 'fav') + '" onclick="pftScWlMode(\'fav\')">Избранное</button>' +
@@ -6151,6 +6154,8 @@
             '</div>' +
             '<button type="button" class="wl-x" onclick="pftScWl()" aria-label="Свернуть полосу">✕</button></div>';
     }
+    // подпись раздела рейки — та же, что в мокапе: тихий капс над списком
+    function wlCapHtml(t) { return '<span class="wl-h">' + t + '</span>'; }
     function scnWlHtml() {
         if (!wlOn()) return '';
         return wlHeadHtml() + (wlMode === 'all' ? scnWlAllHtml() : scnWlFavHtml());
@@ -6182,7 +6187,7 @@
                 '<span class="tk"><b>' + esc(tk) + '</b>' + (nm ? '<em>' + esc(nm) + '</em>' : '') + '</span>' +
                 right + '</div>';
         }).join('');
-        return '<div class="wl-scroll">' + rows + '</div>' +
+        return '<div class="wl-scroll">' + wlCapHtml('Отмечено звездой') + rows + '</div>' +
             '<div class="wl-ft">звезда ☆ у имени бумаги добавляет её сюда · клавиши 1–9 работают и при закрытой рейке</div>';
     }
     // «Список»: акции и облигации из таблицы вкладки «Расчёт». data.js кладёт

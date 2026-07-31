@@ -682,9 +682,9 @@
 /* герой, полоса позиций и росток-«карточка позиций» уступают рейке место —
    .dock тоже сдвигается влево, иначе рейка на него наезжает (левый край 56) */
 /* рейка — флекс-колонка: соседи расступаются сами, сдвигать их нечем */
-.bts .wl-h { display: flex; align-items: center; gap: 8px; padding: 2px 6px 8px; flex: none; }
-.bts .wl-h b { font: 400 15px var(--font-title); }
-.bts .wl-h kbd {
+.bts .wl-top { display: flex; align-items: center; gap: 8px; padding: 2px 6px 8px; flex: none; }
+.bts .wl-top b { font: 400 15px var(--font-title); }
+.bts .wl-top kbd {
     font: 600 9.5px var(--font-num); color: var(--dim);
     border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px;
 }
@@ -1955,3 +1955,168 @@
 .bts .pair .big .gh[role="button"] { cursor: pointer; }
 .bts .pair .big .gh[role="button"]:hover { color: var(--ink); }
 .bts .pair .row-cap { margin-top: 6px; font: 400 10.5px var(--font-ui); color: var(--dim); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   СВЕРКА С МОКАПОМ ПОЭЛЕМЕНТНО (2026-07-31)
+   Стили сняты getComputedStyle с обеих страниц и сравнены машинно — нашлось
+   261 расхождение по кеглю, начертанию, радиусам и отступам. Ниже они закрыты
+   величинами мокапа (overview3, экран 22). Порядок блоков — как на странице.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── строка среды ── */
+.bts .bts-top { height: 52px; gap: 8px; padding: 0 14px; }
+.bts .bts-back {
+    display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 12px;
+    border-radius: 9px; font: 600 12.5px var(--font-ui); color: var(--mut); white-space: nowrap;
+    border: 0; background: none; text-align: start;
+}
+.bts .bts-back svg { width: 14px; height: 14px; }
+.bts .bts-wlb {
+    width: 32px; height: 32px; padding: 0; border-radius: 9px; border: 0; background: none;
+    display: grid; place-items: center; font-size: 14px; color: var(--dim); text-align: start;
+}
+.bts .bts-wlb.on { color: var(--amb); background: var(--gl-in); border: 0; }
+.bts .sc-tabs { gap: 3px; margin-left: 6px; }
+.bts .sct {
+    display: block; font: 600 12px var(--font-ui); color: var(--mut);
+    padding: 6px 12px; border-radius: 9px; border: 0; background: none; gap: normal;
+}
+.bts .sct.on { color: var(--ink); background: var(--gl-in); }
+.bts-omni {
+    height: 32px; padding: 0 12px; border-radius: 9px; gap: 9px;
+    font: 400 12px var(--font-ui); color: var(--dim); text-align: start;
+    border: 1px solid var(--gl-in-edge); background: var(--gl-in);
+}
+.bts-omni kbd { font: 700 9px var(--font-num); border: 1px solid var(--gl-in-edge); border-radius: 5px; padding: 1px 5px; }
+.bts .bts-link { font: 400 11.5px var(--font-ui); gap: 6px; color: var(--mut); }
+.bts .bts-link i { width: 7px; height: 7px; box-shadow: none; background: var(--grn); }
+.bts .bts-sand {
+    font: 700 9.5px var(--font-num); letter-spacing: 0.08em; text-transform: uppercase;
+    border-radius: 6px; padding: 3px 8px;
+}
+.bts .bts-th { gap: 2px; border: 1px solid var(--gl-in-edge); border-radius: 8px; padding: 2px; text-align: start; }
+.bts .bts-th i, .bts .bts-th button {
+    width: 24px; height: 22px; border-radius: 6px; display: grid; place-items: center;
+    font-style: normal; font-size: 11px; color: var(--dim); border: 0; background: none;
+}
+.bts .bts-th i.on, .bts .bts-th button.on { background: var(--gl-in); color: var(--ink); }
+.bts .bts-av {
+    width: 30px; height: 30px; padding: 0; border-radius: 50%; background: var(--gl-in);
+    display: grid; place-items: center; font: 400 13px var(--font-title); color: var(--mut); text-align: start;
+}
+
+/* ── рейка избранного ── */
+.bts .wl-seg { gap: 3px; margin-bottom: 6px; border: 0; padding: 0; border-radius: 0; background: none; }
+.bts .wl-seg-b {
+    flex: 1; text-align: center; font: 700 10.5px var(--font-ui); color: var(--mut);
+    padding: 6px 0; border-radius: 8px; border: 0; background: none;
+}
+.bts .wl-seg-b.on { color: var(--ink); background: var(--gl-in); }
+/* .wl-h — ПОДПИСЬ РАЗДЕЛА рейки (мокап: «ОТМЕЧЕНО ЗВЕЗДОЙ»), а не шапка */
+.bts .wl-h {
+    display: block; font: 700 8px var(--font-num); letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--dim); padding: 8px 6px 5px; gap: normal;
+}
+.bts .wl-r {
+    display: flex; align-items: baseline; gap: 8px; border-radius: 9px; padding: 7px 8px;
+    font: 700 11.5px var(--font-num); font-variant-numeric: tabular-nums;
+}
+.bts .wl-r.on { background: var(--gl-in); }
+.bts .wl-r .pd { margin-left: auto; font: 700 10.5px var(--font-num); text-align: start; }
+
+/* ── герой бумаги ── */
+.bts .ih { align-items: flex-start; gap: 14px; }
+.bts .ih-nm h3 { display: flex; align-items: center; gap: 9px; font: 400 21px/1.1 var(--font-title); }
+.bts .ih-nm em { display: block; font: 400 10.5px var(--font-num); color: var(--mut); letter-spacing: normal; margin-top: 3px; }
+.bts .ih-r { gap: 6px; }
+.bts .ih-per { gap: 2px; border: 1px solid var(--gl-in-edge); border-radius: 8px; padding: 2px; background: none; }
+.bts .ih-per span {
+    font: 600 10px var(--font-num); color: var(--dim); padding: 3px 8px; border-radius: 6px; background: none;
+}
+.bts .ih-per span.on { color: var(--ink); background: var(--gl-in); box-shadow: none; }
+.bts .ih-ind {
+    gap: 5px; font: 700 11px var(--font-ui); color: var(--mut);
+    border: 1px solid var(--gl-in-edge); background: var(--gl-in); border-radius: 8px; padding: 5px 10px;
+}
+.bts .ih-ind.on { color: var(--ink); border-color: color-mix(in srgb, var(--ink) 26%, transparent); }
+.bts .ih-bell {
+    width: 30px; height: 30px; padding: 0; border-radius: 9px; display: grid; place-items: center;
+    color: var(--dim); border: 1px solid var(--gl-in-edge); background: none; text-align: start; font-size: 16px;
+}
+.bts .ih-bell svg { width: 15px; height: 15px; }
+.bts .price-row { gap: 14px; margin-top: 12px; }
+.bts .price-big { font-size: 52px; letter-spacing: -0.03em; line-height: 1; }
+.bts .price-big small { font-size: 38%; font-weight: 600; color: var(--mut); }
+.bts .day-chip { gap: 7px; font: 700 13px var(--font-num); border-radius: 9px; padding: 5px 11px; }
+.bts .day-chip em { font: 600 10.5px var(--font-ui); font-style: normal; color: var(--mut); }
+
+/* ── карточка заявки: шапка и подкарточки сплита ── */
+.bts .tkt-h { padding: 0 0 10px; margin-bottom: 10px; }
+.bts .tkt-h .tkt-title { letter-spacing: normal; }
+.bts .tkt-sub, .bts .tkt-sub-depth { padding: 12px; }
+
+/* ── «Счёт» ── */
+.bts .ac-h { padding: 0 0 9px; gap: 9px; }
+.bts .ac-h b { font: 400 15px var(--font-title); }
+.bts .ac-r { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; font: 400 11.5px var(--font-ui); color: var(--mut); }
+.bts .ac-r b { font: 700 11.5px var(--font-num); color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* ── росток (панели) ── */
+.bts .dock { padding: 0; display: flex; flex-direction: column; }
+.bts .dock-tabs {
+    display: flex; align-items: center; gap: 3px; padding: 9px 12px;
+    border-bottom: 1px solid var(--hair);
+}
+.bts .dock-tabs span[role="tab"] {
+    display: block; font: 600 12px var(--font-ui); color: var(--mut);
+    padding: 5px 11px; border-radius: 9px; opacity: 1; gap: normal;
+}
+.bts .dock-tabs span[role="tab"].on { color: var(--ink); background: var(--gl-in); }
+.bts .dock-tabs span[role="tab"] em { font: 700 10px var(--font-num); font-style: normal; margin-left: 5px; }
+.bts .dk-hd, .bts .dk-r { gap: 12px; align-items: center; padding: 7px 14px; }
+.bts .dk-hd {
+    font: 700 9px var(--font-num); letter-spacing: 0.11em; text-transform: uppercase;
+    color: var(--dim); border-bottom: 1px solid var(--hair);
+}
+.bts .dk-r {
+    font: 400 11.5px var(--font-num); border-radius: 0; border-bottom: 1px solid var(--hair);
+    font-variant-numeric: tabular-nums;
+}
+.bts .dk-r:last-child { border-bottom: 0; }
+
+/* ── полоса позиций ── */
+.bts .pos-strip { height: 56px; gap: 14px; padding: 0 14px; }
+.bts .ps-pills { gap: 4px; }
+.bts .ps-pill {
+    display: inline-flex; align-items: baseline; gap: 7px; font: 600 12px var(--font-ui); color: var(--mut);
+    border: 1px solid var(--gl-in-edge); background: var(--gl-in); border-radius: 99px; padding: 6px 13px;
+    text-align: start;
+}
+.bts .ps-pill.on { color: var(--ink); border-color: color-mix(in srgb, var(--ink) 26%, transparent); }
+.bts .ps-chip {
+    display: inline-flex; align-items: baseline; gap: 7px;
+    font: 700 11.5px var(--font-num); font-variant-numeric: tabular-nums;
+    border-radius: 9px; padding: 6px 11px; background: var(--gl-in); border: 0;
+}
+.bts .ps-chip em { font: 700 10.5px var(--font-num); font-style: normal; }
+.bts .ps-acctw {
+    display: inline-flex; align-items: center; gap: 7px; font: 700 12px var(--font-ui); color: var(--ink);
+    border-radius: 99px; padding: 0;
+}
+.bts .ps-acctw .ps-acct {
+    display: inline-flex; align-items: center; gap: 7px; font: 700 12px var(--font-ui); color: var(--ink);
+    border: 1px solid var(--gl-in-edge); background: var(--gl-in); border-radius: 99px; padding: 6px 14px;
+    box-shadow: none;
+}
+
+/* ── стакан ── */
+.bts .d-row { font-size: 11px; padding: 3px 6px; gap: 8px; }
+.bts .d-row.d-t { display: flex; font-size: 10.5px; border-radius: 0; padding: 2px 0; }
+.bts .d-bal { gap: 2px; }
+.bts .d-mid { padding: 9px 6px; }
+/* хвост поэлементной сверки: величины мокапа, найденные вторым проходом */
+.bts .bts-th { font-size: 16px; }
+.bts .tkt-sub-deal { padding: 12px 14px; }
+.bts .cta { text-align: start; }
+.bts .d-mid { gap: 8px; }
+.bts .d-tape-mini { padding-top: 10px; }
