@@ -115,6 +115,23 @@ body.sbg-aurora #siteBgTiles {
         linear-gradient(160deg, #E3ECEF 0%, #E7EAF2 50%, #E4EBEE 100%);
 }
 
+/* — Витраж: фон мокапа overview3 один в один. От «Авроры» отличается тем, что
+     пятна плотнее и холоднее — он рассчитан на стекло поверх, а не на белые
+     карточки: сквозь полупрозрачные виджеты и колонку сайдбара видно именно его. — */
+body.sbg-vitrazh #siteBgTiles {
+    background:
+        radial-gradient(760px 520px at 6% 8%, rgba(196, 226, 224, 0.7) 0%, rgba(196, 226, 224, 0) 60%),
+        radial-gradient(820px 560px at 84% 4%, rgba(214, 214, 240, 0.66) 0%, rgba(214, 214, 240, 0) 62%),
+        linear-gradient(160deg, #E7EDEF 0%, #EAECF2 50%, #E7EDEF 100%);
+}
+body.dark-mode.sbg-vitrazh #siteBgTiles {
+    background:
+        radial-gradient(760px 520px at 6% 8%, rgba(31, 58, 68, 0.85) 0%, rgba(31, 58, 68, 0) 60%),
+        radial-gradient(820px 560px at 78% 4%, rgba(43, 44, 80, 0.8) 0%, rgba(43, 44, 80, 0) 62%),
+        radial-gradient(940px 620px at 96% 88%, rgba(26, 52, 66, 0.7) 0%, rgba(26, 52, 66, 0) 66%),
+        linear-gradient(160deg, #0D141B 0%, #111520 50%, #0C141A 100%);
+}
+
 /* — Рассвет: второй градиент, тёплый персик сверху-слева уходит в холодный
      барвинок снизу-справа. Отличается от «Градиента» направлением тепла —
      там тёплое пятно внизу справа, здесь тёплый весь верх. — */

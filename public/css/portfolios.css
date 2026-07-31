@@ -3151,30 +3151,30 @@ body.dark-mode .pfl-btn.primary.done { background: rgba(18, 163, 92, 0.14); colo
 
 /* ============ новые блоки конструктора (опт-ин с полки «Добавить блок») ============ */
 /* --- KPI-плитка: иконка + подпись + крупное моно-значение --- */
-.pf-kpi {
-    display: flex; align-items: center; gap: 12px;
-    padding: 13px 16px; container-type: inline-size;
-    height: 100%; box-sizing: border-box;
-}
-.pf-kpi-ic {
-    flex-shrink: 0; width: 38px; height: 38px; border-radius: 11px;
-    display: flex; align-items: center; justify-content: center;
-    color: var(--ac, #3d6fd1); background: color-mix(in srgb, var(--ac, #3d6fd1) 10%, transparent);
-}
-.pf-kpi-ic svg { width: 19px; height: 19px; }
-.pf-kpi-body { min-width: 0; }
-.pf-kpi-l { font-family: 'Inter', sans-serif; font-size: var(--fs-th, 11px); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #8494a7; }
+/* KPI-плитка (мокап overview3, экран 13): шапка виджета, одно крупное моно-число
+   и строка дельты. Значок в цветном квадрате убран — цветным пятном тут был не
+   смысл, а украшение; цвет остался только у знака дельты. */
+.pf-kpi { display: flex; flex-direction: column; container-type: inline-size;
+    height: 100%; box-sizing: border-box; padding-bottom: 18px; }
 .pf-kpi-v {
     font-family: var(--font-num, 'JetBrains Mono', monospace); font-weight: 700;
-    font-size: clamp(16px, 6.4cqw, 21px); line-height: 1.15; color: #0f172a;
+    font-size: clamp(19px, 7.4cqw, 27px); letter-spacing: -0.02em; line-height: 1.1; color: #0f172a;
+    font-variant-numeric: tabular-nums; margin: 12px 24px 0;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.pf-kpi-v small { font-size: 56%; font-weight: 600; color: #8b98aa; }
 .pf-kpi-v.pos { color: #119d5c; }
 .pf-kpi-v.neg { color: #c2410c; }
-.pf-kpi-s { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #64748b; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.pf-kpi-s b { font-weight: 700; }
-.pf-kpi-s .pos { color: #119d5c; }
-.pf-kpi-s .neg { color: #c2410c; }
+.pf-kpi-d { margin: 6px 24px 0; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; color: #46586e;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pf-kpi-d.pos { color: #119d5c; }
+.pf-kpi-d.neg { color: #c2410c; }
+.pf-kpi-d span { font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 600;
+    color: #94a3b8; margin-left: 7px; }
+body.dark-mode .pf-kpi-v { color: #f4f8fd; }
+body.dark-mode .pf-kpi-v.pos { color: #34d399; } body.dark-mode .pf-kpi-v.neg { color: #fb923c; }
+body.dark-mode .pf-kpi-d { color: #b9c6d6; }
 
 /* Высоту блока держат ВНУТРЕННИЕ min-height (плот/список/поле), а не height:100%
    от неопределённой высоты родителя — иначе фикс-высотный ребёнок (карта 260px)
@@ -3832,8 +3832,6 @@ body.dark-mode .pfd-pv-svg .pv-strong { fill: #46587a; }
 body.dark-mode .pfd-pv-svg .pv-soft { fill: #3a4a68; }
 body.dark-mode .pfd-pv-svg .pv-line2 { fill: #2c3a56; }
 body.dark-mode .pf-kpi-v { color: #e7eef7; }
-body.dark-mode .pf-kpi-l { color: #8fa2b8; }
-body.dark-mode .pf-kpi-s { color: #9fb1c6; }
 body.dark-mode .pfcap-val { color: #eaf0f8; }
 body.dark-mode .pfcap-y { background: rgba(11, 18, 32, 0.75); color: #8fa2b8; }
 body.dark-mode .pfcap-x { color: #8fa2b8; }

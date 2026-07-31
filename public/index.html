@@ -237,7 +237,7 @@
     <link rel="stylesheet" href="css/backtest.css?v=17">
     <link rel="stylesheet" href="css/rebalance-r4.css?v=10">
     <link rel="stylesheet" href="css/dashboard-panel.css?v=5">
-    <link rel="stylesheet" href="css/portfolios.css?v=191">
+    <link rel="stylesheet" href="css/portfolios.css?v=192">
     <link rel="stylesheet" href="css/rebal-r5.css?v=11">
     <link rel="stylesheet" href="css/monthly-panel.css?v=1">
     <link rel="stylesheet" href="css/monthly-r5.css?v=14">
@@ -251,14 +251,14 @@
     <link rel="stylesheet" href="css/calc-r7.css?v=1">
     <link rel="stylesheet" href="css/home-register.css?v=22">
     <link rel="stylesheet" href="css/corner-stack.css?v=4">
-    <link rel="stylesheet" href="css/site-bg.css?v=16">
+    <link rel="stylesheet" href="css/site-bg.css?v=17">
     <link rel="stylesheet" href="css/profile-menu.css?v=21">
     <link rel="stylesheet" href="css/notifications.css?v=3">
     <link rel="stylesheet" href="css/tab-gates.css?v=4">
     <link rel="stylesheet" href="css/admin.css?v=13">
     <link rel="stylesheet" href="css/rebalance-r6.css?v=22">
     <link rel="stylesheet" href="css/typography-tokens.css?v=15">
-    <link rel="stylesheet" href="css/portfolios-r7.css?v=87">
+    <link rel="stylesheet" href="css/portfolios-r7.css?v=88">
     <link rel="stylesheet" href="css/broker.css?v=66">
     <link rel="stylesheet" href="css/trading-scene.css?v=47">
     <link rel="stylesheet" href="css/rebalance-wizard.css?v=20">
@@ -266,7 +266,7 @@
     <!-- Сайдбар «Подъём»: рейка 76px + колонка второго уровня (мокап В3-б).
          Идёт ПОСЛЕ site-layout.css — перебивает и его базовые правила рейки,
          и блок body.dark-mode (рейка светлая в обеих темах), но ДО mobile.css -->
-    <link rel="stylesheet" href="css/sidebar-rail.css?v=47">
+    <link rel="stylesheet" href="css/sidebar-rail.css?v=48">
     <!-- Мобильный слой (≤1023px) — всегда ПОСЛЕДНИЙ, перебивает всё -->
     <link rel="stylesheet" href="css/mobile.css?v=28">
     
@@ -2800,13 +2800,13 @@
 <!-- «Портфели» грузятся ЛЕНИВО при первом входе на вкладку или импорте из расчёта —
      ensurePortfoliosJs в webapp-tabs.js. src — ЦЕПОЧКА файлов (исполняются по
      порядку, последним ВСЕГДА portfolios.js с интеграцией); актуальные ?v живут здесь -->
-<script id="pfLazySrc" type="application/json">{"src":["js/portfolios-core.js?v=16","js/portfolios-dash.js?v=49","js/portfolios-widgets.js?v=41","js/portfolios-payouts.js?v=9","js/portfolios-tabs.js?v=35","js/portfolios-cards.js?v=27","js/portfolios-trades.js?v=7","js/portfolios-trading.js?v=101","js/portfolios-broker-pf.js?v=3","js/portfolios-chart.js?v=12","js/portfolios-screens.js?v=14","js/rebalance-wizard.js?v=30","js/portfolios.js?v=195"]}</script>
+<script id="pfLazySrc" type="application/json">{"src":["js/portfolios-core.js?v=16","js/portfolios-dash.js?v=49","js/portfolios-widgets.js?v=44","js/portfolios-payouts.js?v=9","js/portfolios-tabs.js?v=35","js/portfolios-cards.js?v=27","js/portfolios-trades.js?v=7","js/portfolios-trading.js?v=101","js/portfolios-broker-pf.js?v=3","js/portfolios-chart.js?v=12","js/portfolios-screens.js?v=14","js/rebalance-wizard.js?v=30","js/portfolios.js?v=195"]}</script>
 <!-- Стеклянный столбик правого нижнего угла: обязан идти ДО site-bg.js и
      profile-menu.js — их кнопки аппендятся в его капсулу #cornerStack -->
 <script src="js/corner-stack.js?v=2" defer></script>
 <!-- Статичный фон-мозаика остальных вкладок: не смотрит на window.supa,
      порядок относительно облака не важен -->
-<script src="js/site-bg.js?v=12" defer></script>
+<script src="js/site-bg.js?v=13" defer></script>
 
 <!-- Облако: конфиг + клиент ДО home-register/profile-menu (они смотрят window.supa),
      notifications (звоночек) — после profile-menu (встаёт рядом с аватаром),

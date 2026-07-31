@@ -78,6 +78,8 @@
         --sbr-line:  #E7ECF3;
         --sbr-sel:   #2F6B4F;      /* активный раздел */
         --sbr-sel-ic:#FFFFFF;      /* иконка внутри активного кружка */
+        --sbr-glass: rgba(255, 255, 255, 0.62);        /* поверхность колонки */
+        --sbr-glass-edge: rgba(255, 255, 255, 0.7);    /* её правая кромка */
     }
     /* Тёмная тема — палитра самого визарда (body.dark-mode .rbw). Прежняя
        инверсия «светлый сайдбар в обеих темах» снята: светлая рейка 76px
@@ -93,6 +95,8 @@
         --sbr-line:  rgba(255, 255, 255, 0.09);
         --sbr-sel:   #4FB98C;
         --sbr-sel-ic:#0A0E15;
+        --sbr-glass: rgba(18, 23, 34, 0.66);
+        --sbr-glass-edge: rgba(255, 255, 255, 0.09);
     }
 
     /* ---------- Оболочка ---------- */
@@ -117,21 +121,28 @@
     /* ---------- Корпус ----------
        Сплошная колонка на краю экрана, без скругления и тени: карточка с
        жёлобом читалась «панелькой, положенной на страницу». */
+    /* СТЕКЛО, А НЕ БЕЛАЯ СТЕНА (мокап overview3, экран 02). Колонка была
+       сплошной заливкой #FFFFFF: на градиентном фоне она читалась вырезанным
+       белым прямоугольником, и вся идея «витража» кончалась на её кромке.
+       Теперь это та же полупрозрачная поверхность, что у виджетов, — фон
+       страницы виден сквозь неё, а кромка держится светлым волоском. */
     #sbPanel {
         flex-direction: row;
         width: var(--sbr-w);
         flex: 1 1 auto;
         height: 100%;
-        background: var(--sbr-card);
+        background: var(--sbr-glass, var(--sbr-card));
+        -webkit-backdrop-filter: blur(18px) saturate(1.3);
+        backdrop-filter: blur(18px) saturate(1.3);
         border-radius: 0;
-        border-right: 1px solid var(--sbr-line);
+        border-right: 1px solid var(--sbr-glass-edge, var(--sbr-line));
         box-shadow: none;
         overflow: hidden;
         transition: width 0.26s ease;
         color: var(--sbr-ink);
         font-family: var(--font-ui, 'Inter', sans-serif);
     }
-    body.dark-mode #sbPanel { background: var(--sbr-card); }
+    body.dark-mode #sbPanel { background: var(--sbr-glass, var(--sbr-card)); }
     body:not(.sb-collapsed) #sbPanel,
     body.sb-collapsed #sbPanel { width: var(--sbr-w); }
     body.sb-rail #sbPanel { width: var(--sbr-rail-w); }

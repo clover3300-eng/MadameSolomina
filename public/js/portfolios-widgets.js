@@ -502,43 +502,54 @@
             });
         }
         var warm = !demo && pfQuotesWarming();   // котировки греются → значение скелетоном
-        var ic, label, vHtml, vCls = '', sub, ac;
+        var label, kpiSub, vHtml, vCls = '', dVal = '—', dLbl = '', dCls = '';
+        var nPf = PF.store.items.length;
         if (kind === 'cap') {
             var pnl = val - inv, pct = inv > 0 ? pnl / inv * 100 : 0;
-            ic = '<rect x="2" y="7" width="20" height="13" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/>';
-            label = 'Суммарный капитал'; ac = '#3d6fd1';
-            vHtml = warm ? skelHtml(150, 20) : fmtRub(val);
-            sub = warm ? 'Вложено ' + fmtRub(inv)
-                : 'Вложено ' + fmtRub(inv) + ' · <b class="' + (pnl >= 0 ? 'pos' : 'neg') + '">' + (pnl >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(pnl)) + ' · ' + fmtPct(pct) + '</b>';
+            label = 'Капитал';
+            kpiSub = 'по ' + nPf + ' ' + PF.plural(nPf, 'портфелю', 'портфелям', 'портфелям');
+            vHtml = warm ? skelHtml(150, 24) : kpiBig(val);
+            // дельта дня — то, ради чего на плитку смотрят утром; итог за всё
+            // время живёт в соседней плитке «Вложено», дублировать его незачем
+            if (hasDd) { dVal = (dd >= 0 ? '+' : '−') + fmtRub(Math.abs(dd)); dLbl = 'за день'; dCls = dd >= 0 ? ' pos' : ' neg'; }
+            else { dVal = (pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(pnl)); dLbl = 'результат · ' + fmtPct(pct); dCls = pnl >= 0 ? ' pos' : ' neg'; }
         } else if (kind === 'day') {
-            ic = '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>';
-            label = 'За сегодня'; ac = hasDd ? (dd >= 0 ? '#119d5c' : '#c2410c') : '#64748b';
-            vHtml = warm && hasDd ? skelHtml(110, 20) : hasDd ? (dd >= 0 ? '+' : '−') + fmtRub(Math.abs(dd)) : '—';
+            label = 'За сегодня';
+            kpiSub = hasDd ? 'к прошлому дневному снимку' : 'появится со второго дня наблюдения';
+            vHtml = warm && hasDd ? skelHtml(110, 24) : hasDd ? (dd >= 0 ? '+' : '−') + kpiBig(Math.abs(dd)) : '—';
             vCls = !warm && hasDd ? (dd >= 0 ? ' pos' : ' neg') : '';
-            sub = hasDd
-                ? ((mv && Math.abs(mv.chg) >= 1) ? 'Сильнее всех: ' + esc(mv.t) + ' <b class="' + (mv.chg >= 0 ? 'pos' : 'neg') + '">' + fmtPct(mv.chg) + '</b> за день' : 'к последнему дневному снимку')
-                : 'появится со второго дня наблюдения';
+            if (mv && Math.abs(mv.chg) >= 0.01) { dVal = fmtPct(mv.chg); dLbl = 'сильнее всех: ' + esc(mv.t); dCls = mv.chg >= 0 ? ' pos' : ' neg'; }
+            else { dVal = ''; dLbl = ''; }
         } else {
             var ev = demo ? demo.ev : PF.collectUpcomingPayouts()[0];
-            ic = '<rect x="3" y="4" width="18" height="18" rx="2.5"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M9 16l2 2 4-4"/>';
-            label = 'Ближайшая выплата'; ac = '#119d5c';
-            vHtml = ev ? '+' + fmtRub(ev.amount) : '—';
+            label = 'Ближайшая выплата';
+            // облигацию подписываем именем («ОФЗ 26248»), а не 12-значным secid —
+            // так же, как в строках календаря выплат
+            kpiSub = ev ? esc(ev.kind === 'div' ? ev.ticker : (ev.name || ev.ticker)) + ', ' +
+                    (ev.kind === 'div' ? 'дивиденды' : ev.kind === 'redeem' ? 'погашение' : 'купон')
+                : 'нет выплат на год вперёд';
+            vHtml = ev ? '+' + kpiBig(ev.amount) : '—';
             vCls = ev ? ' pos' : '';
-            sub = ev ? esc(ev.ticker) + ' · ' + ruDate(dateToIso(ev.date)) + ' · ' + esc(PF.daysUntilText(ev.date))
-                : 'нет запланированных выплат на год вперёд';
+            if (ev) { dVal = ruDate(dateToIso(ev.date)); dLbl = esc(PF.daysUntilText(ev.date)); }
+            else { dVal = ''; dLbl = ''; }
         }
         // data-live только у котировочных плиток (cap/day) и НЕ в demo-режиме
         // (превью пикера с захардкоженными числами патчер трогать не должен);
         // плитка «Ближайшая выплата» — расписания, не котировки
         var live = !demo && (kind === 'cap' || kind === 'day');
-        return '<div class="dash2-card pf-kpi" style="--ac:' + ac + '">' +
-            '<div class="pf-kpi-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + ic + '</svg></div>' +
-            '<div class="pf-kpi-body">' +
-                '<div class="pf-kpi-l">' + label + '</div>' +
-                '<div class="pf-kpi-v' + vCls + '"' + (live ? ' data-live="kpi:' + kind + ':v"' : '') + '>' + vHtml + '</div>' +
-                '<div class="pf-kpi-s"' + (live ? ' data-live="kpi:' + kind + ':s"' : '') + '>' + sub + '</div>' +
-            '</div></div>';
+        // KPI-плитка по мокапу overview3 (экран 13): та же шапка, что у всех
+        // виджетов (серифное имя + подпись), под ней ОДНО крупное моно-число и
+        // строка дельты — число моноширинным, ярлык при нём гротеском. Значка в
+        // цветном квадрате нет: цветным пятном тут был не смысл, а украшение.
+        return '<div class="dash2-card pf-card2 pf-kpi">' +
+            PF.pfCardHead('', label, kpiSub, null, live ? 'kpi:' + kind + ':h' : '') +
+            '<div class="pf-kpi-v' + vCls + '"' + (live ? ' data-live="kpi:' + kind + ':v"' : '') + '>' + vHtml + '</div>' +
+            '<div class="pf-kpi-d' + dCls + '"' + (live ? ' data-live="kpi:' + kind + ':s"' : '') + '>' + dVal +
+                (dLbl ? '<span>' + dLbl + '</span>' : '') + '</div>' +
+        '</div>';
     }
+    // «18 180 623 ₽» → крупное число и тихий знак валюты (мокап: .kpi-v small)
+    function kpiBig(n) { return fmtRub(n).replace(/\s?₽$/, '<small>&nbsp;₽</small>'); }
 
     // ---- точечный фоновый апдейт KPI-плиток (роадмап №6) ----
     // «Суммарный капитал» (значение + саб «Вложено … ▲ X ₽ · +N%») и «За сегодня»
@@ -556,14 +567,21 @@
             var m = topMover(p); if (m && (!mv || Math.abs(m.chg) > Math.abs(mv.chg))) mv = m;
         });
         var pnl = val - inv, pct = inv > 0 ? pnl / inv * 100 : 0;
-        PF.liveSet('kpi:cap:v', { text: fmtRub(val), cls: 'pf-kpi-v' });
-        PF.liveSet('kpi:cap:s', { html: 'Вложено ' + fmtRub(inv) + ' · <b class="' + (pnl >= 0 ? 'pos' : 'neg') + '">' + (pnl >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(pnl)) + ' · ' + fmtPct(pct) + '</b>' });
+        // патчер зеркалит ту же разметку, что и рендер: крупное число с тихим «₽»
+        // и строка дельты «число + ярлык» (мокап overview3, экран 13)
+        function dRow(val2, lbl, cls) {
+            return { html: val2 + (lbl ? '<span>' + lbl + '</span>' : ''), cls: 'pf-kpi-d' + (cls || '') };
+        }
+        PF.liveSet('kpi:cap:v', { html: kpiBig(val), cls: 'pf-kpi-v' });
+        PF.liveSet('kpi:cap:s', hasDd
+            ? dRow((dd >= 0 ? '+' : '−') + fmtRub(Math.abs(dd)), 'за день', dd >= 0 ? ' pos' : ' neg')
+            : dRow((pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(pnl)), 'результат · ' + fmtPct(pct), pnl >= 0 ? ' pos' : ' neg'));
         PF.liveSet('kpi:day:v', {
-            text: hasDd ? (dd >= 0 ? '+' : '−') + fmtRub(Math.abs(dd)) : '—',
+            html: hasDd ? (dd >= 0 ? '+' : '−') + kpiBig(Math.abs(dd)) : '—',
             cls: 'pf-kpi-v' + (hasDd ? (dd >= 0 ? ' pos' : ' neg') : '') });
-        PF.liveSet('kpi:day:s', { html: hasDd
-            ? ((mv && Math.abs(mv.chg) >= 1) ? 'Сильнее всех: ' + esc(mv.t) + ' <b class="' + (mv.chg >= 0 ? 'pos' : 'neg') + '">' + fmtPct(mv.chg) + '</b> за день' : 'к последнему дневному снимку')
-            : 'появится со второго дня наблюдения' });
+        PF.liveSet('kpi:day:s', (mv && Math.abs(mv.chg) >= 0.01)
+            ? dRow(fmtPct(mv.chg), 'сильнее всех: ' + esc(mv.t), mv.chg >= 0 ? ' pos' : ' neg')
+            : dRow('', ''));
     };
 
     // ---- pfdPanelActive: «контролы страницы живут не в шапке сайта» ----
@@ -1146,7 +1164,9 @@
             '<div class="pfh-row">' +
                 '<div class="pfh-l">' +
                     '<div class="pfh-cap">Капитал · ' + n + ' ' + PF.plural(n, 'портфель', 'портфеля', 'портфелей') + '</div>' +
-                    '<div class="pfh-sum">' + (warm ? skelHtml(190, 34) : fmtRub(val)) + '</div>' +
+                    // знак валюты — тихим 52% (мокап .hx-sum small): 40px «₽» спорил
+                    // с самой суммой, хотя несёт куда меньше
+                    '<div class="pfh-sum">' + (warm ? skelHtml(190, 36) : kpiBig(val)) + '</div>' +
                     '<div class="pfh-big">' + big + '</div>' +
                     '<div class="pfh-small">' + small + '</div>' +
                     '<div class="pfh-line">' +
