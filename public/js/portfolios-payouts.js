@@ -130,6 +130,39 @@
         evs.sort(function (a, b) { return a.date - b.date; });
         return evs;
     }
+    // ПРОШЕДШИЕ выплаты за время владения — зеркало collectUpcomingPayouts по тем
+    // же расписаниям, только назад по времени и с учётом количества НА ДАТУ
+    // выплаты (qtyAtDate): бумагу могли докупить позже, и приписывать ей старый
+    // купон в полном объёме — враньё.
+    function collectPastPayouts(fromMs) {
+        var evs = [], today = todayStr(), lim = fromMs || 0;
+        var visNum = {};
+        visibleItems().forEach(function (p, i) { visNum[p.id] = i + 1; });
+        function ev(date, kind, amount, x) {
+            return { date: date, kind: kind, amount: amount, ticker: x.h.ticker, name: x.h.name || x.h.ticker,
+                pfName: x.p.name, pfColor: colorVal(x.p.color), pfNum: visNum[x.p.id] || '' };
+        }
+        function walk(list, schedOf, kind) {
+            list.forEach(function (x) {
+                var sched = schedOf(x); if (!sched) return;
+                sched.forEach(function (cp) {
+                    if (!(+cp.v > 0) || cp.d > today) return;
+                    var t = Date.parse(cp.d); if (!isFinite(t) || t < lim) return;
+                    var q = PF.qtyAtDate(x.h, cp.d); if (!(q > 0)) return;
+                    evs.push(ev(new Date(t), kind, cp.v * q, x));
+                });
+            });
+        }
+        walk(allHeldBonds(), function (x) {
+            var full = fullBondId(x.h.ticker);
+            return (full in coupSched) ? coupSched[full] : (ensureSchedule('bond', full), null);
+        }, 'coupon');
+        walk(allHeldStocks(), function (x) {
+            return (x.h.ticker in divSched) ? divSched[x.h.ticker] : (ensureSchedule('div', x.h.ticker), null);
+        }, 'div');
+        evs.sort(function (a, b) { return b.date - a.date; });   // свежие сверху
+        return evs;
+    }
     // догрузка недостающих деталей купонов разом по ВСЕМ портфелям (де-дуп по тикеру —
     // fetchBondData и так кеширует внутри себя, но незачем плодить повторные вызовы за один проход)
     var payCalPending = false;
@@ -319,34 +352,52 @@
     //  R7 — НОВЫЕ ВИДЖЕТЫ (подвкладки + опт-ин на «Обзор» через пикер)
     // ====================================================================
     // «Дивиденды и купоны»: получено за время владения + ожидается (30 дней / год)
+    // «Дивиденды и купоны» (мокап overview3, экран 13): СПИСОК выплат, а не три
+    // сводные строки. Было три плитки с иконками — «Получено», «Ожидается 30
+    // дней», «Ожидается за год», — то есть три суммы и ни одной выплаты; человек
+    // не видел, ЧТО и КОГДА придёт. Теперь строка на выплату: дата, бумага, чей
+    // портфель, сумма. Один контрол — тумблер «Ждём / Пришло».
+    var pfdvMode = 'wait';      // 'wait' | 'got' — сессионный, как режим карты
+    window.pfdvSetMode = function (m) {
+        if (pfdvMode === m) return;
+        pfdvMode = m; PF.renderPortfolios();
+    };
     function pfwDivsHtml() {
-        var got = 0, pending = false, any = false;
-        PF.store.items.forEach(function (p) {
-            if (p.hidden) return;
-            var po = pfPayouts(p);
-            if (po.any) any = true;
-            if (po.pending) pending = true; else got += po.sum;
+        var wait = collectUpcomingPayouts();
+        var got = collectPastPayouts(Date.now() - 365 * 86400000);
+        var list = pfdvMode === 'got' ? got : wait;
+        var multiPf = visibleItems().length > 1;
+        var seg = '<span class="pfdv-seg">'
+            + '<button type="button" class="' + (pfdvMode === 'wait' ? 'on' : '') + '" onclick="pfdvSetMode(\'wait\')">Ждём</button>'
+            + '<button type="button" class="' + (pfdvMode === 'got' ? 'on' : '') + '" onclick="pfdvSetMode(\'got\')">Пришло</button>'
+            + '</span>';
+        var body = !list.length
+            ? '<div class="pfal-empty">' + (pfdvMode === 'got'
+                ? 'За последний год выплат по вашим бумагам ещё не было.'
+                : 'Добавьте облигации или дивидендные акции — здесь появятся будущие выплаты.') + '</div>'
+            : '<div class="pfdv-list">' + list.slice(0, 8).map(function (e) {
+                var kind = e.kind === 'div' ? 'дивиденды' : e.kind === 'redeem' ? 'погашение' : 'купон';
+                var nm = e.kind === 'div' ? e.ticker : (e.name || e.ticker);
+                return '<div class="pfdv-r">' +
+                    '<span class="d">' + e.date.getDate() + ' ' + PAY_MON_GEN[e.date.getMonth()] + '</span>' +
+                    '<span class="tk">' + esc(nm) + '</span>' +
+                    '<span class="nm">' + kind + '</span>' +
+                    (multiPf ? '<span class="pf"><i style="background:' + e.pfColor + '"></i>' + esc(e.pfName) + '</span>' : '') +
+                    '<b class="pos">+' + fmtRub(e.amount) + '</b></div>';
+            }).join('') + '</div>';
+        // подвал: за 90 дней вперёд (ждём) либо за 90 дней назад (пришло)
+        var lim = Date.now() + (pfdvMode === 'got' ? -90 : 90) * 86400000, sum90 = 0;
+        list.forEach(function (e) {
+            var t = e.date.getTime();
+            if (pfdvMode === 'got' ? t >= lim : t <= lim) sum90 += e.amount;
         });
-        var evs = collectUpcomingPayouts();
-        var soon = 0, year = 0;
-        evs.forEach(function (e) { if (e.date.getTime() - Date.now() <= 30 * 86400000) soon += e.amount; year += e.amount; });
-        var IC_GOT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/><circle cx="16.5" cy="15" r="1.4" fill="currentColor" stroke="none"/></svg>';
-        var IC_WAIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>';
-        var IC_YEAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2.5" x2="8" y2="6"/><line x1="16" y1="2.5" x2="16" y2="6"/></svg>';
-        function row(ic, cls, l, sub, v, vCls) {
-            return '<div class="pfdv-row"><span class="pfdv-ic ' + cls + '">' + ic + '</span>' +
-                '<span class="pfdv-t"><b>' + l + '</b><i>' + sub + '</i></span>' +
-                '<span class="pfdv-v ' + (vCls || '') + '">' + v + '</span></div>';
-        }
-        var body = !any
-            ? '<div class="pfal-empty">Добавьте облигации или дивидендные акции — здесь появятся полученные и будущие выплаты.</div>'
-            : '<div class="pfdv-rows">' +
-                row(IC_GOT, 'got', 'Получено', 'за время владения', pending ? '…' : '+' + fmtRub(got), 'pos') +
-                row(IC_WAIT, 'soon', 'Ожидается', 'ближайшие 30 дней', soon > 0 ? '+' + fmtRub(soon) : '—', soon > 0 ? 'pos' : '') +
-                row(IC_YEAR, 'year', 'Ожидается', 'на год вперёд', year > 0 ? '+' + fmtRub(year) : '—', year > 0 ? 'pos' : '') +
-            '</div>';
         return '<div class="dash2-card pf-card2 pf-divsblk">' +
-            PF.pfCardHead('', 'Дивиденды', 'ожидаемые и полученные выплаты', null) + body + '</div>';
+            PF.pfCardHead(list.length || '', 'Дивиденды и купоны',
+                pfdvMode === 'got' ? 'что уже пришло за год' : 'что придёт на год вперёд', seg) +
+            body +
+            (list.length ? PF.pfCardFoot('за 90 дней', sum90 > 0 ? '+' + fmtRub(sum90) : 'выплат нет',
+                { label: 'Календарь', onclick: "pfdScrollToBlock('cal')" }, sum90 > 0 ? 'pos' : '') : '') +
+        '</div>';
     }
     // «Полученные по портфелям»: строка на портфель с суммой выплат
     function pfwDivsByPfHtml() {

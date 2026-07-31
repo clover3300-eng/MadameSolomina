@@ -347,29 +347,35 @@ body.dark-mode .pft-side.pay { color: #34d399; background: rgba(52, 211, 153, 0.
 /* виджеты с малым числом строк (Рынок сейчас, Пассивный доход, Дивиденды) при заданной
    высоте РАСПРЕДЕЛЯЮТ строки по высоте — данные подстраиваются, а не жмутся к шапке */
 .pfd-item.pfd-hset .pfix-rows, .pfd-item.pfd-hset .pfpv-rows,
-.pfd-item.pfd-hset .pfdv-rows { flex: 1 1 auto; min-height: 0; justify-content: space-evenly; }
+.pfd-item.pfd-hset .pfdv-list { flex: 1 1 auto; min-height: 0; }
 
-/* — Дивиденды — */
-.pfdv-rows { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
-.pfdv-row {
-    display: flex; align-items: center; gap: 12px;
-    padding: 12px 14px; border: 1px solid #eef2f7; border-radius: 14px; background: #fbfcfe;
-}
-body.dark-mode .pfdv-row { border-color: rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.03); }
-.pfdv-ic {
-    flex-shrink: 0; width: 36px; height: 36px; border-radius: 11px;
-    display: grid; place-items: center;
-}
-.pfdv-ic svg { width: 18px; height: 18px; }
-.pfdv-ic.got { color: #119d5c; background: rgba(18, 163, 92, 0.1); }
-.pfdv-ic.soon { color: #3d6fd1; background: rgba(61, 111, 209, 0.1); }
-.pfdv-ic.year { color: #7c3aed; background: rgba(124, 58, 237, 0.09); }
-.pfdv-t { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
-.pfdv-t b { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; color: #1b2433; }
-.pfdv-t i { font-family: 'Inter', sans-serif; font-style: normal; font-size: 11px; font-weight: 600; color: #8494a7; }
-body.dark-mode .pfdv-t b { color: #e8eef7; }
-.pfdv-v { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: var(--fs-num, 15px); font-weight: 700; color: #64748b; white-space: nowrap; }
-.pfdv-v.pos { color: #119d5c; }
+/* — Дивиденды и купоны: СПИСОК выплат (мокап overview3, экран 13) —
+   были три плитки-сводки с иконками; плашки внутри виджета мокап запрещает,
+   строки разделяет волосок, а цвет остаётся только у знака суммы. */
+.pfdv-seg { display: inline-flex; gap: 2px; }
+.pfdv-seg button { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 10px; font-weight: 600;
+    color: #94a3b8; padding: 3px 9px; border-radius: 8px; border: 0; background: transparent; cursor: pointer; }
+.pfdv-seg button:hover { color: #46586e; }
+.pfdv-seg button.on { color: #1b2433; background: rgba(24, 38, 60, 0.06); }
+body.dark-mode .pfdv-seg button.on { color: #eef3f9; background: rgba(255, 255, 255, 0.09); }
+.pfdv-list { display: flex; flex-direction: column; padding: 8px 24px 0; }
+.pfdv-r { display: flex; align-items: center; gap: 10px; padding: 9px 0;
+    border-bottom: 1px solid rgba(24, 38, 60, 0.07); font-size: 12px; }
+.pfdv-r:last-child { border-bottom: 0; }
+body.dark-mode .pfdv-r { border-bottom-color: rgba(255, 255, 255, 0.07); }
+.pfdv-r .d { flex: none; width: 56px; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 11px; color: #94a3b8; font-variant-numeric: tabular-nums; }
+.pfdv-r .tk { flex: none; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px;
+    font-weight: 700; color: #1b2433; }
+.pfdv-r .nm { color: #94a3b8; font-size: 11px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfdv-r .pf { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; color: #94a3b8;
+    white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pfdv-r .pf i { flex: none; width: 7px; height: 7px; border-radius: 50%; }
+.pfdv-r b { margin-left: auto; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px;
+    font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pfdv-r b.pos { color: #119d5c; }
+body.dark-mode .pfdv-r .tk { color: #e8eef7; }
+body.dark-mode .pfdv-r b.pos { color: #34d399; }
 .pfdv-plist { display: flex; flex-direction: column; margin-top: 4px; }
 .pfdv-prow {
     display: flex; align-items: center; gap: 10px; padding: 11px 2px;
@@ -1042,7 +1048,7 @@ body.dark-mode .dm-news b { color: #e8eef7; }
     border-color: rgba(255, 255, 255, 0.09);
 }
 .pfd-item.pfd-thm-dark .pf-ch-t, .pfd-item.pfd-thm-dark .pfcap-val,
-.pfd-item.pfd-thm-dark .pf-kpi-v, .pfd-item.pfd-thm-dark .pfdv-t b,
+.pfd-item.pfd-thm-dark .pf-kpi-v, .pfd-item.pfd-thm-dark .pfdv-r .tk,
 .pfd-item.pfd-thm-dark .pfas-id b, .pfd-item.pfd-thm-dark .pfas-val,
 .pfd-item.pfd-thm-dark .pfop-id b, .pfd-item.pfd-thm-dark .pfsn-v,
 .pfd-item.pfd-thm-dark .pfyl-n, .pfd-item.pfd-thm-dark .pfop-sum { color: #f4f8fd; }
@@ -1054,12 +1060,12 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 .pfd-item.pfd-thm-dark .pfcap-rb { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); color: #93a2b8; }
 .pfd-item.pfd-thm-dark .pfcap-rb.on { background: rgba(99, 102, 241, 0.22); border-color: rgba(129, 140, 248, 0.5); color: #c7d2fe; }
 .pfd-item.pfd-thm-dark .pfcap-empty-t { color: #f4f8fd; }
-.pfd-item.pfd-thm-dark .pfdv-row, .pfd-item.pfd-thm-dark .dm-chip { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.09); }
+.pfd-item.pfd-thm-dark .dm-chip { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.09); }
 .pfd-item.pfd-thm-dark .pfas-row, .pfd-item.pfd-thm-dark .pfop-row,
 .pfd-item.pfd-thm-dark .pfsn-row, .pfd-item.pfd-thm-dark .pfdv-prow,
 .pfd-item.pfd-thm-dark .pfix-row, .pfd-item.pfd-thm-dark .pfpv-row { border-bottom-color: rgba(255, 255, 255, 0.08); }
 .pfd-item.pfd-thm-dark .pfas-nm, .pfd-item.pfd-thm-dark .pfop-id i,
-.pfd-item.pfd-thm-dark .pfdv-t i { color: #8fa0b6; }
+.pfd-item.pfd-thm-dark .pfdv-r .nm, .pfd-item.pfd-thm-dark .pfdv-r .d { color: #8fa0b6; }
 .pfd-item.pfd-thm-dark .pfdv-pn { color: #e8eef7; }
 /* Список активов / Операции / Доходность — мелкие плашки и ховеры */
 .pfd-item.pfd-thm-dark .pfas-row:hover { background: rgba(255, 255, 255, 0.04); }
@@ -1423,13 +1429,13 @@ body.dark-mode .pfl-opt-go { background: rgba(255,255,255,0.06); color: #8fa0b6;
 }
 /* …то же для непрозрачных строк-плашек остальных виджетов (дивиденды, новости,
    календарь-список, плитки ставок и «Избранного») — сквозь них должен сквозить фон */
-.pfd-item.pfd-thm-glass .pfdv-row, .pfd-item.pfd-thm-glass .pfnw-item,
+.pfd-item.pfd-thm-glass .pfnw-item,
 #panel-portfolios .pfd-item.pfd-thm-glass .pfpc-row,
 #panel-portfolios .pfd-item.pfd-thm-glass .drt-tile,
 #panel-portfolios .pfd-item.pfd-thm-glass .pf-fav .pff-tile {
     background: rgba(255, 255, 255, 0.42); border-color: rgba(255, 255, 255, 0.65);
 }
-body.dark-mode .pfd-item.pfd-thm-glass .pfdv-row, body.dark-mode .pfd-item.pfd-thm-glass .pfnw-item,
+body.dark-mode .pfd-item.pfd-thm-glass .pfnw-item,
 body.dark-mode #panel-portfolios .pfd-item.pfd-thm-glass .pfpc-row,
 body.dark-mode #panel-portfolios .pfd-item.pfd-thm-glass .drt-tile,
 body.dark-mode #panel-portfolios .pfd-item.pfd-thm-glass .pf-fav .pff-tile {
