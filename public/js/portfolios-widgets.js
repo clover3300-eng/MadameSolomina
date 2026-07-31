@@ -2651,11 +2651,17 @@
         if (!rows.length) {
             body = '<div class="pfal-empty">Состав пуст — добавьте активы в настройках портфеля ⚙.</div>';
         } else {
+            // строка мокапа: тикер моно · метка класса · имя тихо · количество ·
+            // стоимость · изменение в колонке 56px (экран 13, .row / .cx3)
             body = '<div class="pfas-list" data-skey="pfassets">' + rows.map(function (r) {
                 var isB = r.h.type === 'bond';
-                var chg = (r.c.invested > 0) ? '<b class="' + (r.c.pnlPct >= 0 ? 'pos' : 'neg') + '">' + fmtPct(r.c.pnlPct) + '</b>' : '<b class="muted">—</b>';
+                var chg = (r.c.invested > 0)
+                    ? '<span class="pfas-c ' + (r.c.pnlPct >= 0 ? 'pos' : 'neg') + '">' + fmtPct(r.c.pnlPct) + '</span>'
+                    : '<span class="pfas-c">—</span>';
                 return '<div class="pfas-row" role="button" onclick="pfOpenTicker(\'' + jsArg(r.h.ticker) + '\')">' +
-                    '<span class="pfas-id"><b>' + esc(r.h.ticker) + '</b><i class="' + (isB ? 'bond' : 'stock') + '">' + (isB ? 'обл' : 'акц') + '</i><span class="pfas-nm">' + esc(PF.assetDisplayName(r.h)) + '</span></span>' +
+                    '<span class="pfas-tk">' + esc(r.h.ticker) + '</span>' +
+                    '<i class="pfas-cl ' + (isB ? 'bond' : 'stock') + '">' + (isB ? 'обл' : 'акц') + '</i>' +
+                    '<span class="pfas-nm">' + esc(PF.assetDisplayName(r.h)) + '</span>' +
                     '<span class="pfas-qty">' + fmtQty(r.c.qty) + ' шт</span>' +
                     '<span class="pfas-val">' + fmtRub(r.c.value || 0) + '</span>' +
                     chg +
@@ -2727,16 +2733,17 @@
         var at = new Date(brokerCache.ts).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
         var head = '<div class="pfbrk-total"><div class="pfbrk-total-l"><span>Стоимость портфеля</span><i>обновлено ' + at + '</i></div><b>' + fmtRub(d.total || 0) + '</b></div>';
         return head + '<div class="pfas-list" data-skey="pfbroker">' + d.rows.slice(0, lim).map(function (r) {
-            var chg = r.pnl === 0 ? '<b class="muted">—</b>'
-                : '<b class="' + (r.pnl >= 0 ? 'pos' : 'neg') + '">' + (r.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(r.pnl)) + '</b>';
+            // та же строка, что у «Списка активов» — список общий (.pfas-list)
+            var chg = r.pnl === 0 ? '<span class="pfas-c">—</span>'
+                : '<span class="pfas-c ' + (r.pnl >= 0 ? 'pos' : 'neg') + '">' + (r.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(r.pnl)) + '</span>';
             // сверка с ручными лотами: количество разошлось — заметная метка
             var diff = (r.manualQty !== undefined && Math.abs(r.manualQty - r.qty) > 1e-9)
                 ? '<i class="pfbrk-diff" title="В трекере ' + fmtQty(r.manualQty) + ' шт — у брокера ' + fmtQty(r.qty) + ' шт">≠ трекер</i>' : '';
             var open = r.tkOk ? ' role="button" onclick="pfOpenTicker(\'' + jsArg(r.tk) + '\')"' : '';
             return '<div class="pfas-row"' + open + '>' +
-                '<span class="pfas-id"><b>' + esc(r.tk) + '</b>' +
-                (BRK_TYPES[r.type] ? '<i class="' + (r.type === 'bond' ? 'bond' : 'stock') + '">' + BRK_TYPES[r.type] + '</i>' : '') +
-                '<span class="pfas-nm">' + esc(r.name) + '</span></span>' +
+                '<span class="pfas-tk">' + esc(r.tk) + '</span>' +
+                (BRK_TYPES[r.type] ? '<i class="pfas-cl ' + (r.type === 'bond' ? 'bond' : 'stock') + '">' + BRK_TYPES[r.type] + '</i>' : '') +
+                '<span class="pfas-nm">' + esc(r.name) + '</span>' +
                 '<span class="pfas-qty">' + fmtQty(r.qty) + ' шт' + diff + '</span>' +
                 '<span class="pfas-val">' + fmtRub(r.value) + '</span>' +
                 chg +
@@ -2818,19 +2825,26 @@
         if (!list.length) {
             body = '<div class="pfal-empty">Операций пока нет — покупки появятся здесь автоматически.</div>';
         } else {
+            // строка мокапа (.hs-r): дата · вид операции капсом, а не плашкой ·
+            // тикер с именем · количество · сумма
             body = '<div class="pfop-list">' + list.map(function (t) {
                 var sell = t.side === 'sell';
                 return '<div class="pfop-row">' +
                     '<span class="pfop-date">' + ruDate(t.date) + '</span>' +
                     '<span class="pfop-side ' + (sell ? 'sell' : 'buy') + '">' + (sell ? 'Продажа' : 'Покупка') + '</span>' +
                     '<span class="pfop-id"><b>' + esc(t.ticker) + '</b><i>' + esc(t.name) + '</i></span>' +
+                    '<span class="pfop-qty">' + fmtQty(t.qty) + ' шт</span>' +
                     '<span class="pfop-sum' + (sell ? ' pos' : '') + '">' + (sell ? '+' : '') + fmtRub(t.total) + '</span>' +
                 '</div>';
-            }).join('') + '</div>' +
-            '<button class="pfop-all" onclick="pfxGoTab(\'ops\')"><span>Вся история</span>' + GO_ARROW_SVG + '</button>';
+            }).join('') + '</div>';
         }
+        // подвал общий для всех виджетов: итог слева, переход справа
+        var spent = 0;
+        list.forEach(function (t) { spent += (t.side === 'sell' ? -1 : 1) * (t.total || 0); });
         return '<div class="dash2-card pf-card2 pf-opsblk">' +
-            PF.pfCardHead('', 'Последние операции', 'свежие покупки и продажи', null) + body + '</div>';
+            PF.pfCardHead(list.length || '', 'Последние операции', 'свежие покупки и продажи', null) + body +
+            (list.length ? PF.pfCardFoot('расход за эти сделки', fmtRub(Math.abs(spent)),
+                { label: 'Вся история', onclick: 'pfxGoTab(\'ops\')' }) : '') + '</div>';
     }
     // «Доходность портфелей»: строка мокапа — точка · имя · за всё время ·
     // годовых, полоса ПОД строкой. Раньше полоса стояла между именем и числом
@@ -2997,8 +3011,8 @@
     // «Пассивный доход»: средний месяц из выплат на год вперёд + доходность выплатами
     function pfwPassiveHtml() {
         var evs = PF.collectUpcomingPayouts();
-        var year = 0, soon = 0;
-        evs.forEach(function (e) { if (e.date.getTime() - Date.now() <= 30 * 86400000) soon += e.amount; year += e.amount; });
+        var year = 0;
+        evs.forEach(function (e) { year += e.amount; });
         var val = 0;
         PF.store.items.forEach(function (p) { if (!p.hidden) val += calcPf(p).value; });
         var monthly = year / 12, yPct = val > 0 ? year / val * 100 : 0;
@@ -3006,12 +3020,14 @@
         if (!(year > 0)) {
             body = '<div class="pfal-empty">Добавьте облигации или дивидендные акции — посчитаем ваш пассивный доход.</div>';
         } else {
-            // Крупно — год, под ним доходность к капиталу, месяц ушёл в подвал
-            // (мокап, экран 13): одно число в теле, одно в подвале, дублей нет.
-            body = '<div class="pfpv-hero"><b class="pos">+' + fmtRub(year) + '</b>' +
-                    '<span class="pos">' + fmtPct(yPct).replace('+', '') + '<em>к капиталу</em></span></div>' +
-                (soon > 0 ? '<div class="pfpv-rows"><div class="pfpv-row"><span>Ближайшие 30 дней</span>' +
-                    '<b class="pos">+' + fmtRub(soon) + '</b></div></div>' : '');
+            // Тот же блок, что у KPI-плиток (мокап, экран 13: pass собран из
+            // .kpi-v/.kpi-d): крупно — год, под ним доходность к капиталу,
+            // месяц в подвале. Своя вёрстка «.pfpv-hero» была четвёртым
+            // способом показать одно большое число — числа теперь одинаковы
+            // во всех виджетах, а строку «Ближайшие 30 дней» говорят
+            // «Дивиденды и купоны» и «Календарь выплат».
+            body = '<div class="pf-kpi-v pos">+' + kpiBig(year) + '</div>' +
+                '<div class="pf-kpi-d pos">' + fmtPct(yPct).replace('+', '') + '<span>к капиталу</span></div>';
         }
         return '<div class="dash2-card pf-card2 pf-passiveblk">' +
             PF.pfCardHead('', 'Пассивный доход', 'ожидаемые выплаты за 12 месяцев', null) + body +

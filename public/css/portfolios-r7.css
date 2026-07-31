@@ -375,7 +375,7 @@ body.dark-mode .pft-side.pay { color: #34d399; background: rgba(52, 211, 153, 0.
 .pfd-item.pfd-hset .pfop-list, .pfd-item.pfd-hset .pfyl-list { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; scrollbar-width: thin; }
 /* виджеты с малым числом строк (Рынок сейчас, Пассивный доход, Дивиденды) при заданной
    высоте РАСПРЕДЕЛЯЮТ строки по высоте — данные подстраиваются, а не жмутся к шапке */
-.pfd-item.pfd-hset .pfix-rows, .pfd-item.pfd-hset .pfpv-rows,
+.pfd-item.pfd-hset .pfix-rows,
 .pfd-item.pfd-hset .pfdv-list { flex: 1 1 auto; min-height: 0; }
 
 /* — Дивиденды и купоны: СПИСОК выплат (мокап overview3, экран 13) —
@@ -418,60 +418,75 @@ body.dark-mode .pfdv-pn { color: #e8eef7; }
 .pfdv-prow b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 13px; font-weight: 700; color: #64748b; }
 .pfdv-prow b.pos { color: #119d5c; }
 
-/* — Список активов — */
-.pfas-list { display: flex; flex-direction: column; margin-top: 2px; max-height: 420px; overflow-y: auto; scrollbar-width: thin; }
+/* — Список активов: строка мокапа (.row/.cx3) — тикер моно, метка класса
+   риской, имя тихо, дальше числа. Был грид из четырёх колонок с тикером
+   гротеском 13/800: имя бумаги весило столько же, сколько имя виджета. — */
+.pfas-list { display: flex; flex-direction: column; margin-top: 6px; max-height: 420px; overflow-y: auto; scrollbar-width: thin; }
 .pfas-row {
-    display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto;
-    gap: 12px; align-items: center; padding: 11px 2px; cursor: pointer;
-    border-bottom: 1px solid #eef2f7; transition: background 0.1s;
+    display: flex; align-items: center; gap: 10px; padding: 9px 2px; cursor: pointer;
+    border-bottom: 1px solid rgba(24, 38, 60, 0.07); font-size: 12px; transition: background 0.1s;
 }
 .pfas-row:hover { background: #f8fafc; }
 .pfas-row:last-child { border-bottom: 0; }
-body.dark-mode .pfas-row { border-bottom-color: rgba(255, 255, 255, 0.08); }
+body.dark-mode .pfas-row { border-bottom-color: rgba(255, 255, 255, 0.07); }
 body.dark-mode .pfas-row:hover { background: rgba(255, 255, 255, 0.04); }
-.pfas-id { display: flex; align-items: center; gap: 7px; min-width: 0; }
-.pfas-id b { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; }
-body.dark-mode .pfas-id b { color: #f4f8fd; }
-.pfas-id i {
-    font-style: normal; font-size: 9px; font-weight: 700; text-transform: uppercase; color: #94a3b8;
-    background: rgba(24, 38, 60, 0.06); padding: 1px 5px; border-radius: 5px; flex-shrink: 0;
+.pfas-tk { flex: none; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px; font-weight: 700; color: #1b2433; }
+body.dark-mode .pfas-tk { color: #f4f8fd; }
+.pfas-cl {
+    flex: none; font-style: normal; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 8.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    border-radius: 6px; padding: 2px 6px;
 }
-body.dark-mode .pfas-id i { background: rgba(255, 255, 255, 0.08); }
-.pfas-nm { min-width: 0; font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #8494a7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pfas-qty { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12px; font-weight: 600; color: #8494a7; white-space: nowrap; }
-.pfas-val { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 13px; font-weight: 700; color: #1b2433; white-space: nowrap; }
+.pfas-cl.bond { color: #4a6fa5; background: color-mix(in srgb, #4a6fa5 13%, transparent); }
+.pfas-cl.stock { color: #12a35c; background: color-mix(in srgb, #12a35c 13%, transparent); }
+.pfas-nm { min-width: 0; font-size: 11px; color: #8494a7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfas-qty { margin-left: auto; flex: none; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 11px; color: #8494a7; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pfas-val { flex: none; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px;
+    font-weight: 700; color: #1b2433; font-variant-numeric: tabular-nums; white-space: nowrap; }
 body.dark-mode .pfas-val { color: #e8eef7; }
-.pfas-row > b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px; font-weight: 700; white-space: nowrap; }
-.pfas-row > b.pos { color: #119d5c; }
-.pfas-row > b.neg { color: #c2410c; }
-.pfas-row > b.muted { color: #94a3b8; }
+.pfas-c { flex: none; width: 56px; text-align: right; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #8494a7; }
+.pfas-c.pos { color: #119d5c; }
+.pfas-c.neg { color: #c2410c; }
+/* в узком виджете количество уходит первым: стоимость и изменение важнее */
+@container pfw (max-width: 380px) {
+    .pfas-row .pfas-qty { display: none; }
+    .pfas-row .pfas-val { margin-left: auto; }
+}
 
-/* — Последние операции — */
-.pfop-list { display: flex; flex-direction: column; margin-top: 2px; }
+/* — Последние операции: строка мокапа (.hs-r) — вид операции набран КАПСОМ
+   цветом, а не цветной пилюлей: плашек внутри тела виджета мокап не держит. — */
+.pfop-list { display: flex; flex-direction: column; margin-top: 6px; }
 .pfop-row {
-    display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto;
-    gap: 12px; align-items: center; padding: 11px 2px; border-bottom: 1px solid #eef2f7;
+    display: flex; align-items: center; gap: 10px; padding: 9px 2px;
+    border-bottom: 1px solid rgba(24, 38, 60, 0.07); font-size: 12px;
 }
 .pfop-row:last-child { border-bottom: 0; }
-body.dark-mode .pfop-row { border-bottom-color: rgba(255, 255, 255, 0.08); }
-.pfop-date { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11.5px; font-weight: 600; color: #8494a7; white-space: nowrap; }
-.pfop-side { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
-.pfop-side.buy { color: #3d6fd1; background: rgba(61, 111, 209, 0.1); }
-.pfop-side.sell { color: #c2410c; background: rgba(224, 89, 43, 0.1); }
+body.dark-mode .pfop-row { border-bottom-color: rgba(255, 255, 255, 0.07); }
+.pfop-date { flex: none; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11px;
+    color: #8494a7; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pfop-side { flex: none; font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap; }
+.pfop-side.buy { color: #4a6fa5; }
+.pfop-side.sell { color: #c2410c; }
 .pfop-id { display: flex; align-items: baseline; gap: 7px; min-width: 0; }
-.pfop-id b { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; }
+.pfop-id b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12px; font-weight: 700; color: #1b2433; }
 body.dark-mode .pfop-id b { color: #f4f8fd; }
-.pfop-id i { font-style: normal; min-width: 0; font-size: 11.5px; font-weight: 600; color: #8494a7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pfop-sum { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 13px; font-weight: 700; color: #1b2433; white-space: nowrap; }
+.pfop-id i { font-style: normal; min-width: 0; font-size: 10.5px; color: #8494a7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfop-qty { margin-left: auto; flex: none; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 11px; color: #8494a7; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pfop-sum { flex: none; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12px;
+    font-weight: 600; color: #1b2433; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .pfop-sum.pos { color: #119d5c; }
 body.dark-mode .pfop-sum { color: #e8eef7; }
-.pfop-all {
-    align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; margin-top: 10px;
-    border: 0; background: none; padding: 0; cursor: pointer;
-    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; color: #4453ef;
+/* в узком виджете первым уходит количество — сумма и бумага важнее */
+@container pfw (max-width: 380px) {
+    .pfop-row .pfop-qty { display: none; }
+    .pfop-row .pfop-sum { margin-left: auto; }
 }
-.pfop-all svg { width: 14px; height: 14px; }
-body.dark-mode .pfop-all { color: #a5b4fc; }
+/* «Вся история» переехала в общий подвал виджета (.pf-wf-go) — своей кнопки
+   у «Операций» больше нет: переход у всех виджетов в одном месте. */
 
 /* — Доходность портфелей / Диверсификация: ОДНА строка мокапа (.dv-r, yRow) —
    имя и числа одной строкой, полоса ПОД ней. Прежняя раскладка ставила полосу
@@ -553,21 +568,8 @@ body.dark-mode .pfix-v { color: #e8eef7; }
 .pfix-c.pos { color: #119d5c; }
 .pfix-c.neg { color: #c2410c; }
 
-/* — «Пассивный доход» (pfwPassiveHtml) — */
-.pfpv-hero { display: flex; flex-direction: column; gap: 2px; margin: 6px 0 10px; }
-.pfpv-hero b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 23px; font-weight: 800; color: #119d5c; letter-spacing: -0.01em; }
-.pfpv-hero span { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: #8494a7; }
-.pfpv-rows { display: flex; flex-direction: column; }
-.pfpv-row {
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    padding: 10px 2px; border-bottom: 1px solid #eef2f7;
-}
-.pfpv-row:last-child { border-bottom: 0; }
-body.dark-mode .pfpv-row { border-bottom-color: rgba(255, 255, 255, 0.08); }
-.pfpv-row span { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; color: #64748b; }
-.pfpv-row b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 13px; font-weight: 700; color: #1b2433; white-space: nowrap; }
-.pfpv-row b.pos { color: #119d5c; }
-body.dark-mode .pfpv-row b { color: #e8eef7; }
+/* «Пассивный доход» собран из общего KPI-блока (.pf-kpi-v/.pf-kpi-d) — как
+   в мокапе; своей вёрстки у него больше нет. */
 
 /* — «Диверсификация»: первая ячейка — ТИКЕР (моно), середина — деньги тихо,
    справа — доля громко. Обратный порядок веса к «Доходности», где имя портфеля
@@ -1099,7 +1101,7 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 }
 .pfd-item.pfd-thm-dark .pf-ch-t, .pfd-item.pfd-thm-dark .pfcap-val,
 .pfd-item.pfd-thm-dark .pf-kpi-v, .pfd-item.pfd-thm-dark .pfdv-r .tk,
-.pfd-item.pfd-thm-dark .pfas-id b, .pfd-item.pfd-thm-dark .pfas-val,
+.pfd-item.pfd-thm-dark .pfas-tk, .pfd-item.pfd-thm-dark .pfas-val,
 .pfd-item.pfd-thm-dark .pfop-id b, .pfd-item.pfd-thm-dark .pfsn-v,
 .pfd-item.pfd-thm-dark .pfyl-n, .pfd-item.pfd-thm-dark .pfop-sum { color: #f4f8fd; }
 .pfd-item.pfd-thm-dark .pf-ch-s, .pfd-item.pfd-thm-dark .pfcap-per,
@@ -1113,21 +1115,19 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 .pfd-item.pfd-thm-dark .dm-chip { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.09); }
 .pfd-item.pfd-thm-dark .pfas-row, .pfd-item.pfd-thm-dark .pfop-row,
 .pfd-item.pfd-thm-dark .pfsn-row, .pfd-item.pfd-thm-dark .pfdv-prow,
-.pfd-item.pfd-thm-dark .pfix-row, .pfd-item.pfd-thm-dark .pfpv-row { border-bottom-color: rgba(255, 255, 255, 0.08); }
+.pfd-item.pfd-thm-dark .pfix-row { border-bottom-color: rgba(255, 255, 255, 0.08); }
 .pfd-item.pfd-thm-dark .pfas-nm, .pfd-item.pfd-thm-dark .pfop-id i,
 .pfd-item.pfd-thm-dark .pfdv-r .nm, .pfd-item.pfd-thm-dark .pfdv-r .d { color: #8fa0b6; }
 .pfd-item.pfd-thm-dark .pfdv-pn { color: #e8eef7; }
 /* Список активов / Операции / Доходность — мелкие плашки и ховеры */
 .pfd-item.pfd-thm-dark .pfas-row:hover { background: rgba(255, 255, 255, 0.04); }
-.pfd-item.pfd-thm-dark .pfas-id i { background: rgba(255, 255, 255, 0.08); }
-.pfd-item.pfd-thm-dark .pfop-all { color: #a5b4fc; }
 .pfd-item.pfd-thm-dark .pfyl-barwrap { background: rgba(255, 255, 255, 0.08); }
 .pfd-item.pfd-thm-dark .pfyl-bar { background: rgba(255, 255, 255, 0.42); }
 .pfd-item.pfd-thm-dark .pfyl-n, .pfd-item.pfd-thm-dark .pfyl-v { color: #e8eef7; }
 .pfd-item.pfd-thm-dark .pfyl-row { border-bottom-color: rgba(255, 255, 255, 0.07); }
 /* Рынок сейчас / Пассивный доход / Лидеры дня (бар-строки реюзают pfyl) */
 .pfd-item.pfd-thm-dark .pfix-tk, .pfd-item.pfd-thm-dark .pfmv-r .tk { color: #f4f8fd; }
-.pfd-item.pfd-thm-dark .pfix-v, .pfd-item.pfd-thm-dark .pfpv-row b { color: #e8eef7; }
+.pfd-item.pfd-thm-dark .pfix-v { color: #e8eef7; }
 /* Распределение активов */
 .pfd-item.pfd-thm-dark .pfal-chip { background: #16213a; border-color: #2b3a55; color: #b6c4d8; }
 .pfd-item.pfd-thm-dark .pfal-chip:hover { border-color: #3a4c6d; color: #eaf1fb; }
