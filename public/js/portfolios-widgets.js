@@ -2286,35 +2286,49 @@
     }
     // ---- R7.2: виджеты «как в больших терминалах» ----
     // «Лидеры дня»: сильнейшие дневные движения среди акций портфелей (quotes.chgPct)
+    // КТО ДВИГАЛ СЕГОДНЯ (мокап overview3, правый столбец героя на экране 02).
+    // Виджет сортировал бумаги по величине ПРОЦЕНТА и называл лидером дня того,
+    // кто сильнее всех дёрнулся. На деле это вводило в заблуждение: LKOH на −3,9%
+    // уносил 5 572 ₽, а SBER на −0,7% — 119 662 ₽, то есть в двадцать раз больше.
+    // Считаем вклад в рублях (тем же способом, что dayDeltaFromQuotes) и сортируем
+    // по нему; процент остаётся, но становится подписью, а не главным числом.
+    // Один тикер может лежать в нескольких портфелях — вклад складываем.
     function pfwMoversHtml() {
-        var seen = {}, rows = [];
+        var byTk = {}, order = [];
         visibleItems().forEach(function (p) {
             (p.holdings || []).forEach(function (h) {
-                if (!h.ticker || h.type === 'bond' || seen[h.ticker] || !(aggHolding(h).qty > 0)) return;
-                seen[h.ticker] = 1;
+                if (!h.ticker || h.type === 'bond') return;
                 var q = quotes[h.ticker];
                 if (!q || q.chgPct == null) return;
-                rows.push({ tk: h.ticker, name: PF.assetDisplayName(h), chg: +q.chgPct });
+                var k = q.chgPct / 100;
+                if (!(k > -0.999)) return;
+                var v = PF.calcHold ? PF.calcHold(h).value : 0;
+                if (!(v > 0)) return;
+                var r = byTk[h.ticker];
+                if (!r) { r = byTk[h.ticker] = { tk: h.ticker, name: PF.assetDisplayName(h), chg: +q.chgPct, rub: 0 }; order.push(r); }
+                r.rub += v - v / (1 + k);
             });
         });
-        rows.sort(function (a, b) { return Math.abs(b.chg) - Math.abs(a.chg); });
+        var rows = order.sort(function (a, b) { return Math.abs(b.rub) - Math.abs(a.rub); });
         rows = rows.slice(0, pfdRowsFor('movers', 6, 34, 110));   // строк больше при высоком блоке
         var body;
         if (!rows.length) {
             body = '<div class="pfal-empty">Появится с приходом дневных котировок — держите в портфеле хотя бы одну акцию.</div>';
         } else {
-            var maxAbs = rows.reduce(function (m, r) { return Math.max(m, Math.abs(r.chg)); }, 0.1);
+            var maxAbs = rows.reduce(function (m, r) { return Math.max(m, Math.abs(r.rub)); }, 1);
             body = '<div class="pfyl-list pfmv-list">' + rows.map(function (r) {
-                var w = clamp(Math.abs(r.chg) / maxAbs * 100, 4, 100);
+                var w = clamp(Math.abs(r.rub) / maxAbs * 100, 4, 100);
+                var pos = r.rub >= 0;
                 return '<div class="pfyl-row">' +
                     '<span class="pfyl-n pfmv-n" role="button" onclick="pfOpenTicker(\'' + jsArg(r.tk) + '\')"><b>' + esc(r.tk) + '</b><em>' + esc(r.name) + '</em></span>' +
-                    '<span class="pfyl-barwrap"><span class="pfyl-bar ' + (r.chg >= 0 ? 'pos' : 'neg') + '" style="width:' + w.toFixed(1) + '%"></span></span>' +
-                    '<b class="' + (r.chg >= 0 ? 'pos' : 'neg') + '">' + fmtPct(r.chg) + '</b>' +
+                    '<span class="pfyl-barwrap"><span class="pfyl-bar ' + (pos ? 'pos' : 'neg') + '" style="width:' + w.toFixed(1) + '%"></span></span>' +
+                    '<b class="pfmv-rub ' + (pos ? 'pos' : 'neg') + '">' + (pos ? '+' : '−') + fmtRub(Math.abs(r.rub)) +
+                        '<i>' + fmtPct(r.chg) + '</i></b>' +
                 '</div>';
             }).join('') + '</div>';
         }
         return '<div class="dash2-card pf-card2 pf-moversblk">' +
-            PF.pfCardHead('', 'Лидеры дня', 'сильнейшие движения ваших бумаг за день', null) + body + '</div>';
+            PF.pfCardHead('', 'Лидеры дня', 'кто двигал капитал сегодня — вклад в рублях', null) + body + '</div>';
     }
     // «Рынок сейчас»: IMOEX / USD / BTC — живые значения из скрытых спанов дашборда
     // (те же источники, что рыночная лента в шапке; тикает tickLive раз в секунду)

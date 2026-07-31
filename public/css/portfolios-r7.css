@@ -452,6 +452,10 @@ body.dark-mode .pfyl-barwrap { background: rgba(255, 255, 255, 0.08); }
 .pfyl-row > b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 13px; font-weight: 700; white-space: nowrap; }
 .pfyl-row > b.pos { color: #119d5c; }
 .pfyl-row > b.neg { color: #c2410c; }
+/* «Лидеры дня»: главное число — вклад в рублях, процент подписью под ним */
+.pfmv-rub { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 2px; line-height: 1.15; }
+.pfmv-rub i { font-style: normal; font-size: 10.5px; font-weight: 600; color: #94a3b8; }
+body.dark-mode .pfmv-rub i, .pfd-item.pfd-thm-dark .pfmv-rub i { color: #8b98ad; }
 
 /* — Снимки капитала — */
 .pfsn-list { display: flex; flex-direction: column; margin-top: 2px; max-height: 420px; overflow-y: auto; scrollbar-width: thin; }
