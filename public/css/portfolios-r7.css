@@ -531,20 +531,24 @@ body.dark-mode .pfmv-r { border-bottom-color: rgba(255, 255, 255, 0.07); }
 .pfmv-r b.neg, .pfmv-r .pct.neg { color: #c2410c; }
 body.dark-mode .pfmv-r .tk { color: #e8eef7; }
 
-/* — Снимки капитала — */
-.pfsn-list { display: flex; flex-direction: column; margin-top: 2px; max-height: 420px; overflow-y: auto; scrollbar-width: thin; }
+/* — Снимки капитала: строка мокапа с датой (payRow) — дата колонкой слева,
+   значение отжато вправо, изменение — колонкой 56px — */
+.pfsn-list { display: flex; flex-direction: column; margin-top: 6px; max-height: 420px; overflow-y: auto; scrollbar-width: thin; }
 .pfsn-row {
-    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center;
-    padding: 10px 2px; border-bottom: 1px solid #eef2f7;
+    display: flex; align-items: center; gap: 10px; padding: 9px 2px;
+    border-bottom: 1px solid rgba(24, 38, 60, 0.07); font-size: 12px;
 }
 .pfsn-row:last-child { border-bottom: 0; }
-body.dark-mode .pfsn-row { border-bottom-color: rgba(255, 255, 255, 0.08); }
-.pfsn-d { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11.5px; font-weight: 600; color: #8494a7; }
-.pfsn-v { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 13px; font-weight: 700; color: #1b2433; text-align: right; }
+body.dark-mode .pfsn-row { border-bottom-color: rgba(255, 255, 255, 0.07); }
+.pfsn-d { flex: none; width: 62px; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11px;
+    color: #8494a7; font-variant-numeric: tabular-nums; }
+.pfsn-v { margin-left: auto; flex: none; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px;
+    font-weight: 700; color: #1b2433; font-variant-numeric: tabular-nums; white-space: nowrap; }
 body.dark-mode .pfsn-v { color: #e8eef7; }
-.pfsn-row b { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12px; font-weight: 700; white-space: nowrap; }
-.pfsn-row b.pos { color: #119d5c; }
-.pfsn-row b.neg { color: #c2410c; }
+.pfsn-c { flex: none; width: 76px; text-align: right; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; color: #8494a7; }
+.pfsn-c.pos { color: #119d5c; }
+.pfsn-c.neg { color: #c2410c; }
 
 /* — заметка: третья заливка «без линии» (чистая карточка) — */
 #panel-portfolios .pf-noteblk.pfnt-fill-none::before { opacity: 0; }
@@ -1847,10 +1851,10 @@ body.dark-mode .pfpl-spark-svg.flat line { stroke: rgba(255, 255, 255, 0.2); }
 }
 
 /* — «Структура по портфелям»: кольцо + легенда — */
-.pfps-wrap { display: flex; align-items: center; gap: 26px; margin-top: 10px; flex-wrap: wrap; }
+.pfps-wrap { display: flex; align-items: center; gap: 18px; margin-top: 14px; flex-wrap: wrap; }
 /* центр кольца пуст — общая стоимость живёт в подзаголовке шапки (см.
    pfwPstructHtml); прежний .pfps-center пришлось бы жать до 15px, чтобы влезть */
-.pfps-ring { position: relative; width: 170px; height: 170px; flex-shrink: 0; }
+.pfps-ring { position: relative; width: 128px; height: 128px; flex-shrink: 0; }
 .pfps-ring svg { width: 100%; height: 100%; display: block; }
 .pfps-legend { flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; }
 /* Задана высота: пара «кольцо + легенда» забирает остаток блока, легенда скроллится.
@@ -1859,24 +1863,21 @@ body.dark-mode .pfpl-spark-svg.flat line { stroke: rgba(255, 255, 255, 0.2); }
    центрируется по вертикали — растягивать его нечем и незачем. */
 .pfd-item.pfd-hset .pfps-wrap { flex: 1 1 auto; min-height: 0; }
 .pfd-item.pfd-hset .pfps-legend { align-self: stretch; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+/* строка легенды мокапа (.don-r): квадратик-метка, имя, ДОЛЯ громко, рубли тихо */
 .pfps-lrow {
-    display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto;
-    gap: 10px; align-items: center; padding: 9px 2px; border-bottom: 1px solid #eef2f7;
+    display: flex; align-items: baseline; gap: 8px; font-size: 12px;
+    padding: 9px 2px; border-bottom: 1px solid rgba(24, 38, 60, 0.07);
 }
 .pfps-lrow:last-child { border-bottom: 0; }
-body.dark-mode .pfps-lrow { border-bottom-color: rgba(255, 255, 255, 0.08); }
-.pfps-lrow i { width: 9px; height: 9px; border-radius: 99px; flex-shrink: 0; }
-.pfps-ln {
-    min-width: 0; font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; color: #1b2433;
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
+body.dark-mode .pfps-lrow { border-bottom-color: rgba(255, 255, 255, 0.07); }
+.pfps-lrow i { flex: none; width: 8px; height: 8px; border-radius: 3px; transform: translateY(-1px); }
+.pfps-ln { min-width: 0; color: #1b2433; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 body.dark-mode .pfps-ln { color: #e8eef7; }
-.pfps-lv { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px; font-weight: 700; color: #334155; white-space: nowrap; }
-body.dark-mode .pfps-lv { color: #cbd6e4; }
-.pfps-lp {
-    font-style: normal; font-family: var(--font-num, 'JetBrains Mono', monospace);
-    font-size: 11.5px; font-weight: 700; color: #8494a7; min-width: 44px; text-align: right; white-space: nowrap;
-}
+.pfps-lp { margin-left: auto; flex: none; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 13px; font-weight: 700; color: #1b2433; font-variant-numeric: tabular-nums; white-space: nowrap; }
+body.dark-mode .pfps-lp { color: #e8eef7; }
+.pfps-lv { flex: none; font-style: normal; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 10.5px; color: #8494a7; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* — «Сводные показатели»: плитки 2×2 — */
 .pfsm-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 8px; }

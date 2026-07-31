@@ -2889,15 +2889,19 @@
         } else {
             var tail = s.slice(-(pfdRowsFor('snaps', 10, 38, 110) + 1));   // строк по высоте блока
             var rows = '';
+            // строка мокапа с датой (payRow): дата колонкой 52px слева, значение
+            // отжато вправо, изменение — колонкой 56px
             for (var i = tail.length - 1; i >= 1; i--) {
                 var d = tail[i].v - tail[i - 1].v;
                 rows += '<div class="pfsn-row"><span class="pfsn-d">' + ruDate(tail[i].d) + '</span>' +
                     '<span class="pfsn-v">' + fmtRub(tail[i].v) + '</span>' +
-                    '<b class="' + (d >= 0 ? 'pos' : 'neg') + '">' + (d >= 0 ? '+' : '−') + fmtRub(Math.abs(d)) + '</b></div>';
+                    '<span class="pfsn-c ' + (d >= 0 ? 'pos' : 'neg') + '">' + (d >= 0 ? '+' : '−') + fmtRub(Math.abs(d)) + '</span></div>';
             }
             body = '<div class="pfsn-list" data-skey="pfsnaps">' + rows + '</div>';
         }
         return '<div class="dash2-card pf-card2 pf-snapsblk">' +
+            // счётчика тут нет намеренно: в мокапе он считает ПРЕДМЕТ виджета
+            // (бумаги, выплаты, портфели), а «388 дней истории» — не предмет
             PF.pfCardHead('', 'Снимки капитала', 'дневные значения стоимости портфелей', null) + body + '</div>';
     }
     // «Отчёты и экспорт» (подвкладка «Отчёты»)
@@ -3295,12 +3299,14 @@
                 off += len;
                 return s;
             }).join('');
+            // строка легенды мокапа (.don-r): доля — громкое число, рубли за ней
+            // тихо. Было наоборот, хотя виджет отвечает на вопрос «какая доля».
             var legend = rows.map(function (r) {
                 var pct = (r.v / total * 100);
                 return '<div class="pfps-lrow"><i style="background:' + r.color + '"></i>' +
                     '<span class="pfps-ln">' + esc(r.name) + '</span>' +
-                    '<b class="pfps-lv">' + fmtRub(r.v) + '</b>' +
-                    '<em class="pfps-lp">' + pct.toFixed(1).replace('.', ',') + '%</em></div>';
+                    '<b class="pfps-lp">' + pct.toFixed(1).replace('.', ',') + '%</b>' +
+                    '<em class="pfps-lv">' + fmtRub(r.v) + '</em></div>';
             }).join('');
             // Центр кольца ПУСТОЙ — как у pfdAllocDonut выше: сумма в дырке
             // сжималась до 15px, чтобы влезть, и спорила с сегментами. Общая
