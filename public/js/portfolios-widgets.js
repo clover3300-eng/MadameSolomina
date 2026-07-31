@@ -2867,15 +2867,16 @@
         if (!rows.length) {
             body = '<div class="pfal-empty">Появится с приходом дневных котировок — держите в портфеле хотя бы одну акцию.</div>';
         } else {
-            var maxAbs = rows.reduce(function (m, r) { return Math.max(m, Math.abs(r.rub)); }, 1);
-            body = '<div class="pfyl-list pfmv-list">' + rows.map(function (r) {
-                var w = clamp(Math.abs(r.rub) / maxAbs * 100, 4, 100);
-                var pos = r.rub >= 0;
-                return '<div class="pfyl-row">' +
-                    '<span class="pfyl-n pfmv-n" role="button" onclick="pfOpenTicker(\'' + jsArg(r.tk) + '\')"><b>' + esc(r.tk) + '</b><em>' + esc(r.name) + '</em></span>' +
-                    '<span class="pfyl-barwrap"><span class="pfyl-bar ' + (pos ? 'pos' : 'neg') + '" style="width:' + w.toFixed(1) + '%"></span></span>' +
-                    '<b class="pfmv-rub ' + (pos ? 'pos' : 'neg') + '">' + (pos ? '+' : '−') + fmtRub(Math.abs(r.rub)) +
-                        '<i>' + fmtPct(r.chg) + '</i></b>' +
+            // Строка ровно как в мокапе (экран 13): тикер · имя · вклад в рублях ·
+            // процент. Полосу «доля вклада» убрал: цвет в строке остаётся только
+            // у знака, а длину вклада и так печатает само число рублей.
+            body = '<div class="pfmv-list">' + rows.map(function (r) {
+                var pos = r.rub >= 0, cls = pos ? 'pos' : 'neg';
+                return '<div class="pfmv-r" role="button" onclick="pfOpenTicker(\'' + jsArg(r.tk) + '\')">' +
+                    '<span class="tk">' + esc(r.tk) + '</span>' +
+                    '<span class="nm">' + esc(r.name) + '</span>' +
+                    '<b class="' + cls + '">' + (pos ? '+' : '−') + fmtRub(Math.abs(r.rub)) + '</b>' +
+                    '<span class="pct ' + cls + '">' + fmtPct(r.chg) + '</span>' +
                 '</div>';
             }).join('') + '</div>';
         }
@@ -2956,7 +2957,7 @@
             var rows = top.map(function (r) {
                 var sh = r.v / total * 100;
                 return '<div class="pfyl-row">' +
-                    '<span class="pfyl-n pfmv-n"><b>' + esc(r.tk) + '</b></span>' +
+                    '<span class="pfyl-n"><b>' + esc(r.tk) + '</b></span>' +
                     '<span class="pfyl-barwrap"><span class="pfyl-bar ' + (sh > 40 ? 'neg' : 'pos') + '" style="width:' + clamp(sh, 3, 100).toFixed(1) + '%"></span></span>' +
                     '<b>' + sh.toFixed(1).replace('.', ',') + '%</b>' +
                 '</div>';

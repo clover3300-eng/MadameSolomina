@@ -459,9 +459,22 @@ body.dark-mode .pfyl-barwrap { background: rgba(255, 255, 255, 0.08); }
 .pfyl-row > b.pos { color: #119d5c; }
 .pfyl-row > b.neg { color: #c2410c; }
 /* «Лидеры дня»: главное число — вклад в рублях, процент подписью под ним */
-.pfmv-rub { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 2px; line-height: 1.15; }
-.pfmv-rub i { font-style: normal; font-size: 10.5px; font-weight: 600; color: #94a3b8; }
-body.dark-mode .pfmv-rub i, .pfd-item.pfd-thm-dark .pfmv-rub i { color: #8b98ad; }
+/* «Лидеры дня» — строка мокапа: тикер · имя · рубли · процент (экран 13) */
+.pfmv-list { display: flex; flex-direction: column; padding-top: 6px; }
+.pfmv-r { display: flex; align-items: center; gap: 10px; padding: 9px 0; cursor: pointer;
+    border-bottom: 1px solid rgba(24, 38, 60, 0.07); font-size: 12px; }
+.pfmv-r:last-child { border-bottom: 0; }
+body.dark-mode .pfmv-r { border-bottom-color: rgba(255, 255, 255, 0.07); }
+.pfmv-r .tk { flex: none; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px;
+    font-weight: 700; color: #1b2433; }
+.pfmv-r .nm { color: #94a3b8; font-size: 11px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfmv-r b { margin-left: auto; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 12.5px;
+    font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pfmv-r .pct { flex: none; width: 56px; text-align: right; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 11px; font-variant-numeric: tabular-nums; }
+.pfmv-r b.pos, .pfmv-r .pct.pos { color: #119d5c; }
+.pfmv-r b.neg, .pfmv-r .pct.neg { color: #c2410c; }
+body.dark-mode .pfmv-r .tk { color: #e8eef7; }
 
 /* — Снимки капитала — */
 .pfsn-list { display: flex; flex-direction: column; margin-top: 2px; max-height: 420px; overflow-y: auto; scrollbar-width: thin; }
@@ -516,10 +529,6 @@ body.dark-mode .pfpv-row { border-bottom-color: rgba(255, 255, 255, 0.08); }
 body.dark-mode .pfpv-row b { color: #e8eef7; }
 
 /* — «Лидеры дня» / «Диверсификация»: имя с тикером в барах — */
-.pfmv-n { cursor: pointer; }
-.pfmv-n b { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; color: #0f172a; }
-.pfmv-n em { font-style: normal; font-size: 11px; font-weight: 600; color: #8494a7; margin-left: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-body.dark-mode .pfmv-n b { color: #f4f8fd; }
 /* R11 (мокап «Обзора» 2026-07-22): полоски долей — тонкие и нейтральные, вердикт —
    тихая строка с цветной иконкой вместо цветной плашки; о концентрации говорит
    только он (красная полоса при доле >40% ушла вместе с зелёным градиентом) */
@@ -1073,7 +1082,7 @@ body.dark-mode .dm-news b { color: #e8eef7; }
 .pfd-item.pfd-thm-dark .pfop-all { color: #a5b4fc; }
 .pfd-item.pfd-thm-dark .pfyl-barwrap { background: rgba(255, 255, 255, 0.08); }
 /* Рынок сейчас / Пассивный доход / Лидеры дня (бар-строки реюзают pfyl) */
-.pfd-item.pfd-thm-dark .pfix-t b, .pfd-item.pfd-thm-dark .pfmv-n b { color: #f4f8fd; }
+.pfd-item.pfd-thm-dark .pfix-t b, .pfd-item.pfd-thm-dark .pfmv-r .tk { color: #f4f8fd; }
 .pfd-item.pfd-thm-dark .pfix-v, .pfd-item.pfd-thm-dark .pfpv-row b { color: #e8eef7; }
 /* Распределение активов */
 .pfd-item.pfd-thm-dark .pfal-chip { background: #16213a; border-color: #2b3a55; color: #b6c4d8; }

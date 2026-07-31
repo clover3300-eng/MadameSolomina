@@ -58,7 +58,10 @@
         return (neg ? '−' : '') + n.toLocaleString('ru-RU') + ' ₽'; }
     function fmtPrice(n) { if (n == null || !isFinite(n)) return '—';
         return n.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₽'; }
-    function fmtPct(n) { if (n == null || !isFinite(n)) return '—'; return (n >= 0 ? '+' : '') + n.toFixed(1).replace('.', ',') + '%'; }
+    // минус — типографский U+2212, как в fmtRub: в одной строке «−4 515 ₽» и
+    // «-0,5%» стояли рядом двумя разными знаками, и это было видно
+    function fmtPct(n) { if (n == null || !isFinite(n)) return '—';
+        return (n >= 0 ? '+' : '−') + Math.abs(n).toFixed(1).replace('.', ',') + '%'; }
     function fmtQty(n) { return (n == null || !isFinite(n)) ? '—' : Math.round(n).toLocaleString('ru-RU'); }
     function pad2(n) { return String(n).padStart(2, '0'); }
     function todayStr() { var d = new Date(); return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
