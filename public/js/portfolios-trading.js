@@ -3862,22 +3862,25 @@
         var c = conn();
         // экраны trading:N — вкладки строки среды (механика и хранилище
         // раунда 1); омнибокс справа (bts-omni-s) — середину держат вкладки
+        // РАЗМЕТКА МОКАПА: .bts-b «Портфели» · .bts-star · .sc-tabs · .bts-omni
+        // (по центру, flex:1 max 420) · .bts-right (связь · песочница · .bts-th ·
+        // ⋯ той же .bts-b · аватар). Прежние .bts-back/.bts-wlb/.bts-omni-s ушли
         return '<div class="bts-top" id="pftBar">' +
-            '<button type="button" class="bts-back" onclick="pftSceneBack()">' + IC_BACK + '<span>Портфели</span></button>' +
+            '<button type="button" class="bts-b" onclick="pftSceneBack()">' + IC_BACK + '<span>Портфели</span></button>' +
             // звезда — рейка избранного (раунд 3); та же клавиша F
-            '<button type="button" class="bts-wlb' + (wlOn() ? ' on' : '') + '" onclick="pftScWl()" ' +
+            '<button type="button" class="bts-star' + (wlOn() ? ' on' : '') + '" onclick="pftScWl()" ' +
                 'title="Полоса избранного — клавиша F" aria-label="Полоса избранного" ' +
-                'aria-pressed="' + wlOn() + '">★</button>' +
+                'aria-pressed="' + wlOn() + '">' + (wlOn() ? '★' : '☆') + '</button>' +
             '<span class="sc-tabs" id="btScnScr">' + scnScreensHtml() + '</span>' +
             // омнибокс ⌘K (этап 6) пока открывает готовый поиск бумаг раунда 1
-            '<button type="button" class="bts-omni bts-omni-s" onclick="pftFsSearch()" title="Найти бумагу">' + IC_LENS +
+            '<button type="button" class="bts-omni" onclick="pftFsSearch()" title="Найти бумагу">' + IC_LENS +
                 '<span>Бумага или команда</span><kbd>⌘K</kbd></button>' +
             '<span class="bts-right">' +
                 scnLinkHtml() +
                 (RP ? '<span class="bts-sand rp">Реплей · ' + esc(RP.label) + '</span>'
                     : (c && c.sandbox ? '<span class="bts-sand">Песочница</span>' : '')) +
                 scnThemeHtml() +
-                '<button type="button" class="bts-dots" onclick="pftFsMenu(event)" ' +
+                '<button type="button" class="bts-b bts-dots" onclick="pftFsMenu(event)" ' +
                     'aria-label="Меню сцены" aria-haspopup="true">' + IC_DOTS3 + '</button>' +
                 '<button type="button" class="bts-av" onclick="pftFsProfile()" ' +
                     'aria-label="Личный кабинет" title="Личный кабинет">' + fsAvaHtml() + '</button>' +
@@ -5395,7 +5398,7 @@
             '<div class="tk-warnw" id="btScnStale">' + scnStaleInner(n) + '</div>' +
             scope +
             protRow +
-            '<div class="sum" id="btScnSum">' + scnSumHtml(n) + '</div>' +
+            '<div class="tk-sumw" id="btScnSum">' + scnSumHtml(n) + '</div>' +
             '<div class="tk-warnw" id="btScnWarn">' + scnWarnHtml(n) + '</div>' +
             (scnKnowOpen
                 ? '<div class="know2" id="btScnKnow">' + scnKnowHtml(n) + '</div>'
@@ -5471,9 +5474,14 @@
             pill('hist', 'История', '', 'Исполненные сделки') +
             pill('alerts', 'Алерты', ALERTS.length ? ' <em>' + ALERTS.length + '</em>' : '', 'Подписки на цену') +
             '</span>';
+        // ручка «Счёта» — ВНУТРИ полосы у правого края (.ps-acctw мокапа
+        // с margin-left:auto). Прежде она висела отдельным узлом поверх
+        // колонки заявки — от раскладки слоёв в потоке это уже пережиток
+        var acctW = S(sxSlot()).meta
+            ? '<div class="ps-acctw" id="btScnAcctW">' + scnAcctBtnHtml() + '</div>' : '';
         if (!list.length) {
             // позиций ещё нет, но росток должен быть достижим — полоса-минимум
-            return pills + '<em class="ps-none">пока пусто</em>';
+            return pills + '<em class="ps-none">пока пусто</em>' + acctW;
         }
         var chips = list.slice(0, POS_CHIPS).map(function (p) {
             var cl = (T.closes || {})[p.uid];
@@ -5483,8 +5491,10 @@
                 Math.abs(d).toLocaleString('ru-RU', { maximumFractionDigits: 1 }) + ' %</em>';
             var uid = jsArg(p.uid);
             // клик всей плитки грузит бумагу; ховер раскрывает два действия
+            // плитка мокапа: тикер голым текстом (моно 700 у самой плитки),
+            // дельта — <em> в цвет; действия по ховеру — наша добавка
             return '<span class="ps-chip" role="button" tabindex="0" onclick="pftScChip(\'' + uid + '\')">' +
-                '<b>' + esc(p.ticker) + '</b>' + em +
+                esc(p.ticker) + em +
                 '<span class="ps-acts"><u class="act" onclick="event.stopPropagation();pftScChip(\'' + uid + '\')">в сцену</u>' +
                 '<u class="act sell" onclick="event.stopPropagation();pftScChipSell(\'' + uid + '\')">продать</u></span></span>';
         }).join('');
@@ -5494,18 +5504,20 @@
             : '';
         // обёртка .ps-chips — из мокапа: она держит свой зазор между плитками
         // и отступ от ряда пилюль, а не наследует общий gap полосы
-        return pills + '<span class="ps-chips">' + chips + more + '</span>';
+        return pills + '<span class="ps-chips">' + chips + more + '</span>' + acctW;
     }
     // ручка «Счёта» — своим узлом ПО ЦЕНТРУ карточки заявки (владелец
     // 2026-07-24; раньше висела в хвосте полосы позиций и к карточке не
     // привязывалась). Обёртка .ps-acctw повторяет геометрию тикета в CSS
+    // РУЧКА МОКАПА: «Счёт ⌃» — слово и шеврон, без чисел. Свободные деньги
+    // жили тут с 2026-07-24, но мокап «Витража» называет их только в самой
+    // карточке — числу в полосе места не нашлось (отступление названо владельцу)
     function scnAcctBtnHtml() {
         var free = T.pos.money;
         var acctOn = !!stageObj().layers.acct;
         return '<button type="button" class="ps-acct' + (acctOn ? ' on' : '') + '" onclick="pftScAcct()" ' +
-            'title="Деньги и итог счёта">счёт' +
-            (free != null ? ' <u>свободно</u> <b>' + fmtRub(free) + '</b>' : '') +
-            ' <i>' + (acctOn ? '▴' : '▾') + '</i></button>';
+            'title="Деньги и итог счёта' + (free != null ? ' · свободно ' + fmtRub(free) : '') + '">' +
+            'Счёт <i>' + (acctOn ? '⌄' : '⌃') + '</i></button>';
     }
     window.pftScChip = function (uid) {
         loadInstrument(sxSlot(), uid, function () {
@@ -8238,17 +8250,20 @@
                 ? '<i class="sct-x" role="button" tabindex="0" aria-label="Удалить экран" ' +
                   'onclick="pftScScreenDel(event,\'' + jsArg(t) + '\')">✕</i>'
                 : '';
-            return '<span class="sct' + (on ? ' on' : '') + '" role="tab" tabindex="0" draggable="true" ' +
+            // ВКЛАДКА МОКАПА — сам <b> в .sc-tabs (был <span> с <b> внутри:
+            // правило мокапа .sc-tabs b попадало во вложенную подпись, и вкладка
+            // оставалась строчной, без своих отступов и радиуса)
+            return '<b class="sct' + (on ? ' on' : '') + '" role="tab" tabindex="0" draggable="true" ' +
                 'aria-selected="' + on + '" onclick="pftScScreenGo(\'' + jsArg(t) + '\')" ' +
                 'ondragstart="pftScScreenDrag(event,\'' + jsArg(t) + '\')" ' +
                 'ondragover="event.preventDefault()" ' +
                 'ondrop="pftScScreenDrop(event,\'' + jsArg(t) + '\')"' +
                 (on ? ' ondblclick="pftScScreenRen(event,\'' + jsArg(t) + '\')" title="Двойной клик — переименовать экран"' : '') +
-                '><b class="sct-l">' + esc(name) + '</b>' + x + '</span>';
+                '><span class="sct-l">' + esc(name) + '</span>' + x + '</b>';
         }).join('');
         if (tabs.length < SCN_SCREENS_MAX) {
-            html += '<span class="sct" role="button" tabindex="0" onclick="pftScScreenAdd()" ' +
-                'title="Новый экран со своими бумагами">＋</span>';
+            html += '<b class="sct add" role="button" tabindex="0" onclick="pftScScreenAdd()" ' +
+                'title="Новый экран со своими бумагами">＋</b>';
         }
         return html;
     }
@@ -8377,17 +8392,22 @@
         // герой и тикет ужимаются, кнопка сделки остаётся на месте, ничего не
         // ложится поверх. Прежде всё висело position:absolute, а «Счёт» и росток
         // выезжали НАД тикетом — из-за этого сцена и не читалась как мокап.
+        // РОСТОК — В КОЛОНКЕ ГЕРОЯ, не этажом под всей сценой (владелец
+        // 2026-07-31): он кончается там, где начинается «Счёт», а колонка заявки
+        // держит полную высоту тела — стакану и заявке достаётся эта высота
         var body = s.meta
             ? '<div class="bts-body">' +
                   '<aside class="bts-wl" id="btScnWl">' + scnWlHtml() + '</aside>' +
-                  scnHeroHtml(n, s) +
+                  '<div class="bts-main">' +
+                      scnHeroHtml(n, s) +
+                      (RP ? '' : '<div class="dock" id="btScnDock">' + scnDockHtml() + '</div>') +
+                  '</div>' +
                   '<div class="tkt-col">' +
                       '<aside class="tkt' + (tktVw === 'split' ? ' tkt-x2' : '') + '" id="btScnTicket">' +
                           scnTicketHtml(n) + '</aside>' +
                       (RP ? '' : '<div class="acct" id="btScnAcct">' + scnAcctHtml() + '</div>') +
                   '</div>' +
-              '</div>' +
-              (RP ? '' : '<div class="dock" id="btScnDock">' + scnDockHtml() + '</div>')
+              '</div>'
             : '<div class="bts-body">' +
                   '<aside class="bts-wl" id="btScnWl">' + scnWlHtml() + '</aside>' +
                   scnHelloHtml() +
@@ -8402,8 +8422,7 @@
             (RP
                 ? '<div class="rp-bar" id="btScnRp">' + rpBarHtml() + '</div>' +
                   '<div class="rp-donew" id="btScnRpDone">' + rpOverHtml() + '</div>'
-                : '<div class="pos-strip" id="btScnPos">' + scnPosInner() + '</div>' +
-                  (s.meta ? '<div class="ps-acctw" id="btScnAcctW">' + scnAcctBtnHtml() + '</div>' : '')) +
+                : '<div class="pos-strip" id="btScnPos">' + scnPosInner() + '</div>') +
         '</div>';
     };
 

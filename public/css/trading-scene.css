@@ -200,6 +200,11 @@
 .bts .bts-body {
     flex: 1; min-height: 0; display: flex; align-items: stretch; gap: 12px; padding: 12px;
 }
+/* колонка героя: сам герой + росток под ним. Росток кончается на границе
+   колонки заявки (владелец 2026-07-31) — «Счёт» стоит ровно за его правым
+   краем, а тикету достаётся вся высота тела, а не остаток после этажа */
+.bts .bts-main { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+.bts .bts-main .bts-hero { flex: 1; min-height: 0; }
 .bts .tkt-col { flex: none; width: 462px; display: flex; flex-direction: column; gap: 12px; min-height: 0; }
 .bts .tkt-col .tkt { width: 100%; flex: 1; min-height: 0; }
 /* ---------- герой бумаги ---------- */
@@ -442,8 +447,9 @@
    заголовка и без итога в 20px. Итог был громче всего в карточке и дублировал
    сумму на самой кнопке — в мокапе он такая же тихая строка, как остальные,
    а крупные числа в карточке только те, что человек вводит. */
-.bts .sum { display: flex; flex-direction: column; }
-.bts .sum:empty { display: none; }
+/* ЛОВУШКА ИМЁН: обёртка квитанции звалась .sum — и ловила строку «Всего
+   средств» счёта (.ac-r.sum), сажая её в колонку. Теперь .tk-sumw. */
+.bts .tk-sumw:empty { display: none; }
 .bts .sum-hint { font: 400 11.5px/1.5 var(--font-ui); color: var(--mut); padding: 5px 0; }
 .bts .sum-hint b { font: 700 11.5px var(--font-num); color: var(--ink); }
 .bts .sum-hint .mut { color: var(--dim); }
@@ -1463,7 +1469,7 @@
    позиций в колонке героя, герой поджимается по высоте (--bts-dock ставит
    scnDockFit); пустой узел — свёрнутое состояние, полоса и есть его ярлык */
 .bts .dock {
-    flex: none; margin: 0 12px 12px; border-radius: 14px;
+    flex: none; margin: 0; border-radius: 14px;
     padding: 12px 14px; z-index: 25; overflow: hidden;
     animation: btDeckUp 0.45s cubic-bezier(0.25, 0.9, 0.3, 1) backwards;
 }
@@ -2378,8 +2384,122 @@
 #btScene .tk-go { text-align: start; }
 /* квитанция: обёртка #btScnSum — цель точечного патча, но в мокапе .tk-row
    стоят прямыми детьми карточки. display:contents убирает обёртку из потока */
-#btScene .sum { display: contents; }
+#btScene .tk-sumw { display: contents; }
 /* «в узкой колонке сплита цена и сумма встают друг под друга» — это правило
    мокапа про УЗКУЮ колонку. Карточка во всю ширину (462px) держит их рядом */
 #btScene .tkt:not(.tkt-x2) .tk-pair { flex-direction: row; }
 #btScene .tkt:not(.tkt-x2) .tk-cell + .tk-cell { border-left: 1px solid var(--hair); border-top: 0; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   БЛОКИ 1В1: ВЕРХ СЦЕНЫ, ПОЛОСА ПОЗИЦИЙ, «СЧЁТ» — ИЗ МОКАПА ДОСЛОВНО
+   Заменены только имена токенов (--fN→--font-num, --fT→--font-title,
+   --up→--grn, --dn→--red). Скоуп #btScene — перекрыть прежние .bts-правила.
+   ═══════════════════════════════════════════════════════════════════════════ */
+#btScene .bts-top { flex:none;height:52px;display:flex;align-items:center;gap:8px;padding:0 14px;
+    border-bottom:1px solid var(--hair);background:var(--gl-thin);
+    -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px) }
+#btScene .bts-b { display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px;border-radius:9px;
+    font-size:12.5px;font-weight:600;color:var(--mut);white-space:nowrap }
+#btScene .bts-b svg { width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round }
+#btScene .bts-star { width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-size:14px;color:var(--dim) }
+#btScene .bts-star.on { color:var(--amb);background:var(--gl-in) }
+#btScene .sc-tabs { display:flex;gap:3px;margin-left:6px }
+#btScene .sc-tabs b { font-size:12px;font-weight:600;color:var(--mut);padding:6px 12px;border-radius:9px }
+#btScene .sc-tabs b.on { color:var(--ink);background:var(--gl-in) }
+#btScene .sc-tabs b.add { color:var(--dim) }
+#btScene .bts-omni { flex:1;max-width:420px;margin:0 auto;display:flex;align-items:center;gap:9px;height:32px;
+    border:1px solid var(--gl-in-edge);background:var(--gl-in);border-radius:9px;padding:0 12px;
+    font-size:12px;color:var(--dim) }
+#btScene .bts-omni svg { width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.9 }
+#btScene .bts-omni kbd { margin-left:auto;font-family:var(--font-num);font-size:9px;font-weight:700;
+    border:1px solid var(--gl-in-edge);border-radius:5px;padding:1px 5px }
+#btScene .bts-right { margin-left:auto;display:flex;align-items:center;gap:8px }
+#btScene .bts-link { display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--mut) }
+#btScene .bts-link i { width:7px;height:7px;border-radius:50%;background:var(--grn) }
+#btScene .bts-sand { font-family:var(--font-num);font-size:9.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:#c2760a;background:rgba(194,118,10,.14);border-radius:6px;padding:3px 8px }
+#btScene .bts-th { display:flex;gap:2px;border:1px solid var(--gl-in-edge);border-radius:8px;padding:2px }
+#btScene .bts-th i { width:24px;height:22px;border-radius:6px;display:grid;place-items:center;font-style:normal;
+    font-size:11px;color:var(--dim) }
+#btScene .bts-th i.on { background:var(--gl-in);color:var(--ink) }
+#btScene .bts-av { width:30px;height:30px;border-radius:50%;background:var(--gl-in);display:grid;place-items:center;
+    font-family:var(--font-title);font-size:13px;color:var(--mut) }
+#btScene .pos-strip { flex:none;height:56px;display:flex;align-items:center;gap:14px;padding:0 14px;
+    border-top:1px solid var(--hair);background:var(--gl-thin);
+    -webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px) }
+#btScene .ps-pills { display:flex;gap:4px }
+#btScene .ps-pill { display:inline-flex;align-items:baseline;gap:7px;font-size:12px;font-weight:600;color:var(--mut);
+    border:1px solid var(--gl-in-edge);background:var(--gl-in);border-radius:99px;padding:6px 13px }
+#btScene .ps-pill.on { color:var(--ink);border-color:color-mix(in srgb,var(--ink) 26%,transparent) }
+#btScene .ps-pill b { font-family:var(--font-num);font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums }
+#btScene .ps-pill em { font-style:normal;font-family:var(--font-num);font-size:10px;font-weight:700;background:var(--ink);
+    color:#fff;border-radius:99px;padding:1px 6px }
+#btScene.night .ps-pill em { background:#e9eef7;color:#0d141b }
+#btScene .ps-chips { display:flex;gap:8px;margin-left:6px }
+#btScene .ps-chip { display:inline-flex;align-items:baseline;gap:7px;font-family:var(--font-num);font-size:11.5px;
+    font-weight:700;border-radius:9px;padding:6px 11px;background:var(--gl-in);font-variant-numeric:tabular-nums }
+#btScene .ps-chip em { font-style:normal;font-size:10.5px;font-weight:700 }
+#btScene .ps-chip em.dn { color:var(--red) }
+#btScene .ps-chip em.up { color:var(--grn) }
+#btScene .ps-acctw { margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;
+    color:var(--ink);border:1px solid var(--gl-in-edge);background:var(--gl-in);border-radius:99px;padding:6px 14px }
+#btScene .acct { flex:none;border-radius:14px;padding:12px 14px;
+    background:var(--gl-work);border:1px solid var(--gl-edge);
+    -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px) }
+#btScene.night .acct { box-shadow:0 22px 50px -24px rgba(0,0,0,.6) }
+#btScene .ac-h { display:flex;align-items:baseline;gap:9px;padding-bottom:9px;border-bottom:1px solid var(--hair) }
+#btScene .ac-h b { font-family:var(--font-title);font-weight:400;font-size:15px }
+#btScene .ac-h em { font-style:normal;font-size:10.5px;color:var(--dim);
+    font-weight:400;letter-spacing:normal;text-transform:none }
+#btScene .ac-h .shev { margin-left:auto;color:var(--dim);font-size:12px }
+#btScene .ac-r { display:flex;justify-content:space-between;gap:10px;padding:7px 0;font-size:11.5px;color:var(--mut) }
+#btScene .ac-r b { font-family:var(--font-num);font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums }
+#btScene .ac-r.g b { color:var(--grn) }
+#btScene .ac-r.r b { color:var(--red) }
+#btScene .ac-r.sum { border-top:1px solid var(--hair);margin-top:4px;padding-top:9px }
+#btScene .ac-r.sum b { font-size:13px }
+
+/* добавки поверх мокапа — то, чего в статичном мокапе нет, но есть в бою */
+/* наши узлы — <button>: снимаем UA-обвязку, чтобы остались мокапные правила */
+#btScene .bts-b, #btScene .bts-star, #btScene .bts-omni, #btScene .bts-av,
+#btScene .ps-pill, #btScene .ps-acct {
+    border-width: 1px; border-style: solid; border-color: transparent;
+    font-family: var(--font-ui); cursor: pointer; text-align: start;
+}
+#btScene .bts-star { padding: 0; }
+#btScene .bts-b, #btScene .bts-star, #btScene .bts-av { background: none; }
+#btScene .bts-av { font-family: var(--font-title); }
+#btScene .ps-chip { cursor: pointer; }
+#btScene .bts-b:hover, #btScene .bts-star:hover, #btScene .bts-av:hover,
+#btScene .ps-pill:hover, #btScene .ps-chip:hover, #btScene .ps-acctw:hover { color: var(--ink); }
+#btScene .bts-b:hover, #btScene .bts-star:hover { background: var(--gl-in); }
+#btScene .bts-omni { border-color: var(--gl-in-edge); text-align: start; }
+#btScene .bts-av { border-color: transparent; background: var(--gl-in); }
+#btScene .bts-th { background: none; }
+#btScene .bts-th i { cursor: pointer; }
+#btScene .bts-dots.on { background: var(--gl-in); color: var(--ink); }
+#btScene .bts-link.stale i { background: var(--red); }
+#btScene .bts-link.wait i { background: var(--amb); }
+#btScene .bts-sand.rp { color: var(--acc); background: color-mix(in srgb, var(--acc) 13%, transparent); }
+#btScene .ps-none { font: 400 12px var(--font-ui); font-style: normal; color: var(--dim); }
+#btScene .ps-more { border: 0; background: none; font: 600 12px var(--font-ui); color: var(--acc);
+    cursor: pointer; white-space: nowrap; }
+/* ручка «Счёта»: сама кнопка внутри .ps-acctw — без своей рамки, обвязка на обёртке */
+#btScene .ps-acctw .ps-acct {
+    border: 0; background: none; padding: 0; color: inherit; font: inherit; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 7px; box-shadow: none;
+    text-transform: none; letter-spacing: normal;
+}
+#btScene .ps-acctw .ps-acct i { font-style: normal; font-size: 11px; color: var(--dim); }
+/* стрелок ▲▼ у дельты в мокапе нет — знак несёт цвет */
+#btScene .ps-chip em::before { content: none; }
+/* «Итог дня» — цветом, не чипом: чип был нашей добавкой раунда «Эволюции» */
+#btScene .ac-r.g b, #btScene .ac-r.r b { background: none; border-radius: 0; padding: 0; }
+#btScene .ps-acctw:has(.ps-acct.on) { border-color: color-mix(in srgb, var(--ink) 26%, transparent); }
+/* действия по ховеру плитки позиции (в мокапе их нет) */
+#btScene .ps-chip .ps-acts { display: none; align-items: center; gap: 8px; }
+#btScene .ps-chip:hover .ps-acts, #btScene .ps-chip:focus-within .ps-acts { display: inline-flex; }
+#btScene .ps-chip .act { font: 600 10.5px var(--font-ui); color: var(--acc); cursor: pointer; text-decoration: none; }
+#btScene .ps-chip .act.sell { color: var(--red); }
+#btScene .acct:empty { display: none; }
+#btScene .ac-h .shev { border: 0; background: none; cursor: pointer; padding: 0; font-family: var(--font-ui); }
