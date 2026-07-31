@@ -566,11 +566,21 @@
         // открывается вкладкой всегда (R9.2). Счётчик позиций из кнопки убран:
         // он всегда стоит в шапке списка (.pfc-cnt).
         // У скрытой карточки главное действие — вернуть её на «Обзор».
+        // ОДИН АКЦЕНТ НА СТРАНИЦУ (мокап overview3, экраны 02 и 10). На «Обзоре»
+        // чёрная «Ребаланс» стояла у КАЖДОЙ карточки: самый громкий элемент экрана
+        // повторялся четыре раза и перебивал собственные цифры карточек. Там теперь
+        // остаётся только тихое «Открыть портфель ›», а ребаланс живёт в своём
+        // разделе и в подвале героя. На вкладке самого портфеля кнопка уместна —
+        // она относится к одному портфелю и на странице одна; зато «Открыть
+        // портфель» оттуда уходит: мы уже внутри, и ссылка вела бы в саму себя.
+        var ownTab = PF.dashTab === 'pf:' + p.id;
         var foot = '<div class="pfc-foot">' +
-            (showOpen ? '<button class="pfc-all" onclick="pfxOpenPf(\'' + p.id + '\')"><span>Открыть портфель</span>' + CHEVR_SVG + '</button>' : '') +
+            (showOpen && !ownTab ? '<button class="pfc-all" onclick="pfxOpenPf(\'' + p.id + '\')"><span>Открыть портфель</span>' + CHEVR_SVG + '</button>' : '') +
             (p.hidden
                 ? '<button class="pfc-rebal" onclick="pfToggleHidden(\'' + p.id + '\',event)">Показать на «Обзоре»</button>'
-                : '<button class="pfc-rebal" onclick="pfExpand(\'' + p.id + '\')">' + PF.REBAL_SVG + 'Ребаланс</button>') +
+                : (ownTab || !showOpen
+                    ? '<button class="pfc-rebal" onclick="pfExpand(\'' + p.id + '\')">' + PF.REBAL_SVG + 'Ребаланс</button>'
+                    : '<button class="pfc-quiet" onclick="pfExpand(\'' + p.id + '\')">' + PF.REBAL_SVG + 'Ребаланс</button>')) +
         '</div>';
 
         // data-pfid — адрес карточки для прокрутки «покажи счёт» (scrollToCard в
@@ -727,10 +737,17 @@
         var pos = c.pnlPct >= 0;
         return { txt: (pos ? '▲ ' : '▼ ') + fmtPct(Math.abs(c.pnlPct)).replace('+', ''), cls: pos ? 'pos' : 'neg' };
     }
-    // «Доля» строки: процент + мини-полоса заполнения (ширина = доля × 2.2, потолок 100%)
+    // «Доля» строки: процент + мини-полоса ПОД ним на постоянном треке.
+    // Ширина 1:1 к доле (мокап overview3, экран 14). Было ×2,2 «для заметности» —
+    // и полоса врала: 46% заполняли трек целиком, то есть 46% и 100% выглядели
+    // одинаково, а вся правая половина шкалы не использовалась никогда.
+    // Порог концентрации: доля больше 40% красит трек янтарным — единственное
+    // место в таблице, где появляется цвет, и означает он ровно одно.
+    var SHARE_WARN = 40;
     function shareCellHtml(share) {
-        return '<span class="pfc-share">' + share.toFixed(1).replace('.', ',') + '%' +
-            '<i class="pfc-sharebar"><i style="width:' + Math.min(100, share * 2.2).toFixed(0) + '%"></i></i></span>';
+        return '<span class="pfc-share' + (share > SHARE_WARN ? ' pfc-share-hot' : '') + '">' +
+            share.toFixed(1).replace('.', ',') + '%' +
+            '<i class="pfc-sharebar"><i style="width:' + Math.max(2, Math.min(100, share)).toFixed(1) + '%"></i></i></span>';
     }
     // Строка актива: тикер с названием · кол-во · средняя · сейчас · изм. · доля.
     // Буквенных плашек и чипов типа больше нет — класс актива читается по подписи

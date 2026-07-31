@@ -637,11 +637,18 @@ body.dark-mode .pfc-mnow { color: #aab8c8; }
 body.dark-mode .pfc-mnow.live { color: #eef3f9; }
 .pfc-mchg.pos { color: #16a34a; font-weight: 700; } .pfc-mchg.neg { color: #dc2626; font-weight: 700; }
 body.dark-mode .pfc-mchg.pos { color: #34d399; } body.dark-mode .pfc-mchg.neg { color: #f87171; }
-/* «Доля»: процент + мини-полоса заполнения (цвет — акцент портфеля) */
-.pfc-share { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 4px; }
-.pfc-sharebar { display: block; width: 46px; height: 3px; border-radius: 2px; background: rgba(15,23,42,0.09); overflow: hidden; }
+/* «Доля»: процент, ПОД ним полоса на постоянном треке 52px (мокап overview3, экран 14).
+   Трек обязателен — без него 0,8% выглядит как сломанная вёрстка, а не как малая доля.
+   Заливка нейтральная (чернила), акцент портфеля тут не нужен: колонка про величину,
+   а не про принадлежность. Цвет появляется только у порога концентрации. */
+.pfc-share { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+.pfc-sharebar { display: block; width: 52px; height: 4px; border-radius: 99px; background: rgba(15,23,42,0.09); overflow: hidden; }
 body.dark-mode .pfc-sharebar { background: rgba(255,255,255,0.1); }
-.pfc-sharebar i { display: block; height: 100%; background: var(--pf-accent); border-radius: 2px; }
+.pfc-sharebar i { display: block; height: 100%; border-radius: 99px; background: rgba(15,23,42,0.42); }
+body.dark-mode .pfc-sharebar i { background: rgba(255,255,255,0.42); }
+/* доля больше 40% — концентрация: трек янтарный */
+.pfc-share-hot .pfc-sharebar i { background: #c2760a; }
+body.dark-mode .pfc-share-hot .pfc-sharebar i { background: #e0a33e; }
 /* ---- раскрытая строка (макет 05): лоты слева · деньги позиции справа · действия
    снизу · лента купонов у облигаций. Тонированная панель с отступом под шеврон. ---- */
 .pfc-mdet td { padding: 0 0 12px !important; border-bottom: 1px solid rgba(15,23,42,0.045) !important; white-space: normal; }
@@ -846,6 +853,18 @@ body.dark-mode .pfc-all:hover { background: rgba(255,255,255,0.08); }
 .pfc-rebal:active { transform: scale(0.985); }
 /* тёмная тема — инверсия, как .pn-btn.pri мокапа: светлая кнопка, тёмный текст */
 body.dark-mode .pfc-rebal { background: #e8eef7; border-color: #e8eef7; color: #0c1016; }
+/* ТИХИЙ «Ребаланс» — вид кнопки на «Обзоре», где карточек несколько (мокап
+   overview3, экран 02). Геометрия та же, что у чёрной, чтобы подвал не прыгал
+   при переходе на вкладку портфеля; меняются только заливка и вес. */
+.pfc-quiet { flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center;
+    gap: 8px; cursor: pointer; border: 1px solid rgba(24,38,60,0.12); background: rgba(24,38,60,0.035);
+    border-radius: 11px; padding: 11px; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 13px;
+    color: #5d6b7e; transition: background 0.15s, color 0.15s, transform 0.12s; }
+.pfc-quiet svg { width: 15px; height: 15px; }
+.pfc-quiet:hover { background: rgba(24,38,60,0.07); color: #1b2433; }
+.pfc-quiet:active { transform: scale(0.985); }
+body.dark-mode .pfc-quiet { border-color: rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: #93a1b5; }
+body.dark-mode .pfc-quiet:hover { background: rgba(255,255,255,0.1); color: #e8eef7; }
 
 /* ---- адаптация к ФАКТИЧЕСКОЙ ширине карточки (макет 07) ----
    Раньше «узкий вид» приходил классом от раскладки (3-в-ряд ⇒ .pf-card--narrow), и
@@ -1884,8 +1903,10 @@ body.dark-mode .pft-toggle:hover, body.dark-mode .pft-toggle.on { background: co
     grid-template-columns: minmax(86px,104px) minmax(80px,96px) minmax(110px,1.4fr) minmax(76px,92px) minmax(66px,84px) minmax(50px,62px) minmax(86px,104px) minmax(78px,96px) minmax(90px,108px); }
 /* мульти-портфель: номер-маркер — узкой ПЕРВОЙ «рельсой» (как левая рельса в календаре
    выплат), отдельной колонки «Портфель» с именем больше нет */
+/* колонка «Портфель»: точка цвета + имя. Была рельса 34px под голый номер-маркер —
+   имя жило только в подсказке, и строки разных портфелей читались одинаково. */
 .pf-trades.has-pf .pft-hrow, .pf-trades.has-pf .pft-row {
-    grid-template-columns: 34px minmax(86px,104px) minmax(80px,96px) minmax(110px,1.4fr) minmax(76px,92px) minmax(66px,84px) minmax(50px,62px) minmax(86px,104px) minmax(78px,96px) minmax(90px,108px); }
+    grid-template-columns: minmax(96px,138px) minmax(86px,104px) minmax(80px,96px) minmax(110px,1.4fr) minmax(76px,92px) minmax(66px,84px) minmax(50px,62px) minmax(86px,104px) minmax(78px,96px) minmax(90px,108px); }
 .pft-hrow { padding: 2px 13px 9px; margin-bottom: 8px; border-bottom: 1px solid rgba(24,38,60,0.08); }
 body.dark-mode .pft-hrow { border-color: rgba(255,255,255,0.08); }
 .pft-h { font-size: 9.5px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -1909,7 +1930,14 @@ body.dark-mode .pft-side.sell { color: #f87171; background: rgba(248,113,113,0.1
 body.dark-mode .pft-tk { color: #f4f8fd; }
 .pft-nm { font-size: 10.5px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* рельса номера: маркер по центру узкой первой колонки, без имени портфеля */
-.pft-pf { display: inline-flex; align-items: center; justify-content: center; cursor: default; }
+/* принадлежность строки портфелю: точка его цвета + имя (мокап overview3, экран 15).
+   Цвет портфеля — единственный носитель принадлежности на весь проект, но одна точка
+   читается только у того, кто выучил палитру; имя рядом снимает вопрос сразу. */
+.pft-pf { display: inline-flex; align-items: center; gap: 7px; min-width: 0; cursor: default; }
+.pft-pfdot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+.pft-pfnm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-size: 11.5px; font-weight: 600; color: #5d6b7e; }
+body.dark-mode .pft-pfnm { color: #93a1b5; }
 /* номер портфеля «закрашен маркером» его цвета — тот же приём и пропорции, что у меток
    в календаре выплат (.pfpc-pfnum) и названия карточки (.pfc-name-ink) */
 .pft-pfnum {
