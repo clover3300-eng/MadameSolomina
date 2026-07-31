@@ -168,7 +168,14 @@
         return '<div class="pfpc-row">' +
             '<div class="pfpc-day' + (multiPf ? ' pfpc-day--pf' : '') + '"' + (multiPf ? ' style="--c:' + ev.pfColor + '"' : '') + ' title="' + attr(tip) + '">' +
                 '<b>' + ev.date.getDate() + '</b><span>' + PAY_MON_SHORT[ev.date.getMonth()] + '</span></div>' +
-            '<div class="pfpc-id"><span class="pfpc-tk">' + esc(ev.ticker) + kind + '</span><span class="pfpc-nm">' + esc(ev.name) + '</span></div>' +
+            // ИМЯ ПОРТФЕЛЯ, а не только цвет квадратика (мокап overview3, экран 15):
+            // цвет — носитель принадлежности, но опознаёт его лишь тот, кто выучил
+            // палитру. Подпись тихая, второй строкой под названием бумаги, и только
+            // когда портфелей больше одного.
+            '<div class="pfpc-id"><span class="pfpc-tk">' + esc(ev.ticker) + kind + '</span>' +
+                '<span class="pfpc-nm">' + esc(ev.name) +
+                (multiPf && ev.pfName ? '<i class="pfpc-pf" style="--c:' + ev.pfColor + '">' + esc(ev.pfName) + '</i>' : '') +
+                '</span></div>' +
             '<div class="pfpc-amt">+' + fmtRub(ev.amount) + '</div>' +
         '</div>';
     }

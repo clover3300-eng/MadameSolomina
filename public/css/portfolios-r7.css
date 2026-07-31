@@ -231,6 +231,11 @@ body.dark-mode .pfcap-rb.on { background: rgba(99, 102, 241, 0.2); border-color:
     pointer-events: none; white-space: nowrap;
 }
 body.dark-mode .pfcap-yt { color: #8fa0b6; }
+/* нулевая линия — точка отсчёта шкалы: единственная сплошная и подписанная в полную силу */
+.pfcap-yt0 { color: #5d6b7e; font-weight: 700; }
+body.dark-mode .pfcap-yt0 { color: #cbd5e1; }
+.pfcap-grid0 { stroke: rgba(100, 116, 139, 0.4); stroke-dasharray: none; }
+body.dark-mode .pfcap-grid0 { stroke: rgba(148, 163, 184, 0.35); }
 
 /* ============ 7б. Кнопка «Ребаланс» ============
    Светлый override снесён при переделке карточки (макет 02): CTA снова тёмный

@@ -697,14 +697,30 @@
             var up = delta >= 0, col = up ? '#12a35c' : '#e0592b';
             var daysShown = Math.max(1, Math.round((new Date(last.d).getTime() - new Date(s[0].d).getTime()) / 86400000));
             pfdCapState = { s: s, min: min, span: span, n: n, inx: INX, pt: PT, pb: PB };
-            // R7: боковая шкала слева (как в референсе) — «красивые» деления niceTicks,
-            // линии сетки в SVG на тех же уровнях, подписи коротким форматом (млн/тыс)
+            // ШКАЛА В ПРОЦЕНТАХ ОТ СТАРТА ПЕРИОДА (мокап overview3, экран 19).
+            // Была шкала в рублях: «19,1 млн / 18,6 млн / 18,1 млн» — три почти
+            // одинаковых числа, по которым нельзя прикинуть, много ли «вот столько».
+            // Проценты отвечают ровно на тот вопрос, ради которого на график смотрят,
+            // и совпадают с дельтой в герое. Нулевая линия — точка отсчёта, поэтому
+            // она единственная сплошная и подписана «0%»; её добавляем принудительно,
+            // даже если niceTicks её не выбрал.
+            var base = s[0].v || 1;
+            function toPct(v) { return (v / base - 1) * 100; }
+            function pctLabel(p) {
+                if (Math.abs(p) < 0.05) return '0%';
+                return (p > 0 ? '+' : '−') + Math.abs(p).toLocaleString('ru-RU', { maximumFractionDigits: 1 }) + '%';
+            }
             var grid = '', yTicks = '';
-            niceTicks(min, max, 4).forEach(function (tv) {
-                var gy = yP(tv);
+            var tps = niceTicks(toPct(min), toPct(max), 4).slice();
+            if (!tps.some(function (p) { return Math.abs(p) < 1e-9; })) tps.push(0);
+            tps.forEach(function (tp) {
+                var gy = yP(base * (1 + tp / 100));
                 if (gy < 2 || gy > 98) return;
-                grid += '<line x1="0" y1="' + gy.toFixed(1) + '" x2="100" y2="' + gy.toFixed(1) + '" class="pfcap-grid"/>';
-                yTicks += '<span class="pfcap-yt" style="top:' + gy.toFixed(1) + '%">' + pfxShortNum(tv) + '</span>';
+                var zero = Math.abs(tp) < 1e-9;
+                grid += '<line x1="0" y1="' + gy.toFixed(1) + '" x2="100" y2="' + gy.toFixed(1) +
+                    '" class="pfcap-grid' + (zero ? ' pfcap-grid0' : '') + '"/>';
+                yTicks += '<span class="pfcap-yt' + (zero ? ' pfcap-yt0' : '') + '" style="top:' + gy.toFixed(1) + '%">' +
+                    pctLabel(tp) + '</span>';
             });
             var lx = xP(n - 1).toFixed(2), ly = yP(last.v).toFixed(2);
             // герой: крупная текущая стоимость + пилюля дельты + за сколько дней

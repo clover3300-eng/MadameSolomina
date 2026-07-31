@@ -1832,6 +1832,11 @@ body.dark-mode .pfpc-day--pf { background: color-mix(in srgb, var(--c) 26%, tran
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 body.dark-mode .pfpc-tk { color: #f4f8fd; }
 .pfpc-nm { font-size: 10.5px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* имя портфеля в строке выплаты: точка его цвета + подпись, тише названия бумаги */
+.pfpc-pf { font-style: normal; display: inline-flex; align-items: center; gap: 5px; margin-left: 8px;
+    padding-left: 8px; border-left: 1px solid rgba(24,38,60,0.12); color: #94a3b8; }
+body.dark-mode .pfpc-pf { border-left-color: rgba(255,255,255,0.14); }
+.pfpc-pf::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--c); flex: none; }
 /* сумма — главное число строки календаря («сколько и когда придёт»); размер — тот же
    токен --fs-total, что у итоговых сумм таблиц (typography-tokens.css), а не свой px */
 .pfpc-amt { font-family: 'JetBrains Mono', monospace; font-size: var(--fs-total, 16px); font-weight: 800; color: #16a34a; white-space: nowrap; text-align: right; transition: font-size 0.2s ease; }
