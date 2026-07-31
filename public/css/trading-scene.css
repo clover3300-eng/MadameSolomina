@@ -490,10 +490,16 @@
     font-size: 13px; line-height: 1; padding: 2px 4px; border-radius: 6px;
 }
 .bts .d-sweep u:hover { color: var(--ink); background: color-mix(in srgb, var(--ink) 8%, transparent); }
-/* СПЛИТ ПО МОКАПУ: стакан и заявка делят ОДНУ карточку 462px (у мокапа
-   .tkt-sub-depth 206 + заявка на остаток), а не раздвигают колонку наружу.
-   Прежняя раскладка растила .tkt до 754px и отодвигала героя — в потоке это
-   выбрасывало карточку за край экрана. */
+/* СПЛИТ: СТАКАН ОТКРЫВАЕТСЯ СЛЕВА ОТ ЗАЯВКИ, двигая график (владелец
+   2026-07-31). Мокапный вариант «стакан и заявка делят одну карточку 462»
+   сжимал заявку до 250px — данные в ней становились нечитаемыми. Теперь
+   колонка тикета раздвигается ровно на ширину стакана (206), заявка остаётся
+   той же 462, что и одна; график уступает место по CSS-transition (атрибут
+   data-tkt встаёт ДО перерисовки), движку ширину сообщает ResizeObserver героя. */
+#btScene[data-tkt="split"] .tkt-col { width: 668px; }   /* 206 стакан + 462 заявка */
+.bts .tkt-col { transition: width 0.45s cubic-bezier(0.25, 0.9, 0.3, 1); }
+/* «Счёт» под тикетом остаётся шириной заявки — стоит под ней, у правого края */
+#btScene[data-tkt="split"] .acct { width: 462px; margin-left: auto; }
 .bts[data-tkt="split"] .tkt { flex-direction: row; padding: 0; gap: 0; overflow: hidden; }
 .bts .tkt-sub { min-width: 0; display: flex; flex-direction: column; padding: 12px 14px; }
 .bts .tkt-sub-deal { flex: 1; min-width: 0; }
