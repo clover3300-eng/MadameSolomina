@@ -12,13 +12,7 @@
 (function () {
     'use strict';
 
-    // 2026-08-04: сюда же добавлена КОЛОНКА САЙДБАРА. Строки портфелей несут
-    // подсказку с суммой и доходностью, и до этого она приходила серым системным
-    // окошком ОС — единственная нативная подсказка на видном месте интерфейса.
-    var ROOT_SEL = '.stk-root, .bnd-root, #sideBar';
-    // Где подсказка встаёт СБОКУ, а не снизу: в колонке 268px строка идёт за
-    // строкой, и блок под курсором накрыл бы соседний пункт.
-    var SIDE_SEL = '#sideBar';
+    var ROOT_SEL = '.stk-root, .bnd-root';
     var STASH = 'data-tt-title';   // здесь хранится исходный текст title
     var SEL = '[title], [' + STASH + ']';
 
@@ -73,23 +67,8 @@
         var gap = 8;
         var pad = 6;
 
-        var left, top;
-        if (el.closest && el.closest(SIDE_SEL)) {
-            // сбоку: справа от строки, по её середине; не влезло справа — слева
-            left = r.right + gap;
-            if (left + tw > window.innerWidth - pad) left = r.left - tw - gap;
-            top = r.top + r.height / 2 - th / 2;
-            if (top + th > window.innerHeight - pad) top = window.innerHeight - pad - th;
-            if (top < pad) top = pad;
-            if (left < pad) left = pad;
-            tip.style.left = Math.round(left) + 'px';
-            tip.style.top = Math.round(top) + 'px';
-            tip.style.visibility = 'visible';
-            return;
-        }
-
-        left = r.left + r.width / 2 - tw / 2;
-        top = r.bottom + gap;
+        var left = r.left + r.width / 2 - tw / 2;
+        var top = r.bottom + gap;
 
         // Если снизу не помещается — показываем над элементом.
         if (top + th > window.innerHeight - pad) {
