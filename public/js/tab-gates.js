@@ -296,6 +296,17 @@
             if (sub) labelNode(sub.querySelector('.sb-sub-tx'), t);
             labelNode(document.querySelector('#mobileDock .dock-item[data-tab="' + tab + '"] span'), t);
         });
+        // ПЕРЕСТРОЕННЫЙ САЙДБАР: РАЗМЕТКА — ИСХОДНИК, А НЕ ЭКРАН (фикс 2026-08-04).
+        // После раунда «Плоскость» видимый первый уровень рисуется в #sbFlat —
+        // это КОПИИ строк из #sbNav (js/sidebar-ctx.js, flatTabHtml), а сами
+        // .sb-item[data-tab] спрятаны и служат источником имён и иконок. Мы
+        // правим источник, поэтому без пересборки копий новое имя появлялось
+        // только со следующим тиком сайдбара (раз в минуту) или после перехода
+        // на другую вкладку — со стороны это читалось как «переименование не
+        // работает». sbCtxSync пересобирает список (и второй уровень) сразу,
+        // sbTitleSync подтягивает подсказки к новым подписям.
+        if (typeof window.sbCtxSync === 'function') { try { window.sbCtxSync(); } catch (e) {} }
+        if (typeof window.sbTitleSync === 'function') { try { window.sbTitleSync(); } catch (e) {} }
         // хлебная крошка шапки берёт имя из своего словаря — перерисовываем её
         if (typeof window.renderHeaderBadge === 'function') window.renderHeaderBadge(curTab());
     }

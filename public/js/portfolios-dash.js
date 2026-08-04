@@ -1667,12 +1667,16 @@
     // R7: пикер-модал по референсу — категории слева, карточки виджетов с ДЕМО-превью
     // в центре, настройки выбранного виджета справа, бар выбора снизу. Вся логика —
     // в секции «ПИКЕР "ДОБАВИТЬ ВИДЖЕТ"» ниже (pfl2*).
-    var PFL2_LOUPE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg>';
+    // Лупа, плюс шапки и четыре плитки подсказки — глифы мокапа overview3 (набор
+    // `I`: search, plus, grid4), той же обводкой, что и категории.
+    var PFL2_LOUPE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.2" y2="16.2"/></svg>';
+    var PFL2_PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+    var PFL2_GRID4 = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>';
     function pflPanelHtml() {
         return '<div class="pfl-panel pfl2" id="pflPanel">' +
             '<div class="pfl-head">' +
                 '<div class="pfl-head-t">' +
-                    '<span class="pfl-head-ic">' + PFD_PLUS_SVG + '</span>' +
+                    '<span class="pfl-head-ic">' + PFL2_PLUS + '</span>' +
                     '<div class="pfl-head-tx"><b>Магазин виджетов</b>' +
                         '<span>добавятся на «' + esc(pfxTabLabel(PF.dashTab)) + '» — выберите и настройте</span></div>' +
                 '</div>' +
@@ -1684,7 +1688,7 @@
                         '<input type="text" id="pfl2Qinp" placeholder="Поиск виджетов" value="' + esc(pfl2Q) + '" oninput="pfl2Search(this.value)">' +
                     '</div>' +
                     '<div class="pfl2-cats" id="pfl2Cats">' + pfl2CatsHtml() + '</div>' +
-                    '<div class="pfl2-hint"><span class="pfl2-hint-ic">' + PF.PFDGRID_SVG + '</span>' +
+                    '<div class="pfl2-hint"><span class="pfl2-hint-ic">' + PFL2_GRID4 + '</span>' +
                         '<span>Перетаскивайте виджеты, чтобы менять порядок</span></div>' +
                 '</aside>' +
                 '<div class="pfl2-main" id="pfl2Main">' + pfl2MainHtml() + '</div>' +
@@ -1891,6 +1895,24 @@
         pfCfgPopSet(false);
         e.stopImmediatePropagation();
     });
+    // Панель раскрывается ОВЕРЛЕЕМ у верхней грани #pfWrap. Со дна длинной
+    // страницы она оказывается далеко выше экрана, и по кнопке «Добавить виджет»
+    // визуально не происходило ничего (просьба 2026-08-04). Ведём к ней сами —
+    // тем же приёмом, каким pfdScrollToBlock ведёт к добавленному блоку: ждём
+    // появления узла в DOM (ре-рендер идёт через startViewTransition и
+    // асинхронен), потом прокручиваем.
+    function pflScrollToPanel(id) {
+        var tries = 0;
+        (function poll() {
+            var el = document.getElementById(id);
+            if (el) {
+                try { el.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+                catch (e) { try { el.scrollIntoView(); } catch (e2) {} }
+                return;
+            }
+            if (tries++ < 45) requestAnimationFrame(poll);
+        })();
+    }
     // клик по кнопке «Раскладка»: открыть карточку (или закрыть, если уже открыта)
     window.pfLayoutToggle = function (ev) {
         if (ev) ev.stopPropagation();
@@ -1904,6 +1926,7 @@
         pfWGatesFetch();        // свежая видимость виджетов каталога к открытию пикера
         pfdRerender();          // отрисует карточку; pflInitPreview выберет первый блок
         updateLayoutBtn();
+        pflScrollToPanel('pflPanel');
     };
     // закрыть карточку (✕): режим своей раскладки НЕ выключаем — сетка остаётся живой,
     // расстановка уже автосохранена; пользователь может тащить/менять блоки и без карточки
@@ -3243,18 +3266,29 @@
     // ====================================================================
     //  R7 — ПИКЕР «ДОБАВИТЬ ВИДЖЕТ»: категории + карточки с ДЕМО-превью + настройки
     // ====================================================================
-    // категории пикера: [key, name, svg-иконка] — иконка у КАЖДОЙ (как в референсе)
+    // ГЛИФЫ МАГАЗИНА — ровно те, что в мокапе overview3, экран 16 (набор `I`):
+    // одна обводка 1.8, скруглённые концы и стыки, viewBox 24. Свой набор
+    // (звезда, портфель-кейс, оси, список, стрелка, карта-сетка) заменён
+    // 2026-08-04: у мокапа другие метафоры — четыре плитки, пульс рынка,
+    // звено цепи, круговая диаграмма, щит, стрелка тренда.
+    function pfl2Ico(paths) {
+        return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+            'stroke-linecap="round" stroke-linejoin="round">' + paths + '</svg>';
+    }
+    // категории пикера: [key, name, svg-иконка, подпись] — подпись живёт во второй
+    // строке заголовка списка («9 виджетов · чаще всего добавляют первыми»)
     var PFL2_CATS = [
-        ['pop', 'Популярные', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2.8 14.9 9 21.7 9.9 16.8 14.5 18 21.2 12 18 6 21.2 7.2 14.5 2.3 9.9 9.1 9"/></svg>'],
-        ['over', 'Обзор портфеля', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="13" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg>'],
-        ['charts', 'Графики и аналитика', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><polyline points="6 14 10 10 14 12 20 5.5"/></svg>'],
-        ['assets', 'Активы и позиции', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>'],
-        ['profit', 'Доходность и прибыль', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>'],
-        ['divs', 'Дивиденды и выплаты', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/><circle cx="16.5" cy="15" r="1.4" fill="currentColor" stroke="none"/></svg>'],
-        ['market', 'Рынок и индексы', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="10" rx="1.7"/><rect x="13" y="3" width="8" height="6" rx="1.7"/><rect x="13" y="11" width="8" height="10" rx="1.7"/><rect x="3" y="15" width="8" height="6" rx="1.7"/></svg>'],
-        ['notes', 'Заметки и задачи', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.5z"/><path d="M15 3v5a1 1 0 0 0 1 1h5"/><path d="M8.5 13.5h7"/><path d="M8.5 17h5"/></svg>'],
-        ['cal', 'Календарь и события', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2.5"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2.5" x2="8" y2="6"/><line x1="16" y1="2.5" x2="16" y2="6"/></svg>'],
-        ['other', 'Прочее', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>']
+        ['pop', 'Популярные', pfl2Ico('<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'), 'чаще всего добавляют первыми'],
+        ['over', 'Обзор портфеля', pfl2Ico('<path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/>'), 'общая картина по всем портфелям'],
+        ['charts', 'Графики и аналитика', pfl2Ico('<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>'), 'динамика, структура и сравнение'],
+        ['assets', 'Активы и позиции', pfl2Ico('<path d="M10 13.5a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 0 0-5.7-5.7L11.5 6.4"/><path d="M14 10.5a4 4 0 0 0-5.7 0l-2.8 2.8a4 4 0 0 0 5.7 5.7l1.3-1.3"/>'), 'бумаги, количества и стоимость'],
+        ['profit', 'Доходность и прибыль', pfl2Ico('<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>'), 'сколько заработано и на чём'],
+        ['divs', 'Дивиденды и выплаты', pfl2Ico('<path d="M12 3l7.5 3v5.4c0 4.5-3.1 8.3-7.5 9.6-4.4-1.3-7.5-5.1-7.5-9.6V6z"/>'), 'купоны, дивиденды и даты'],
+        ['market', 'Рынок и индексы', pfl2Ico('<path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/>'), 'индексы, котировки и новости'],
+        ['notes', 'Заметки и задачи', pfl2Ico('<path d="M5 3.6h14v16.8H5z"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4"/>'), 'заметки, списки и сроки'],
+        ['cal', 'Календарь и события', pfl2Ico('<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3.2v3.4M16 3.2v3.4"/>'), 'что и когда произойдёт'],
+        // «Прочего» в мокапе нет — оставляем свои три точки в том же языке обводки
+        ['other', 'Прочее', pfl2Ico('<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>'), 'настройки, отчёты и служебное']
     ];
     function pfl2Catalog() {
         var list = [
@@ -3334,13 +3368,16 @@
         });
         return list;
     }
-    var pfl2Cat = 'pop', pfl2Q = '', pfl2Sel = 'cap';
+    var pfl2Cat = 'pop', pfl2Q = '', pfl2Sel = null;
     // ВЫБОР — МНОЖЕСТВЕННЫЙ: pfl2SelIds — все отмеченные виджеты в порядке выбора (их и
     // добавит кнопка), pfl2Sel — тот, чьи настройки показаны справа (последний нажатый).
     // Клик по карточке переключает её участие в выборе; настройки — СВОИ у каждого
     // виджета (pfl2OptMap), поэтому в одной пачке можно добавить светлый график и
     // тёмный список, не перебивая опции друг другу.
-    var pfl2SelIds = ['cap'];
+    // ПУСТО НА СТАРТЕ (фикс 2026-08-04): магазин открывался с уже отмеченным
+    // «Графиком капитала» — галочка стояла сама, и нажатие «Добавить» клало на
+    // дашборд виджет, которого никто не выбирал. Отмечает только человек.
+    var pfl2SelIds = [];
     var pfl2OptMap = {};
     // тема по умолчанию — «стекло»: выбор расцветки из интерфейса убран (см. pfl2SetHtml
     // и pfdCfgHtml), все виджеты добавляются и живут стеклянными
@@ -3655,7 +3692,15 @@
     }
     function pfl2MainHtml() {
         var list = pfl2Filtered();
-        var title = pfl2Q ? ('Найдено: ' + list.length) : ((PFL2_CATS.filter(function (c) { return c[0] === pfl2Cat; })[0] || ['', 'Виджеты'])[1] + ' виджеты');
+        // ЗАГОЛОВОК В ДВА РАНГА (мокап overview3, экран 16, .shop-t): имя категории
+        // серифом, а счёт со смыслом — тихой строкой рядом. Раньше это была одна
+        // строка «Популярные виджеты» гротеском 13,5/800.
+        var cat = PFL2_CATS.filter(function (c) { return c[0] === pfl2Cat; })[0] || ['', 'Виджеты', '', ''];
+        var n = list.length;
+        var cnt = n + ' ' + PF.plural(n, 'виджет', 'виджета', 'виджетов');
+        var title = pfl2Q
+            ? '<b>Найдено</b><span>' + cnt + ' по запросу «' + esc(pfl2Q) + '»</span>'
+            : '<b>' + esc(cat[1]) + '</b><span>' + cnt + (cat[3] ? ' · ' + esc(cat[3]) : '') + '</span>';
         var CHECK = '<span class="pfl2-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>';
         var admin = pfIsAdmin();
         var cards = list.map(function (w) {
@@ -3747,7 +3792,7 @@
             (w.chart ? curSel : '') +
             '<div class="pfl2-set-hint">Настройки — у каждого виджета свои. Размеры и место всегда можно поменять позже — просто перетащите виджет или потяните за кромку.</div>';
     }
-    function pfl2SizeLabel(id) { var s = pfl2OptsOf(id).size; return s === 's' ? 'Компактный' : s === 'l' ? 'Большой' : 'Средний размер'; }
+    function pfl2SizeLabel(id) { var s = pfl2OptsOf(id).size; return s === 's' ? 'компактный' : s === 'l' ? 'большой' : 'средний'; }
     function pfl2FootHtml() {
         var n = pfl2SelIds.length;
         // список выбранных именами: видно всю пачку до нажатия «Добавить»
@@ -3755,16 +3800,16 @@
             var w = pfl2ById(id);
             return w ? w.name : id;
         });
-        var sub = !n ? 'кликните карточки в списке — можно отметить сразу несколько'
-            : n === 1 ? esc(names[0]) + ' · ' + pfl2SizeLabel(pfl2SelIds[0])
-            : esc(names.join(', '));
-        var title = !n ? 'Виджеты не выбраны'
-            : n === 1 ? 'Выбран 1 виджет'
-            : 'Выбрано ' + n + ' ' + PF.plural(n, 'виджет', 'виджета', 'виджетов');
+        // ОДНА СТРОКА (мокап overview3, экран 16, .shop-f .cnt): «Выбран 1 виджет ·
+        // График капитала, средний» — тихий текст, жирным только число. Раньше это
+        // были два ранга (заголовок 13/800 + подпись), и подвал спорил с кнопкой.
+        var sel = !n ? 'Ничего не выбрано <i>· отметьте карточки в списке, можно сразу несколько</i>'
+            : n === 1 ? 'Выбран <b>1 виджет</b> · ' + esc(names[0]) + ', ' + pfl2SizeLabel(pfl2SelIds[0])
+            : 'Выбрано <b>' + n + ' ' + PF.plural(n, 'виджет', 'виджета', 'виджетов') + '</b> · ' + esc(names.join(', '));
         // Кнопка называет МЕСТО, куда всё поедет, а не действие вообще: у пикера
         // одна кнопка, и вопрос у человека ровно один — «куда добавится?»
         var btnLbl = 'Добавить на «' + esc(pfxTabLabel(PF.dashTab)) + '»';
-        return '<div class="pfl2-sel"><b>' + title + '</b><span>' + sub + '</span></div>' +
+        return '<div class="pfl2-sel">' + sel + '</div>' +
             '<div class="pfl2-foot-r">' +
                 (n ? '<button type="button" class="pfl-btn ghost" onclick="pfl2ClearSel()">Снять выбор</button>' : '') +
                 '<button type="button" class="pfl-btn ghost" onclick="pfLayoutClose()">Отмена</button>' +
@@ -3912,6 +3957,7 @@
         pfPresetsFetch(true);   // свежие пресеты и базовые к открытию
         pfdRerender();
         updateLayoutBtn();
+        pflScrollToPanel('pfl3Panel');   // та же посадка оверлеем — та же прокрутка
     };
     window.pfLayoutsClose = function () {
         if (!PF.pfl3Open) return;

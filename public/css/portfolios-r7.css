@@ -783,20 +783,42 @@ body.dark-mode .pfx-bg.on .pfx-bg-tx b { color: #c7d2fe; }
 
 /* ============ 12. Пикер «Добавить виджет» (pfl2) ============ */
 .pfl-panel.pfl2 { max-height: min(84vh, 860px); }
+/* ---- ТИПОГРАФИКА ШАПКИ МАГАЗИНА — мокап overview3, экран 16 (.shop-h) ----
+   Заголовок серифом 19/400 вместо гротеска 15/800: окно магазина — такой же
+   заголовок, как у карточек и виджетов, и голос у них один (--font-title).
+   Значок «плюс» — залитый индиговый квадрат 36px, а не бледная плашка.
+   Селекторы адресные (.pfl-panel.pfl2): ту же шапку носит панель раскладок. */
+.pfl-panel.pfl2 > .pfl-head { padding: 18px 22px; gap: 14px; }
+.pfl-panel.pfl2 .pfl-head-t { gap: 14px; }
+.pfl-panel.pfl2 .pfl-head-ic {
+    width: 36px; height: 36px; border-radius: 11px; color: #fff;
+    background: linear-gradient(#5b67f2, #4453ef); box-shadow: none;
+}
+.pfl-panel.pfl2 .pfl-head-ic svg { width: 18px; height: 18px; }
+.pfl-panel.pfl2 .pfl-head-tx b {
+    font-family: var(--font-title, Georgia, serif); font-size: 19px; font-weight: 400;
+    letter-spacing: 0; color: #1b2433; line-height: 1.2;
+}
+.pfl-panel.pfl2 .pfl-head-tx span { font-size: 11.5px; font-weight: 400; color: #64748b; }
+.pfl-panel.pfl2 .pfl-x { width: 32px; height: 32px; border-radius: 10px; border-color: transparent; background: none; color: #94a3b8; }
+.pfl-panel.pfl2 .pfl-x:hover { background: #f1f5f9; border-color: transparent; color: #1b2433; }
+body.dark-mode .pfl-panel.pfl2 .pfl-head-tx b { color: #f4f8fd; }
+body.dark-mode .pfl-panel.pfl2 .pfl-head-ic { background: linear-gradient(#5b67f2, #4453ef); color: #fff; box-shadow: none; }
+body.dark-mode .pfl-panel.pfl2 .pfl-x { background: none; border-color: transparent; }
 .pfl2-body { flex: 1; min-height: 0; display: flex; }
 /* левая колонка: поиск + категории */
 .pfl2-side {
-    flex: 0 0 250px; display: flex; flex-direction: column; min-height: 0;
-    padding: 14px 12px; border-right: 1px solid #eef2f7; gap: 12px;
+    flex: 0 0 246px; display: flex; flex-direction: column; min-height: 0;
+    padding: 14px 12px; border-right: 1px solid #eef2f7; gap: 10px;
 }
 .pfl2-search {
     position: relative; display: flex; align-items: center; gap: 8px;
-    border: 1px solid #e2e8f0; border-radius: 11px; background: #fff; padding: 0 12px;
+    border: 1px solid #e2e8f0; border-radius: 11px; background: #fff; padding: 0 11px;
 }
-.pfl2-search svg { width: 15px; height: 15px; color: #94a3b8; flex-shrink: 0; }
+.pfl2-search svg { width: 14px; height: 14px; color: #94a3b8; flex-shrink: 0; }
 .pfl2-search input {
-    flex: 1; min-width: 0; border: 0; outline: none; background: none; padding: 10px 0;
-    font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; color: #0f172a;
+    flex: 1; min-width: 0; border: 0; outline: none; background: none; padding: 9px 0;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; color: #0f172a;
 }
 .pfl2-search input::placeholder { color: #94a3b8; }
 .pfl2-search:focus-within { border-color: #a5b4fc; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12); }
@@ -817,7 +839,8 @@ body.dark-mode .pfx-bg.on .pfx-bg-tx b { color: #c7d2fe; }
 .pfl2-cat-ic svg { width: 15px; height: 15px; }
 .pfl2-cat.on .pfl2-cat-ic { color: #1b2433; }
 .pfl2-cat-n { flex: 1; min-width: 0; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pfl2-cat.on .pfl2-cat-n { color: #1b2433; font-weight: 700; }
+/* выбранную строку метит подложка и цвет чернил — вес в мокапе не меняется */
+.pfl2-cat.on .pfl2-cat-n { color: #1b2433; }
 .pfl2-cat-c {
     flex-shrink: 0; font-style: normal; font-family: var(--font-num, 'JetBrains Mono', monospace);
     font-size: 10.5px; font-weight: 600; color: #94a3b8;
@@ -827,16 +850,25 @@ body.dark-mode .pfx-bg.on .pfx-bg-tx b { color: #c7d2fe; }
    плашка-карточка в индиго спорила с самим каталогом за внимание */
 .pfl2-hint {
     flex-shrink: 0; display: flex; align-items: center; gap: 11px; padding: 9px 10px;
-    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 500; color: #94a3b8; line-height: 1.4;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 400; color: #94a3b8; line-height: 1.4;
 }
 .pfl2-hint-ic { display: grid; place-items: center; width: 26px; height: 26px; color: #b6c2d1; flex-shrink: 0; }
 .pfl2-hint-ic svg { width: 15px; height: 15px; }
 /* центр: сетка карточек-виджетов */
-.pfl2-main { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; scrollbar-width: thin; padding: 16px 18px; background: #f8fafc; }
-.pfl2-main-t { font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 800; color: #0f172a; margin-bottom: 12px; }
+.pfl2-main { flex: 1; min-width: 0; min-height: 0; overflow-y: auto; scrollbar-width: thin; padding: 18px 20px; background: #f8fafc; }
+/* Заголовок списка в два ранга (мокап .shop-t): имя категории серифом 17/400,
+   рядом тихая строка со счётом и назначением категории. */
+.pfl2-main-t { margin-bottom: 4px; }
+.pfl2-main-t b {
+    font-family: var(--font-title, Georgia, serif); font-size: 17px; font-weight: 400;
+    letter-spacing: 0; color: #1b2433;
+}
+.pfl2-main-t span { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 400; color: #64748b; margin-left: 9px; }
+body.dark-mode .pfl2-main-t b { color: #e8eef7; }
+body.dark-mode .pfl2-main-t span { color: #93a2b8; }
 /* две колонки, а не auto-fill: карточка с настоящей миниатюрой виджета требует
    ширины, иначе миниатюра врёт о том, как виджет выглядит на полотне */
-.pfl2-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.pfl2-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
 .pfl2-none { padding: 24px 4px; font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 600; color: #94a3b8; }
 .pfl2-card {
     position: relative; display: flex; flex-direction: column; gap: 4px; cursor: pointer;
@@ -850,15 +882,16 @@ body.dark-mode .pfx-bg.on .pfx-bg-tx b { color: #c7d2fe; }
 .pfl2-card.sel { border-color: #4453ef; box-shadow: 0 0 0 1px #4453ef, 0 10px 26px -12px rgba(68, 83, 239, 0.45); background: #fdfdff; }
 .pfl2-card.sel.cur { box-shadow: 0 0 0 3px rgba(68, 83, 239, 0.22), 0 10px 26px -12px rgba(68, 83, 239, 0.45); }
 .pfl2-card-h { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
-.pfl2-card-h b { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; letter-spacing: -0.01em; color: #0f172a; }
+/* имя виджета 13/700 и описание 11/400 — мокап .shop-card .hd b и .d */
+.pfl2-card-h b { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: -0.01em; color: #0f172a; }
 .pfl2-check {
-    flex-shrink: 0; display: grid; place-items: center; width: 19px; height: 19px; border-radius: 50%;
+    flex-shrink: 0; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
     background: #4453ef; color: #fff;
 }
 .pfl2-check svg { width: 11px; height: 11px; }
 .pfl2-card-d {
-    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: #7c8798; line-height: 1.4;
-    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 30px;
+    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 400; color: #64748b; line-height: 1.45;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 32px;
 }
 .pfl2-demo {
     margin-top: 8px; min-height: 96px; display: flex; flex-direction: column; justify-content: center;
@@ -885,12 +918,15 @@ body.dark-mode .pfx-bg.on .pfx-bg-tx b { color: #c7d2fe; }
 .pfl2-gatebdg { color: #b45309; background: #fef3c7; border-color: #fde68a; }
 body.dark-mode .pfl2-gate:hover { background: rgba(255, 255, 255, 0.08); color: #cbd6e4; }
 /* правая колонка: настройки */
-.pfl2-set { flex: 0 0 236px; min-height: 0; overflow-y: auto; scrollbar-width: thin; padding: 16px; border-left: 1px solid #eef2f7; display: flex; flex-direction: column; gap: 7px; }
-.pfl2-set-t { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
+.pfl2-set { flex: 0 0 262px; min-height: 0; overflow-y: auto; scrollbar-width: thin; padding: 18px; border-left: 1px solid #eef2f7; display: flex; flex-direction: column; gap: 6px; }
+/* заголовок колонки настроек — тот же серифный голос, что у шапки и списка
+   (мокап .shop-set-t: 15/400), а не третий гротеск на панели */
+.pfl2-set-t { font-family: var(--font-title, Georgia, serif); font-size: 15px; font-weight: 400; letter-spacing: 0; color: #1b2433; margin-bottom: 8px; }
 /* подпись раздела — надстрочная, а не второй заголовок: она называет группу
    контролов, а не спорит с ними за внимание (мокап overview3, экран 16) */
 .pfl2-lbl { display: block; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 9px;
-    font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #94a3b8; margin: 7px 0 -1px; }
+    font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #94a3b8; margin: 8px 0 0; }
+.pfl2-lbl:first-of-type { margin-top: 0; }
 /* строка-тумблер раздела «Что показать на полотне»: у каждой два состояния и
    они независимы, поэтому это строки с галочкой, а не селект и не сегменты */
 .pfl2-tgl {
@@ -910,6 +946,9 @@ body.dark-mode .pfl2-tgl.on, body.dark-mode .pfl2-tgl.on span { color: #e8eef7; 
     border: 1px solid #e2e8f0; border-radius: 10px; background: #fff;
     font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 700; color: #0f172a; outline: none;
 }
+/* в магазине селект носит кегль мокапа (.shop-sel 12/600); тот же класс живёт в
+   поповере настроек виджета (pfdCfgHtml) — его не трогаем */
+.pfl-panel.pfl2 .pfl2-select { padding: 8px 11px; font-size: 12px; font-weight: 600; }
 .pfl2-select:disabled { color: #94a3b8; cursor: not-allowed; background: #f8fafc; }
 .pfl2-select:focus { border-color: #a5b4fc; box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12); }
 .pfl2-seg { display: flex; gap: 5px; }
@@ -922,7 +961,7 @@ body.dark-mode .pfl2-tgl.on, body.dark-mode .pfl2-tgl.on span { color: #e8eef7; 
 .pfl2-seg-b svg { width: 15px; height: 15px; }
 .pfl2-seg-b:hover { background: #f4f7fb; }
 .pfl2-seg-b.on { background: #eef1ff; border-color: #c7d2fe; color: #4338ca; }
-.pfl2-set-hint { margin-top: 12px; font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 600; color: #94a3b8; line-height: 1.5; }
+.pfl2-set-hint { margin-top: 12px; font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 400; color: #94a3b8; line-height: 1.5; }
 /* подвал */
 .pfl2-foot {
     flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; gap: 14px;
@@ -932,6 +971,25 @@ body.dark-mode .pfl2-tgl.on, body.dark-mode .pfl2-tgl.on span { color: #e8eef7; 
 .pfl2-sel b { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; }
 .pfl2-sel span { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #64748b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pfl2-foot-r { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
+/* ---- подвал МАГАЗИНА (мокап .shop-f): одна строка вместо двух рангов ----
+   «Выбран 1 виджет · График капитала, средний» — тихий текст, жирным только
+   число. Заголовок 13/800 над подписью спорил с единственной кнопкой панели.
+   Селекторы адресные: тот же .pfl2-foot носит подвал панели раскладок (pfl3),
+   а там подпись под заголовком осталась. */
+.pfl-panel.pfl2 > .pfl2-foot { gap: 12px; padding: 14px 22px; }
+.pfl-panel.pfl2 .pfl2-sel {
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 400; color: #64748b; line-height: 1.45;
+}
+.pfl-panel.pfl2 .pfl2-sel b { font-size: 12px; font-weight: 700; color: #0f172a; }
+.pfl-panel.pfl2 .pfl2-sel i { font-style: normal; color: #94a3b8; }
+/* кнопки подвала — 12/700 у тихих, 12,5/700 у залитой (мокап .shop-f .gh/.add) */
+.pfl-panel.pfl2 .pfl2-foot .pfl-btn.ghost { font-size: 12px; font-weight: 700; color: #64748b; background: none; border-color: transparent; padding: 9px 14px; }
+.pfl-panel.pfl2 .pfl2-foot .pfl-btn.ghost:hover { background: #f1f5f9; border-color: transparent; color: #1b2433; }
+.pfl-panel.pfl2 .pfl2-addbtn { font-size: 12.5px; font-weight: 700; }
+body.dark-mode .pfl-panel.pfl2 .pfl2-sel { color: #93a2b8; }
+body.dark-mode .pfl-panel.pfl2 .pfl2-foot .pfl-btn.ghost { color: #93a2b8; }
+body.dark-mode .pfl-panel.pfl2 .pfl2-foot .pfl-btn.ghost:hover { background: rgba(255, 255, 255, 0.07); color: #eef3f9; }
 /* кнопка чернильная, а не индиговая: акцентный цвет в «Витраже» отдан данным,
    а единственное действие панели опознаётся заливкой, а не оттенком */
 .pfl2-addbtn { background: #141b26 !important; border-color: #141b26 !important; padding: 11px 18px; }
@@ -941,8 +999,6 @@ body.dark-mode .pfl2-tgl.on, body.dark-mode .pfl2-tgl.on span { color: #e8eef7; 
 .pfl2-addbtn[disabled]:hover { background: #141b26 !important; }
 body.dark-mode .pfl2-addbtn { background: #e8eef7 !important; border-color: #e8eef7 !important; color: #0c1016 !important; }
 body.dark-mode .pfl2-addbtn:hover { background: #fff !important; }
-/* список отмеченных в подвале может быть длинным — пусть переносится, а не обрезается */
-.pfl2-foot .pfl2-sel span { white-space: normal; overflow: visible; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 /* пикер в тёмной теме */
 body.dark-mode .pfl2-side { border-right-color: #22304a; }
 body.dark-mode .pfl2-search { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.12); }
@@ -956,8 +1012,8 @@ body.dark-mode .pfl2-cat.on .pfl2-cat-c { color: #cbd6e4; }
 body.dark-mode .pfl2-hint { color: #7d8ba0; }
 body.dark-mode .pfl2-hint-ic { color: #5c6a80; }
 body.dark-mode .pfl2-main { background: #0d1626; }
-body.dark-mode .pfl2-main-t { color: #e8eef7; }
 body.dark-mode .pfl2-card { background: #131c2e; border-color: #26324c; }
+body.dark-mode .pfl2-card-d { color: #93a2b8; }
 body.dark-mode .pfl2-card.sel { background: #16203a; }
 body.dark-mode .pfl2-card-h b { color: #e8eef7; }
 body.dark-mode .pfl2-set { border-left-color: #22304a; }
@@ -1250,12 +1306,17 @@ body.dark-mode .dm-news b { color: #e8eef7; }
    списка: квадратик дня красится ЦВЕТОМ ПОРТФЕЛЯ (--c), день с выплатами из разных
    портфелей — нейтральный акцент и точки по цветам. */
 .pf-calmblk { display: flex; flex-direction: column; box-sizing: border-box; padding: 0 22px 20px; }
-/* Узкий виджет: пилюля «за месяц» (135px) + кнопки не оставляли заголовку места —
-   он сжимался до 65px и переносился в пять строк, шапка вырастала до 172px и
-   читалась кривой. Даём ряду переноситься: не влезли — хвост уходит на свою
-   строку целиком, заголовок получает всю ширину. Тот же приём, что у карточки
-   графика (.btc-card .pf-ch). Базис 190px у заголовка — порог переноса. */
-.pf-calmblk > .pf-ch { padding-left: 0; padding-right: 0; flex-wrap: wrap; row-gap: 8px; }
+/* ШАПКА — ОДНОЙ СТРОКОЙ (2026-08-04). Раньше ряду разрешался перенос: пилюля
+   «за месяц» (135px) + кнопки не оставляли заголовку места, и он ломался в
+   пять строк. Пилюли давно нет, а заголовок с тех пор режется многоточием
+   (.pf-ch-t: nowrap + ellipsis) — переносить нечего. Зато flex-wrap ронял
+   месяц с шестерёнкой и корзиной на ВТОРУЮ строку, как только сумма ширин
+   заголовка и хвоста не влезала (уже на 330px): контролы уходили из правого
+   верхнего угла, шапка вырастала с 40px до 66px. Без переноса имя отдаёт
+   лишнее многоточию, а хвост остаётся в углу. */
+.pf-calmblk > .pf-ch { padding-left: 0; padding-right: 0; }
+/* заголовок сжимается первым — хвосту (стрелки месяца + хром) ужиматься некуда */
+.pf-calmblk > .pf-ch > .pf-ch-t { flex: 0 1 auto; min-width: 0; }
 /* R9.3: прежде здесь шестерёнка и корзина были ВИДНЫ ВСЕГДА и прибиты на top:22.5px —
    угловой оверлей выныривал по ховеру на 7px выше пилюли «за месяц» и ломал ровный ряд,
    и это лечили постоянной видимостью. Теперь кнопки живут В ПОТОКЕ шапки перед пилюлей
@@ -2531,7 +2592,11 @@ body.dark-mode .pfh-line b { color: #e8eef7; }
 .pfh-ct { display: flex; align-items: center; gap: 12px; }
 /* пилюли периода в строке «Капитал по дням» — прижаты вправо (мокап .hx-pills) */
 .pfh-ct .pfcap-ranges { margin-left: auto; }
-.pfh-plot { flex: 1; min-height: 132px; margin-top: 10px; }
+/* Воздух между строкой контролов («Сравнить» и пилюли периода) и полотном
+   (просьба 2026-08-04): с 10px кнопка сидела вплотную к верхней сетке графика
+   и читалась как его часть. 20px — тот же зазор, что у графика-виджета
+   (.pfcap-body), ряд контролов и полотно перестают склеиваться. */
+.pfh-plot { flex: 1; min-height: 132px; margin-top: 20px; }
 .pfh-mvs { margin-top: 12px; }
 .pfh-mv { display: grid; grid-template-columns: 54px 1fr auto 52px; gap: 9px; align-items: baseline;
     padding: 8px 0; border-bottom: 1px solid rgba(16,24,40,0.06); font-size: 12px; }

@@ -1032,11 +1032,15 @@ body.dark-mode .pfc-quiet:hover { background: rgba(255,255,255,0.1); color: #e8e
    шевроном (слово живёт в подсказке), сводка — в две колонки с переносом. */
 @container pfcard (max-width: 330px) {
     .pfc-name { min-width: 84px; }
-    /* Тот же приём, что у шапки виджетов (.pf-ch на пороге 300px): имя забирает
-       всю строку, контролы переносятся ниже. Ужимать их дальше некуда — кнопка
-       30px и так минимум, а спрятать ⚙ нельзя. */
-    .pfc-top { gap: 5px; flex-wrap: wrap; row-gap: 8px; }
-    .pfc-name { flex-basis: 100%; }
+    /* ПЕРЕНОСА БОЛЬШЕ НЕТ (2026-08-04). Здесь имя забирало всю строку
+       (flex-basis:100%), а размер S/M/L и ⚙ уезжали НА СТРОКУ НИЖЕ — шапка
+       карточки вырастала с 42px до 71px, и контролы пропадали из правого
+       верхнего угла, где их и ищут. Считаем заново: после ужатия «Открыть» до
+       шеврона и скрытия служебных иконок (.pfc-act--sec, порог 440px) хвост
+       весит ~89px, имени хватает своих 84px с многоточием — на 234px чистой
+       ширины ряд помещается целиком. Имя отдаёт лишнее многоточию, кнопки
+       остаются в углу. */
+    .pfc-top { gap: 5px; }
     .pfc-ctrls { gap: 5px; }
     .pfc-openx { width: 30px; padding: 0; justify-content: center; }
     .pfc-openx span { display: none; }
@@ -3029,6 +3033,7 @@ body.dark-mode .pfcf-input:focus { border-color: #818cf8; box-shadow: 0 0 0 3px 
    абсолютно у верхней грани #pfWrap, съезжает вниз. .pf-wrap — контекст позиционирования. */
 .pfl-panel {
     position: absolute; top: 0; left: 0; right: 0; z-index: 60;
+    scroll-margin-top: 16px;   /* прокрутка к панели (pflScrollToPanel) — не впритык к кромке */
     display: flex; flex-direction: column; max-height: min(72vh, 720px);
     border-radius: 18px; overflow: hidden;
     background: #fff; border: 1px solid #e2e8f0;
@@ -3204,7 +3209,7 @@ body.dark-mode .pf-kpi-d { color: #b9c6d6; }
 .pfcap-hero { display: flex; align-items: baseline; flex-wrap: wrap; gap: 9px; margin-top: 4px; }
 .pfcap-val { font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 25px; font-weight: 800; letter-spacing: -0.02em; color: #0f172a; line-height: 1.05; }
 .pfcap-per { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: #9aa7b8; }
-.pfcap-body { display: flex; flex-direction: column; flex: 1; min-height: 0; margin-top: 14px; }
+.pfcap-body { display: flex; flex-direction: column; flex: 1; min-height: 0; margin-top: 20px; }
 .pfcap-plot { position: relative; flex: 1; min-height: 158px; }
 .pfcap-plot svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .pfcap-y {
