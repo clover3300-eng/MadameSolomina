@@ -1,14 +1,16 @@
 /* ============================================================================
    МОДУЛЬ «ГРАФИК ИНДЕКСА МОСБИРЖИ» — вкладка Рынок
    ----------------------------------------------------------------------------
-   Advanced-chart TradingView (символ RUS:IRUS = IMOEX, МЕСЯЧНЫЙ таймфрейм).
-   Отдельной карточки на странице больше нет: график живёт ВНУТРИ карточки
-   тепловой карты (#mhCard) и подменяет её холст по кнопке в статбаре
-   (см. js/market-heatmap.js). Этот модуль только собирает виджет:
+   Advanced-chart TradingView (символ RUS:IRUS = IMOEX). После раунда
+   «Разворот» отдельного вида «График» больше нет: виджет живёт ПОСТОЯННО в
+   герое вкладки (#mhHero, см. js/market-heatmap.js) площадным графиком, а
+   период задаёт сегмент 1Д/1Н/1М/1Г рядом с ним. Этот модуль только
+   собирает виджет:
 
-     window.mkChartMount(host) — построить график в переданном контейнере
-       (ленивая загрузка: внешний скрипт TradingView тянется при первом вызове;
-        повторные вызовы — no-op, пока не сменилась тема).
+     window.mkChartMount(host, range) — построить график в переданном
+       контейнере на диапазон range ('1D'|'5D'|'1M'|'12M'; по умолчанию '1M').
+       Ленивая загрузка: внешний скрипт TradingView тянется при первом вызове;
+       повторные вызовы — no-op, пока не сменились тема/диапазон/хост.
      window.mkChartUnmount() — снести виджет (iframe TradingView со своим
        рендер-циклом): зовётся при уходе со вкладки «Рынок». Держать его живым
        в фоне незачем — это самый тяжёлый объект страницы.
@@ -22,37 +24,44 @@
     var TV_SRC = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
     var hostEl = null;     // контейнер, в котором смонтирован виджет
     var curTheme = null;   // тема, под которую он построен ('light' | 'dark')
+    var curRange = '1M';   // диапазон, под который он построен
 
     function isDark() { return document.body.classList.contains('dark-mode'); }
     function theme() { return isDark() ? 'dark' : 'light'; }
 
-    // Конфиг виджета: месячные свечи на всю доступную историю, autosize под хост
-    function cfg(t) {
+    // Свечной ТФ под каждый диапазон: день — получас, неделя — час, месяц —
+    // день, год — неделя (иначе TV рисует год из дневных свечей кашей).
+    var RANGE_TF = { '1D': '30', '5D': '60', '1M': 'D', '12M': 'W' };
+
+    // Конфиг виджета: площадной график (style 3) без тулбаров — герой уже несёт
+    // и заголовок, и цифры, и переключатель периода; виджету остаётся кривая.
+    // Фон прозрачный: карточка героя — стекло, белая плита его бы закрыла.
+    function cfg(t, range) {
         var dark = (t === 'dark');
         return {
             autosize: true,
             symbol: 'RUS:IRUS',
-            interval: 'M',  // месячный таймфрейм
-            range: 'ALL',   // вся доступная история заполняет ширину виджета
+            interval: RANGE_TF[range] || 'D',
+            range: range,
             timezone: 'Europe/Moscow',
             theme: dark ? 'dark' : 'light',
-            style: '1',
+            style: '3',      // area — как в мокапе Р2 (свечи остались в терминале)
             locale: 'ru',
-            allow_symbol_change: true,
+            allow_symbol_change: false,
             calendar: false,
             details: false,
             hide_side_toolbar: true,
-            hide_top_toolbar: false,
-            hide_legend: false,
-            hide_volume: false,
+            hide_top_toolbar: true,
+            hide_legend: true,
+            hide_volume: true,
             hotlist: false,
-            save_image: true,
+            save_image: false,
             withdateranges: false,
-            backgroundColor: dark ? '#1d2734' : '#ffffff',
+            backgroundColor: dark ? 'rgba(28,39,53,0)' : 'rgba(255,255,255,0)',
             gridColor: dark ? 'rgba(255,255,255,0.06)' : 'rgba(46,46,46,0.06)',
             watchlist: [],
             compareSymbols: [],
-            studies: ['Volume@tv-basicstudies'],
+            studies: [],
             support_host: 'https://www.tradingview.com'
         };
     }
@@ -80,7 +89,7 @@
         script.type = 'text/javascript';
         script.src = TV_SRC;
         script.async = true;
-        script.innerHTML = JSON.stringify(cfg(t));
+        script.innerHTML = JSON.stringify(cfg(t, curRange));
 
         container.appendChild(widget);
         container.appendChild(copy);
@@ -90,12 +99,14 @@
         curTheme = t;
     }
 
-    // Публичная точка входа: смонтировать график в host (или пересобрать,
-    // если host сменился/тема устарела). Уже актуальный виджет не трогаем.
-    window.mkChartMount = function (host) {
+    // Публичная точка входа: смонтировать график в host на диапазон range (или
+    // пересобрать, если host/тема/диапазон устарели). Актуальный не трогаем.
+    window.mkChartMount = function (host, range) {
         if (!host) return;
-        if (hostEl === host && curTheme === theme() && host.firstChild) return;
+        if (range && RANGE_TF[range]) { var next = range; } else { next = curRange; }
+        if (hostEl === host && curTheme === theme() && curRange === next && host.firstChild) return;
         hostEl = host;
+        curRange = next;
         build();
     };
 

@@ -1,15 +1,18 @@
 /* ============================================================================
-   МОДУЛЬ «ТЕПЛОВАЯ КАРТА ИНДЕКСА МОСБИРЖИ» — вкладка Рынок (#mhCard)
+   МОДУЛЬ «ДАШБОРД ИНДЕКСА МОСБИРЖИ» — вкладка Рынок (раунд «Разворот», Р2·С)
    ----------------------------------------------------------------------------
-   Squarified-treemap по составу индекса IMOEX на бесплатных данных ISS API
-   Московской биржи (iss.moex.com, CORS открыт):
+   Три этажа вместо переключателя видов (мокап dev/mockups/market-mockups.html):
+     • #mhHero    — герой: значение IMOEX + откр./макс./мин./объём, площадной
+                    график TradingView (1Д/1Н/1М/1Г) и ширина рынка полосой;
+     • #mhCard    — карта: squarified-treemap состава индекса (период День/
+                    Неделя/Месяц, размер Вес/Объём/% изм., drill-down, тултип);
+     • #mhLeaders — лидеры дня: по 6 строк роста и падения с именем компании;
+     • #mhComp    — состав индекса таблицей (топ-8 по сортировке + «Все 46»).
+   Данные — бесплатное ISS API Мосбиржи (iss.moex.com, CORS открыт):
      • состав + веса      — statistics/.../index/analytics/IMOEX.json
      • секторы            — состав отраслевых индексов MOEXOG/FN/MM/IT/… (динамически)
      • цена/изм%/объём    — engines/stock/markets/shares/boards/TQBR/securities
      • значение индекса   — engines/stock/markets/index/securities (IMOEX)
-   Размер плитки = вес в индексе ИЛИ объём торгов, цвет = дневное изменение цены
-   (LASTTOPREVPRICE). Плюс шапка-пульс рынка, drill-down по секторам, живые
-   вспышки котировок, плавные переходы и сортируемая таблица под картой.
 
    Классический скрипт (без модулей), грузится ПОСЛЕ market-chart.js — оборачивает
    switchTab, чтобы лениво строиться при первом заходе на «Рынок». Котировки
@@ -25,7 +28,7 @@
         '?iss.meta=off&iss.only=marketdata&marketdata.columns=SECID,LAST,LASTTOPREVPRICE,VALTODAY,UPDATETIME';
     var INDEX_URL = ISS + 'engines/stock/markets/index/securities.json' +
         '?iss.meta=off&securities=IMOEX&iss.only=marketdata' +
-        '&marketdata.columns=SECID,CURRENTVALUE,LASTVALUE,LASTCHANGEPRC,UPDATETIME';
+        '&marketdata.columns=SECID,CURRENTVALUE,LASTVALUE,LASTCHANGEPRC,OPENVALUE,HIGH,LOW,VALTODAY,UPDATETIME';
     function sectorUrl(idx) {
         return ISS + 'statistics/engines/stock/markets/index/analytics/' + idx +
             '.json?iss.meta=off&iss.only=analytics&analytics.columns=ticker&limit=100';
@@ -63,8 +66,6 @@
     var REFRESH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>';
     var BACK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>';
     var GRID_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></svg>';
-    // Свечной график — иконка кнопки «График IMOEX» (переключение карта ↔ TradingView)
-    var CANDLE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4v3M8 15v5"/><rect x="6" y="7" width="4" height="8" rx="1"/><path d="M16 3v4M16 14v4"/><rect x="14" y="7" width="4" height="7" rx="1"/></svg>';
     // Звезда «в избранное» и иконка «боковая карточка компании» — те же, что в таблице «Акции»,
     // чтобы поведение строки тикера совпадало между вкладками (заливка звезды — класс .active).
     var STAR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><polygon points="12 3 14.85 8.78 21.23 9.71 16.61 14.21 17.7 20.56 12 17.56 6.3 20.56 7.39 14.21 2.77 9.71 9.15 8.78 12 3"/></svg>';
@@ -93,10 +94,10 @@
         try { localStorage.setItem(FAV_KEY, JSON.stringify(a)); } catch (e) {}
         return a.indexOf(tk) !== -1;
     }
-    // Тоггл избранного из таблицы карты + синхронная подсветка звезды(звёзд) в строке.
+    // Тоггл избранного из таблицы состава + синхронная подсветка звезды в строке.
     function toggleHeatFav(tk) {
         var on = toggleFav(tk);
-        var c = card(); if (!c) return;
+        var c = compEl(); if (!c) return;
         c.querySelectorAll('.mh-tk-fav[data-tk="' + tk + '"]').forEach(function (b) {
             b.classList.toggle('active', on);
             b.title = on ? 'Убрать из избранного' : 'В избранное';
@@ -125,14 +126,13 @@
         refCloses: {},       // { week: {TICKER:close}, month: {...} } — закрытие на опорную дату
         refIndex: {},        // { week: closeIMOEX, month: ... }
         zoom: null,          // имя сектора при drill-down или null
-        // Главный объект вкладки — ОДИН, выбирается переключателем в шапке:
-        //   'map'   — тепловая карта (дефолт: уникальная фишка вкладки,
-        //             график есть в любом терминале);
-        //   'chart' — TradingView (месячный ТФ), монтируется лениво;
-        //   'table' — таблица состава индекса (раньше висела ПОД картой всегда,
-        //             из-за чего экран был «двухэтажным»).
-        // Последний выбор восстанавливается из mh_prefs_v1 (loadPrefs).
-        view: 'map',
+        // Диапазон графика-героя ('1D'|'5D'|'1M'|'12M'); сегмент 1Д/1Н/1М/1Г.
+        // Прежний переключатель видов (карта/график/таблица) снят раундом
+        // «Разворот»: все три объекта стоят этажами и видны одновременно.
+        chartRange: '1M',
+        // Таблица состава: свёрнута до топ-8 текущей сортировки; «Все 46 бумаг»
+        // разворачивает на месте (в пределах сессии, в prefs не пишем)
+        compOpen: false,
         // Режим таблицы: 'simple' — только цена, сектор и изменение (дефолт:
         // столько и нужно, чтобы «пробежать глазами»); 'full' — плюс вес в
         // индексе и объём торгов. Прячем КОЛОНКИ классом на карточке, данные
@@ -149,14 +149,13 @@
     // Запоминаем выбор пользователя между сессиями: вид, период, размер плитки,
     // сортировку таблицы. Данные (rows) НЕ кэшируем — только вид.
     var PREFS_KEY = 'mh_prefs_v1';
-    var VIEWS = { map: 1, chart: 1, table: 1 };
+    var RANGES = { '1D': 1, '5D': 1, '1M': 1, '12M': 1 };
     function loadPrefs() {
         try {
             var p = JSON.parse(localStorage.getItem(PREFS_KEY));
             if (!p || typeof p !== 'object') return;
-            if (p.view && VIEWS[p.view]) state.view = p.view;
-            // до трёх видов вид хранился булевым chartMode — переносим молча
-            else if (typeof p.chartMode === 'boolean') state.view = p.chartMode ? 'chart' : 'map';
+            // p.view из прежних версий молча игнорируем: видов больше нет
+            if (p.range && RANGES[p.range]) state.chartRange = p.range;
             if (p.period === 'day' || p.period === 'week' || p.period === 'month') state.period = p.period;
             if (p.sizeMode === 'weight' || p.sizeMode === 'value' || p.sizeMode === 'change') state.sizeMode = p.sizeMode;
             if (p.tableMode === 'simple' || p.tableMode === 'full') state.tableMode = p.tableMode;
@@ -167,7 +166,7 @@
     function savePrefs() {
         try {
             localStorage.setItem(PREFS_KEY, JSON.stringify({
-                view: state.view, period: state.period, sizeMode: state.sizeMode,
+                range: state.chartRange, period: state.period, sizeMode: state.sizeMode,
                 tableMode: state.tableMode, sortKey: state.sortKey, sortDir: state.sortDir
             }));
         } catch (e) {}
@@ -175,7 +174,13 @@
     loadPrefs();
 
     // ---------- Утилиты ----------
+    // Четыре корня-этажа. $ по-прежнему смотрит в карту (там плот, крошки,
+    // легенда и тултип), у остальных этажей — свои хелперы.
     function card() { return document.getElementById('mhCard'); }
+    function hero() { return document.getElementById('mhHero'); }
+    function leadEl() { return document.getElementById('mhLeaders'); }
+    function compEl() { return document.getElementById('mhComp'); }
+    function panel() { return document.getElementById('panel-market'); }
     function $(sel) { var c = card(); return c ? c.querySelector(sel) : null; }
     function clamp(min, v, max) { return v < min ? min : (v > max ? max : v); }
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -322,7 +327,8 @@
         return jget(INDEX_URL).then(function (j) {
             var c = j.marketdata.columns, d = j.marketdata.data[0]; if (!d) return null;
             function g(k) { return d[c.indexOf(k)]; }
-            return { value: g('CURRENTVALUE') || g('LASTVALUE'), chg: g('LASTCHANGEPRC') };
+            return { value: g('CURRENTVALUE') || g('LASTVALUE'), chg: g('LASTCHANGEPRC'),
+                open: g('OPENVALUE'), hi: g('HIGH'), lo: g('LOW'), vol: g('VALTODAY') };
         }).catch(function () { return null; });
     }
     function ensureStatic() { return Promise.all([fetchConstituents(), fetchSectors()]); }
@@ -586,52 +592,78 @@
         state.rows.forEach(function (r) { state.prevPrices[r.ticker] = r.last; });
     }
 
-    // ---------- Шапка-пульс ----------
-    function renderPulse() {
-        var c = card(); if (!c || !state.rows) return;
+    // ---------- Этаж-герой: значение, метрики дня, ширина рынка ----------
+    function renderHero() {
+        var h = hero(); if (!h || !state.rows) return;
         var iv = state.index;
-        var valEl = c.querySelector('.mh-idx-val'), chgEl = c.querySelector('.mh-idx-chg');
+        var valEl = h.querySelector('.mh-idx-val'), chgEl = h.querySelector('.mh-idx-chg');
         if (valEl) valEl.textContent = iv ? fmtIdx(iv.value) : '—';
         if (chgEl) {
             var p = indexChgNow();
             chgEl.textContent = (p != null ? (p >= 0 ? '▲ ' : '▼ ') + Math.abs(p).toFixed(2) + '%' : '—');
             chgEl.className = 'mh-idx-chg' + (p > 0 ? ' up' : p < 0 ? ' down' : '');
         }
-        // ширина рынка — «сентимент-метр»: проценты вшиты прямо в сегменты бара
+        // откр./макс./мин./объём — метрики ДНЯ независимо от периода карты
+        function put(sel, v) { var el = h.querySelector(sel); if (el) el.textContent = v; }
+        put('.mh-ixm-open', iv && iv.open != null ? fmtIdx(iv.open) : '—');
+        put('.mh-ixm-hi',   iv && iv.hi   != null ? fmtIdx(iv.hi)   : '—');
+        put('.mh-ixm-lo',   iv && iv.lo   != null ? fmtIdx(iv.lo)   : '—');
+        put('.mh-ixm-vol',  iv && iv.vol ? fmtValue(iv.vol) + ' ₽' : '—');
+        // ширина рынка — полоса на всю ширину героя, счёт бумаг в подписях
         var up = 0, down = 0, flat = 0;
         state.rows.forEach(function (r) { if (r.chg > 0) up++; else if (r.chg < 0) down++; else flat++; });
         var tot = up + down + flat || 1;
-        var upPct = Math.round(up / tot * 100), dnPct = Math.round(down / tot * 100);
-        var bar = c.querySelector('.mh-breadth-bar');
+        var bar = h.querySelector('.mh-breadth-bar');
         if (bar) {
             var iu = bar.querySelector('i.up'), ifl = bar.querySelector('i.flat'), idn = bar.querySelector('i.down');
             iu.style.width = (up / tot * 100) + '%'; ifl.style.width = (flat / tot * 100) + '%'; idn.style.width = (down / tot * 100) + '%';
         }
-        var ratio = c.querySelector('.mh-brd-ratio');
-        if (ratio) ratio.innerHTML = '<b class="up">' + up + '</b> / <b class="down">' + down + '</b>';
-        // проценты вынесены в подписи под баром — плоско и читаемо, в стиле остального дашборда
-        var lbl = c.querySelector('.mh-breadth-lbl');
-        if (lbl) lbl.innerHTML = '<span class="up"><b>' + upPct + '%</b> растут</span>' +
-            '<span class="flat">' + flat + ' нейтр.</span>' +
-            '<span class="down"><b>' + dnPct + '%</b> падают</span>';
-        // лидеры дня — always-on двухколоночный лидерборд (top-3 рост / top-3 падение)
-        // с пропорциональными барами (ширина ∝ |изм.| / макс. по рынку), без выпадашки
+        var lbl = h.querySelector('.mh-breadth-lbl');
+        if (lbl) lbl.innerHTML = '<span class="up">▲ <b>' + up + '</b> ' + plural(up, 'бумага растёт', 'бумаги растут', 'бумаг растут') + '</span>' +
+            '<span class="flat">ширина рынка' + (flat ? ' · ' + flat + ' нейтр.' : '') + '</span>' +
+            '<span class="down">▼ <b>' + down + '</b> ' + plural(down, 'падает', 'падают', 'падают') + '</span>';
+    }
+    function plural(n, one, few, many) {
+        var m10 = n % 10, m100 = n % 100;
+        if (m10 === 1 && m100 !== 11) return one;
+        if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
+        return many;
+    }
+
+    // ---------- Этаж «Лидеры дня»: по 6 строк роста и падения ----------
+    // Строка: тикер + ИМЯ КОМПАНИИ (ширины колонки 366px на это хватает),
+    // полоса от нуля (падение растёт справа налево) и процент. Направление
+    // читается без цвета: стрелка в заголовке группы, знак в числе.
+    function renderLeaders() {
+        var el = leadEl(); if (!el || !state.rows) return;
+        var body = el.querySelector('.mh-lead-body'); if (!body) return;
         var withChg = state.rows.filter(function (r) { return r.chg != null; });
-        var gain = withChg.filter(function (r) { return r.chg > 0; }).sort(function (a, b) { return b.chg - a.chg; }).slice(0, 3);
-        var lose = withChg.filter(function (r) { return r.chg < 0; }).sort(function (a, b) { return a.chg - b.chg; }).slice(0, 3);
+        var ups = withChg.filter(function (r) { return r.chg > 0; }).sort(function (a, b) { return b.chg - a.chg; });
+        var dns = withChg.filter(function (r) { return r.chg < 0; }).sort(function (a, b) { return a.chg - b.chg; });
+        var gain = ups.slice(0, 6), lose = dns.slice(0, 6);
         var maxAbs = 0; withChg.forEach(function (r) { var a = Math.abs(r.chg); if (a > maxAbs) maxAbs = a; });
         maxAbs = maxAbs || 1;
-        function moverRow(r, dir) {
-            if (!r) return '<div class="mh-mv ghost"></div>';
-            var w = Math.max(8, Math.abs(r.chg) / maxAbs * 100);
-            return '<div class="mh-mv ' + dir + '" style="--w:' + w.toFixed(1) + '%">' +
-                '<span class="mh-mv-fill"></span>' +
-                '<span class="mh-mv-tk">' + esc(r.ticker) + '</span>' +
-                '<span class="mh-mv-pc">' + fmtPct(r.chg) + '</span></div>';
+        function row(r, dir) {
+            var w = Math.max(4, Math.abs(r.chg) / maxAbs * 100);
+            return '<div class="mh-lg ' + dir + '" data-tk="' + esc(r.ticker) + '" role="button" tabindex="0" ' +
+                'title="Карточка компании">' +
+                '<span class="mh-lg-id"><b>' + esc(r.ticker) + '</b><span>' + esc(r.name) + '</span></span>' +
+                '<span class="mh-lg-bar"><i style="width:' + w.toFixed(0) + '%"></i></span>' +
+                '<em>' + fmtPct(r.chg) + '</em></div>';
         }
-        var upCol = c.querySelector('.mh-mv-col.up'), dnCol = c.querySelector('.mh-mv-col.down');
-        if (upCol) upCol.innerHTML = [0, 1, 2].map(function (i) { return moverRow(gain[i], 'up'); }).join('');
-        if (dnCol) dnCol.innerHTML = [0, 1, 2].map(function (i) { return moverRow(lose[i], 'down'); }).join('');
+        function grp(title, list, dir, totN) {
+            return '<div class="mh-lg-h"><span>' + title + '</span>' +
+                '<em class="' + (dir === 'u' ? 'up' : 'down') + '">' + list.length + ' из ' + totN + '</em></div>' +
+                (list.length
+                    ? list.map(function (r) { return row(r, dir); }).join('')
+                    : '<div class="mh-lg-empty">Сегодня таких нет</div>');
+        }
+        body.innerHTML = grp('Рост', gain, 'u', ups.length) +
+            '<div class="mh-lg-gap"></div>' +
+            grp('Падение', lose, 'd', dns.length);
+        // подпись периода в шапке: лидеры считаются по тому же периоду, что карта
+        var hint = el.querySelector('.mh-lead-hint');
+        if (hint) hint.textContent = 'по изменению за ' + pcfg().word;
     }
 
     // ---------- Хлебные крошки (drill-down) ----------
@@ -640,7 +672,7 @@
     // «Терминал» с тем же сектором, если тамошний список секторов его знает.
     function renderBread() {
         var b = $('.mh-bread'); if (!b) return;
-        if (!state.zoom || state.view === 'chart') { b.hidden = true; b.innerHTML = ''; return; }
+        if (!state.zoom) { b.hidden = true; b.innerHTML = ''; return; }
         b.hidden = false;
         var n = state.rows ? rowsOfSector(state.zoom).length : 0;
         b.innerHTML = '<button class="mh-bread-root" type="button" data-act="bread-root">' + BACK_SVG +
@@ -667,7 +699,7 @@
         return rows;
     }
     function renderTable() {
-        var c = card(); if (!c || !state.rows) return;
+        var c = compEl(); if (!c || !state.rows) return;
         var head = c.querySelector('.mh-table thead tr');
         if (head) head.querySelectorAll('th').forEach(function (th) {
             var sorted = th.getAttribute('data-sort') === state.sortKey;
@@ -712,12 +744,32 @@
         body.innerHTML = html;
     }
 
-    // Рисуем ТОЛЬКО то, что на экране: поллинг раз в 30с не должен перестраивать
-    // скрытую таблицу (или карту), пока пользователь смотрит другой вид.
+    // Свёртка/развёртка состава: класс на карточке (CSS прячет строки 9+),
+    // подпись счётчика и кнопки — по факту видимого.
+    function renderComp() {
+        var c = compEl(); if (!c || !state.rows) return;
+        renderTable();
+        var total = tableRows().length;
+        var shown = state.compOpen ? total : Math.min(8, total);
+        c.classList.toggle('mh-closed', !state.compOpen);
+        var hint = c.querySelector('.mh-comp-hint');
+        if (hint) hint.textContent = state.compOpen
+            ? 'Все ' + total + ' ' + plural(total, 'бумага', 'бумаги', 'бумаг') +
+              (state.zoom ? ' сектора' : ' индекса')
+            : 'Показаны ' + shown + ' из ' + total + ' — по текущей сортировке';
+        var btn = c.querySelector('.mh-comp-btn');
+        if (btn) {
+            btn.style.display = total > 8 ? '' : 'none';
+            btn.innerHTML = state.compOpen
+                ? 'Свернуть до 8'
+                : 'Все ' + total + ' ' + plural(total, 'бумага', 'бумаги', 'бумаг') +
+                  ' <span class="mh-comp-arr" aria-hidden="true">↓</span>';
+        }
+    }
+
+    // Все этажи видны одновременно — поллинг раз в 30 c обновляет каждый.
     function render() {
-        renderPulse(); renderBread();
-        if (state.view === 'map') renderPlot();
-        else if (state.view === 'table') renderTable();
+        renderHero(); renderBread(); renderPlot(); renderLeaders(); renderComp();
         setMeta();
     }
 
@@ -725,12 +777,21 @@
     //  СОСТОЯНИЯ / ПОДПИСЬ
     // ====================================================================
     function setMeta() {
+        // LIVE-капсула — в шапке героя: время относится ко всем этажам сразу
+        var h = hero();
+        if (h) {
+            var liveEl = h.querySelector('.mh-live'), tEl = h.querySelector('.mh-live-time');
+            if (liveEl) liveEl.className = 'mh-live' + (state.status === 'ready' ? ' live' : state.status === 'error' ? ' stale' : '');
+            if (tEl) tEl.textContent = state.updated ? state.updated : '—';
+        }
         var c = card(); if (!c) return;
-        // LIVE-капсула в шапке: пульс + время последнего апдейта
-        var liveEl = c.querySelector('.mh-live'), tEl = c.querySelector('.mh-live-time');
-        if (liveEl) liveEl.className = 'mh-live mh-map-ctrl' + (state.status === 'ready' ? ' live' : state.status === 'error' ? ' stale' : '');
-        if (tEl) tEl.textContent = state.updated ? state.updated : '—';
-        // тонкая подпись-источник под статбаром
+        // счётчик бумаг в шапке карты
+        var cnt = c.querySelector('.mh-count');
+        if (cnt && state.rows) {
+            var n = state.zoom ? rowsOfSector(state.zoom).length : state.rows.length;
+            cnt.textContent = n + ' ' + plural(n, 'бумага', 'бумаги', 'бумаг');
+        }
+        // тонкая подпись-источник под холстом карты
         var meta = c.querySelector('.mh-meta-txt');
         if (meta) meta.textContent = 'Данные ISS Московской биржи · задержка ~15 мин · ' +
             'размер плитки — ' + (state.sizeMode === 'value' ? 'объём торгов' : state.sizeMode === 'change' ? 'модуль изменения' : 'вес в индексе') +
@@ -752,7 +813,10 @@
         o.hidden = false;
         o.innerHTML = 'Не удалось загрузить данные Мосбиржи.<button class="mh-retry" type="button" data-act="retry">Повторить</button>';
     }
-    function spin(on) { var b = $('.mh-refresh'); if (b) b.classList.toggle('spin', on); }
+    function spin(on) {
+        var h = hero(), b = h && h.querySelector('.mh-refresh');
+        if (b) b.classList.toggle('spin', on);
+    }
 
     function refresh() {
         if (state.loading) return;
@@ -876,7 +940,7 @@
     function setTableMode(v) {
         if (state.tableMode === v) return;
         state.tableMode = v;
-        var c = card();
+        var c = compEl();
         if (c) {
             c.classList.toggle('mh-table-simple', v === 'simple');
             c.querySelectorAll('.mh-seg-tmode .mh-seg-btn').forEach(function (b) {
@@ -886,35 +950,21 @@
         savePrefs();
     }
 
-    // ---------- Переключение вида: карта / график / таблица ----------
-    // Один переключатель в шапке — один главный объект на экране. Раньше таблица
-    // висела ПОД холстом всегда, и вкладка читалась «двухэтажной».
-    // Инструменты ряда .mh-tools показываются по виду (см. CSS): .mh-map-ctrl —
-    // только карта, .mh-table-ctrl — только таблица, общие (актуальность, период,
-    // «Обновить») — в обоих; у графика ряда инструментов нет вовсе.
-    function applyView() {
-        var plot = $('.mh-plot'), host = $('.mh-chart-host'), tbl = $('.mh-table-wrap'), c = card();
-        if (!plot || !host || !tbl || !c) return;
-        var v = state.view;
-        c.classList.toggle('mh-view-map', v === 'map');
-        c.classList.toggle('mh-view-chart', v === 'chart');
-        c.classList.toggle('mh-view-table', v === 'table');
-        c.classList.toggle('mh-table-simple', state.tableMode === 'simple');
-        plot.style.display = v === 'map' ? '' : 'none';
-        host.hidden = v !== 'chart';
-        tbl.hidden = v !== 'table';
-        renderBread();   // крошки drill-down: карта и таблица — да, график — нет
-        // TradingView монтируем ЛЕНИВО: только когда график реально показан
-        if (v === 'chart' && typeof window.mkChartMount === 'function') window.mkChartMount(host);
-        c.querySelectorAll('.mh-seg-view .mh-seg-btn').forEach(function (b) {
-            b.classList.toggle('active', b.getAttribute('data-view') === v);
-        });
-        if (v === 'map') renderPlot();     // вернулись к карте — актуализировать раскладку
-        else if (v === 'table') renderTable();
-    }
-    function setView(v) {
-        if (state.view === v || !VIEWS[v]) return;
-        state.view = v; hideTip(); applyView(); savePrefs();
+    // ---------- Диапазон графика-героя: 1Д / 1Н / 1М / 1Г ----------
+    // Виджет TradingView пересобирается под новый range (см. market-chart.js);
+    // прежний переключатель видов (карта/график/таблица) снят раундом «Разворот».
+    function setRange(v) {
+        if (state.chartRange === v || !RANGES[v]) return;
+        state.chartRange = v;
+        var h = hero();
+        if (h) {
+            h.querySelectorAll('.mh-seg-range .mh-seg-btn').forEach(function (b) {
+                b.classList.toggle('active', b.getAttribute('data-range') === v);
+            });
+            var host = h.querySelector('.mh-chart-host');
+            if (host && typeof window.mkChartMount === 'function') window.mkChartMount(host, v);
+        }
+        savePrefs();
     }
 
     // Обновляет подписи легенды ±cap% под выбранный период
@@ -934,95 +984,99 @@
     }
 
     // ====================================================================
-    //  ПОСТРОЕНИЕ ОБОЛОЧКИ
+    //  ПОСТРОЕНИЕ ОБОЛОЧКИ — четыре этажа (мокап Р2 «Разворот»)
     // ====================================================================
-    function build() {
-        var c = card(); if (!c || state.built) return;
-        c.innerHTML =
+    var PULSE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>';
+    var RANGE_LBL = [['1D', '1Д'], ['5D', '1Н'], ['1M', '1М'], ['12M', '1Г']];
+
+    function buildHero() {
+        var h = hero(); if (!h) return;
+        h.innerHTML =
             '<div class="mh-head">' +
             '  <div class="mh-head-title">' +
+            '    <span class="mh-head-ico" aria-hidden="true">' + PULSE_SVG + '</span>' +
+            '    <div class="mh-head-tt"><span class="mh-title">Индекс МосБиржи <small class="mh-title-tag">IMOEX</small></span></div>' +
+            '  </div>' +
+            '  <span class="mh-head-side">' +
+            '    <span class="mh-live" title="Время последнего обновления данных Мосбиржи (задержка ~15 мин)">' +
+            '      <i class="mh-live-dot"></i>' +
+            '      <span class="mh-live-meta"><span class="mh-live-cap">обновлено</span><span class="mh-live-time">—</span></span>' +
+            '    </span>' +
+            '    <button class="mh-refresh" type="button" title="Обновить" aria-label="Обновить">' + REFRESH_SVG + '</button>' +
+            '  </span>' +
+            '</div>' +
+            '<div class="mh-hero-body">' +
+            '  <div class="mh-hero-num">' +
+            '    <span class="mh-kpi-lbl">Индекс МосБиржи</span>' +
+            '    <div class="mh-pulse-idx"><span class="mh-idx-val">—</span><span class="mh-idx-chg">—</span></div>' +
+            '    <div class="mh-ixm">' +
+            '      <div><dt>Открытие</dt><dd class="mh-ixm-open">—</dd></div>' +
+            '      <div><dt>Объём</dt><dd class="mh-ixm-vol">—</dd></div>' +
+            '      <div><dt>Максимум</dt><dd class="mh-ixm-hi">—</dd></div>' +
+            '      <div><dt>Минимум</dt><dd class="mh-ixm-lo">—</dd></div>' +
+            '    </div>' +
+            '  </div>' +
+            '  <div class="mh-hero-chart">' +
+            '    <div class="mh-hero-chart-top">' +
+            '      <span class="mh-kpi-lbl">Динамика</span>' +
+            '      <span class="mh-seg mh-seg-range" role="tablist" title="Диапазон графика индекса">' +
+            RANGE_LBL.map(function (p) {
+                return '<button class="mh-seg-btn' + (state.chartRange === p[0] ? ' active' : '') +
+                    '" type="button" data-range="' + p[0] + '">' + p[1] + '</button>';
+            }).join('') +
+            '      </span>' +
+            '    </div>' +
+            // хост графика TradingView — монтируется лениво на входе во вкладку
+            '    <div class="mh-chart-host"></div>' +
+            '  </div>' +
+            '</div>' +
+            // подвал героя: ширина рынка полосой во всю ширину
+            '<div class="mh-hero-foot">' +
+            '  <div class="mh-breadth-bar"><i class="up"></i><i class="flat"></i><i class="down"></i></div>' +
+            '  <div class="mh-breadth-lbl"></div>' +
+            '</div>';
+
+        h.querySelector('.mh-refresh').addEventListener('click', refresh);
+        h.querySelectorAll('.mh-seg-range .mh-seg-btn').forEach(function (b) {
+            b.addEventListener('click', function () { setRange(b.getAttribute('data-range')); });
+        });
+    }
+
+    function buildMap() {
+        var c = card(); if (!c) return;
+        c.innerHTML =
+            '<div class="mh-head sm">' +
+            '  <div class="mh-head-title">' +
             '    <span class="mh-head-ico" aria-hidden="true">' + GRID_SVG + '</span>' +
-            '    <div class="mh-head-tt">' +
-            '      <span class="mh-title">Индекс МосБиржи · IMOEX</span>' +
-            '    </div>' +
+            '    <div class="mh-head-tt"><span class="mh-title">Карта индекса <small class="mh-count"></small></span></div>' +
             '  </div>' +
-            // Переключатель вида — в ОДНОМ ряду с заголовком и всегда крайний
-            // справа: это навигация («что я смотрю»), а не инструмент. Ряд не
-            // переносится, поэтому кнопки больше не прыгают строкой ниже.
-            // active-класс проставит applyView() в конце build() по state.view.
-            '  <span class="mh-seg mh-seg-view" role="tablist" title="Что показывать: тепловая карта, график индекса (месячный ТФ) или таблица состава">' +
-            '    <button class="mh-seg-btn" type="button" data-view="map">' +
-            '      <span class="mh-cb-ico" aria-hidden="true">' + GRID_SVG + '</span>Карта</button>' +
-            '    <button class="mh-seg-btn" type="button" data-view="chart">' +
-            '      <span class="mh-cb-ico" aria-hidden="true">' + CANDLE_SVG + '</span>График</button>' +
-            '    <button class="mh-seg-btn" type="button" data-view="table">' +
-            '      <span class="mh-cb-ico" aria-hidden="true">' + TABLE_SVG + '</span>Таблица</button>' +
+            // active-классы сегментов берём из state (восстановлен из mh_prefs_v1),
+            // а не хардкодим «День»/«Вес» — иначе подсветка врёт после перезагрузки
+            '  <span class="mh-head-side">' +
+            '    <span class="mh-seg mh-seg-period" role="tablist" title="Период изменения (цвет карты и колонки «Изм.»)">' +
+            '      <button class="mh-seg-btn' + (state.period === 'day' ? ' active' : '') + '" type="button" data-period="day">День</button>' +
+            '      <button class="mh-seg-btn' + (state.period === 'week' ? ' active' : '') + '" type="button" data-period="week">Неделя</button>' +
+            '      <button class="mh-seg-btn' + (state.period === 'month' ? ' active' : '') + '" type="button" data-period="month">Месяц</button>' +
+            '    </span>' +
+            '    <span class="mh-seg mh-seg-size" role="tablist" title="Размер плитки">' +
+            '      <button class="mh-seg-btn' + (state.sizeMode === 'weight' ? ' active' : '') + '" type="button" data-size="weight">Вес</button>' +
+            '      <button class="mh-seg-btn' + (state.sizeMode === 'value' ? ' active' : '') + '" type="button" data-size="value">Объём</button>' +
+            '      <button class="mh-seg-btn' + (state.sizeMode === 'change' ? ' active' : '') + '" type="button" data-size="change">% изм.</button>' +
+            '    </span>' +
             '  </span>' +
-            '</div>' +
-            // Инструменты текущего вида — СВОИМ рядом под заголовком (состав
-            // меняется от вида к виду; в одном ряду с заголовком это и двигало
-            // переключатель). active-классы берём из state (восстановлен из
-            // mh_prefs_v1), а не хардкодим «День»/«Вес» — иначе подсветка врёт
-            // после перезагрузки.
-            '<div class="mh-tools">' +
-            '  <span class="mh-live" title="Время последнего обновления данных Мосбиржи (задержка ~15 мин)">' +
-            '    <i class="mh-live-dot"></i>' +
-            '    <span class="mh-live-meta"><span class="mh-live-cap">обновлено</span><span class="mh-live-time">—</span></span>' +
-            '  </span>' +
-            '  <span class="mh-seg mh-seg-period" role="tablist" title="Период изменения (цвет карты и колонки «Изм.»)">' +
-            '    <button class="mh-seg-btn' + (state.period === 'day' ? ' active' : '') + '" type="button" data-period="day">День</button>' +
-            '    <button class="mh-seg-btn' + (state.period === 'week' ? ' active' : '') + '" type="button" data-period="week">Неделя</button>' +
-            '    <button class="mh-seg-btn' + (state.period === 'month' ? ' active' : '') + '" type="button" data-period="month">Месяц</button>' +
-            '  </span>' +
-            '  <span class="mh-seg mh-seg-size mh-map-ctrl" role="tablist" title="Размер плитки">' +
-            '    <button class="mh-seg-btn' + (state.sizeMode === 'weight' ? ' active' : '') + '" type="button" data-size="weight">Вес</button>' +
-            '    <button class="mh-seg-btn' + (state.sizeMode === 'value' ? ' active' : '') + '" type="button" data-size="value">Объём</button>' +
-            '    <button class="mh-seg-btn' + (state.sizeMode === 'change' ? ' active' : '') + '" type="button" data-size="change">% изм.</button>' +
-            '  </span>' +
-            // Режим таблицы: «Кратко» прячет вес и объём (см. mh-table-simple)
-            '  <span class="mh-seg mh-seg-tmode mh-table-ctrl" role="tablist" title="Кратко — только цена, сектор и изменение; Подробно — ещё вес в индексе и объём торгов">' +
-            '    <button class="mh-seg-btn' + (state.tableMode === 'simple' ? ' active' : '') + '" type="button" data-tmode="simple">Кратко</button>' +
-            '    <button class="mh-seg-btn' + (state.tableMode === 'full' ? ' active' : '') + '" type="button" data-tmode="full">Подробно</button>' +
-            '  </span>' +
-            '  <button class="mh-refresh" type="button" title="Обновить" aria-label="Обновить">' + REFRESH_SVG + '</button>' +
-            '</div>' +
-            '<div class="mh-pulse">' +
-            '  <div class="mh-kpi mh-kpi-idx">' +
-            '    <div class="mh-idx-top"><span class="mh-idx-tag">IMOEX</span><span class="mh-idx-lbl">Индекс МосБиржи</span></div>' +
-            '    <div class="mh-pulse-idx">' +
-            '      <span class="mh-idx-val">—</span><span class="mh-idx-chg">—</span>' +
-            '    </div>' +
-            '  </div>' +
-            '  <div class="mh-kpi mh-kpi-breadth">' +
-            '    <div class="mh-brd-top"><span class="mh-kpi-lbl">Ширина рынка</span><span class="mh-brd-ratio"></span></div>' +
-            '    <div class="mh-breadth-bar"><i class="up"></i><i class="flat"></i><i class="down"></i></div>' +
-            '    <div class="mh-breadth-lbl"></div>' +
-            '  </div>' +
-            '  <div class="mh-kpi mh-kpi-leaders">' +
-            '    <span class="mh-kpi-lbl">Лидеры дня</span>' +
-            '    <div class="mh-movers"><div class="mh-mv-col up"></div><div class="mh-mv-col down"></div></div>' +
-            '  </div>' +
-            '</div>' +
-            '<div class="mh-meta">' +
-            '  <span class="mh-legend"><span>−' + CAP + '%</span><span class="mh-legend-bar"></span><span>+' + CAP + '%</span></span>' +
-            '  <span class="mh-meta-txt"></span>' +
             '</div>' +
             '<div class="mh-bread" hidden></div>' +
             '<div class="mh-plot">' +
             '  <div class="mh-overlay" hidden></div>' +
             '</div>' +
-            // хост графика TradingView — подменяет холст карты по кнопке «График»
-            '<div class="mh-chart-host" hidden></div>' +
+            // легенда и подпись-источник — ПОД холстом, как в мокапе
+            '<div class="mh-meta">' +
+            '  <span class="mh-legend"><span>−' + CAP + '%</span><span class="mh-legend-bar"></span><span>+' + CAP + '%</span></span>' +
+            '  <span class="mh-meta-txt"></span>' +
+            '</div>' +
             // тултип ВНЕ .mh-plot (у плота overflow:hidden) — чтобы карточка могла
             // уходить НИЖЕ курсора, не упираясь в нижний край карты и не клипаясь.
-            '<div class="mh-tip"></div>' +
-            '<div class="mh-table-wrap"><table class="mh-table"><thead><tr>' +
-            '<th class="mh-th-rank">#</th>' +
-            COLS.map(function (col) {
-                return '<th data-sort="' + col.key + '" class="' + (col.num ? 'num ' : '') + (col.cls || '') + '">' +
-                    esc(col.label) + '<span class="mh-arrow"></span></th>';
-            }).join('') +
-            '</tr></thead><tbody></tbody></table></div>';
+            '<div class="mh-tip"></div>';
 
         plotEl = c.querySelector('.mh-plot');
 
@@ -1036,47 +1090,14 @@
                 render();
             });
         });
-        // Режим таблицы (кратко / подробно) — прячет вес и объём
-        c.querySelectorAll('.mh-seg-tmode .mh-seg-btn').forEach(function (b) {
-            b.addEventListener('click', function () { setTableMode(b.getAttribute('data-tmode')); });
-        });
-        // Переключатель периода (день / неделя / месяц) — меняет базу изменения (цвет/таблица)
+        // Переключатель периода (день / неделя / месяц) — меняет базу изменения
+        // (цвет карты, колонку «Изм.» состава и лидеров)
         c.querySelectorAll('.mh-seg-period .mh-seg-btn').forEach(function (b) {
             b.addEventListener('click', function () {
                 if (b.classList.contains('active')) return;
                 c.querySelectorAll('.mh-seg-period .mh-seg-btn').forEach(function (x) { x.classList.remove('active'); });
                 b.classList.add('active'); selectPeriod(b.getAttribute('data-period'));
             });
-        });
-        c.querySelector('.mh-refresh').addEventListener('click', refresh);
-
-        // Сортировка таблицы
-        c.querySelectorAll('.mh-table thead th').forEach(function (th) {
-            th.addEventListener('click', function () {
-                var k = th.getAttribute('data-sort'), col = COLS.filter(function (x) { return x.key === k; })[0];
-                if (state.sortKey === k) state.sortDir *= -1;
-                else { state.sortKey = k; state.sortDir = col && col.num ? -1 : 1; }
-                savePrefs();
-                renderTable();
-            });
-        });
-
-        // Делегированные клики: ретрай, крошки, сектор-зум, плитка, действия/строка таблицы
-        c.addEventListener('click', function (e) {
-            if (e.target.closest('[data-act="retry"]')) { refresh(); return; }
-            var viewBtn = e.target.closest('.mh-seg-view .mh-seg-btn');
-            if (viewBtn) { setView(viewBtn.getAttribute('data-view')); return; }
-            if (e.target.closest('[data-act="bread-root"]')) { exitZoom(); return; }
-            var secGo = e.target.closest('[data-act="sec-terminal"]');
-            if (secGo) { openSectorInTerminal(state.zoom); return; }
-            // действия в ячейке тикера — проверяем ДО клика по строке
-            var favBtn = e.target.closest('[data-act="fav"]');
-            if (favBtn) { toggleHeatFav(favBtn.getAttribute('data-tk')); return; }
-            var cardBtn = e.target.closest('[data-act="card"]');
-            if (cardBtn) { openCompany(cardBtn.getAttribute('data-tk')); return; }
-            var sec = e.target.closest('.mh-sec'); if (sec) { enterZoom(sec.getAttribute('data-sec')); return; }
-            var tile = e.target.closest('.mh-tile'); if (tile) { openCompany(tile.getAttribute('data-tk')); return; }
-            var tr = e.target.closest('.mh-table tbody tr'); if (tr) { openCompany(tr.getAttribute('data-tk')); }
         });
 
         // Тултип + спотлайт
@@ -1086,10 +1107,101 @@
         });
         plotEl.addEventListener('mousemove', moveTip);
         plotEl.addEventListener('mouseleave', function () { hideTip(); plotEl.classList.remove('mh-spot'); });
+    }
+
+    function buildLeaders() {
+        var el = leadEl(); if (!el) return;
+        el.innerHTML =
+            '<div class="mh-head sm">' +
+            '  <div class="mh-head-title">' +
+            '    <span class="mh-head-ico" aria-hidden="true">' + PULSE_SVG + '</span>' +
+            '    <div class="mh-head-tt"><span class="mh-title">Лидеры дня</span></div>' +
+            '  </div>' +
+            '  <span class="mh-lead-hint">по изменению за день</span>' +
+            '</div>' +
+            '<div class="mh-lead-body"></div>';
+    }
+
+    function buildComp() {
+        var c = compEl(); if (!c) return;
+        c.classList.toggle('mh-table-simple', state.tableMode === 'simple');
+        c.classList.add('mh-closed');
+        c.innerHTML =
+            '<div class="mh-head sm">' +
+            '  <div class="mh-head-title">' +
+            '    <span class="mh-head-ico" aria-hidden="true">' + TABLE_SVG + '</span>' +
+            '    <div class="mh-head-tt"><span class="mh-title">Состав индекса</span></div>' +
+            '  </div>' +
+            // Режим таблицы: «Кратко» прячет вес и объём (см. mh-table-simple)
+            '  <span class="mh-seg mh-seg-tmode" role="tablist" title="Кратко — только цена, сектор и изменение; Подробно — ещё вес в индексе и объём торгов">' +
+            '    <button class="mh-seg-btn' + (state.tableMode === 'simple' ? ' active' : '') + '" type="button" data-tmode="simple">Кратко</button>' +
+            '    <button class="mh-seg-btn' + (state.tableMode === 'full' ? ' active' : '') + '" type="button" data-tmode="full">Подробно</button>' +
+            '  </span>' +
+            '</div>' +
+            '<div class="mh-table-wrap"><table class="mh-table"><thead><tr>' +
+            '<th class="mh-th-rank">#</th>' +
+            COLS.map(function (col) {
+                return '<th data-sort="' + col.key + '" class="' + (col.num ? 'num ' : '') + (col.cls || '') + '">' +
+                    esc(col.label) + '<span class="mh-arrow"></span></th>';
+            }).join('') +
+            '</tr></thead><tbody></tbody></table></div>' +
+            // подвал: счётчик + кнопка развёртки (свёрнуто — топ-8 сортировки)
+            '<div class="mh-comp-foot">' +
+            '  <span class="mh-comp-hint"></span>' +
+            '  <button class="mh-comp-btn" type="button" data-act="comp-toggle"></button>' +
+            '</div>';
+
+        // Режим таблицы (кратко / подробно) — прячет вес и объём
+        c.querySelectorAll('.mh-seg-tmode .mh-seg-btn').forEach(function (b) {
+            b.addEventListener('click', function () { setTableMode(b.getAttribute('data-tmode')); });
+        });
+        // Сортировка таблицы (счётчик подвала не меняется — хватает renderTable)
+        c.querySelectorAll('.mh-table thead th').forEach(function (th) {
+            th.addEventListener('click', function () {
+                var k = th.getAttribute('data-sort'), col = COLS.filter(function (x) { return x.key === k; })[0];
+                if (!k) return;
+                if (state.sortKey === k) state.sortDir *= -1;
+                else { state.sortKey = k; state.sortDir = col && col.num ? -1 : 1; }
+                savePrefs();
+                renderTable();
+            });
+        });
+    }
+
+    function build() {
+        if (state.built || !card()) return;
+        buildHero(); buildMap(); buildLeaders(); buildComp();
+
+        // Делегированные клики НА ПАНЕЛИ — этажей четыре, обработчик один:
+        // ретрай, крошки, сектор-зум, плитка, строка лидеров, действия/строка
+        // таблицы, развёртка состава.
+        panel().addEventListener('click', function (e) {
+            if (e.target.closest('[data-act="retry"]')) { refresh(); return; }
+            if (e.target.closest('[data-act="bread-root"]')) { exitZoom(); return; }
+            var secGo = e.target.closest('[data-act="sec-terminal"]');
+            if (secGo) { openSectorInTerminal(state.zoom); return; }
+            if (e.target.closest('[data-act="comp-toggle"]')) {
+                state.compOpen = !state.compOpen; renderComp(); return;
+            }
+            // действия в ячейке тикера — проверяем ДО клика по строке
+            var favBtn = e.target.closest('[data-act="fav"]');
+            if (favBtn) { toggleHeatFav(favBtn.getAttribute('data-tk')); return; }
+            var cardBtn = e.target.closest('[data-act="card"]');
+            if (cardBtn) { openCompany(cardBtn.getAttribute('data-tk')); return; }
+            var sec = e.target.closest('.mh-sec'); if (sec) { enterZoom(sec.getAttribute('data-sec')); return; }
+            var tile = e.target.closest('.mh-tile'); if (tile) { openCompany(tile.getAttribute('data-tk')); return; }
+            var lg = e.target.closest('.mh-lg'); if (lg) { openCompany(lg.getAttribute('data-tk')); return; }
+            var tr = e.target.closest('.mh-table tbody tr'); if (tr) { openCompany(tr.getAttribute('data-tk')); }
+        });
+        // строки лидеров доступны с клавиатуры (role="button" + tabindex)
+        panel().addEventListener('keydown', function (e) {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            var lg = e.target.closest && e.target.closest('.mh-lg');
+            if (lg) { e.preventDefault(); openCompany(lg.getAttribute('data-tk')); }
+        });
 
         updateLegend(); // подписи легенды ±cap% под восстановленный период
         state.built = true;
-        applyView(); // синхронизировать вид и подсветку переключателя по state.view
     }
 
     // ====================================================================
@@ -1099,10 +1211,11 @@
     function stopPolling() { if (state.timer) { clearInterval(state.timer); state.timer = null; } }
     function onEnter() {
         build();
-        // applyView и на входе, а не только в build(): при уходе мы сносим виджет
-        // TradingView (onLeave), и без этого вызова возврат на вкладку в режиме
-        // «График» показал бы пустой хост — build() второй раз не выполняется.
-        applyView();
+        // График-герой монтируем на КАЖДОМ входе, а не только в build(): при
+        // уходе мы сносим виджет TradingView (onLeave), и без этого вызова
+        // возврат на вкладку показал бы пустой хост.
+        var h = hero(), host = h && h.querySelector('.mh-chart-host');
+        if (host && typeof window.mkChartMount === 'function') window.mkChartMount(host, state.chartRange);
         refresh(); startPolling();
         // фоном тянем таблицу терминала — нужна и для ОДХС в карточке компании по
         // клику, и для кнопки «Сектор в Терминале» (sectorInTerminal)
@@ -1110,7 +1223,7 @@
     }
     // Уходим со вкладки — сносим виджет TradingView: это iframe со своим
     // рендер-циклом, держать его живым в фоне незачем. Вернёмся — смонтируется
-    // заново (лениво, из applyView).
+    // заново (лениво, из onEnter).
     function onLeave() {
         stopPolling(); hideTip();
         if (typeof window.mkChartUnmount === 'function') window.mkChartUnmount();

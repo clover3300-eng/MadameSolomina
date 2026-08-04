@@ -2290,10 +2290,12 @@
         #panel-portfolio .panel-section-header { margin: 0 0 12px; }
         #calcPane { max-width: 580px; margin: 0 auto; width: 100%; }
 
-        /* ===== РЫНОК (дашборд): full-bleed, вертикальный ритм как у «Главной» ===== */
+        /* ===== РЫНОК (дашборд): full-bleed, вертикальный ритм как у «Главной» =====
+           Просвет 20px, а не 18: этажи — стекло «Витража», и фон в стыках
+           должен читаться, иначе карточки слипаются в одну плиту */
         #panel-market { max-width: none !important; }
         #panel-market.active {
-            display: flex; flex-direction: column; gap: 18px;
+            display: flex; flex-direction: column; gap: 20px;
         }
         /* Карточка занимает всю ширину контент-области (как блоки дашборда) */
         #panel-market .mh-card {

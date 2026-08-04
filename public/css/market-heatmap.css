@@ -1,71 +1,118 @@
 /* ============================================================
-   МОДУЛЬ «ТЕПЛОВАЯ КАРТА ИНДЕКСА МОСБИРЖИ» — вкладка Рынок
+   МОДУЛЬ «ДАШБОРД ИНДЕКСА МОСБИРЖИ» — вкладка Рынок (Р2·С «Разворот»)
    ------------------------------------------------------------
-   РЕДИЗАЙН (бренд Madame Solomi'na): светлая «воздушная» карта,
-   диверг-палитра OKLCH (рост — мята hue 158, падение — клэй hue 44),
-   плоские плитки с тёмным текстом, табы-секторы, аккуратная таблица.
-   Шапка и блок «Лидеры дня» переосмыслены: компактный «control well»
-   в шапке + always-on мини-лидерборд с пропорциональными барами
-   (без выпадашки). Вся механика и анимации — из js/market-heatmap.js
-   (treemap, FLIP-переходы, вспышки, sheen, спотлайт, drill-down).
-   Всё заскоплено под #mhCard / префикс .mh-.
+   Три этажа-карточки на СТЕКЛЕ «Витража» (мокап dev/mockups/
+   market-mockups.html, Р2·С и Р2·С·D): герой #mhHero (глубина .66/blur22),
+   карта #mhCard и лидеры #mhLeaders (рабочий слой .52/blur16), состав
+   #mhComp (тонкое .36/blur10). Плашки внутри стекла — тоже стекло (.42).
+   Тёмных плит в светлой теме нет: активный сегмент — приподнятый белый,
+   как активный раздел сайдбара. Тёмная тема — дымчатое rgba(28,39,53,…).
+   Стекло существует только на градиентном фоне: на подложке «Бумага»
+   (body.sbg-paper) карточки становятся непрозрачными (фолбэк в конце §).
+   Диверг-палитра плиток OKLCH (мята 158 / клэй 44) — без изменений; вся
+   механика из js/market-heatmap.js. Всё заскоплено под префикс .mh-.
    ============================================================ */
 
 .mh-card {
-    /* --- локальные токены --- */
-    --mh-bg: #ffffff;
-    --mh-line: #e7edf4;
-    --mh-line-soft: rgba(44, 54, 76, 0.05);
-    --mh-text: #111927;
-    --mh-muted: #7a8698;
-    --mh-muted2: #9aa7b8;
-    --mh-zebra: rgba(15, 23, 42, 0.018);
-    --mh-hover: rgba(22, 181, 107, 0.05);
-    --mh-up: #119d5c;
-    --mh-up-bg: rgba(22, 181, 107, 0.10);
-    --mh-down: #d8483f;
-    --mh-down-bg: rgba(225, 80, 70, 0.10);
-    --mh-brand: #141b26;          /* тёмная бренд-плашка (активный сегмент) */
-    --mh-accent: #16b56b;         /* бренд-зелёный (иконка/точки) */
-    --mh-accent-soft: #eef7f1;
-    --mh-well: #f4f7fb;           /* «колодец» под контролы шапки */
-    --mh-card-soft: #fbfcfe;      /* вложенные плашки статбара */
-    --mh-plot-bg: #eef2f7;        /* фон-«гэп» между плитками */
+    /* --- локальные токены (светлое стекло) --- */
+    --mh-bg: rgba(255, 255, 255, 0.52);          /* рабочая глубина стекла */
+    --mh-line: rgba(255, 255, 255, 0.78);        /* грань карточки */
+    --mh-line-soft: rgba(16, 24, 40, 0.08);      /* волосяные линии внутри */
+    --mh-text: #101828;
+    --mh-muted: #4a5768;    /* сквозь стекло подложка ≈#EDEEEF: прежний #7a8698 давал 3,1:1 */
+    --mh-muted2: #5c6a7d;   /* было #9aa7b8 — 2,6:1, ниже AA */
+    --mh-zebra: rgba(16, 24, 40, 0.028);
+    --mh-hover: rgba(18, 163, 92, 0.07);
+    --mh-up: #12a35c;
+    --mh-up-bg: rgba(18, 163, 92, 0.12);
+    --mh-down: #d8452b;
+    --mh-down-bg: rgba(216, 69, 43, 0.12);
+    --mh-accent: #12a35c;          /* бренд-зелёный (иконка/точки) */
+    --mh-accent-soft: rgba(255, 255, 255, 0.5);
+    --mh-well: rgba(255, 255, 255, 0.42);        /* «колодец» под контролы — тоже стекло */
+    --mh-well-edge: rgba(255, 255, 255, 0.6);
+    --mh-card-soft: rgba(255, 255, 255, 0.42);   /* вложенные плашки */
+    --mh-plot-bg: rgba(255, 255, 255, 0.42);     /* фон-«гэп» между плитками */
+    --mh-raise: rgba(255, 255, 255, 0.92);       /* приподнятый активный сегмент */
 
     max-width: none;
     margin: 0;
     width: 100%;
     position: relative; /* offsetParent для .mh-tip (тултип вынесен из .mh-plot) */
     background: var(--mh-bg);
-    /* язык карточки регистрации (.hg-auth): тонкая рамка вместо тёмного
-       контура, радиус 14px, лёгкая тень */
-    border: 1px solid rgba(20, 27, 45, 0.09);
-    border-radius: 14px;
-    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 10px 26px -20px rgba(16, 24, 40, 0.22);
+    border: 1px solid var(--mh-line);
+    border-radius: 16px;
+    -webkit-backdrop-filter: blur(16px) saturate(1.35);
+    backdrop-filter: blur(16px) saturate(1.35);
+    box-shadow: 0 16px 40px -22px rgba(24, 38, 60, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.7);
     overflow: hidden;
     font-family: 'Inter', sans-serif;
     color: var(--mh-text);
     -webkit-font-smoothing: antialiased;
 }
+/* герой — самое плотное стекло, состав — самое тонкое (ранг = глубина) */
+.mh-card.mh-hero {
+    background: rgba(255, 255, 255, 0.66);
+    border-radius: 20px;
+    -webkit-backdrop-filter: blur(22px) saturate(1.4);
+    backdrop-filter: blur(22px) saturate(1.4);
+    box-shadow: 0 26px 60px -28px rgba(24, 38, 60, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+.mh-card.mh-comp {
+    background: rgba(255, 255, 255, 0.36);
+    border-color: rgba(255, 255, 255, 0.55);
+    -webkit-backdrop-filter: blur(10px) saturate(1.15);
+    backdrop-filter: blur(10px) saturate(1.15);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
 body.dark-mode .mh-card {
-    --mh-bg: #1d2734;
-    --mh-line: rgba(255, 255, 255, 0.08);
-    --mh-line-soft: rgba(255, 255, 255, 0.05);
-    --mh-text: #eef2f8;
-    --mh-muted: #8d9bb0;
-    --mh-muted2: #6f7e93;
+    /* --- дымчатое стекло (Р2·С·D) --- */
+    --mh-bg: rgba(28, 39, 53, 0.55);
+    --mh-line: rgba(255, 255, 255, 0.15);
+    --mh-line-soft: rgba(255, 255, 255, 0.08);
+    --mh-text: #e9eef7;
+    --mh-muted: #93a1b5;
+    --mh-muted2: #7d8ba1;
     --mh-zebra: rgba(255, 255, 255, 0.02);
-    --mh-hover: rgba(126, 226, 168, 0.06);
-    --mh-up: #7ee2a8;
-    --mh-up-bg: rgba(126, 226, 168, 0.12);
-    --mh-down: #f08a82;
-    --mh-down-bg: rgba(232, 110, 100, 0.14);
-    --mh-brand: #7ee2a8;
-    --mh-accent: #7ee2a8;
-    --mh-accent-soft: rgba(126, 226, 168, 0.12);
-    --mh-well: rgba(255, 255, 255, 0.045);
-    --mh-card-soft: rgba(255, 255, 255, 0.03);
-    --mh-plot-bg: #131b25;
+    --mh-hover: rgba(79, 185, 140, 0.08);
+    --mh-up: #4fb98c;
+    --mh-up-bg: rgba(79, 185, 140, 0.16);
+    --mh-down: #f0836a;
+    --mh-down-bg: rgba(240, 131, 106, 0.16);
+    --mh-accent: #4fb98c;
+    --mh-accent-soft: rgba(255, 255, 255, 0.08);
+    --mh-well: rgba(255, 255, 255, 0.05);
+    --mh-well-edge: rgba(255, 255, 255, 0.12);
+    --mh-card-soft: rgba(255, 255, 255, 0.05);
+    --mh-plot-bg: rgba(255, 255, 255, 0.05);
+    --mh-raise: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 16px 40px -22px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.09);
+}
+body.dark-mode .mh-card.mh-hero {
+    background: rgba(28, 39, 53, 0.66);
+    box-shadow: 0 26px 60px -28px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+body.dark-mode .mh-card.mh-comp {
+    background: rgba(28, 39, 53, 0.4);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+/* Фолбэк «Бумага»: на плоской заливке (#F4F6FA) стекла не существует —
+   карточки становятся непрозрачными, blur снят (нечего преломлять) */
+body.sbg-paper .mh-card,
+body.sbg-paper .mh-card.mh-hero,
+body.sbg-paper .mh-card.mh-comp {
+    background: #ffffff;
+    border-color: rgba(20, 27, 45, 0.09);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 10px 26px -20px rgba(16, 24, 40, 0.22);
+}
+body.dark-mode.sbg-paper .mh-card,
+body.dark-mode.sbg-paper .mh-card.mh-hero,
+body.dark-mode.sbg-paper .mh-card.mh-comp {
+    background: #1d2734;
     border-color: rgba(255, 255, 255, 0.07);
     box-shadow: 0 16px 36px rgba(0, 0, 0, 0.32);
 }
@@ -82,12 +129,12 @@ body.dark-mode .mh-card {
     display: flex; align-items: center; justify-content: space-between; gap: 18px;
     flex-wrap: nowrap; padding: 20px 22px 14px;
 }
-.mh-head .mh-seg-view { flex-shrink: 0; }
 .mh-head-title { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .mh-head-ico {
     width: 44px; height: 44px; border-radius: 13px; flex-shrink: 0;
     display: inline-flex; align-items: center; justify-content: center;
     background: var(--mh-accent-soft); color: var(--mh-accent);
+    border: 1px solid var(--mh-well-edge);
 }
 .mh-head-ico svg { width: 22px; height: 22px; }
 .mh-head-tt { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
@@ -96,6 +143,19 @@ body.dark-mode .mh-card {
     letter-spacing: -0.01em; line-height: 1.1;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+/* моно-довесок заголовка: тикер у героя, счётчик бумаг у карты */
+.mh-title-tag, .mh-count {
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 11px;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--mh-muted2);
+    margin-left: 8px;
+}
+/* правый кластер шапки (live + обновить у героя; сегменты у карты) */
+.mh-head-side { display: inline-flex; align-items: center; gap: 10px; flex-shrink: 0; }
+/* шапки этажей ниже героя — на ступень тише */
+.mh-head.sm { padding: 15px 22px 12px; }
+.mh-head.sm .mh-head-ico { width: 36px; height: 36px; border-radius: 11px; }
+.mh-head.sm .mh-head-ico svg { width: 18px; height: 18px; }
+.mh-head.sm .mh-title { font-size: 17px; }
 /* Ряд 2 — ИНСТРУМЕНТЫ текущего вида (актуальность, период, размер плитки,
    обновить, режим таблицы). Отдельный ряд, а не хвост заголовка: состав тут
    меняется от вида к виду, и в одном ряду с заголовком это заставляло
@@ -128,6 +188,7 @@ body.dark-mode .mh-card {
 .mh-live {
     display: inline-flex; align-items: center; gap: 9px; height: 38px; padding: 0 14px;
     border-radius: 11px; background: var(--mh-well);
+    border: 1px solid var(--mh-well-edge); box-sizing: border-box;
     font-size: 12px; font-weight: 700; color: var(--mh-muted); white-space: nowrap; cursor: default;
 }
 .mh-live-meta { display: inline-flex; align-items: baseline; gap: 7px; }
@@ -140,15 +201,20 @@ body.dark-mode .mh-card {
 .mh-live.stale .mh-live-dot { background: var(--mh-muted2); box-shadow: none; }
 @keyframes mhPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(22,181,107,.45); } 50% { box-shadow: 0 0 0 5px rgba(22,181,107,0); } }
 
-/* сегмент-переключатель метрики */
+/* Сегмент-переключатель метрики. «Колодец» — стекло с гранью; активная
+   кнопка — ПРИПОДНЯТЫЙ БЕЛЫЙ вместо прежней тёмной плиты: на стекле чёрный
+   прямоугольник — гвоздь в витраже (закон «Витража»), а этот язык совпадает
+   с активным разделом сайдбара. */
 .mh-seg { display: inline-flex; height: 38px; padding: 4px; box-sizing: border-box;
-    border-radius: 12px; background: var(--mh-well); gap: 3px; }
+    border-radius: 12px; background: var(--mh-well);
+    border: 1px solid var(--mh-well-edge); gap: 3px; }
 .mh-seg-btn { appearance: none; border: 0; cursor: pointer; background: transparent;
     font: 700 13px 'Inter', sans-serif; color: var(--mh-muted); padding: 0 14px;
     border-radius: 9px; transition: background .16s ease, color .16s ease, box-shadow .16s ease; }
 .mh-seg-btn:hover { color: var(--mh-text); }
-.mh-seg-btn.active { background: var(--mh-brand); color: #fff; box-shadow: 0 5px 14px rgba(16, 24, 38, .2); }
-body.dark-mode .mh-seg-btn.active { color: #10201a; }
+.mh-seg-btn.active { background: var(--mh-raise); color: var(--mh-text);
+    box-shadow: 0 1px 2px rgba(16, 24, 40, .08), 0 5px 14px -6px rgba(16, 24, 40, .16); }
+body.dark-mode .mh-seg-btn.active { box-shadow: none; }
 
 .mh-refresh { width: 38px; height: 38px; border-radius: 11px; border: 1px solid var(--mh-line);
     background: transparent; color: var(--mh-muted); cursor: pointer;
@@ -241,8 +307,8 @@ body.dark-mode .mh-seg-view .mh-seg-btn.active .mh-cb-ico { color: #10201a; }
 .mh-mv.down .mh-mv-pc { color: var(--mh-down); }
 .mh-mv.ghost { background: transparent; pointer-events: none; }
 
-/* ---------- подпись-источник + легенда (тонкая строка) ---------- */
-.mh-meta { padding: 12px 22px 0; font-family: 'JetBrains Mono', monospace;
+/* ---------- подпись-источник + легенда (подвал карты, ПОД холстом) ---------- */
+.mh-meta { padding: 12px 22px 16px; font-family: 'JetBrains Mono', monospace;
     font-size: 11px; color: var(--mh-muted2); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .mh-legend { display: inline-flex; align-items: center; gap: 7px; font-weight: 600; color: var(--mh-muted); }
 .mh-legend-bar { width: 92px; height: 8px; border-radius: 99px;
@@ -280,13 +346,17 @@ body.dark-mode .mh-seg-view .mh-seg-btn.active .mh-cb-ico { color: #10201a; }
 /* плавный перелив цвета плитки при обновлении (тикер var(--tile)) */
 @property --tile { syntax: '<color>'; inherits: false; initial-value: oklch(0.955 0.012 158); }
 
-.mh-plot { position: relative; width: calc(100% - 44px); height: 560px; box-sizing: border-box;
-    margin: 16px 22px 8px; border-radius: 16px; overflow: hidden; background: var(--mh-plot-bg); }
+/* Холст карты. Подложка-«гэп» — стекло .42 (плитки НЕПРОЗРАЧНЫ: их цвет
+   кодирует число, прозрачным стал только зазор). Высота фиксированная:
+   этажи ниже должны быть видны хотя бы краем. */
+.mh-plot { position: relative; width: calc(100% - 44px); height: 460px; box-sizing: border-box;
+    margin: 2px 22px 0; border-radius: 14px; overflow: hidden; background: var(--mh-plot-bg);
+    border: 1px solid var(--mh-well-edge); }
 
-/* хост графика TradingView — тот же бокс, что и холст карты (подмена по кнопке «График») */
-.mh-chart-host { position: relative; width: calc(100% - 44px); height: 560px; box-sizing: border-box;
-    margin: 16px 22px 8px; border-radius: 16px; overflow: hidden; background: var(--mh-bg);
-    border: 1px solid var(--mh-line); }
+/* Хост графика TradingView — живёт в ГЕРОЕ (площадной график, 1Д/1Н/1М/1Г).
+   Фон прозрачный: под ним стекло героя, белая плита закрыла бы материал. */
+.mh-chart-host { position: relative; width: 100%; height: 192px; box-sizing: border-box;
+    border-radius: 12px; overflow: hidden; background: transparent; }
 .mh-chart-host[hidden] { display: none; }
 .mh-chart-host .tradingview-widget-container { height: 100%; width: 100%; }
 .mh-chart-host .tradingview-widget-container__widget { height: calc(100% - 22px); width: 100%; }
@@ -360,11 +430,15 @@ body.dark-mode .mh-plot.mh-spot .mh-tile:not(:hover) { filter: brightness(.7) sa
 .mh-sec-zoom { flex: 0 0 auto; margin-left: auto; font-size: 11px; color: var(--mh-muted2); opacity: 0; transition: opacity .15s; }
 .mh-sec:hover .mh-sec-zoom { opacity: .9; }
 
-/* ---------- Тултип ---------- */
+/* ---------- Тултип ----------
+   Самая верхняя поверхность — ей положено самое плотное стекло (закон
+   «Витража»: окно = глубина героя), не рабочая полупрозрачность --mh-bg. */
 .mh-tip { position: absolute; z-index: 30; pointer-events: none; width: 234px;
-    background: var(--mh-bg); color: var(--mh-text); border: 1px solid var(--mh-line);
+    background: rgba(255, 255, 255, 0.9); color: var(--mh-text); border: 1px solid var(--mh-line);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4); backdrop-filter: blur(22px) saturate(1.4);
     border-radius: 14px; box-shadow: 0 16px 40px rgba(16, 24, 40, .22); padding: 13px 15px;
     opacity: 0; transform: translateY(4px); transition: opacity .12s ease, transform .12s ease; }
+body.dark-mode .mh-tip { background: rgba(28, 39, 53, 0.92); }
 .mh-tip.show { opacity: 1; transform: none; }
 .mh-tip-name { font-weight: 800; font-size: 14px; letter-spacing: -.01em; }
 .mh-tip-sub { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--mh-muted); margin: 2px 0 10px; }
@@ -386,8 +460,10 @@ body.dark-mode .mh-plot.mh-spot .mh-tile:not(:hover) { filter: brightness(.7) sa
     background-size: 220% 100%; animation: mhShimmer 1.25s linear infinite; }
 @keyframes mhShimmer { to { background-position: -220% 0; } }
 .mh-retry { appearance: none; cursor: pointer; font: 700 13px 'Inter', sans-serif;
-    color: #fff; background: var(--mh-brand); border: 0; border-radius: 10px; padding: 9px 18px; }
-body.dark-mode .mh-retry { color: #10201a; }
+    color: var(--mh-text); background: var(--mh-raise);
+    border: 1px solid var(--mh-well-edge); border-radius: 10px; padding: 9px 18px;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, .08), 0 5px 14px -6px rgba(16, 24, 40, .16); }
+body.dark-mode .mh-retry { box-shadow: none; }
 
 /* ---------- Таблица состава — ТРЕТИЙ ВИД холста (без внутреннего скролла) ----------
    Раньше висела ПОД картой всегда, и вкладка читалась «двухэтажной»: главный
@@ -510,33 +586,116 @@ body.dark-mode .mh-retry { color: #10201a; }
 .mh-vol-unit { margin-left: 4px; font-size: 11px; font-weight: 600; color: var(--mh-muted2); }
 
 /* ============================================================
+   ЭТАЖИ РАУНДА «РАЗВОРОТ» (мокап Р2·С)
+   ============================================================ */
+/* второй этаж: карта + лидеры. align-items: start — карточки своего роста */
+.mh-row2 { display: grid; grid-template-columns: minmax(0, 1fr) 366px; gap: 20px;
+    align-items: start; }
+
+/* --- герой: цифры слева, график справа --- */
+.mh-hero-body { display: grid; grid-template-columns: 300px minmax(0, 1fr);
+    gap: 26px; padding: 4px 22px 14px; align-items: start; }
+.mh-hero-num { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.mh-pulse-idx { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.mh-hero .mh-idx-val { font-size: 34px; }
+/* метрики дня: пары «подпись — значение» с волосяной чертой */
+.mh-ixm { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 18px; margin-top: 6px; }
+.mh-ixm > div { display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+    padding-bottom: 6px; border-bottom: 1px solid var(--mh-line-soft);
+    font-size: 12px; min-width: 0; }
+.mh-ixm dt { color: var(--mh-muted2); font-weight: 600; }
+.mh-ixm dd { margin: 0; font-family: 'JetBrains Mono', monospace; font-weight: 700;
+    color: var(--mh-text); white-space: nowrap; }
+.mh-hero-chart { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.mh-hero-chart-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.mh-seg-range { height: 32px; padding: 3px; border-radius: 10px; }
+.mh-seg-range .mh-seg-btn { padding: 0 11px; font-size: 12px; border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace; }
+/* подвал героя: полоса ширины рынка во всю ширину над волосяной чертой */
+.mh-hero-foot { padding: 0 22px 16px; }
+.mh-hero-foot::before { content: ''; display: block; height: 1px;
+    background: var(--mh-line-soft); margin-bottom: 12px; }
+.mh-hero-foot .mh-breadth-lbl { margin-top: 8px; }
+.mh-breadth-lbl .flat::before { display: none; } /* у центральной подписи точка не нужна */
+
+/* --- лидеры дня: по 6 строк роста и падения с именем компании --- */
+.mh-lead-hint { font-size: 11.5px; font-weight: 600; color: var(--mh-muted2);
+    white-space: nowrap; flex-shrink: 0; }
+.mh-lead-body { padding: 2px 18px 14px; }
+.mh-lg-h { display: flex; align-items: center; justify-content: space-between; height: 26px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase; color: var(--mh-muted2); }
+.mh-lg-h em { font-style: normal; font-size: 10.5px; letter-spacing: 0; }
+.mh-lg-h em.up { color: var(--mh-up); } .mh-lg-h em.down { color: var(--mh-down); }
+.mh-lg { display: grid; grid-template-columns: 118px minmax(0, 1fr) 56px;
+    align-items: center; gap: 10px; height: 34px; cursor: pointer;
+    border-top: 1px solid var(--mh-line-soft); border-radius: 6px;
+    transition: background .12s ease; }
+.mh-lg:hover, .mh-lg:focus-visible { background: var(--mh-hover); outline: none; }
+.mh-lg-id { min-width: 0; }
+.mh-lg-id b { display: block; font-family: 'JetBrains Mono', monospace; font-weight: 800;
+    font-size: 12px; letter-spacing: -.01em; line-height: 1.15; color: var(--mh-text); }
+.mh-lg-id span { display: block; font-size: 10.5px; font-weight: 600; color: var(--mh-muted2);
+    margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* полоса от нуля: рост слева направо, падение — справа налево */
+.mh-lg-bar { position: relative; height: 7px; border-radius: 4px; background: var(--mh-well);
+    overflow: hidden; }
+.mh-lg-bar i { position: absolute; top: 0; bottom: 0; border-radius: 4px;
+    transition: width .55s cubic-bezier(.4,0,.2,1); }
+.mh-lg.u .mh-lg-bar i { left: 0; background: var(--mh-up); opacity: .75; }
+.mh-lg.d .mh-lg-bar i { right: 0; background: var(--mh-down); opacity: .75; }
+.mh-lg em { font-style: normal; text-align: right; font-family: 'JetBrains Mono', monospace;
+    font-weight: 700; font-size: 12px; white-space: nowrap; }
+.mh-lg.u em { color: var(--mh-up); } .mh-lg.d em { color: var(--mh-down); }
+.mh-lg-gap { height: 14px; }
+.mh-lg-empty { padding: 10px 0; font-size: 12px; color: var(--mh-muted2);
+    border-top: 1px solid var(--mh-line-soft); }
+
+/* --- состав индекса: свёртка до 8 строк + подвал --- */
+.mh-comp.mh-closed .mh-table tbody tr:nth-child(n+9) { display: none; }
+.mh-comp-foot { display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    padding: 12px 22px; border-top: 1px solid var(--mh-line); }
+.mh-comp-hint { font-size: 12px; font-weight: 600; color: var(--mh-muted2); }
+.mh-comp-btn { appearance: none; cursor: pointer; font: 700 12.5px 'Inter', sans-serif;
+    color: var(--mh-text); background: var(--mh-well); border: 1px solid var(--mh-well-edge);
+    border-radius: 9px; padding: 7px 13px; display: inline-flex; align-items: center; gap: 6px;
+    transition: background .15s ease; }
+.mh-comp-btn:hover { background: var(--mh-raise); }
+.mh-comp-arr { font-size: 11px; color: var(--mh-muted); }
+
+/* ============================================================
    АДАПТИВ
    ============================================================ */
+@media (max-width: 1180px) {
+    /* лидеры не уживаются рядом с картой — падают этажом под неё */
+    .mh-row2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 900px) {
+    .mh-hero-body { grid-template-columns: 1fr; gap: 16px; }
+}
 @media (max-width: 1100px) {
     .mh-pulse { grid-template-columns: 1fr 1fr; }
     .mh-kpi-leaders { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--mh-line); }
     .mh-kpi-breadth { border-left: 1px solid var(--mh-line); }
 }
 @media (max-width: 720px) {
-    .mh-card { border-radius: 14px; margin-bottom: 14px; }
-    /* Заголовок и переключатель вида — в столбик: на 375px они рядом не живут
-       (заголовок ужался бы до многоточия). Переключатель во всю ширину — это
-       главная навигация вкладки. Ряд .mh-tools и так скроллится вбок. */
+    .mh-card { border-radius: 14px; }
+    /* Шапки этажей — в столбик: на 375px заголовок и кластер контролов рядом
+       не живут (заголовок ужался бы до многоточия). */
     .mh-head {
         padding: 16px 14px 10px; gap: 12px;
         flex-direction: column; align-items: stretch;
     }
-    .mh-head .mh-seg-view { width: 100%; }
-    .mh-head .mh-seg-view .mh-seg-btn { flex: 1 1 0; justify-content: center; }
-    .mh-tools { padding: 0 14px 12px; gap: 8px; }
-    .mh-pulse { grid-template-columns: 1fr; margin: 0 14px; }
-    .mh-kpi { padding: 13px 16px; }
-    .mh-kpi + .mh-kpi { border-left: 0; border-top: 1px solid var(--mh-line); }
-    .mh-kpi-breadth { border-left: 0; }
+    .mh-head-side { flex-wrap: wrap; }
+    .mh-hero-body { padding: 0 14px 12px; }
+    .mh-hero-foot { padding: 0 14px 14px; }
+    .mh-lead-body { padding: 2px 14px 12px; }
+    .mh-comp-foot { padding: 11px 14px; flex-wrap: wrap; }
+    .mh-hero .mh-idx-val { font-size: 27px; }
     .mh-idx-val { font-size: 25px; }
-    .mh-plot { height: 470px; margin: 12px 14px 6px; width: calc(100% - 28px); }
-    .mh-chart-host { height: 470px; margin: 12px 14px 6px; width: calc(100% - 28px); }
-    .mh-meta { padding: 10px 14px 0; }
+    .mh-plot { height: 420px; margin: 2px 14px 0; width: calc(100% - 28px); }
+    .mh-chart-host { height: 168px; }
+    .mh-meta { padding: 10px 14px 12px; }
     /* на узком экране прячем сектор и объём, бар веса — остаётся #, тикер+имя, цена, изм., вес */
     .mh-table th.mh-th-sec, .mh-table td.mh-td-sec-col,
     .mh-table th.mh-th-vol, .mh-table td.mh-td-vol { display: none; }
