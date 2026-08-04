@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Сайдбар · стиль референса «Technolize» — группы, белая карточка, блок подвала</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+       --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+       --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding:44px 0 90px;-webkit-font-smoothing:antialiased}
+.page{width:1560px;max-width:100%;margin:0 auto;padding:0 20px}
+
+/* ---------------- документ ---------------- */
+.doc-h{margin-bottom:34px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-acc);margin-bottom:9px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
+.doc-h p{margin-top:12px;font-size:15px;line-height:1.6;color:var(--doc-mut);max-width:900px}
+.verdict{margin-top:20px;display:flex;gap:14px;align-items:flex-start;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid var(--doc-acc);border-radius:14px;padding:16px 20px;max-width:980px}
+.verdict p{margin:0;font-size:14.5px;line-height:1.62;color:var(--doc-quote)}
+.verdict p+p{margin-top:10px}
+.verdict b{font-weight:700;color:var(--doc-ink)}
+
+.mk{margin-top:52px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.62;max-width:980px;margin-bottom:18px}
+.notes{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 26px;max-width:1280px}
+.note{display:flex;gap:9px;font-size:13px;line-height:1.5;color:var(--doc-quote)}
+.note i{flex:none;width:18px;height:18px;border-radius:50%;background:var(--doc-ink);color:var(--doc-bg);font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.scroller{overflow-x:auto;padding:4px 0 44px;margin-bottom:-32px}
+.row{display:flex;gap:28px;align-items:flex-start;width:max-content}
+@media (max-width:1000px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} }
+
+.map{margin-top:20px;width:100%;max-width:1100px;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th{text-align:left;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);padding:10px 14px;border-bottom:1px solid var(--doc-line)}
+.map td{padding:9px 14px;border-bottom:1px solid var(--doc-line);color:var(--doc-quote);line-height:1.5;vertical-align:top}
+.map tr:last-child td{border-bottom:0}
+.map code{font-family:var(--fN);font-size:11.5px;background:color-mix(in srgb,var(--doc-acc) 9%,transparent);color:var(--doc-acc);padding:1px 5px;border-radius:5px}
+
+/* ======================================================================
+   СЦЕНА: сайдбар на фоне приложения + призрак страницы справа
+   ====================================================================== */
+.stage{--ink:#1c202a; --mut:#6b7183; --dim:#9ba1b3; --hair:rgba(28,32,42,.08);
+  --acc:#4453ef; --amb:#c2760a;
+  --panel-bg:#f6f6fa;                 /* полотно колонки — светлый лавандово-серый, как в референсе */
+  --item:#585f70;                     /* обычный пункт — средне-серый */
+  --card:#ffffff;                     /* активная карточка */
+  --badge-bg:#e8eafb; --badge-tx:#5158e2;
+  --seg-bg:#ecedf3;
+  position:relative;display:flex;gap:22px;align-items:stretch;
+  width:640px;height:800px;padding:22px;border-radius:16px;overflow:hidden;
+  border:1px solid rgba(15,23,42,.09);
+  box-shadow:0 2px 4px rgba(15,23,42,.05),0 34px 70px -34px rgba(24,38,60,.4);
+  color:var(--ink);
+  background:
+    radial-gradient(760px 520px at 6% 8%, rgba(196,226,224,.7) 0%, rgba(196,226,224,0) 60%),
+    radial-gradient(820px 560px at 78% 4%, rgba(214,214,240,.65) 0%, rgba(214,214,240,0) 62%),
+    linear-gradient(160deg,#E9EEF2 0%,#ECEDF4 50%,#E9EFF1 100%)}
+.stage.rail{width:380px}
+.stage.dark{--ink:#e9edf6; --mut:#9aa2b5; --dim:#68718a; --hair:rgba(233,237,246,.09);
+  --acc:#8e9bff;
+  --panel-bg:#151822;
+  --item:#a2a9bc;
+  --card:#232836;
+  --badge-bg:rgba(120,132,255,.17); --badge-tx:#9aa4ff;
+  --seg-bg:rgba(255,255,255,.07);
+  border-color:rgba(255,255,255,.08);
+  background:
+    radial-gradient(760px 520px at 6% 8%, rgba(64,84,120,.35) 0%, rgba(64,84,120,0) 60%),
+    radial-gradient(820px 560px at 78% 4%, rgba(90,74,140,.28) 0%, rgba(90,74,140,0) 62%),
+    linear-gradient(160deg,#0e1118 0%,#11141d 50%,#0f1219 100%)}
+
+/* призрак страницы: намёк на контент, чтобы колонка читалась в контексте */
+.ghost{flex:1;display:flex;flex-direction:column;gap:14px;min-width:0;opacity:.55}
+.g{border-radius:14px;background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.65)}
+.stage.dark .g{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.07)}
+.g.h64{height:64px}.g.h180{height:180px}.g.grow{flex:1}
+.g.split{display:flex;gap:14px;background:none;border:none;border-radius:0}
+.g.split>span{flex:1;border-radius:14px;background:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.65)}
+.stage.dark .g.split>span{background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.07)}
+
+/* ======================================================================
+   САЙДБАР
+   ====================================================================== */
+.sb{position:relative;flex:none;width:268px;display:flex;flex-direction:column;
+  background:var(--panel-bg);border:1px solid var(--hair);border-radius:16px;
+  padding:16px 12px 12px;font-family:var(--fU);
+  box-shadow:0 1px 2px rgba(16,24,40,.04)}
+.stage.rail .sb{width:80px;padding:16px 10px 12px;align-items:center}
+.sb svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+/* --- шапка: марка + имя + кнопка-свёртка на кромке (как « < » в референсе) --- */
+.sb-head{display:flex;align-items:center;gap:10px;padding:0 4px;min-height:36px}
+.stage.rail .sb-head{padding:0;justify-content:center}
+.sb-mark{flex:none;width:34px;height:34px;border-radius:10px;background:#171a22;color:#fff;
+  font-family:var(--fT);font-size:17px;display:grid;place-items:center;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08),0 1px 2px rgba(16,24,40,.2)}
+.stage.dark .sb-mark{background:#e9edf6;color:#12151d;box-shadow:0 1px 2px rgba(0,0,0,.35)}
+.sb-name{display:flex;flex-direction:column;line-height:1.12;min-width:0}
+.sb-name b{font-size:14px;font-weight:800;color:var(--ink);letter-spacing:-.01em;white-space:nowrap}
+.sb-name b i{font-style:normal;font-weight:300}
+.sb-name span{font-family:var(--fN);font-size:9.5px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+.sb-edge{position:absolute;top:26px;right:-13px;width:26px;height:26px;border-radius:50%;
+  background:var(--card);border:1px solid var(--hair);color:var(--mut);
+  display:grid;place-items:center;box-shadow:0 1px 3px rgba(16,24,40,.12)}
+.sb-edge svg{width:13px;height:13px}
+
+/* --- командная строка (второй вход палитры, #sbCmd) --- */
+.sb-cmd{margin-top:16px;display:flex;align-items:center;gap:8px;height:36px;padding:0 10px;
+  border-radius:10px;background:var(--card);border:1px solid var(--hair);color:var(--dim)}
+.stage.dark .sb-cmd{background:rgba(255,255,255,.05)}
+.sb-cmd svg{width:15px;height:15px}
+.sb-cmd span{font-size:13px;font-weight:500;color:var(--dim);flex:1;white-space:nowrap;overflow:hidden}
+.sb-cmd kbd{font-family:var(--fN);font-size:10px;font-weight:600;color:var(--dim);
+  border:1px solid var(--hair);border-radius:6px;padding:2px 5px;background:var(--panel-bg)}
+.stage.rail .sb-cmd{width:40px;justify-content:center;padding:0}
+.stage.rail .sb-cmd span,.stage.rail .sb-cmd kbd{display:none}
+
+/* --- группа: подпись-капитель + шеврон --- */
+.sb-cap{margin:18px 6px 6px;display:flex;align-items:center;gap:8px;
+  font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.sb-cap svg{width:12px;height:12px;margin-left:auto;stroke-width:2}
+.stage.rail .sb-cap{margin:16px 0 6px;width:100%;justify-content:center}
+.stage.rail .sb-cap em{display:none}
+.stage.rail .sb-cap svg{display:none}
+.stage.rail .sb-cap::after{content:'';width:22px;height:1px;background:var(--hair)}
+
+/* --- пункт --- */
+.sb-it.first{margin-top:16px}
+.sb-it{display:flex;align-items:center;gap:10px;height:38px;padding:0 10px;margin:1px 0;
+  border-radius:10px;color:var(--item);font-size:13.5px;font-weight:600;cursor:default;white-space:nowrap}
+.sb-it svg{color:var(--mut)}
+.sb-it.on{background:var(--card);color:var(--ink);
+  box-shadow:0 1px 2px rgba(16,24,40,.06),0 5px 14px -6px rgba(16,24,40,.12)}
+.stage.dark .sb-it.on{box-shadow:0 1px 2px rgba(0,0,0,.4),0 5px 14px -6px rgba(0,0,0,.5)}
+.sb-it.on svg{color:var(--ink)}
+.sb-it .lbl{flex:1;overflow:hidden;text-overflow:ellipsis}
+.stage.rail .sb-it{width:40px;justify-content:center;padding:0;position:relative}
+.stage.rail .sb-it .lbl,.stage.rail .sb-it .bdg{display:none}
+
+/* бейдж-пилюля: счёт событий (data-sb-note) */
+.bdg{flex:none;min-width:20px;height:19px;padding:0 6px;border-radius:999px;
+  display:grid;place-items:center;
+  font-family:var(--fN);font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;
+  background:var(--badge-bg);color:var(--badge-tx)}
+.bdg.amb{background:rgba(194,118,10,.13);color:var(--amb)}
+.stage.dark .bdg.amb{background:rgba(230,160,60,.15);color:#e0a458}
+/* в рейке счёт сжимается в точку */
+.stage.rail .sb-it .dot{position:absolute;top:7px;right:7px;width:6px;height:6px;border-radius:50%;
+  background:var(--badge-tx)}
+.stage.rail .sb-it .dot.amb{background:var(--amb)}
+
+/* --- подвал-карточка (аналог SUPPORT-блока референса) --- */
+.sb-foot{margin-top:auto;border:1px solid var(--hair);border-radius:14px;padding:6px;background:var(--card)}
+.stage.dark .sb-foot{background:rgba(255,255,255,.04)}
+.sb-foot .sb-it{height:36px;margin:0}
+.sb-foot .sb-it.slim{color:var(--item)}
+.stage.rail .sb-foot{border:none;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:2px}
+
+/* сегмент темы: Тёмная · Светлая · Системная */
+.sb-seg{margin:6px 4px;display:flex;background:var(--seg-bg);border-radius:10px;padding:3px}
+.sb-seg span{flex:1;text-align:center;font-size:11.5px;font-weight:600;color:var(--mut);
+  padding:5px 0;border-radius:8px;white-space:nowrap}
+.sb-seg span.on{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(16,24,40,.09)}
+.stage.dark .sb-seg span.on{background:#2a3040;box-shadow:0 1px 2px rgba(0,0,0,.4)}
+
+/* профиль: аватар + имя + выход (низ подвала) */
+.sb-prof{display:flex;align-items:center;gap:10px;height:40px;padding:0 8px;margin-top:2px;
+  border-top:1px solid var(--hair)}
+.sb-ava{flex:none;width:26px;height:26px;border-radius:50%;
+  background:linear-gradient(135deg,#8e9bff 0%,#4453ef 100%);color:#fff;
+  font-size:10.5px;font-weight:700;display:grid;place-items:center;letter-spacing:.02em}
+.sb-prof .nm{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.15}
+.sb-prof .nm b{font-size:12.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-prof .nm span{font-size:10.5px;color:var(--dim)}
+.sb-prof>svg{color:var(--dim);width:16px;height:16px}
+.stage.rail .sb-prof{border:none;padding:0;height:auto;margin-top:4px}
+.stage.rail .sb-prof .nm,.stage.rail .sb-prof>svg{display:none}
+
+/* звоночек с точкой */
+.nf{position:relative}
+.nf::after{content:'';position:absolute;top:8px;left:22px;width:6px;height:6px;border-radius:50%;
+  background:var(--badge-tx);outline:2px solid var(--card)}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="doc-h">
+  <div class="doc-kicker">Сайдбар · мокап по референсу</div>
+  <h1>Колонка в языке «Technolize»: группы капителью, белая карточка активного, подвал-блок</h1>
+  <p>Референс — светлый SaaS-сайдбар: лавандово-серое полотно, разделы собраны в группы с подписями-капителью
+     и шевронами, активный пункт — белая скруглённая карточка с мягкой тенью, счётчики — индиговые пилюли,
+     низ — отдельный блок в рамке с переключателем темы и выходом. Ниже — тот же язык, натянутый на реальный
+     состав нашей колонки: плоский первый уровень «Плоскости» (Обзор · Мои портфели · Ребаланс · Торговля ·
+     Рынок · Расчёт · Академия + «Ещё») — ровно в том порядке, как в коде, без придуманных групп.</p>
+  <div class="verdict">
+    <p><b>Что меняется, а что нет.</b> Состав, порядок и поведение пунктов — прежние (это тот же
+       <code>#sbFlat</code>: Обзор, Мои портфели, Ребаланс, Торговля, затем Рынок, Расчёт, Академия);
+       меняется только одежда: полотно светлее фона страницы, активный раздел — белая карточка вместо
+       заливки, события — пилюли у правого края. Единственная группа с подписью-капителью — «Ещё», потому
+       что она и в коде группа (<code>sb_flat_more_v1</code>): Аналитика, Отчёты, Операции, Тест, Админка.
+       Командная строка поиска остаётся наверху, а подвал (аватар, звоночек, настройки, тема) собирается в
+       блок-карточку — как SUPPORT-блок референса.</p>
+    <p><b>Отступления от референса, названные вслух:</b> секций-групп OVERVIEW / MY PAGES / TEAM у нас нет —
+       список остаётся плоским, капитель достаётся только «Ещё». Сегмент темы — три положения (Тёмная ·
+       Светлая · Системная), как в референсе Dark · Light · System; сегодня тема переключается одной кнопкой
+       <code>#themeFab</code> — это единственное новое поведение в мокапе.</p>
+  </div>
+</div>
+
+<!-- ================================================================= -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">В1</span><h2>Развёрнутая колонка, светлая тема</h2><span class="mk-tag">Основной вид</span></div>
+  <p class="mk-sub">268 px, как сейчас. Список плоский, порядок — как в коде: Обзор · Мои портфели · Ребаланс ·
+     Торговля · Рынок · Расчёт · Академия; «Ещё» — единственная группа (по умолчанию свёрнута — здесь раскрыта,
+     чтобы показать состав: Аналитика, Отчёты, Операции, Тест, Админка). Активный раздел — «Мои портфели».</p>
+  <div class="scroller"><div class="row">
+
+  <div class="stage">
+    <aside class="sb">
+      <div class="sb-head">
+        <div class="sb-mark">M</div>
+        <div class="sb-name"><b><i>Madame&nbsp;</i>Solomi'na</b><span>Terminal</span></div>
+      </div>
+      <div class="sb-edge"><svg viewBox="0 0 24 24"><polyline points="14 6 8 12 14 18"/></svg></div>
+
+      <div class="sb-cmd">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span>Бумага, портфель, действие…</span><kbd>⌘K</kbd>
+      </div>
+
+      <div class="sb-it first">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/></svg>
+        <span class="lbl">Обзор</span>
+      </div>
+      <div class="sb-it on">
+        <svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg>
+        <span class="lbl">Мои портфели</span><span class="bdg">4</span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        <span class="lbl">Ребаланс</span><span class="bdg amb">2</span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M8 3v3.5"/><rect x="5.8" y="6.5" width="4.4" height="8" rx="1.2"/><path d="M8 14.5V21"/><path d="M16 3v5.5"/><rect x="13.8" y="8.5" width="4.4" height="7" rx="1.2"/><path d="M16 15.5V21"/></svg>
+        <span class="lbl">Торговля</span>
+      </div>
+
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span class="lbl">Рынок</span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+        <span class="lbl">Расчёт</span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M22 9.5L12 4.5 2 9.5l10 5 10-5z"/><path d="M6 11.8V17c0 1.6 2.7 3 6 3s6-1.4 6-3v-5.2"/></svg>
+        <span class="lbl">Академия</span>
+      </div>
+
+      <div class="sb-cap"><em>Ещё</em><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <span class="lbl">Аналитика</span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
+        <span class="lbl">Отчёты</span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M7 8h13M7 12h13M7 16h13"/><path d="M4 8h.01M4 12h.01M4 16h.01"/></svg>
+        <span class="lbl">Операции</span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg>
+        <span class="lbl">Тест</span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span class="lbl">Админка</span>
+      </div>
+
+      <div class="sb-foot">
+        <div class="sb-it slim nf">
+          <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="lbl">Уведомления</span><span class="bdg">3</span>
+        </div>
+        <div class="sb-it slim">
+          <svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+          <span class="lbl">Настройки</span>
+        </div>
+        <div class="sb-seg"><span>Тёмная</span><span class="on">Светлая</span><span>Системная</span></div>
+        <div class="sb-prof">
+          <div class="sb-ava">MS</div>
+          <div class="nm"><b>Madame Solomi'na</b><span>owner</span></div>
+          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </div>
+      </div>
+    </aside>
+
+    <div class="ghost">
+      <div class="g h64"></div>
+      <div class="g split"><span></span><span></span><span></span></div>
+      <div class="g h180"></div>
+      <div class="g grow"></div>
+    </div>
+  </div>
+
+  <!-- ============================== В2: тёмная ============================== -->
+  <div class="stage dark">
+    <aside class="sb">
+      <div class="sb-head">
+        <div class="sb-mark">M</div>
+        <div class="sb-name"><b><i>Madame&nbsp;</i>Solomi'na</b><span>Terminal</span></div>
+      </div>
+      <div class="sb-edge"><svg viewBox="0 0 24 24"><polyline points="14 6 8 12 14 18"/></svg></div>
+
+      <div class="sb-cmd">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span>Бумага, портфель, действие…</span><kbd>⌘K</kbd>
+      </div>
+
+      <div class="sb-it first">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/></svg>
+        <span class="lbl">Обзор</span>
+      </div>
+      <div class="sb-it on">
+        <svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg>
+        <span class="lbl">Мои портфели</span><span class="bdg">4</span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        <span class="lbl">Ребаланс</span><span class="bdg amb">2</span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M8 3v3.5"/><rect x="5.8" y="6.5" width="4.4" height="8" rx="1.2"/><path d="M8 14.5V21"/><path d="M16 3v5.5"/><rect x="13.8" y="8.5" width="4.4" height="7" rx="1.2"/><path d="M16 15.5V21"/></svg>
+        <span class="lbl">Торговля</span>
+      </div>
+
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span class="lbl">Рынок</span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+        <span class="lbl">Расчёт</span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M22 9.5L12 4.5 2 9.5l10 5 10-5z"/><path d="M6 11.8V17c0 1.6 2.7 3 6 3s6-1.4 6-3v-5.2"/></svg>
+        <span class="lbl">Академия</span>
+      </div>
+
+      <div class="sb-cap"><em>Ещё</em><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></div>
+
+      <div class="sb-foot">
+        <div class="sb-it slim nf">
+          <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="lbl">Уведомления</span><span class="bdg">3</span>
+        </div>
+        <div class="sb-it slim">
+          <svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+          <span class="lbl">Настройки</span>
+        </div>
+        <div class="sb-seg"><span class="on">Тёмная</span><span>Светлая</span><span>Системная</span></div>
+        <div class="sb-prof">
+          <div class="sb-ava">MS</div>
+          <div class="nm"><b>Madame Solomi'na</b><span>owner</span></div>
+          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </div>
+      </div>
+    </aside>
+
+    <div class="ghost">
+      <div class="g h64"></div>
+      <div class="g split"><span></span><span></span><span></span></div>
+      <div class="g h180"></div>
+      <div class="g grow"></div>
+    </div>
+  </div>
+
+  <!-- ============================== В3: рейка ============================== -->
+  <div class="stage rail">
+    <aside class="sb">
+      <div class="sb-head"><div class="sb-mark">M</div></div>
+      <div class="sb-edge"><svg viewBox="0 0 24 24"><polyline points="10 6 16 12 10 18"/></svg></div>
+
+      <div class="sb-cmd">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+
+      <div class="sb-it first">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/></svg>
+      </div>
+      <div class="sb-it on">
+        <svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg>
+        <span class="dot"></span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        <span class="dot amb"></span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M8 3v3.5"/><rect x="5.8" y="6.5" width="4.4" height="8" rx="1.2"/><path d="M8 14.5V21"/><path d="M16 3v5.5"/><rect x="13.8" y="8.5" width="4.4" height="7" rx="1.2"/><path d="M16 15.5V21"/></svg>
+      </div>
+
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M22 9.5L12 4.5 2 9.5l10 5 10-5z"/><path d="M6 11.8V17c0 1.6 2.7 3 6 3s6-1.4 6-3v-5.2"/></svg>
+      </div>
+
+      <div class="sb-foot">
+        <div class="sb-it slim nf">
+          <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        </div>
+        <div class="sb-prof"><div class="sb-ava">MS</div></div>
+      </div>
+    </aside>
+
+    <div class="ghost">
+      <div class="g h64"></div>
+      <div class="g h180"></div>
+      <div class="g grow"></div>
+    </div>
+  </div>
+
+  </div></div>
+
+  <div class="notes">
+    <div class="note"><i>1</i><span>Полотно колонки — на полтона светлее фона страницы (у референса #F7F7FB на белом): колонка отделяется тоном, без жирной границы.</span></div>
+    <div class="note"><i>2</i><span>Активный раздел — белая карточка с мягкой тенью; заливок и левых полос нет. В тёмной теме карточка — ступень светлоты поверхности, не тень.</span></div>
+    <div class="note"><i>3</i><span>Счётчики событий — пилюли: индиговая = счёт (портфели, уведомления), янтарная = требует действия (дрейф ребаланса). В рейке пилюля сжимается в точку тех же цветов.</span></div>
+    <div class="note"><i>4</i><span>«Ещё» из строки-переключателя становится подписью группы с шевроном — тот же persist <code>sb_flat_more_v1</code>, в В2 показана свёрнутой.</span></div>
+    <div class="note"><i>5</i><span>Подвал — блок-карточка как SUPPORT в референсе: уведомления, настройки раздела, сегмент темы, профиль с выходом. Аватар и звоночек — те же узлы <code>#sbPersonalSlot</code>.</span></div>
+    <div class="note"><i>6</i><span>Кнопка-свёртка сидит кружком на кромке колонки (как « ‹ » референса) — вместо шеврона в шапке и кнопки в подвале рейки.</span></div>
+  </div>
+</div>
+
+<!-- ================================================================= -->
+<div class="mk">
+  <div class="mk-h"><span class="mk-n">КАРТА</span><h2>Референс → наша колонка</h2><span class="mk-tag mute">внедрение</span></div>
+  <table class="map">
+    <tr><th>Элемент референса</th><th>У нас</th><th>Где живёт</th></tr>
+    <tr><td>Логотип-квадрат + имя воркспейса</td><td>Марка «M» + Madame Solomi'na / Terminal — без изменений</td><td><code>#sbHead</code></td></tr>
+    <tr><td>Круглая кнопка « ‹ » на кромке панели</td><td>Свёртка в рейку 76px; заменяет <code>#sbHeadCollapse</code> и кнопку в <code>#sbRailFoot</code></td><td><code>css/sidebar-rail.css</code></td></tr>
+    <tr><td>Группы OVERVIEW / MY PAGES с шевронами</td><td>Аналога нет — список остаётся плоским, как в коде; капитель с шевроном достаётся только «Ещё» (она и так группа)</td><td><code>#sbFlat</code> (js/sidebar-ctx.js)</td></tr>
+    <tr><td>Активный пункт — белая карточка</td><td>То же; сегодняшняя подсветка заливкой уходит</td><td><code>.sb-item.on</code></td></tr>
+    <tr><td>Счётчики-пилюли (4, 7)</td><td>Величины событий из <code>data-sb-note</code> (badgeSync) — индиго/янтарь</td><td>js/sidebar-ctx.js</td></tr>
+    <tr><td>TEAM (люди с аватарами)</td><td>Аналога нет — место занимает группа «Ещё»</td><td>—</td></tr>
+    <tr><td>SUPPORT-блок в рамке</td><td>Подвал: Уведомления (<code>#nfBell</code>), Настройки (<code>#sbSettingsBtn</code>), тема, профиль (<code>#sbPersonalSlot</code>)</td><td><code>#sbRailFoot</code></td></tr>
+    <tr><td>Сегмент Dark · Light · System</td><td>Тёмная · Светлая · Системная — новое поведение (сейчас одна кнопка <code>#themeFab</code>)</td><td>theme-scope</td></tr>
+    <tr><td>Sign Out</td><td>Иконка выхода в строке профиля (меню кабинета остаётся по клику на аватар)</td><td>js/profile-menu.js</td></tr>
+  </table>
+</div>
+
+</div>
+</body>
+</html>
