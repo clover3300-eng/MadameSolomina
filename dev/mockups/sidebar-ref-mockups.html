@@ -120,10 +120,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .sb-name b{font-size:14px;font-weight:800;color:var(--ink);letter-spacing:-.01em;white-space:nowrap}
 .sb-name b i{font-style:normal;font-weight:300}
 .sb-name span{font-family:var(--fN);font-size:9.5px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
-.sb-edge{position:absolute;top:26px;right:-13px;width:26px;height:26px;border-radius:50%;
-  background:var(--card);border:1px solid var(--hair);color:var(--mut);
-  display:grid;place-items:center;box-shadow:0 1px 3px rgba(16,24,40,.12)}
-.sb-edge svg{width:13px;height:13px}
+/* свёртка — тихий двойной шеврон в шапке (как #sbHeadCollapse сейчас), без
+   кружка на кромке: в рейке колонку разворачивает клик по марке «M» (markExpands) */
+.sb-hcol{margin-left:auto;width:28px;height:28px;border:none;border-radius:8px;
+  background:transparent;color:var(--dim);display:grid;place-items:center;cursor:default}
+.sb-hcol svg{width:15px;height:15px}
 
 /* --- командная строка (второй вход палитры, #sbCmd) --- */
 .sb-cmd{margin-top:16px;display:flex;align-items:center;gap:8px;height:36px;padding:0 10px;
@@ -170,16 +171,19 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   background:var(--badge-tx)}
 .stage.rail .sb-it .dot.amb{background:var(--amb)}
 
-/* --- открытые портфели под «Мои портфели» (аналог TEAM-списка референса) --- */
-.sb-ports{margin:1px 0 3px;padding-left:24px}
-.sb-port{display:flex;align-items:center;gap:9px;height:31px;padding:0 10px 0 12px;
-  border-left:1px solid var(--hair);color:var(--item);font-size:13px;font-weight:550;white-space:nowrap}
-.sb-port .pa{flex:none;width:20px;height:20px;border-radius:6px;background:var(--c,#4453ef);
-  color:#fff;font-size:9.5px;font-weight:700;display:grid;place-items:center;letter-spacing:.02em}
+/* --- открытые портфели под «Мои портфели» (аналог TEAM-списка референса) ---
+   строки того же ряда, что разделы: точка-маркер стоит по оси иконок, без
+   «дерева» и квадратиков — портфель узнаётся цветом и именем, день — тихим моно */
+.sb-ports{margin:1px 0 3px}
+.sb-port{display:flex;align-items:center;gap:10px;height:30px;padding:0 10px;
+  border-radius:10px;color:var(--item);font-size:13px;font-weight:550;white-space:nowrap}
+.sb-port .pdot{flex:none;width:8px;height:8px;border-radius:50%;margin:0 5px;
+  background:var(--c,#4453ef);box-shadow:0 0 0 3px color-mix(in srgb,var(--c,#4453ef) 16%,transparent)}
 .sb-port .pn{flex:1;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.sb-port .pd{font-family:var(--fN);font-size:10.5px;font-weight:600;font-variant-numeric:tabular-nums;color:#12a35c}
+.sb-port .pd{font-family:var(--fN);font-size:10.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--dim)}
+.sb-port .pd.up{color:#12a35c}
 .sb-port .pd.neg{color:#d8452b}
-.stage.dark .sb-port .pd{color:#3fd08b}
+.stage.dark .sb-port .pd.up{color:#3fd08b}
 .stage.dark .sb-port .pd.neg{color:#ff7a5c}
 .stage.rail .sb-ports{display:none}
 /* шеврон-раскрыватель списка на строке «Мои портфели» */
@@ -187,18 +191,21 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .sb-it .chev svg{width:13px;height:13px;stroke-width:2}
 .stage.rail .sb-it .chev{display:none}
 
-/* --- подвал-карточка (аналог SUPPORT-блока референса) --- */
-.sb-foot{margin-top:auto;border:1px solid var(--hair);border-radius:14px;padding:6px;background:var(--card)}
-.stage.dark .sb-foot{background:rgba(255,255,255,.04)}
-.sb-foot .sb-it{height:36px;margin:0}
-.sb-foot .sb-it.slim{color:var(--item)}
-.stage.rail .sb-foot{border:none;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:2px}
-/* шапка подвала: капитель + шеврон — блок СВОРАЧИВАЕТСЯ (persist по аналогии
-   с sb_flat_more_v1); точка на шапке = внутри есть непрочитанные события */
-.sb-fhead{display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;
-  font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
-.sb-fhead svg{width:12px;height:12px;margin-left:auto;stroke-width:2}
-.sb-fhead .fdot{width:6px;height:6px;border-radius:50%;background:var(--badge-tx)}
+/* --- подвал: ОДНА строка профиля, никаких панелей --- профиль слева, справа
+   отдельные звоночек и шестерёнка; их содержимое живёт в поповерах по клику
+   (меню кабинета и #nfPanel — как сейчас), поэтому сворачивать нечего */
+.sb-bot{margin-top:auto;border-top:1px solid var(--hair);padding-top:10px;
+  display:flex;align-items:center;gap:8px}
+.sb-bot .nm{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.15}
+.sb-bot .nm b{font-size:12.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-bot .nm span{font-size:10.5px;color:var(--dim)}
+.sb-ib{position:relative;flex:none;width:32px;height:32px;border:none;border-radius:9px;
+  background:transparent;color:var(--mut);display:grid;place-items:center;cursor:default}
+.sb-ib svg{width:17px;height:17px}
+.sb-ib .dot{position:absolute;top:5px;right:6px;width:6px;height:6px;border-radius:50%;
+  background:var(--badge-tx)}
+.stage.rail .sb-bot{flex-direction:column;gap:6px;width:100%;padding-top:12px}
+.stage.rail .sb-bot .nm{display:none}
 
 /* --- «вшитый» вид: колонка сидит прямо на фоне, контент — белая карта --- */
 .stage.seam{background:#f4f5fa}
@@ -219,30 +226,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .prow{display:flex;gap:14px}
 .prow .pline{flex:1}
 
-/* сегмент темы: Тёмная · Светлая · Системная */
-.sb-seg{margin:6px 4px;display:flex;background:var(--seg-bg);border-radius:10px;padding:3px}
-.sb-seg span{flex:1;text-align:center;font-size:11.5px;font-weight:600;color:var(--mut);
-  padding:5px 0;border-radius:8px;white-space:nowrap}
-.sb-seg span.on{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(16,24,40,.09)}
-.stage.dark .sb-seg span.on{background:#2a3040;box-shadow:0 1px 2px rgba(0,0,0,.4)}
-
-/* профиль: аватар + имя + выход (низ подвала) */
-.sb-prof{display:flex;align-items:center;gap:10px;height:40px;padding:0 8px;margin-top:2px;
-  border-top:1px solid var(--hair)}
-.sb-ava{flex:none;width:26px;height:26px;border-radius:50%;
+.sb-ava{flex:none;width:28px;height:28px;border-radius:50%;
   background:linear-gradient(135deg,#8e9bff 0%,#4453ef 100%);color:#fff;
   font-size:10.5px;font-weight:700;display:grid;place-items:center;letter-spacing:.02em}
-.sb-prof .nm{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.15}
-.sb-prof .nm b{font-size:12.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sb-prof .nm span{font-size:10.5px;color:var(--dim)}
-.sb-prof>svg{color:var(--dim);width:16px;height:16px}
-.stage.rail .sb-prof{border:none;padding:0;height:auto;margin-top:4px}
-.stage.rail .sb-prof .nm,.stage.rail .sb-prof>svg{display:none}
-
-/* звоночек с точкой */
-.nf{position:relative}
-.nf::after{content:'';position:absolute;top:8px;left:22px;width:6px;height:6px;border-radius:50%;
-  background:var(--badge-tx);outline:2px solid var(--card)}
 </style>
 </head>
 <body>
@@ -262,12 +248,14 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
        меняется только одежда: полотно светлее фона страницы, активный раздел — белая карточка вместо
        заливки, события — пилюли у правого края. Единственная группа с подписью-капителью — «Ещё», потому
        что она и в коде группа (<code>sb_flat_more_v1</code>): Аналитика, Отчёты, Операции, Тест, Админка.
-       Командная строка поиска остаётся наверху, а подвал (аватар, звоночек, настройки, тема) собирается в
-       блок-карточку — как SUPPORT-блок референса.</p>
+       Командная строка поиска остаётся наверху, а подвал — ОДНА строка: профиль слева и отдельные звоночек
+       с шестерёнкой справа; их содержимое открывается поповерами по клику (меню кабинета, <code>#nfPanel</code>),
+       постоянной панели настроек нет.</p>
     <p><b>Отступления от референса, названные вслух:</b> секций-групп OVERVIEW / MY PAGES / TEAM у нас нет —
-       список остаётся плоским, капитель достаётся только «Ещё». Сегмент темы — три положения (Тёмная ·
-       Светлая · Системная), как в референсе Dark · Light · System; сегодня тема переключается одной кнопкой
-       <code>#themeFab</code> — это единственное новое поведение в мокапе.</p>
+       список остаётся плоским, капитель достаётся только «Ещё»; TEAM-списку отвечают открытые портфели под
+       «Мои портфели». Сегмент темы Dark · Light · System не переносим — тема остаётся в меню кабинета
+       (<code>#themeFab</code>). Круглой кнопки-стрелки на кромке тоже нет: свёртка — двойной шеврон в шапке,
+       разворот рейки — клик по марке «M».</p>
   </div>
 </div>
 
@@ -277,7 +265,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <p class="mk-sub">268 px, как сейчас. Список плоский, порядок — как в коде: Обзор · Мои портфели · Ребаланс ·
      Торговля · Рынок · Расчёт · Академия; «Ещё» — единственная группа (по умолчанию свёрнута — здесь раскрыта,
      чтобы показать состав: Аналитика, Отчёты, Операции, Тест, Админка). Активный раздел — «Мои портфели»,
-     под ним — открытые портфели. Подвал «Сервис» в В1 раскрыт, в В2 (тёмной) — свёрнут до шапки.</p>
+     под ним — открытые портфели. Внизу — строка профиля с отдельными звоночком и шестерёнкой.</p>
   <div class="scroller"><div class="row">
 
   <div class="stage">
@@ -285,8 +273,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       <div class="sb-head">
         <div class="sb-mark">M</div>
         <div class="sb-name"><b><i>Madame&nbsp;</i>Solomi'na</b><span>Terminal</span></div>
+        <button class="sb-hcol" title="Свернуть в рейку"><svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg></button>
       </div>
-      <div class="sb-edge"><svg viewBox="0 0 24 24"><polyline points="14 6 8 12 14 18"/></svg></div>
 
       <div class="sb-cmd">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -304,10 +292,10 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       </div>
       <!-- открытые (не скрытые) портфели из PF.store — имена здесь примерные -->
       <div class="sb-ports">
-        <div class="sb-port"><i class="pa" style="--c:#4453ef">О</i><span class="pn">Основной</span><span class="pd">+0,42%</span></div>
-        <div class="sb-port"><i class="pa" style="--c:#0e9488">И</i><span class="pn">ИИС</span><span class="pd">+0,18%</span></div>
-        <div class="sb-port"><i class="pa" style="--c:#7c5cff">Д</i><span class="pn">Дивидендный</span><span class="pd neg">−0,35%</span></div>
-        <div class="sb-port"><i class="pa" style="--c:#64748b">Т</i><span class="pn">Т-Инвестиции</span><span class="pd">+0,07%</span></div>
+        <div class="sb-port"><i class="pdot" style="--c:#4453ef"></i><span class="pn">Основной</span><span class="pd up">+0,42%</span></div>
+        <div class="sb-port"><i class="pdot" style="--c:#0e9488"></i><span class="pn">ИИС</span><span class="pd up">+0,18%</span></div>
+        <div class="sb-port"><i class="pdot" style="--c:#7c5cff"></i><span class="pn">Дивидендный</span><span class="pd neg">−0,35%</span></div>
+        <div class="sb-port"><i class="pdot" style="--c:#c2760a"></i><span class="pn">Т-Инвестиции</span><span class="pd up">+0,07%</span></div>
       </div>
       <div class="sb-it">
         <svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
@@ -353,22 +341,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         <span class="lbl">Админка</span>
       </div>
 
-      <div class="sb-foot">
-        <div class="sb-fhead"><em>Сервис</em><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg></div>
-        <div class="sb-it slim nf">
-          <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-          <span class="lbl">Уведомления</span><span class="bdg">3</span>
-        </div>
-        <div class="sb-it slim">
-          <svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
-          <span class="lbl">Настройки</span>
-        </div>
-        <div class="sb-seg"><span>Тёмная</span><span class="on">Светлая</span><span>Системная</span></div>
-        <div class="sb-prof">
-          <div class="sb-ava">MS</div>
-          <div class="nm"><b>Madame Solomi'na</b><span>owner</span></div>
-          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        </div>
+      <div class="sb-bot">
+        <div class="sb-ava">MS</div>
+        <div class="nm"><b>Madame Solomi'na</b><span>owner</span></div>
+        <button class="sb-ib" title="Уведомления"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="dot"></span></button>
+        <button class="sb-ib" title="Настройки"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg></button>
       </div>
     </aside>
 
@@ -386,8 +363,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       <div class="sb-head">
         <div class="sb-mark">M</div>
         <div class="sb-name"><b><i>Madame&nbsp;</i>Solomi'na</b><span>Terminal</span></div>
+        <button class="sb-hcol" title="Свернуть в рейку"><svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg></button>
       </div>
-      <div class="sb-edge"><svg viewBox="0 0 24 24"><polyline points="14 6 8 12 14 18"/></svg></div>
 
       <div class="sb-cmd">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -405,10 +382,10 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       </div>
       <!-- открытые (не скрытые) портфели из PF.store — имена здесь примерные -->
       <div class="sb-ports">
-        <div class="sb-port"><i class="pa" style="--c:#4453ef">О</i><span class="pn">Основной</span><span class="pd">+0,42%</span></div>
-        <div class="sb-port"><i class="pa" style="--c:#0e9488">И</i><span class="pn">ИИС</span><span class="pd">+0,18%</span></div>
-        <div class="sb-port"><i class="pa" style="--c:#7c5cff">Д</i><span class="pn">Дивидендный</span><span class="pd neg">−0,35%</span></div>
-        <div class="sb-port"><i class="pa" style="--c:#64748b">Т</i><span class="pn">Т-Инвестиции</span><span class="pd">+0,07%</span></div>
+        <div class="sb-port"><i class="pdot" style="--c:#4453ef"></i><span class="pn">Основной</span><span class="pd up">+0,42%</span></div>
+        <div class="sb-port"><i class="pdot" style="--c:#0e9488"></i><span class="pn">ИИС</span><span class="pd up">+0,18%</span></div>
+        <div class="sb-port"><i class="pdot" style="--c:#7c5cff"></i><span class="pn">Дивидендный</span><span class="pd neg">−0,35%</span></div>
+        <div class="sb-port"><i class="pdot" style="--c:#c2760a"></i><span class="pn">Т-Инвестиции</span><span class="pd up">+0,07%</span></div>
       </div>
       <div class="sb-it">
         <svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
@@ -434,14 +411,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
       <div class="sb-cap"><em>Ещё</em><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></div>
 
-      <!-- подвал СВЁРНУТ: осталась шапка с точкой непрочитанного и профиль -->
-      <div class="sb-foot">
-        <div class="sb-fhead"><em>Сервис</em><span class="fdot"></span><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
-        <div class="sb-prof">
-          <div class="sb-ava">MS</div>
-          <div class="nm"><b>Madame Solomi'na</b><span>owner</span></div>
-          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        </div>
+      <div class="sb-bot">
+        <div class="sb-ava">MS</div>
+        <div class="nm"><b>Madame Solomi'na</b><span>owner</span></div>
+        <button class="sb-ib" title="Уведомления"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="dot"></span></button>
+        <button class="sb-ib" title="Настройки"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg></button>
       </div>
     </aside>
 
@@ -456,8 +430,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <!-- ============================== В3: рейка ============================== -->
   <div class="stage rail">
     <aside class="sb">
+      <!-- в рейке отдельной стрелки нет: колонку разворачивает клик по марке «M»
+           (ровно как сейчас — markExpands в js/sidebar.js) -->
       <div class="sb-head"><div class="sb-mark">M</div></div>
-      <div class="sb-edge"><svg viewBox="0 0 24 24"><polyline points="10 6 16 12 10 18"/></svg></div>
 
       <div class="sb-cmd">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -488,11 +463,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         <svg viewBox="0 0 24 24"><path d="M22 9.5L12 4.5 2 9.5l10 5 10-5z"/><path d="M6 11.8V17c0 1.6 2.7 3 6 3s6-1.4 6-3v-5.2"/></svg>
       </div>
 
-      <div class="sb-foot">
-        <div class="sb-it slim nf">
-          <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-        </div>
-        <div class="sb-prof"><div class="sb-ava">MS</div></div>
+      <div class="sb-bot">
+        <button class="sb-ib" title="Уведомления"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="dot"></span></button>
+        <div class="sb-ava">MS</div>
       </div>
     </aside>
 
@@ -508,19 +481,21 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <div class="notes">
     <div class="note"><i>1</i><span>Полотно колонки — на полтона светлее фона страницы (у референса #F7F7FB на белом): колонка отделяется тоном, без жирной границы.</span></div>
     <div class="note"><i>2</i><span>Активный раздел — белая карточка с мягкой тенью; заливок и левых полос нет. В тёмной теме карточка — ступень светлоты поверхности, не тень.</span></div>
-    <div class="note"><i>3</i><span>Счётчики событий — пилюли: индиговая = счёт (портфели, уведомления), янтарная = требует действия (дрейф ребаланса). В рейке пилюля сжимается в точку тех же цветов.</span></div>
+    <div class="note"><i>3</i><span>Счётчики событий — пилюли: индиговая = счёт (портфели), янтарная = требует действия (дрейф ребаланса). В рейке пилюля сжимается в точку тех же цветов; непрочитанное на звоночке — тоже точка.</span></div>
     <div class="note"><i>4</i><span>«Ещё» из строки-переключателя становится подписью группы с шевроном — тот же persist <code>sb_flat_more_v1</code>, в В2 показана свёрнутой.</span></div>
-    <div class="note"><i>5</i><span>Подвал — блок-карточка как SUPPORT в референсе: уведомления, настройки раздела, сегмент темы, профиль с выходом. Аватар и звоночек — те же узлы <code>#sbPersonalSlot</code>.</span></div>
-    <div class="note"><i>6</i><span>Кнопка-свёртка сидит кружком на кромке колонки (как « ‹ » референса) — вместо шеврона в шапке и кнопки в подвале рейки.</span></div>
+    <div class="note"><i>5</i><span>Подвал — одна строка профиля с ОТДЕЛЬНЫМИ звоночком и шестерёнкой (те же узлы <code>#sbPersonalSlot</code>/<code>#sbSettingsBtn</code>); их содержимое — поповеры по клику, постоянной панели нет.</span></div>
+    <div class="note"><i>6</i><span>Свёртка — тихий двойной шеврон в шапке (как <code>#sbHeadCollapse</code> сейчас); в рейке колонку разворачивает клик по марке «M» (markExpands), отдельной стрелки нигде нет.</span></div>
   </div>
 </div>
 
 <!-- ================================================================= -->
 <div class="mk">
-  <div class="mk-h"><span class="mk-n">В4–В5</span><h2>Вшитая колонка: сайдбар прямо на фоне</h2><span class="mk-tag">как в референсе</span></div>
+  <div class="mk-h"><span class="mk-n">В4–В6</span><h2>Вшитая колонка: сайдбар прямо на фоне</h2><span class="mk-tag">как в референсе</span></div>
   <p class="mk-sub">Референсная посадка: колонка — не карточка, а часть фона приложения; карточкой становится
-     САМ КОНТЕНТ — белая «бумага» справа. Кнопка-свёртка сидит кружком на границе фона и бумаги. В4 — светлая,
-     подвал раскрыт; В5 — тёмная, подвал свёрнут до шапки «Сервис» (точка = есть непрочитанное).</p>
+     САМ КОНТЕНТ — белая «бумага» справа. Подвал — одна строка: профиль слева, отдельные звоночек и шестерёнка
+     справа (их содержимое — поповеры по клику, постоянной панели нет). Свёртка — тихий двойной шеврон в шапке.
+     В4 — светлая, В5 — тёмная, В6 — ответ на «как выглядит свёрнутый вшитый»: та же рейка 80px на том же фоне,
+     бумага контента забирает освободившуюся ширину; разворачивает клик по марке «M», как сейчас.</p>
   <div class="scroller"><div class="row">
 
   <div class="stage seam">
@@ -528,8 +503,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       <div class="sb-head">
         <div class="sb-mark">M</div>
         <div class="sb-name"><b><i>Madame&nbsp;</i>Solomi'na</b><span>Terminal</span></div>
+        <button class="sb-hcol" title="Свернуть в рейку"><svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg></button>
       </div>
-      <div class="sb-edge"><svg viewBox="0 0 24 24"><polyline points="14 6 8 12 14 18"/></svg></div>
 
       <div class="sb-cmd">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -546,10 +521,10 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         <span class="chev"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg></span>
       </div>
       <div class="sb-ports">
-        <div class="sb-port"><i class="pa" style="--c:#4453ef">О</i><span class="pn">Основной</span><span class="pd">+0,42%</span></div>
-        <div class="sb-port"><i class="pa" style="--c:#0e9488">И</i><span class="pn">ИИС</span><span class="pd">+0,18%</span></div>
-        <div class="sb-port"><i class="pa" style="--c:#7c5cff">Д</i><span class="pn">Дивидендный</span><span class="pd neg">−0,35%</span></div>
-        <div class="sb-port"><i class="pa" style="--c:#64748b">Т</i><span class="pn">Т-Инвестиции</span><span class="pd">+0,07%</span></div>
+        <div class="sb-port"><i class="pdot" style="--c:#4453ef"></i><span class="pn">Основной</span><span class="pd up">+0,42%</span></div>
+        <div class="sb-port"><i class="pdot" style="--c:#0e9488"></i><span class="pn">ИИС</span><span class="pd up">+0,18%</span></div>
+        <div class="sb-port"><i class="pdot" style="--c:#7c5cff"></i><span class="pn">Дивидендный</span><span class="pd neg">−0,35%</span></div>
+        <div class="sb-port"><i class="pdot" style="--c:#c2760a"></i><span class="pn">Т-Инвестиции</span><span class="pd up">+0,07%</span></div>
       </div>
       <div class="sb-it">
         <svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
@@ -573,22 +548,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       </div>
       <div class="sb-cap"><em>Ещё</em><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></div>
 
-      <div class="sb-foot">
-        <div class="sb-fhead"><em>Сервис</em><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg></div>
-        <div class="sb-it slim nf">
-          <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-          <span class="lbl">Уведомления</span><span class="bdg">3</span>
-        </div>
-        <div class="sb-it slim">
-          <svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
-          <span class="lbl">Настройки</span>
-        </div>
-        <div class="sb-seg"><span>Тёмная</span><span class="on">Светлая</span><span>Системная</span></div>
-        <div class="sb-prof">
-          <div class="sb-ava">MS</div>
-          <div class="nm"><b>Madame Solomi'na</b><span>owner</span></div>
-          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        </div>
+      <div class="sb-bot">
+        <div class="sb-ava">MS</div>
+        <div class="nm"><b>Madame Solomi'na</b><span>owner</span></div>
+        <button class="sb-ib" title="Уведомления"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="dot"></span></button>
+        <button class="sb-ib" title="Настройки"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg></button>
       </div>
     </aside>
 
@@ -609,8 +573,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       <div class="sb-head">
         <div class="sb-mark">M</div>
         <div class="sb-name"><b><i>Madame&nbsp;</i>Solomi'na</b><span>Terminal</span></div>
+        <button class="sb-hcol" title="Свернуть в рейку"><svg viewBox="0 0 24 24"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg></button>
       </div>
-      <div class="sb-edge"><svg viewBox="0 0 24 24"><polyline points="14 6 8 12 14 18"/></svg></div>
 
       <div class="sb-cmd">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -627,10 +591,10 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         <span class="chev"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg></span>
       </div>
       <div class="sb-ports">
-        <div class="sb-port"><i class="pa" style="--c:#4453ef">О</i><span class="pn">Основной</span><span class="pd">+0,42%</span></div>
-        <div class="sb-port"><i class="pa" style="--c:#0e9488">И</i><span class="pn">ИИС</span><span class="pd">+0,18%</span></div>
-        <div class="sb-port"><i class="pa" style="--c:#7c5cff">Д</i><span class="pn">Дивидендный</span><span class="pd neg">−0,35%</span></div>
-        <div class="sb-port"><i class="pa" style="--c:#64748b">Т</i><span class="pn">Т-Инвестиции</span><span class="pd">+0,07%</span></div>
+        <div class="sb-port"><i class="pdot" style="--c:#4453ef"></i><span class="pn">Основной</span><span class="pd up">+0,42%</span></div>
+        <div class="sb-port"><i class="pdot" style="--c:#0e9488"></i><span class="pn">ИИС</span><span class="pd up">+0,18%</span></div>
+        <div class="sb-port"><i class="pdot" style="--c:#7c5cff"></i><span class="pn">Дивидендный</span><span class="pd neg">−0,35%</span></div>
+        <div class="sb-port"><i class="pdot" style="--c:#c2760a"></i><span class="pn">Т-Инвестиции</span><span class="pd up">+0,07%</span></div>
       </div>
       <div class="sb-it">
         <svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
@@ -654,13 +618,63 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       </div>
       <div class="sb-cap"><em>Ещё</em><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></div>
 
-      <div class="sb-foot">
-        <div class="sb-fhead"><em>Сервис</em><span class="fdot"></span><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
-        <div class="sb-prof">
-          <div class="sb-ava">MS</div>
-          <div class="nm"><b>Madame Solomi'na</b><span>owner</span></div>
-          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        </div>
+      <div class="sb-bot">
+        <div class="sb-ava">MS</div>
+        <div class="nm"><b>Madame Solomi'na</b><span>owner</span></div>
+        <button class="sb-ib" title="Уведомления"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="dot"></span></button>
+        <button class="sb-ib" title="Настройки"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg></button>
+      </div>
+    </aside>
+
+    <div class="ghost">
+      <div class="paper">
+        <div class="pline w40"></div>
+        <div class="pline h28"></div>
+        <div class="prow"><div class="pline"></div><div class="pline"></div><div class="pline"></div></div>
+        <div class="pline grow"></div>
+        <div class="pline w60"></div>
+        <div class="pline grow"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============== В6: свёрнутая вшитая рейка ============== -->
+  <div class="stage rail seam">
+    <aside class="sb">
+      <div class="sb-head"><div class="sb-mark">M</div></div>
+
+      <div class="sb-cmd">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+
+      <div class="sb-it first">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/></svg>
+      </div>
+      <div class="sb-it on">
+        <svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg>
+        <span class="dot"></span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        <span class="dot amb"></span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M8 3v3.5"/><rect x="5.8" y="6.5" width="4.4" height="8" rx="1.2"/><path d="M8 14.5V21"/><path d="M16 3v5.5"/><rect x="13.8" y="8.5" width="4.4" height="7" rx="1.2"/><path d="M16 15.5V21"/></svg>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M22 9.5L12 4.5 2 9.5l10 5 10-5z"/><path d="M6 11.8V17c0 1.6 2.7 3 6 3s6-1.4 6-3v-5.2"/></svg>
+      </div>
+
+      <div class="sb-bot">
+        <button class="sb-ib" title="Уведомления"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="dot"></span></button>
+        <button class="sb-ib" title="Настройки"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2 2 2 0 1 1-4 0 1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4 1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1a2 2 0 1 1 4 0 1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4z"/></svg></button>
+        <div class="sb-ava">MS</div>
       </div>
     </aside>
 
@@ -680,8 +694,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
   <div class="notes">
     <div class="note"><i>7</i><span>Колонка без рамки и заливки — тон фона и есть её полотно; бумага контента забирает карточность себе. Это ближе всего к посадке референса.</span></div>
-    <div class="note"><i>8</i><span>Открытые портфели — строки под «Мои портфели» с квадратиком-инициалом и дневным %: аналог TEAM-списка референса. Имена примерные, реальные придут из <code>PF.store.items</code> (без скрытых <code>p.hidden</code>).</span></div>
-    <div class="note"><i>9</i><span>Подвал «Сервис» сворачивается по шапке (persist по образцу <code>sb_flat_more_v1</code>); в свёрнутом виде остаются шапка с точкой непрочитанного и профиль.</span></div>
+    <div class="note"><i>8</i><span>Открытые портфели — строки того же ряда, что разделы: цветная точка-маркер по оси иконок, имя, день тихим моно у правого края. Имена примерные, реальные придут из <code>PF.store.items</code> (без скрытых <code>p.hidden</code>).</span></div>
+    <div class="note"><i>9</i><span>Внизу — одна строка: профиль, отдельный звоночек (точка = непрочитанное) и отдельная шестерёнка. Клик открывает поповеры — меню кабинета и <code>#nfPanel</code>, как сейчас; постоянной панели настроек нет.</span></div>
+    <div class="note"><i>10</i><span>Свёрнутый вшитый вид — В6: рейка 80px на том же фоне, без рамки; разворачивает клик по марке «M» (текущее поведение markExpands), отдельной стрелки нет.</span></div>
   </div>
 </div>
 
@@ -691,14 +706,14 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <table class="map">
     <tr><th>Элемент референса</th><th>У нас</th><th>Где живёт</th></tr>
     <tr><td>Логотип-квадрат + имя воркспейса</td><td>Марка «M» + Madame Solomi'na / Terminal — без изменений</td><td><code>#sbHead</code></td></tr>
-    <tr><td>Круглая кнопка « ‹ » на кромке панели</td><td>Свёртка в рейку 76px; заменяет <code>#sbHeadCollapse</code> и кнопку в <code>#sbRailFoot</code></td><td><code>css/sidebar-rail.css</code></td></tr>
+    <tr><td>Круглая кнопка « ‹ » на кромке панели</td><td>Не переносим (не вписалась): свёртка — двойной шеврон в шапке (<code>#sbHeadCollapse</code>), разворот рейки — клик по марке «M» (markExpands)</td><td><code>js/sidebar.js</code></td></tr>
     <tr><td>Группы OVERVIEW / MY PAGES с шевронами</td><td>Аналога нет — список остаётся плоским, как в коде; капитель с шевроном достаётся только «Ещё» (она и так группа)</td><td><code>#sbFlat</code> (js/sidebar-ctx.js)</td></tr>
     <tr><td>Активный пункт — белая карточка</td><td>То же; сегодняшняя подсветка заливкой уходит</td><td><code>.sb-item.on</code></td></tr>
     <tr><td>Счётчики-пилюли (4, 7)</td><td>Величины событий из <code>data-sb-note</code> (badgeSync) — индиго/янтарь</td><td>js/sidebar-ctx.js</td></tr>
-    <tr><td>TEAM (люди с аватарами)</td><td>Открытые портфели под «Мои портфели»: инициал-квадратик + имя + день; состав — <code>PF.store.items</code> без <code>p.hidden</code></td><td>js/sidebar-ctx.js</td></tr>
-    <tr><td>SUPPORT-блок в рамке</td><td>Подвал «Сервис»: Уведомления (<code>#nfBell</code>), Настройки (<code>#sbSettingsBtn</code>), тема, профиль (<code>#sbPersonalSlot</code>); СВОРАЧИВАЕТСЯ по шапке, свой persist</td><td><code>#sbRailFoot</code></td></tr>
-    <tr><td>Сегмент Dark · Light · System</td><td>Тёмная · Светлая · Системная — новое поведение (сейчас одна кнопка <code>#themeFab</code>)</td><td>theme-scope</td></tr>
-    <tr><td>Sign Out</td><td>Иконка выхода в строке профиля (меню кабинета остаётся по клику на аватар)</td><td>js/profile-menu.js</td></tr>
+    <tr><td>TEAM (люди с аватарами)</td><td>Открытые портфели под «Мои портфели»: цветная точка-маркер + имя + день моно; состав — <code>PF.store.items</code> без <code>p.hidden</code></td><td>js/sidebar-ctx.js</td></tr>
+    <tr><td>SUPPORT-блок в рамке</td><td>Не блок, а строка профиля: аватар+имя, отдельный звоночек (<code>#nfBell</code>), отдельная шестерёнка (<code>#sbSettingsBtn</code>); содержимое — поповеры по клику</td><td><code>#sbRailFoot</code></td></tr>
+    <tr><td>Сегмент Dark · Light · System</td><td>Не переносим — тема остаётся в меню кабинета (<code>#themeFab</code>)</td><td>theme-scope</td></tr>
+    <tr><td>Sign Out</td><td>В меню кабинета по клику на профиль — отдельной строки нет</td><td>js/profile-menu.js</td></tr>
   </table>
 </div>
 
