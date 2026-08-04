@@ -2493,11 +2493,14 @@ body.dark-mode .pfpl-sort-cap { color: #93a2b8; }
 #panel-portfolios .pf-ch > .pfd-inchrome { margin-left: auto; }
 #panel-portfolios .pf-ch > .pfd-inchrome ~ .pff-add,
 #panel-portfolios .pf-ch > .pfd-inchrome ~ .pf-ch-go { margin-left: 8px; }
-/* «Избранное»: пара шестерёнка+корзина и «+» должны читаться ОДНИМ кластером —
-   набегало 29px (10px паддинг + 2px + flex-gap 12px + 8px margin) при 2px между
-   самими иконками (замечание 2026-07-22). Зазор вокруг разделителя — по 8px. */
+/* «Избранное»: пара шестерёнка+корзина и следом сортировка читаются ОДНИМ
+   кластером — набегало 29px (10px паддинг + 2px + flex-gap 12px + 8px margin)
+   при 2px между самими иконками (замечание 2026-07-22). Зазор вокруг
+   разделителя — по 8px. «+» стоит ПОСЛЕ сортировки, в самом углу, поэтому
+   правило подтягивания смежного соседа адресуем именно ей. */
 #panel-portfolios .pf-fav .pf-ch > .pfd-inchrome { padding-right: 8px; margin-right: 0; }
-#panel-portfolios .pf-fav .pf-ch > .pfd-inchrome ~ .pff-add { margin-left: -4px; }   /* flex-gap 12 − 4 = 8px после черты */
+#panel-portfolios .pf-fav .pf-ch > .pfd-inchrome + .pff-sort { margin-left: -4px; }   /* flex-gap 12 − 4 = 8px после черты */
+#panel-portfolios .pf-fav .pf-ch .pff-sort + .pff-add { margin-left: 2px; }
 .pfd-inbtn {
     width: 26px; height: 26px; border: 0; background: none; padding: 0; cursor: pointer; border-radius: 8px;
     display: inline-flex; align-items: center; justify-content: center; color: #c3cdd9;
@@ -2523,7 +2526,11 @@ body.dark-mode .pfd-inbtn:hover, .pfd-item.pfd-thm-dark .pfd-inbtn:hover { color
    Плитки живы только у ratesStackHtml (режим «Ставки» блока cal). */
 #panel-portfolios .pf-ratesbar { padding: 14px 20px; }
 .pf-ratesbar .rtb-row { display: flex; align-items: center; min-width: 0; }
-.rtb-i { display: flex; align-items: baseline; gap: 9px; min-width: 0; padding: 0 22px;
+/* flex:0 0 auto — подпись НЕ ужимается (фикс 2026-08-04): при 0 1 auto четыре
+   плитки делили остаток после хвоста и «Ключевая» усыхала до «к», а «ОФЗ 10 лет»
+   до «о». Не влезли в строку — переносим ряд в сетку (брейкпоинт ниже), а не
+   режем слова. */
+.rtb-i { display: flex; align-items: baseline; gap: 9px; flex: 0 0 auto; min-width: 0; padding: 0 22px;
     border-left: 1px solid rgba(15, 23, 42, 0.07); }
 .rtb-i:first-child { border-left: 0; padding-left: 0; }
 .rtb-l { font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em;
@@ -2546,14 +2553,35 @@ body.dark-mode .rtb-src { color: #6c7a8e; }
 /* адаптация к ширине БЛОКА (container pfw объявлен у .pf-card2 в portfolios.css):
    узкий span — сетка 2×2, хвост остаётся ОДНОЙ строкой снизу (не пустой — в нём
    хром+подпись); совсем узкий — столбик */
-@container pfw (max-width: 700px) {
+/* 1020px, а не 700 (фикс 2026-08-04): четырём подписям с числами нужно ~700px,
+   плюс хвост «ЦБ · MOEX · обновлено …» ещё ~245 и поля карточки 40 — на 750px
+   строка «влезала» только за счёт съеденных подписей. Ниже порога — честная
+   сетка 2×2, где всё читается целиком. */
+@container pfw (max-width: 1020px) {
     .pf-ratesbar .rtb-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 22px; }
-    .rtb-i { padding: 0; border-left: 0; }
+    /* В СЕТКЕ ЗНАЧЕНИЯ СТАНОВЯТСЯ КОЛОНКОЙ (правка 2026-08-04). В строке пара
+       «подпись — значение» шла флексом вплотную, и в сетке 2×2 числа вставали на
+       разной вертикали: у «Ключевая» подпись короче, чем у «Инфляция, год», и
+       колонки чисел не было вовсе — плитки читались случайной россыпью. Каждая
+       плитка — своя мини-сетка «подпись | значение», значение прижато вправо:
+       числа выстраиваются по правому краю своей колонки. */
+    .rtb-i { padding: 0; border-left: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; }
+    .rtb-v { justify-self: end; }
     .rtb-tail { grid-column: 1 / -1; margin-left: 0; padding-left: 0; justify-content: flex-end; }
 }
 @container pfw (max-width: 330px) {
     .pf-ratesbar .rtb-row { grid-template-columns: 1fr; }
     .rtb-tail { justify-content: space-between; }
+}
+/* ---- РУЧНАЯ ВЫСОТА: полоса заполняет блок, а не липнет к его верху ----
+   Потянув «Ставки» вниз, пользователь получал ту же строку в 40px, прижатую к
+   верхней кромке, и мёртвое поле под ней. Теперь ряд забирает всю свободную
+   высоту: в одну строку — значения по центру блока, в сетке — ряды разнесены
+   равномерно, и каждая плитка выровнена по своей строке. */
+.pfd-item.pfd-hset > .pfd-body > .pf-ratesbar { display: flex; flex-direction: column; }
+.pfd-item.pfd-hset .pf-ratesbar .rtb-row { flex: 1 1 auto; min-height: 0; align-items: center; }
+@container pfw (max-width: 1020px) {
+    .pfd-item.pfd-hset .pf-ratesbar .rtb-row { align-content: space-evenly; }
 }
 
 /* ============ 20. ГЕРОЙ «ОБЗОРА» (мокап overview3, экран 02) ============

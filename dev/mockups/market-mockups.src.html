@@ -1,0 +1,976 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Рынок · раунд 1 «Этажи» — четыре ответа на пустую страницу</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+       --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+       --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding:44px 0 90px;-webkit-font-smoothing:antialiased}
+.page{width:1420px;max-width:100%;margin:0 auto;padding:0 20px}
+
+/* ---------------- документ ---------------- */
+.doc-h{margin-bottom:34px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-acc);margin-bottom:9px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
+.doc-h p{margin-top:12px;font-size:15px;line-height:1.6;color:var(--doc-mut);max-width:900px}
+.verdict{margin-top:20px;display:flex;gap:14px;align-items:flex-start;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid var(--doc-acc);border-radius:14px;padding:16px 20px;max-width:1000px}
+.verdict p{margin:0;font-size:14.5px;line-height:1.62;color:var(--doc-quote)}
+.verdict p+p{margin-top:10px}
+.verdict b{font-weight:700;color:var(--doc-ink)}
+
+.mk{margin-top:52px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.62;max-width:1000px;margin-bottom:18px}
+.notes{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 26px;max-width:1380px}
+.note{display:flex;gap:9px;font-size:13px;line-height:1.5;color:var(--doc-quote)}
+.note i{flex:none;width:18px;height:18px;border-radius:50%;background:var(--doc-ink);color:var(--doc-bg);font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.note.minus i{background:#c2503f;color:#fff}
+@media (max-width:1000px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} }
+
+.map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th{text-align:left;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);padding:10px 14px;border-bottom:1px solid var(--doc-line)}
+.map td{padding:10px 14px;border-bottom:1px solid var(--doc-line);color:var(--doc-quote);line-height:1.5;vertical-align:top}
+.map tr:last-child td{border-bottom:0}
+.map td:first-child{font-family:var(--fN);font-size:11px;font-weight:700;color:var(--doc-dim);width:34px}
+.map code{font-family:var(--fN);font-size:11.5px;background:color-mix(in srgb,var(--doc-acc) 9%,transparent);color:var(--doc-acc);padding:1px 5px;border-radius:5px}
+
+.rules{margin-top:18px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.rule{background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:14px;padding:15px 16px}
+.rule b{display:block;font-family:var(--fT);font-weight:400;font-size:17px;margin-bottom:7px}
+.rule span{font-size:13px;line-height:1.55;color:var(--doc-mut)}
+@media (max-width:1100px){ .rules{grid-template-columns:1fr 1fr} }
+
+/* ======================================================================
+   СЦЕНА: рабочая площадь вкладки (без сайдбара — он не меняется)
+   ====================================================================== */
+.stage{
+  --card:#ffffff; --line:#e7edf4; --line2:rgba(44,54,76,.06);
+  --ink:#111927; --mut:#7a8698; --dim:#9aa7b8;
+  --up:#119d5c; --upbg:rgba(22,181,107,.10);
+  --dn:#d8483f; --dnbg:rgba(225,80,70,.10);
+  --brand:#141b26; --brandtx:#ffffff; --acc:#16b56b; --accsoft:#eef7f1;
+  --well:#f4f7fb; --soft:#fbfcfe; --plot:#eef2f7;
+  position:relative;padding:22px;border-radius:18px;overflow:hidden;
+  color:var(--ink);font-family:var(--fU);
+  border:1px solid rgba(15,23,42,.09);
+  box-shadow:0 2px 4px rgba(15,23,42,.05),0 34px 70px -34px rgba(24,38,60,.4);
+  background:
+    radial-gradient(760px 520px at 6% 8%, rgba(196,226,224,.55) 0%, rgba(196,226,224,0) 60%),
+    radial-gradient(820px 560px at 82% 2%, rgba(214,214,240,.5) 0%, rgba(214,214,240,0) 62%),
+    linear-gradient(160deg,#EDF1F4 0%,#EFF0F6 50%,#EBF1F2 100%)}
+.stage.dark{
+  --card:#1d2734; --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.05);
+  --ink:#eef2f8; --mut:#8d9bb0; --dim:#6f7e93;
+  --up:#7ee2a8; --upbg:rgba(126,226,168,.12);
+  --dn:#f08a82; --dnbg:rgba(232,110,100,.14);
+  --brand:#7ee2a8; --brandtx:#12211a; --acc:#7ee2a8; --accsoft:rgba(126,226,168,.12);
+  --well:rgba(255,255,255,.045); --soft:rgba(255,255,255,.03); --plot:#131b25;
+  border-color:rgba(255,255,255,.08);
+  background:
+    radial-gradient(760px 520px at 6% 8%, rgba(64,84,120,.32) 0%, rgba(64,84,120,0) 60%),
+    radial-gradient(820px 560px at 82% 2%, rgba(90,74,140,.24) 0%, rgba(90,74,140,0) 62%),
+    linear-gradient(160deg,#0e1118 0%,#11141d 50%,#0f1219 100%)}
+.stage svg.ic{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+.fl{display:flex;flex-direction:column;gap:14px}
+.row{display:grid;gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;min-width:0}
+.chead{display:flex;align-items:center;gap:12px;padding:13px 16px}
+.chead+.cbody{padding-top:0}
+.chead.line{border-bottom:1px solid var(--line)}
+.ctitle{font-family:var(--fT);font-weight:400;font-size:18px;letter-spacing:-.01em;white-space:nowrap}
+.ctitle small{font-family:var(--fN);font-size:11px;font-weight:700;color:var(--dim);letter-spacing:.06em;margin-left:8px}
+.clbl{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.spacer{flex:1}
+.cbody{padding:14px 16px}
+.ico{flex:none;width:30px;height:30px;border-radius:9px;background:var(--accsoft);color:var(--acc);display:grid;place-items:center}
+
+/* сегментированный переключатель — как в текущей карточке */
+.seg{display:inline-flex;gap:2px;background:var(--well);border-radius:11px;padding:3px}
+.seg b{font-size:12px;font-weight:600;color:var(--mut);padding:7px 11px;border-radius:8px;white-space:nowrap}
+.seg b.on{background:var(--brand);color:var(--brandtx)}
+.seg.sm b{font-size:11px;padding:5px 9px;border-radius:7px}
+.live{display:inline-flex;align-items:center;gap:7px;padding:6px 10px;border-radius:9px;background:var(--well)}
+.live i{width:6px;height:6px;border-radius:50%;background:var(--acc);flex:none}
+.live span{font-family:var(--fN);font-size:11px;font-weight:600;color:var(--mut);letter-spacing:.02em}
+.gbtn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:9px;border:1px solid var(--line);background:var(--card);font-size:12px;font-weight:600;color:var(--mut)}
+
+/* знак изменения: цвет + стрелка + подпись (не только цветом) */
+.pl{display:inline-flex;align-items:center;gap:4px;font-family:var(--fN);font-size:12px;font-weight:600;padding:3px 7px;border-radius:7px;font-variant-numeric:tabular-nums}
+.pl i{font-style:normal;font-size:8px;line-height:1}
+.pl.up{background:var(--upbg);color:var(--up)}
+.pl.dn{background:var(--dnbg);color:var(--dn)}
+.pl.flat{background:var(--well);color:var(--mut)}
+.pl.lg{font-size:14px;padding:5px 9px;border-radius:8px}
+.num{font-family:var(--fN);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.up{color:var(--up)} .dn{color:var(--dn)}
+
+/* ---- этаж 1: макро-плитки ---- */
+.mac{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.mac .m{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:11px 13px 9px;position:relative;overflow:hidden;min-width:0}
+.mac .tk{display:flex;align-items:baseline;gap:7px}
+.mac .tk b{font-family:var(--fN);font-size:10.5px;font-weight:700;letter-spacing:.09em;color:var(--ink)}
+.mac .tk span{font-size:10.5px;font-weight:500;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mac .v{font-family:var(--fN);font-size:19px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:9px}
+.mac .b{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-top:4px}
+.mac .sp{width:64px;height:24px;flex:none}
+.mac .note{font-size:10.5px;font-weight:500;color:var(--dim);margin-top:5px}
+.ch{display:block;width:100%;height:100%;overflow:visible}
+.ch.up{color:var(--up)} .ch.dn{color:var(--dn)} .ch.flat{color:var(--mut)}
+
+/* ---- герой индекса ---- */
+.ixh{display:grid;grid-template-columns:290px 1fr;gap:24px;align-items:stretch}
+.ixv{font-family:var(--fN);font-size:38px;font-weight:600;letter-spacing:-.035em;font-variant-numeric:tabular-nums;line-height:1}
+.ixm{display:grid;grid-template-columns:1fr 1fr;gap:7px 16px;margin-top:14px}
+.ixm div{display:flex;justify-content:space-between;gap:10px;font-size:11.5px;padding-bottom:5px;border-bottom:1px solid var(--line2)}
+.ixm dt{color:var(--dim);font-weight:500}
+.ixm dd{font-family:var(--fN);font-weight:600;font-variant-numeric:tabular-nums}
+.ixc{position:relative;min-width:0;display:flex;flex-direction:column}
+.ixc .cw{flex:1;min-height:0;position:relative}
+.ixc .ax{display:flex;justify-content:space-between;margin-top:6px;font-family:var(--fN);font-size:9.5px;font-weight:600;color:var(--dim);letter-spacing:.04em}
+
+/* ---- ширина рынка ---- */
+.brd-bar{display:flex;gap:2px;height:9px;margin:12px 0 10px}
+.brd-bar i{border-radius:3px}
+.brd-bar i.u{background:var(--up)} .brd-bar i.f{background:var(--dim);opacity:.45} .brd-bar i.d{background:var(--dn)}
+.brd-lg{display:flex;justify-content:space-between;font-size:11.5px;font-weight:500;color:var(--mut)}
+.brd-lg b{font-family:var(--fN);font-weight:700;font-variant-numeric:tabular-nums}
+.brd-cnt{font-family:var(--fN);font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ---- лидеры ---- */
+.mv{display:grid;grid-template-columns:52px 1fr 54px;align-items:center;gap:9px;height:28px}
+.mv b{font-family:var(--fN);font-size:11.5px;font-weight:700}
+.mv .bar{height:7px;border-radius:4px;background:var(--well);position:relative;overflow:hidden}
+.mv .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:4px}
+.mv.u .bar i{background:var(--up);opacity:.75} .mv.d .bar i{background:var(--dn);opacity:.75}
+.mv em{font-family:var(--fN);font-size:11.5px;font-weight:600;font-style:normal;text-align:right;font-variant-numeric:tabular-nums}
+.mv.u em{color:var(--up)} .mv.d em{color:var(--dn)}
+
+/* ---- карта ---- */
+.plot{position:relative;background:var(--plot);border-radius:12px;overflow:hidden}
+.tile{position:absolute;border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;line-height:1.12;padding:1px}
+.tile .t{font-family:var(--fN);font-weight:700;letter-spacing:-.01em}
+.tile .p{font-family:var(--fN);font-weight:600;font-variant-numeric:tabular-nums;opacity:.92}
+.tile .r{font-family:var(--fN);font-weight:500;font-variant-numeric:tabular-nums;opacity:.68;margin-top:1px}
+.tile.vert .t{writing-mode:vertical-rl;transform:rotate(180deg)}
+.sech{position:absolute;display:flex;align-items:center;gap:6px;font-size:9px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--mut);white-space:nowrap;overflow:hidden}
+.sech em{font-family:var(--fN);font-style:normal;font-weight:700;font-size:9.5px;letter-spacing:0}
+.lgd{display:flex;align-items:center;gap:7px;font-family:var(--fN);font-size:10px;font-weight:600;color:var(--dim)}
+.lgd i{width:88px;height:7px;border-radius:4px;background:linear-gradient(90deg,#d9714b,#f6f4f2,#4fae78)}
+.stage.dark .lgd i{background:linear-gradient(90deg,#a2483a,#262f3c,#3f9a68)}
+.hint{font-size:11px;font-weight:500;color:var(--dim)}
+
+/* ---- рейтинг отраслей ---- */
+.sr{display:grid;grid-template-columns:158px 1fr 58px;align-items:center;gap:12px;height:34px;border-bottom:1px solid var(--line2)}
+.sr:last-child{border-bottom:0}
+.sr .nm{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr .nm span{display:block;font-size:10px;font-weight:500;color:var(--dim);margin-top:1px}
+.sr .tr{position:relative;height:10px;background:var(--well);border-radius:3px}
+.sr .tr b{position:absolute;top:0;bottom:0;left:50%;width:1px;background:var(--line);z-index:1}
+.sr .tr i{position:absolute;top:0;bottom:0;border-radius:2px}
+.sr .tr i.u{background:var(--up);opacity:.8} .sr .tr i.d{background:var(--dn);opacity:.8}
+.sr em{font-family:var(--fN);font-size:12px;font-weight:600;font-style:normal;text-align:right;font-variant-numeric:tabular-nums}
+
+/* ---- таблица состава ---- */
+.tb{width:100%;border-collapse:collapse}
+.tb th{font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);padding:0 10px 8px;text-align:left;white-space:nowrap}
+.tb th.r{text-align:right}
+.tb td{padding:7px 10px;border-top:1px solid var(--line2);font-size:12.5px;white-space:nowrap}
+.tb td.r{text-align:right;font-family:var(--fN);font-weight:600;font-variant-numeric:tabular-nums}
+.tb .rk{font-family:var(--fN);font-size:10.5px;font-weight:600;color:var(--dim);width:26px}
+.tb .id b{font-family:var(--fN);font-size:12px;font-weight:700}
+.tb .id span{color:var(--dim);font-size:11.5px;margin-left:8px}
+.tb .sec{font-size:11px;font-weight:500;color:var(--mut)}
+.tb .wt{display:flex;align-items:center;justify-content:flex-end;gap:7px}
+.tb .wt i{width:42px;height:5px;border-radius:3px;background:var(--well);position:relative;overflow:hidden}
+.tb .wt i b{position:absolute;left:0;top:0;bottom:0;background:var(--dim);opacity:.5;border-radius:3px}
+.tfoot{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-top:1px solid var(--line)}
+
+/* ---- выходы «куда дальше» ---- */
+.go{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.go .g{display:flex;align-items:center;gap:12px;padding:13px 15px;background:var(--card);border:1px solid var(--line);border-radius:14px}
+.go .g .tx{min-width:0;flex:1}
+.go .g b{display:block;font-size:13px;font-weight:600}
+.go .g span{display:block;font-size:11px;font-weight:500;color:var(--dim);margin-top:2px}
+.go .g .ar{color:var(--dim)}
+
+/* ---- новости и календарь ---- */
+.nw{display:flex;flex-direction:column}
+.nw .i{padding:11px 16px;border-top:1px solid var(--line2)}
+.nw .i:first-child{border-top:0}
+.nw .t{font-size:12.5px;font-weight:500;line-height:1.42}
+.nw .m{display:flex;align-items:center;gap:8px;margin-top:6px;font-family:var(--fN);font-size:10px;font-weight:600;color:var(--dim);letter-spacing:.03em}
+.nw .m b{padding:1px 5px;border-radius:5px;background:var(--well);color:var(--mut)}
+.cal .i{display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:11px;padding:9px 16px;border-top:1px solid var(--line2)}
+.cal .i:first-child{border-top:0}
+.cal .d{text-align:center;font-family:var(--fN)}
+.cal .d b{display:block;font-size:14px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.cal .d span{display:block;font-size:9px;font-weight:600;color:var(--dim);letter-spacing:.06em;margin-top:2px}
+.cal .t{font-size:12px;font-weight:500;line-height:1.35}
+.cal .t span{display:block;font-size:10.5px;color:var(--dim);margin-top:2px}
+
+/* ---- скелет / пусто / ошибка ---- */
+.st{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:var(--well);font-size:12px;font-weight:500;color:var(--mut)}
+.sk{background:var(--well);border-radius:6px;position:relative;overflow:hidden}
+.tape{display:flex;align-items:center;gap:22px;padding:9px 16px;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.tape .u{display:flex;align-items:baseline;gap:7px;white-space:nowrap}
+.tape .u b{font-family:var(--fN);font-size:10.5px;font-weight:700;letter-spacing:.08em;color:var(--dim)}
+.tape .u em{font-family:var(--fN);font-size:13px;font-weight:600;font-style:normal;font-variant-numeric:tabular-nums}
+.tape .u i{font-family:var(--fN);font-size:11.5px;font-weight:600;font-style:normal}
+.tape .sep{width:1px;height:16px;background:var(--line)}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="doc-h">
+    <div class="doc-kicker">Рынок · раунд 1 «Этажи»</div>
+    <h1>Вкладка «Рынок»: почему она читается как недоделка и четыре способа это исправить</h1>
+    <p>Аудит текущего экрана и четыре разных ответа на один вопрос: чем заполнить страницу, не превратив её в свалку виджетов. Все цифры на мокапах — демонстрационный срез 18:30 (реальные тикеры, правдоподобные значения), новости и календарь придуманы для примера.</p>
+    <div class="verdict">
+      <p><b>Диагноз в одну строку:</b> вкладка — это одна карточка. Страница кончается там же, где кончается тепловая карта, поэтому нижняя треть экрана пустая, а верх растянут: три плитки «пульса» размазаны по 1200 px, и у значения индекса справа 400 px воздуха.<br>
+      <b>Второй слой проблемы:</b> «Карта · График · Таблица» — это переключатель, который <b>подменяет</b> холст. Три вида одних и тех же данных конкурируют за одно место вместо того, чтобы стоять этажами. Отсюда и ощущение, что показано меньше, чем есть.<br>
+      <b>Третий:</b> курс доллара, ключевая ставка, доходность ОФЗ и биткойн <b>уже качаются</b> в <code>core.js</code> — и живут в скрытом рейле чужой панели. На вкладке «Рынок» их нет.</p>
+    </div>
+  </header>
+
+  <section class="mk" style="margin-top:44px">
+    <div class="mk-h"><span class="mk-n">00</span><h2>Что именно сейчас не работает</h2></div>
+    <div class="mk-sub">Семь наблюдений с текущего экрана. Первые четыре — про композицию, последние три — про содержание.</div>
+    <table class="map">
+      <thead><tr><th></th><th style="width:38%">Что видно</th><th>Почему читается как недоделка</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Вкладка = один <code>&lt;section class="mh-card"&gt;</code></td><td>Ниже карты — ничего. Нет ни второго блока, ни подвала: страница выглядит обрезанной, а не законченной.</td></tr>
+        <tr><td>2</td><td>«Пульс» из трёх плиток на всю ширину</td><td>Плотность рвётся: слева цифра индекса и 400 px пустоты, справа шесть тикеров лидеров в мелкой сетке. Один ряд, две разные плотности.</td></tr>
+        <tr><td>3</td><td>Ряд инструментов идёт до данных</td><td>Первое, на что падает глаз, — «обновлено · День/Неделя/Месяц · Вес/Объём/% изм. · обновить». Панель управления встречает раньше, чем содержимое.</td></tr>
+        <tr><td>4</td><td>Переключатель «Карта · График · Таблица»</td><td>Виды подменяют друг друга. График индекса и состав индекса физически не могут быть видны одновременно с картой, хотя места хватает.</td></tr>
+        <tr><td>5</td><td>Нет макро-этажа</td><td>USD/RUB, CNY/RUB, ключевая ставка, доходность ОФЗ и BTC уже загружаются приложением, но на «Рынке» не показаны ни разу.</td></tr>
+        <tr><td>6</td><td>Нет оси времени</td><td>2 264,16 и +0,06% — без графика. «Много это или мало» ответить нечем, пока не переключишь вид и не потеряешь карту.</td></tr>
+        <tr><td>7</td><td>С карты некуда пойти</td><td>«Терминал» живёт только в сайдбаре. Ни новостей, ни календаря событий, ни ответа на вопрос «а где тут мои бумаги».</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">01</span><h2>Четыре правила, по которым собраны все варианты</h2></div>
+    <div class="rules">
+      <div class="rule"><b>Этажи, а не блок</b><span>Страница отвечает на четыре вопроса подряд: что с рынком вообще → что с индексом → где сегодня деньги → из чего он состоит. Каждый этаж — один вопрос.</span></div>
+      <div class="rule"><b>Инструмент живёт у своего этажа</b><span>Период — в шапке карточки, к которой он относится, а не над страницей. Верх страницы отдан данным.</span></div>
+      <div class="rule"><b>Виды не подменяют друг друга</b><span>Там, где хватает ширины, график и таблица становятся отдельными этажами. Переключатель остаётся только у самой карты.</span></div>
+      <div class="rule"><b>С каждого этажа есть выход</b><span>Тикер → карточка компании, отрасль → терминал с фильтром, бумага → портфель. Экран перестаёт быть тупиком.</span></div>
+    </div>
+  </section>
+
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">Р1</span><h2>«Пульт»</h2><span class="mk-tag">рекомендую</span></div>
+    <div class="mk-sub">Четыре этажа сверху вниз: макро-лента → индекс с графиком и пульсом → карта во всю ширину → выходы. Карта остаётся героем, но перестаёт быть единственным жителем страницы. Инструменты карты уехали в её собственную шапку.</div>
+    <div id="v1"></div>
+    <div class="notes">
+      <div class="note"><i>1</i><span>Шесть макро-плиток — ровно те данные, что уже качает приложение. Спарклайн за 30 дней даёт масштаб цифре.</span></div>
+      <div class="note"><i>2</i><span>Индекс получил график и строку «откр./макс./мин./объём». Ширина рынка и лидеры ушли в узкие карточки справа — плотность выровнялась.</span></div>
+      <div class="note"><i>3</i><span>Ряд инструментов («День · Неделя · Месяц», «Вес · Объём»)&nbsp;— в шапке карты, а не над страницей.</span></div>
+      <div class="note"><i>4</i><span>Подвал «Куда дальше» закрывает дыру внизу и даёт три реальных перехода вместо пустоты.</span></div>
+      <div class="note"><i>5</i><span>Знак изменения читается без цвета: стрелка + подпись. Все числа моноширинные, с фиксированной точностью в колонке.</span></div>
+      <div class="note minus"><i>−</i><span>Самый длинный экран: на ноутбуке 13″ подвал уходит под сгиб. Карта теряет ~80 px высоты по сравнению с сегодняшней.</span></div>
+    </div>
+  </section>
+
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">Р2</span><h2>«Разворот»</h2><span class="mk-tag mute">без переключателя видов</span></div>
+    <div class="mk-sub">Радикальный ответ на пункт 4 аудита: переключатель «Карта · График · Таблица» исчезает совсем. График индекса — первый этаж во всю ширину, карта — второй, состав индекса таблицей — третий. Всё, что раньше пряталось, стоит рядом.</div>
+    <div id="v2"></div>
+    <div class="notes">
+      <div class="note"><i>1</i><span>Герой-индекс во всю ширину: крупный график за месяц, ключевые цифры слева, ширина рынка полосой под графиком.</span></div>
+      <div class="note"><i>2</i><span>Карта делит этаж с рейтингом отраслей: слева «кто именно», справа «где деньги». Один взгляд отвечает на оба вопроса.</span></div>
+      <div class="note"><i>3</i><span>Таблица состава всегда развёрнута на 8 строк с кнопкой «Все 46». Сортировка и колонки — те же, что сейчас.</span></div>
+      <div class="note minus"><i>−</i><span>Самый высокий макет из четырёх. Карта ужимается до 380 px и на мелких тикерах становится нечитаемой.</span></div>
+      <div class="note minus"><i>−</i><span>Убирает привычный переключатель — это переучивание для тех, кто уже привык к трём видам.</span></div>
+    </div>
+  </section>
+
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">Р3</span><h2>«Отрасли»</h2><span class="mk-tag mute">другой герой</span></div>
+    <div class="mk-sub">Единственный вариант, где героем становится не карта. Наверху — узкая лента макро одной строкой, дальше рейтинг десяти отраслей с лидером и аутсайдером в каждой строке. Карта уходит в правую колонку как иллюстрация к рейтингу.</div>
+    <div id="v3"></div>
+    <div class="notes">
+      <div class="note"><i>1</i><span>Отвечает на вопрос «где сегодня деньги» прямо, а не через разглядывание пятен на карте.</span></div>
+      <div class="note"><i>2</i><span>Расходящаяся полоса от центра: рост вправо, падение влево. Отрасли отсортированы, лидер и аутсайдер видны в строке.</span></div>
+      <div class="note"><i>3</i><span>Из каждой строки — переход в терминал с готовым фильтром по отрасли.</span></div>
+      <div class="note"><i>4</i><span>Самая компактная страница: помещается в один экран ноутбука целиком.</span></div>
+      <div class="note minus"><i>−</i><span>Карта в правой колонке теряет половину площади — мелкие бумаги превращаются в цветные квадратики без подписи.</span></div>
+    </div>
+  </section>
+
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">Р4</span><h2>«Хроника»</h2><span class="mk-tag mute">две колонки</span></div>
+    <div class="mk-sub">Ответ на «одиноко» через контекст, а не через цифры: слева постоянная колонка с макро-лентой, новостями и календарём событий, справа — рабочая площадь с индексом и картой. Ближе всего к настоящему терминалу.</div>
+    <div id="v4"></div>
+    <div class="notes">
+      <div class="note"><i>1</i><span>Новости уже есть в проекте (<code>NEWS_API_URL</code> в core.js, лента по тикеру) — здесь они впервые попадают на общий экран.</span></div>
+      <div class="note"><i>2</i><span>Календарь дат: отсечки, отчёты, заседание совета директоров ЦБ. Единственный вариант, где на «Рынке» есть будущее, а не только настоящее.</span></div>
+      <div class="note"><i>3</i><span>Левая колонка постоянна между подвкладками — при переходе в «Терминал» она остаётся, меняется только площадь справа.</span></div>
+      <div class="note minus"><i>−</i><span>Съедает 316 px ширины у карты. На 1280 px карта становится теснее сегодняшней.</span></div>
+      <div class="note minus"><i>−</i><span>Требует источника новостей по рынку в целом: сейчас скрипт умеет отдавать ленту только по конкретному тикеру.</span></div>
+    </div>
+  </section>
+
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">Р1·D</span><h2>«Пульт» в тёмной теме</h2></div>
+    <div class="mk-sub">Тот же макет на тёмной теме: глубина набирается ступенями подложки (полотно → карточка → «колодец» под контролами), а не тенями. Палитра карты — из <code>market-heatmap.css</code>.</div>
+    <div id="v1d"></div>
+  </section>
+
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">02</span><h2>Что решить перед реализацией</h2></div>
+    <table class="map">
+      <thead><tr><th></th><th style="width:34%">Вопрос</th><th>Мой ответ</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Какой вариант берём</td><td><b>Р1 «Пульт»</b>: даёт максимум наполнения при минимуме переучивания — карта и её переключатель остаются на месте, вокруг появляются этажи. Р4 «Хроника» — следующий раунд, когда будет источник общерыночных новостей.</td></tr>
+        <tr><td>2</td><td>Оставляем ли переключатель видов</td><td>В Р1 — да, но «График» показывает график <b>вместо карты</b> только на этаже карты; график индекса на втором этаже живёт всегда. В Р2 переключателя нет вовсе.</td></tr>
+        <tr><td>3</td><td>Откуда спарклайны в макро-плитках</td><td>ISS <code>history</code> за 30 дней — тот же эндпоинт, которым уже берутся опорные закрытия для периодов «Неделя / Месяц». Для BTC и валют нужен отдельный источник или плитка без спарклайна.</td></tr>
+        <tr><td>4</td><td>«Ваши бумаги на карте»</td><td>Четвёртый выход в подвале Р1 появляется только у авторизованного пользователя с непустым портфелем. Гостю показываются три входа вместо четырёх.</td></tr>
+        <tr><td>5</td><td>Высота карты</td><td>В Р1 карта фиксируется на 440 px и не растёт с окном: этажи ниже должны быть видны хотя бы краем, иначе подвал никто не найдёт.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+</div>
+
+<script>
+/* ======================================================================
+   Генератор мокапов. Выполняется сборщиком (build-mockups.js) в Node с
+   заглушкой document — на выходе статическая страница без скриптов.
+   ====================================================================== */
+
+/* ---------- утилиты ---------- */
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+/* русское форматирование: неразрывный пробел в тысячах, запятая в дробной */
+function fmt(v, d){
+    var s = Math.abs(v).toFixed(d == null ? 2 : d);
+    var p = s.split('.');
+    p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return (v < 0 ? '−' : '') + p.join(',');
+}
+function pct(v, d){ return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d == null ? 2 : d).replace('.', ',') + '%'; }
+function arrow(v){ return v > 0 ? '▲' : v < 0 ? '▼' : '–'; }
+function cls(v){ return v > 0 ? 'up' : v < 0 ? 'dn' : 'flat'; }
+function pill(v, big){ return '<span class="pl ' + cls(v) + (big ? ' lg' : '') + '"><i>' + arrow(v) + '</i>' + pct(v) + '</span>'; }
+
+/* детерминированный шум — чтобы пересборка давала ту же картинку */
+function seedOf(s){ var h = 7; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) & 0x7fffffff; return h || 1; }
+function rnd(seed){ var s = seed; return function(){ s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; }; }
+function series(key, n, drift){
+    var r = rnd(seedOf(key)), v = 0, a = [];
+    for (var i = 0; i < n; i++){ v += (r() - 0.5) * 2 + drift; a.push(v); }
+    return a;
+}
+/* площадной график: uid нужен, чтобы градиенты не конфликтовали между сценами */
+function chart(uid, key, w, h, dir, n){
+    var a = series(key, n || 44, dir * 0.055), i;
+    var mn = Math.min.apply(null, a), mx = Math.max.apply(null, a), sp = (mx - mn) || 1;
+    var pad = 3, line = '', pts = [];
+    for (i = 0; i < a.length; i++){
+        var x = (i / (a.length - 1)) * w;
+        var y = pad + (1 - (a[i] - mn) / sp) * (h - pad * 2);
+        pts.push([x, y]);
+        line += (i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1);
+    }
+    var area = line + 'L' + w + ' ' + h + 'L0 ' + h + 'Z';
+    var id = 'g' + uid + key.replace(/[^a-z0-9]/gi, '');
+    return '<svg class="ch ' + (dir > 0 ? 'up' : 'dn') + '" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
+        '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="currentColor" stop-opacity=".24"/>' +
+        '<stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs>' +
+        '<path d="' + area + '" fill="url(#' + id + ')"/>' +
+        '<path d="' + line + '" fill="none" stroke="currentColor" stroke-width="1.5" ' +
+        'vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+}
+
+/* иконки — набор из проекта (stroke-current, 1.8) */
+var IC = {
+    grid:   '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+    pulse:  '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+    table:  '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M9 10v10"/>',
+    bond:   '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>',
+    cal:    '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+    star:   '<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26"/>',
+    ref:    '<path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/>',
+    arr:    '<path d="M5 12h14"/><path d="M13 6l6 6-6 6"/>',
+    news:   '<path d="M4 4h13a2 2 0 0 1 2 2v12a2 2 0 0 0 2 2H5a1 1 0 0 1-1-1z"/><path d="M8 8h7M8 12h7M8 16h4"/>',
+    chart:  '<path d="M3 3v18h18"/><polyline points="7 14 11 9 15 12 20 5"/>'
+};
+function ic(name, k){ return '<svg class="ic" viewBox="0 0 24 24"' + (k ? ' style="width:' + k + 'px;height:' + k + 'px"' : '') + '>' + IC[name] + '</svg>'; }
+
+/* ---------- данные: состав индекса, 46 бумаг ----------
+   тикер, имя, отрасль, цена ₽, изм. за день %, вес в индексе % */
+var D = [
+    ['LKOH','Лукойл','Нефть и газ',4573.5,-0.64,12.30],
+    ['GAZP','Газпром','Нефть и газ',93.32,-0.85,9.40],
+    ['TATN','Татнефть','Нефть и газ',525.70,-0.79,4.60],
+    ['NVTK','Новатэк','Нефть и газ',1023.10,-0.29,4.10],
+    ['ROSN','Роснефть','Нефть и газ',345.75,-0.33,3.60],
+    ['SNGSP','Сургутнефтегаз-п','Нефть и газ',42.71,2.25,2.40],
+    ['SNGS','Сургутнефтегаз','Нефть и газ',15.59,1.17,1.10],
+    ['TATNP','Татнефть-п','Нефть и газ',480.30,-1.50,0.80],
+    ['TRNFP','Транснефть-п','Нефть и газ',1245.00,-0.18,0.70],
+
+    ['SBER','Сбербанк','Финансы',284.16,0.98,14.10],
+    ['T','Т-Технологии','Финансы',271.94,-0.14,3.10],
+    ['VTBR','ВТБ','Финансы',56.38,-2.07,2.20],
+    ['MOEX','Мосбиржа','Финансы',159.91,-1.02,1.70],
+    ['SBERP','Сбербанк-п','Финансы',285.46,1.16,1.60],
+    ['CBOM','МКБ','Финансы',6.42,1.89,0.50],
+    ['SVCB','Совкомбанк','Финансы',14.20,-0.31,0.40],
+    ['BSPB','Банк Санкт-Петербург','Финансы',385.00,0.86,0.35],
+
+    ['GMKN','Норникель','Металлы и добыча',125.10,2.73,5.20],
+    ['PLZL','Полюс','Металлы и добыча',1295.00,-1.07,3.40],
+    ['CHMF','Северсталь','Металлы и добыча',661.60,-0.66,1.40],
+    ['NLMK','НЛМК','Металлы и добыча',128.40,-0.70,1.20],
+    ['RUAL','Русал','Металлы и добыча',26.68,4.08,0.90],
+    ['ALRS','Алроса','Металлы и добыча',51.32,5.03,0.80],
+    ['MAGN','ММК','Металлы и добыча',33.86,-0.90,0.70],
+    ['ENPG','Эн+','Металлы и добыча',385.20,0.62,0.45],
+
+    ['YDEX','Яндекс','IT и технологии',3975.50,0.04,5.10],
+    ['OZON','Озон','IT и технологии',2917.00,-0.73,2.30],
+    ['HEAD','Хэдхантер','IT и технологии',2820.00,0.50,0.90],
+    ['POSI','Позитив','IT и технологии',1285.00,0.28,0.55],
+    ['VKCO','ВК','IT и технологии',268.40,-1.12,0.40],
+    ['CNRU','Циан','IT и технологии',545.00,-0.66,0.30],
+
+    ['FIVE','ИКС 5','Потребительский',2086.00,0.10,1.90],
+    ['MGNT','Магнит','Потребительский',3480.00,-0.24,0.60],
+    ['MDMG','Мать и дитя','Потребительский',964.00,-0.18,0.55],
+    ['LENT','Лента','Потребительский',1470.00,-0.49,0.45],
+    ['RAGR','РусАгро','Потребительский',132.60,-4.22,0.35],
+
+    ['MTSS','МТС','Телеком',214.50,0.11,1.10],
+    ['RTKM','Ростелеком','Телеком',58.90,0.30,0.40],
+
+    ['IRAO','Интер РАО','Электроэнергетика',3.42,-0.02,0.80],
+    ['HYDR','РусГидро','Электроэнергетика',0.512,-0.78,0.35],
+
+    ['PHOR','Фосагро','Химия',6340.00,-0.32,0.90],
+    ['AKRN','Акрон','Химия',15980.00,0.18,0.25],
+
+    ['AFLT','Аэрофлот','Транспорт',61.20,-0.60,0.60],
+    ['FLOT','Совкомфлот','Транспорт',82.40,-1.18,0.30],
+
+    ['PIKK','ПИК','Недвижимость',512.00,-1.05,0.35],
+    ['SMLT','Самолёт','Недвижимость',985.00,-0.62,0.20]
+];
+var ROWS = D.map(function (r){
+    var q = rnd(seedOf(r[0]));
+    return { tk:r[0], nm:r[1], sec:r[2], p:r[3], chg:r[4], w:r[5],
+             vol: +(r[5] * (0.35 + q() * 0.55)).toFixed(2) };   /* млрд ₽ за день */
+});
+var TOTW = ROWS.reduce(function (s, r){ return s + r.w; }, 0);
+
+/* отрасли: вес и взвешенное изменение */
+var SECS = (function (){
+    var m = {}, order = [];
+    ROWS.forEach(function (r){
+        if (!m[r.sec]) { m[r.sec] = { nm:r.sec, w:0, acc:0, n:0, rows:[] }; order.push(r.sec); }
+        var s = m[r.sec];
+        s.w += r.w; s.acc += r.chg * r.w; s.n++; s.rows.push(r);
+    });
+    return order.map(function (k){
+        var s = m[k];
+        s.avg = +(s.acc / s.w).toFixed(2);
+        s.rows.sort(function (a, b){ return b.chg - a.chg; });
+        s.best = s.rows[0]; s.worst = s.rows[s.rows.length - 1];
+        return s;
+    });
+})();
+var UP = ROWS.filter(function (r){ return r.chg > 0; }).length;
+var DN = ROWS.filter(function (r){ return r.chg < 0; }).length;
+var FL = ROWS.length - UP - DN;
+var byChg = ROWS.slice().sort(function (a, b){ return b.chg - a.chg; });
+var GAIN = byChg.slice(0, 3);
+var LOSE = byChg.slice(-3).reverse();
+var IDX = { v:2264.16, chg:0.06, open:2262.80, hi:2271.44, lo:2258.03, vol:'48,6 млрд ₽' };
+
+/* ---------- цвет плитки: расхождение от нейтрали, насыщение на ±3% ---------- */
+var CAP = 3;
+function mix(a, b, t){
+    return '#' + [0,1,2].map(function (i){
+        var v = Math.round(a[i] + (b[i] - a[i]) * t);
+        return (v < 16 ? '0' : '') + v.toString(16);
+    }).join('');
+}
+var PAL = {
+    light:{ mid:[246,244,242], up:[79,174,120], dn:[217,113,75], ink:'#25302b', inv:'#ffffff' },
+    dark: { mid:[38,47,60],    up:[63,154,104], dn:[162,72,58],  ink:'#e6ecf3', inv:'#0d1319' }
+};
+function tileBg(chg, mode){
+    var p = PAL[mode], t = Math.min(Math.abs(chg) / CAP, 1);
+    t = Math.pow(t, 0.72);
+    return { bg: mix(p.mid, chg >= 0 ? p.up : p.dn, t), tx: t > 0.62 ? (mode === 'dark' ? p.ink : p.inv) : p.ink, t:t };
+}
+
+/* ---------- squarified treemap ---------- */
+function squarify(items, x, y, w, h){
+    var out = [], list = items.slice().sort(function (a, b){ return b.v - a.v; });
+    var total = list.reduce(function (s, i){ return s + i.v; }, 0);
+    if (!total || w <= 0 || h <= 0) return out;
+    var k = (w * h) / total, vals = list.map(function (i){ return i.v * k; }), idx = 0;
+    function worst(row, sum, short){
+        var mx = Math.max.apply(null, row), mn = Math.min.apply(null, row);
+        var s2 = sum * sum, r2 = short * short;
+        return Math.max(r2 * mx / s2, s2 / (r2 * mn));
+    }
+    while (idx < vals.length){
+        var short = Math.min(w, h), row = [vals[idx]], sum = vals[idx], j = idx + 1;
+        while (j < vals.length){
+            var ns = sum + vals[j];
+            if (worst(row.concat([vals[j]]), ns, short) <= worst(row, sum, short)) { row.push(vals[j]); sum = ns; j++; }
+            else break;
+        }
+        var thick = sum / short, off = 0;
+        for (var t = 0; t < row.length; t++){
+            var len = row[t] / thick;
+            if (w >= h) out.push({ x:x, y:y + off, w:thick, h:len, it:list[idx + t] });
+            else        out.push({ x:x + off, y:y, w:len, h:thick, it:list[idx + t] });
+            off += len;
+        }
+        if (w >= h) { x += thick; w -= thick; } else { y += thick; h -= thick; }
+        idx = j;
+    }
+    return out;
+}
+function px(v){ return v.toFixed(1) + 'px'; }
+function tileHtml(r, w, h, mode){
+    var c = tileBg(r.chg, mode), s = '';
+    var vert = w < 30 && h > 46;
+    var tkFs = Math.max(8, Math.min(17, Math.sqrt(w * h) / 5.4));
+    if (vert){
+        s = '<span class="t" style="font-size:' + Math.min(11, h / 7).toFixed(1) + 'px">' + esc(r.tk) + '</span>';
+    } else {
+        s = '<span class="t" style="font-size:' + tkFs.toFixed(1) + 'px">' + esc(r.tk) + '</span>';
+        if (h >= 40 && w >= 42) s += '<span class="p" style="font-size:' + Math.max(8, tkFs * 0.72).toFixed(1) + 'px">' + pct(r.chg) + '</span>';
+        if (h >= 66 && w >= 58) s += '<span class="r" style="font-size:' + Math.max(7.5, tkFs * 0.62).toFixed(1) + 'px">' + fmt(r.p, r.p < 10 ? 3 : 2) + ' ₽</span>';
+    }
+    return '<div class="tile' + (vert ? ' vert' : '') + '" style="left:' + px(0) + ';background:' + c.bg + ';color:' + c.tx + '">' + s + '</div>';
+}
+/* карта: два уровня — отрасли, внутри бумаги */
+function treemap(W, H, mode, minSec){
+    var secItems = SECS.filter(function (s){ return s.w >= (minSec || 0); })
+                       .map(function (s){ return { v:s.w, s:s }; });
+    var boxes = squarify(secItems, 0, 0, W, H), html = '';
+    boxes.forEach(function (b){
+        var s = b.it.s;
+        var pad = 2, head = (b.h > 54 && b.w > 84) ? 15 : 0;
+        var ix = b.x + pad, iy = b.y + pad + head, iw = b.w - pad * 2, ih = b.h - pad * 2 - head;
+        if (head){
+            var lim = Math.floor(b.w / 6.4);
+            var nm = s.nm.length > lim ? s.nm.slice(0, Math.max(3, lim - 1)) + '…' : s.nm;
+            html += '<div class="sech" style="left:' + px(b.x + 4) + ';top:' + px(b.y + 3) + ';width:' + px(b.w - 8) + ';height:12px">' +
+                esc(nm) + (b.w > 150 ? '<em class="' + cls(s.avg) + '">' + pct(s.avg) + '</em>' : '') + '</div>';
+        }
+        var inner = squarify(s.rows.map(function (r){ return { v:r.w, r:r }; }), ix, iy, iw, ih);
+        inner.forEach(function (t){
+            var g = 1.5, x = t.x + g, y = t.y + g, w = Math.max(2, t.w - g * 2), h = Math.max(2, t.h - g * 2);
+            html += tileHtml(t.it.r, w, h, mode)
+                .replace('left:0.0px;', 'left:' + px(x) + ';top:' + px(y) + ';width:' + px(w) + ';height:' + px(h) + ';');
+        });
+    });
+    return '<div class="plot" style="height:' + H + 'px">' + html + '</div>';
+}
+
+/* ---------- кирпичи сцен ---------- */
+var MACRO = [
+    { tk:'IMOEX', nm:'Индекс МосБиржи', v:fmt(2264.16), chg:0.06, dir:1 },
+    { tk:'RTSI',  nm:'Индекс РТС',      v:fmt(1018.42), chg:0.31, dir:1 },
+    { tk:'USD/RUB', nm:'Доллар',        v:fmt(78.42) + ' ₽', chg:-0.24, dir:-1 },
+    { tk:'CNY/RUB', nm:'Юань',          v:fmt(10.84) + ' ₽', chg:-0.18, dir:-1 },
+    { tk:'RGBI',  nm:'ОФЗ, 10 лет',     v:'15,80 %', chg:null, note:'+0,05 п.п. за день', dir:1 },
+    { tk:'KEY',   nm:'Ключевая ставка', v:'21,00 %', chg:null, note:'без изм. · ЦБ 12 сентября', dir:0 }
+];
+function macroRow(uid){
+    return '<div class="mac">' + MACRO.map(function (m){
+        var spark = m.dir === 0 ? '' : '<span class="sp">' + chart(uid, m.tk, 64, 24, m.dir, 30) + '</span>';
+        return '<div class="m">' +
+            '<div class="tk"><b>' + esc(m.tk) + '</b><span>' + esc(m.nm) + '</span></div>' +
+            '<div class="v">' + m.v + '</div>' +
+            '<div class="b">' + (m.chg != null ? pill(m.chg) : '<span class="note" style="margin:0">' + esc(m.note) + '</span>') + spark + '</div>' +
+            (m.chg != null && m.note ? '<div class="note">' + esc(m.note) + '</div>' : '') +
+        '</div>';
+    }).join('') + '</div>';
+}
+function liveChip(){
+    return '<span class="live"><i></i><span>обновлено 18:30:55</span></span>';
+}
+function segView(active){
+    return '<span class="seg">' +
+        ['Карта','График','Таблица'].map(function (t){ return '<b' + (t === active ? ' class="on"' : '') + '>' + t + '</b>'; }).join('') +
+        '</span>';
+}
+function segPeriod(active){
+    return '<span class="seg sm">' +
+        ['День','Неделя','Месяц'].map(function (t){ return '<b' + (t === active ? ' class="on"' : '') + '>' + t + '</b>'; }).join('') +
+        '</span>';
+}
+function segSize(active){
+    return '<span class="seg sm">' +
+        ['Вес','Объём','% изм.'].map(function (t){ return '<b' + (t === active ? ' class="on"' : '') + '>' + t + '</b>'; }).join('') +
+        '</span>';
+}
+function indexCard(uid, chartW, chartH){
+    return '<div class="ixh">' +
+        '<div>' +
+            '<div class="clbl">Индекс МосБиржи</div>' +
+            '<div style="display:flex;align-items:baseline;gap:12px;margin-top:9px">' +
+                '<span class="ixv">' + fmt(IDX.v) + '</span>' + pill(IDX.chg, 1) +
+            '</div>' +
+            '<div class="ixm">' +
+                '<div><dt>Открытие</dt><dd>' + fmt(IDX.open) + '</dd></div>' +
+                '<div><dt>Объём</dt><dd>' + IDX.vol + '</dd></div>' +
+                '<div><dt>Максимум</dt><dd>' + fmt(IDX.hi) + '</dd></div>' +
+                '<div><dt>Минимум</dt><dd>' + fmt(IDX.lo) + '</dd></div>' +
+            '</div>' +
+        '</div>' +
+        '<div class="ixc">' +
+            '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">' +
+                '<span class="clbl">Динамика</span><span class="spacer"></span>' +
+                '<span class="seg sm">' + ['1Д','1Н','1М','1Г'].map(function (t){ return '<b' + (t === '1М' ? ' class="on"' : '') + '>' + t + '</b>'; }).join('') + '</span>' +
+            '</div>' +
+            '<div class="cw" style="height:' + chartH + 'px">' + chart(uid, 'IMOEXBIG', chartW, chartH, 1, 70) + '</div>' +
+            '<div class="ax"><span>4 июля</span><span>18 июля</span><span>1 августа</span></div>' +
+        '</div>' +
+    '</div>';
+}
+function breadthCard(){
+    var u = Math.round(UP / ROWS.length * 100), d = Math.round(DN / ROWS.length * 100);
+    return '<div class="cbody">' +
+        '<div style="display:flex;align-items:baseline;justify-content:space-between">' +
+            '<span class="clbl">Ширина рынка</span>' +
+            '<span class="brd-cnt"><span class="up">' + UP + '</span> <span style="color:var(--dim)">/</span> <span class="dn">' + DN + '</span></span>' +
+        '</div>' +
+        '<div class="brd-bar">' +
+            '<i class="u" style="flex:' + UP + '"></i>' +
+            (FL ? '<i class="f" style="flex:' + FL + '"></i>' : '') +
+            '<i class="d" style="flex:' + DN + '"></i>' +
+        '</div>' +
+        '<div class="brd-lg">' +
+            '<span class="up">▲ <b>' + u + '%</b> растут</span>' +
+            '<span style="color:var(--dim)">' + FL + ' нейтр.</span>' +
+            '<span class="dn">▼ <b>' + d + '%</b> падают</span>' +
+        '</div>' +
+    '</div>';
+}
+function moversCard(){
+    function row(r, dir){
+        var w = Math.min(100, Math.abs(r.chg) / 5.2 * 100);
+        return '<div class="mv ' + dir + '"><b>' + esc(r.tk) + '</b>' +
+            '<span class="bar"><i style="width:' + w.toFixed(0) + '%"></i></span>' +
+            '<em>' + pct(r.chg) + '</em></div>';
+    }
+    return '<div class="cbody">' +
+        '<div class="clbl">Лидеры дня</div>' +
+        '<div style="margin-top:8px">' + GAIN.map(function (r){ return row(r, 'u'); }).join('') + '</div>' +
+        '<div style="height:1px;background:var(--line2);margin:7px 0"></div>' +
+        '<div>' + LOSE.map(function (r){ return row(r, 'd'); }).join('') + '</div>' +
+    '</div>';
+}
+function sectorList(n, showLeaders){
+    var list = SECS.slice().sort(function (a, b){ return b.avg - a.avg; }).slice(0, n || SECS.length);
+    var max = 1.4;
+    return list.map(function (s){
+        var w = Math.min(50, Math.abs(s.avg) / max * 50);
+        var bar = s.avg >= 0
+            ? '<i class="u" style="left:50%;width:' + w.toFixed(1) + '%"></i>'
+            : '<i class="d" style="right:50%;width:' + w.toFixed(1) + '%"></i>';
+        return '<div class="sr">' +
+            '<div class="nm">' + esc(s.nm) +
+                (showLeaders ? '<span>' + esc(s.best.tk) + ' ' + pct(s.best.chg) + ' · ' + esc(s.worst.tk) + ' ' + pct(s.worst.chg) + '</span>' : '<span>' + s.n + ' бумаг · ' + s.w.toFixed(1) + '% индекса</span>') +
+            '</div>' +
+            '<div class="tr"><b></b>' + bar + '</div>' +
+            '<em class="' + cls(s.avg) + '">' + pct(s.avg) + '</em>' +
+        '</div>';
+    }).join('');
+}
+function compTable(n){
+    var list = ROWS.slice().sort(function (a, b){ return b.w - a.w; }).slice(0, n);
+    var mw = list[0].w;
+    return '<table class="tb"><thead><tr>' +
+        '<th></th><th>Тикер</th><th>Отрасль</th><th class="r">Цена, ₽</th><th class="r">Изм. за день</th><th class="r">Вес</th><th class="r">Объём, млрд ₽</th>' +
+        '</tr></thead><tbody>' +
+        list.map(function (r, i){
+            return '<tr>' +
+                '<td class="rk">' + (i + 1) + '</td>' +
+                '<td class="id"><b>' + esc(r.tk) + '</b><span>' + esc(r.nm) + '</span></td>' +
+                '<td class="sec">' + esc(r.sec) + '</td>' +
+                '<td class="r">' + fmt(r.p, r.p < 10 ? 3 : 2) + '</td>' +
+                '<td class="r">' + pill(r.chg) + '</td>' +
+                '<td class="r"><span class="wt"><i><b style="width:' + (r.w / mw * 100).toFixed(0) + '%"></b></i>' + r.w.toFixed(2) + '%</span></td>' +
+                '<td class="r">' + r.vol.toFixed(2) + '</td>' +
+            '</tr>';
+        }).join('') + '</tbody></table>';
+}
+function goRow(withPf){
+    var items = [
+        ['table','Терминал · Акции','46 бумаг индекса, фильтры и эшелоны'],
+        ['bond','Терминал · Облигации','ОФЗ и корпораты по доходности'],
+        ['cal','Календарь событий','отсечки, отчёты, заседания ЦБ']
+    ];
+    if (withPf) items.push(['star','Ваши бумаги на карте','6 из 46 позиций подсвечены']);
+    return '<div class="go"' + (withPf ? ' style="grid-template-columns:repeat(4,1fr)"' : '') + '>' +
+        items.map(function (g){
+            return '<div class="g"><span class="ico">' + ic(g[0]) + '</span>' +
+                '<span class="tx"><b>' + g[1] + '</b><span>' + g[2] + '</span></span>' +
+                '<span class="ar">' + ic('arr', 15) + '</span></div>';
+        }).join('') + '</div>';
+}
+
+/* ======================================================================
+   Р1 «Пульт»
+   ====================================================================== */
+function v1(uid, dark){
+    var W = 1276 - 32;                      /* внутренняя ширина карточки карты */
+    return '<div class="stage' + (dark ? ' dark' : '') + '"><div class="fl" style="width:1276px">' +
+        macroRow(uid) +
+        '<div class="row" style="grid-template-columns:1fr 268px 268px">' +
+            '<div class="card"><div class="cbody" style="padding:16px 18px">' + indexCard(uid, 620, 104) + '</div></div>' +
+            '<div class="card">' + breadthCard() + '</div>' +
+            '<div class="card">' + moversCard() + '</div>' +
+        '</div>' +
+        '<div class="card">' +
+            '<div class="chead line">' +
+                '<span class="ico">' + ic('grid') + '</span>' +
+                '<span class="ctitle">Карта индекса<small>46 БУМАГ</small></span>' +
+                '<span class="spacer"></span>' +
+                liveChip() + segPeriod('День') + segSize('Вес') +
+                '<span class="gbtn">' + ic('ref', 15) + '</span>' +
+                segView('Карта') +
+            '</div>' +
+            '<div style="padding:12px 16px 10px">' + treemap(W, 440, dark ? 'dark' : 'light') + '</div>' +
+            '<div class="chead" style="padding-top:0">' +
+                '<span class="lgd">−3% <i></i> +3%</span>' +
+                '<span class="hint">размер плитки — вес в индексе, цвет — изменение за день. Клик по бумаге открывает карточку компании</span>' +
+            '</div>' +
+        '</div>' +
+        goRow(true) +
+    '</div></div>';
+}
+
+/* ======================================================================
+   Р2 «Разворот» — без переключателя видов
+   ====================================================================== */
+function v2(uid){
+    return '<div class="stage"><div class="fl" style="width:1276px">' +
+        '<div class="card">' +
+            '<div class="chead line">' +
+                '<span class="ico">' + ic('pulse') + '</span>' +
+                '<span class="ctitle">Индекс МосБиржи<small>IMOEX</small></span>' +
+                '<span class="spacer"></span>' + liveChip() +
+            '</div>' +
+            '<div class="cbody" style="padding:16px 18px 12px">' + indexCard(uid, 900, 132) + '</div>' +
+            '<div style="padding:0 18px 14px">' +
+                '<div style="height:1px;background:var(--line2);margin-bottom:12px"></div>' +
+                '<div style="display:grid;grid-template-columns:1fr 300px;gap:24px;align-items:center">' +
+                    '<div>' +
+                        '<div class="brd-bar" style="margin-top:0">' +
+                            '<i class="u" style="flex:' + UP + '"></i>' + (FL ? '<i class="f" style="flex:' + FL + '"></i>' : '') + '<i class="d" style="flex:' + DN + '"></i>' +
+                        '</div>' +
+                        '<div class="brd-lg">' +
+                            '<span class="up">▲ <b>' + UP + '</b> бумаг растут</span>' +
+                            '<span style="color:var(--dim)">ширина рынка</span>' +
+                            '<span class="dn">▼ <b>' + DN + '</b> падают</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<div style="display:flex;gap:10px;justify-content:flex-end">' +
+                        GAIN.slice(0, 2).map(function (r){ return '<span class="pl up"><i>▲</i>' + esc(r.tk) + ' ' + pct(r.chg) + '</span>'; }).join('') +
+                        LOSE.slice(0, 2).map(function (r){ return '<span class="pl dn"><i>▼</i>' + esc(r.tk) + ' ' + pct(r.chg) + '</span>'; }).join('') +
+                    '</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>' +
+        '<div class="row" style="grid-template-columns:1fr 366px">' +
+            '<div class="card">' +
+                '<div class="chead line">' +
+                    '<span class="ico">' + ic('grid') + '</span>' +
+                    '<span class="ctitle">Карта индекса</span><span class="spacer"></span>' +
+                    segPeriod('День') + segSize('Вес') +
+                '</div>' +
+                '<div style="padding:12px 14px 8px">' + treemap(878, 380, 'light') + '</div>' +
+                '<div class="chead" style="padding-top:0"><span class="lgd">−3% <i></i> +3%</span>' +
+                    '<span class="hint">размер — вес, цвет — день</span></div>' +
+            '</div>' +
+            '<div class="card">' +
+                '<div class="chead line"><span class="ctitle" style="font-size:17px">Отрасли за день</span>' +
+                    '<span class="spacer"></span><span class="clbl">10 из 10</span></div>' +
+                '<div class="cbody" style="padding:6px 16px 10px">' + sectorList(10, false) + '</div>' +
+            '</div>' +
+        '</div>' +
+        '<div class="card">' +
+            '<div class="chead line">' +
+                '<span class="ico">' + ic('table') + '</span>' +
+                '<span class="ctitle">Состав индекса<small>ПО ВЕСУ</small></span>' +
+                '<span class="spacer"></span>' +
+                '<span class="seg sm"><b class="on">Кратко</b><b>Подробно</b></span>' +
+            '</div>' +
+            '<div class="cbody" style="padding:12px 6px 0">' + compTable(8) + '</div>' +
+            '<div class="tfoot"><span class="hint">Показаны 8 из 46 бумаг по весу в индексе</span>' +
+                '<span class="gbtn">Все 46 бумаг ' + ic('arr', 14) + '</span></div>' +
+        '</div>' +
+    '</div></div>';
+}
+
+/* ======================================================================
+   Р3 «Отрасли» — героем становится рейтинг, карта уходит вбок
+   ====================================================================== */
+function v3(uid){
+    var tape = [
+        ['IMOEX', fmt(2264.16), 0.06],
+        ['USD/RUB', fmt(78.42) + ' ₽', -0.24],
+        ['CNY/RUB', fmt(10.84) + ' ₽', -0.18],
+        ['ОФЗ 10 л.', '15,80 %', null],
+        ['Ключевая', '21,00 %', null],
+        ['BTC', '$' + fmt(104250, 0), 2.14]
+    ];
+    return '<div class="stage"><div class="fl" style="width:1276px">' +
+        '<div class="tape">' +
+            tape.map(function (t, i){
+                return (i ? '<span class="sep"></span>' : '') +
+                    '<span class="u"><b>' + esc(t[0]) + '</b><em>' + t[1] + '</em>' +
+                    (t[2] != null ? '<i class="' + cls(t[2]) + '">' + arrow(t[2]) + ' ' + pct(t[2]) + '</i>' : '<i style="color:var(--dim)">без изм.</i>') + '</span>';
+            }).join('') +
+            '<span class="spacer"></span>' + liveChip() +
+        '</div>' +
+        '<div class="card">' +
+            '<div class="chead line">' +
+                '<span class="ico">' + ic('chart') + '</span>' +
+                '<span class="ctitle">Где сегодня деньги<small>10 ОТРАСЛЕЙ</small></span>' +
+                '<span class="spacer"></span>' + segPeriod('День') +
+                '<span class="gbtn">В терминал ' + ic('arr', 14) + '</span>' +
+            '</div>' +
+            '<div class="cbody" style="padding:8px 16px 12px">' + sectorList(10, true) + '</div>' +
+        '</div>' +
+        '<div class="row" style="grid-template-columns:1fr 400px">' +
+            '<div class="card">' +
+                '<div class="chead line"><span class="ico">' + ic('grid') + '</span>' +
+                    '<span class="ctitle">Карта индекса</span><span class="spacer"></span>' + segSize('Вес') + segView('Карта') + '</div>' +
+                '<div style="padding:12px 14px 8px">' + treemap(834, 330, 'light') + '</div>' +
+                '<div class="chead" style="padding-top:0"><span class="lgd">−3% <i></i> +3%</span>' +
+                    '<span class="hint">клик по отрасли — увеличение</span></div>' +
+            '</div>' +
+            '<div class="fl">' +
+                '<div class="card">' + breadthCard() + '</div>' +
+                '<div class="card">' + moversCard() + '</div>' +
+                '<div class="card"><div class="cbody">' +
+                    '<div class="clbl">Лидеры по объёму</div>' +
+                    '<div style="margin-top:8px">' +
+                        ROWS.slice().sort(function (a, b){ return b.vol - a.vol; }).slice(0, 3).map(function (r){
+                            return '<div class="mv u" style="grid-template-columns:52px 1fr 70px"><b>' + esc(r.tk) + '</b>' +
+                                '<span class="bar"><i style="width:' + (r.vol / 8.4 * 100).toFixed(0) + '%;background:var(--dim);opacity:.45"></i></span>' +
+                                '<em style="color:var(--ink)">' + r.vol.toFixed(2) + ' млрд</em></div>';
+                        }).join('') +
+                    '</div>' +
+                '</div></div>' +
+            '</div>' +
+        '</div>' +
+    '</div></div>';
+}
+
+/* ======================================================================
+   Р4 «Хроника» — постоянная левая колонка контекста
+   ====================================================================== */
+var NEWS = [
+    ['Совет директоров рекомендовал дивиденды за первое полугодие', '18:04', 'PLZL'],
+    ['Компания вернулась к добыче на законсервированном участке', '17:26', 'ALRS'],
+    ['Выпуск алюминия за квартал вырос на 6,4% год к году', '16:50', 'RUAL'],
+    ['Биржа расширила режим торгов выходного дня на 12 бумаг', '15:12', 'MOEX'],
+    ['Отчёт по МСФО за первое полугодие выйдет 8 августа', '14:38', 'SBER']
+];
+var CAL = [
+    ['5', 'АВГ', 'Отсечка по дивидендам', 'TATN · 34,50 ₽ на акцию'],
+    ['8', 'АВГ', 'Отчёт по МСФО, 1 полугодие', 'SBER'],
+    ['14', 'АВГ', 'Операционные результаты', 'RUAL · GMKN'],
+    ['12', 'СЕН', 'Заседание совета директоров ЦБ', 'ключевая ставка']
+];
+function v4(uid){
+    return '<div class="stage"><div class="row" style="grid-template-columns:302px 1fr;width:1276px">' +
+        /* левая колонка */
+        '<div class="fl">' +
+            '<div class="card"><div class="cbody" style="padding:6px 14px">' +
+                MACRO.slice(0, 5).map(function (m, i){
+                    return '<div style="display:flex;align-items:center;gap:10px;height:40px' + (i ? ';border-top:1px solid var(--line2)' : '') + '">' +
+                        '<span style="flex:1;min-width:0"><b style="display:block;font-family:var(--fN);font-size:10.5px;font-weight:700;letter-spacing:.08em">' + esc(m.tk) + '</b>' +
+                        '<span style="font-size:10px;color:var(--dim)">' + esc(m.nm) + '</span></span>' +
+                        '<span class="num" style="font-size:13px;font-weight:600">' + m.v + '</span>' +
+                        (m.chg != null ? pill(m.chg) : '<span class="pl flat">–</span>') +
+                    '</div>';
+                }).join('') +
+            '</div></div>' +
+            '<div class="card">' +
+                '<div class="chead line"><span class="ico">' + ic('news') + '</span>' +
+                    '<span class="ctitle" style="font-size:16px">Новости</span><span class="spacer"></span>' +
+                    '<span class="clbl">демо</span></div>' +
+                '<div class="nw">' + NEWS.map(function (n){
+                    return '<div class="i"><div class="t">' + esc(n[0]) + '</div>' +
+                        '<div class="m"><span>' + n[1] + '</span><b>' + n[2] + '</b></div></div>';
+                }).join('') + '</div>' +
+            '</div>' +
+            '<div class="card">' +
+                '<div class="chead line"><span class="ico">' + ic('cal') + '</span>' +
+                    '<span class="ctitle" style="font-size:16px">Ближайшие даты</span></div>' +
+                '<div class="cal">' + CAL.map(function (c){
+                    return '<div class="i"><span class="d"><b>' + c[0] + '</b><span>' + c[1] + '</span></span>' +
+                        '<span class="t">' + esc(c[2]) + '<span>' + esc(c[3]) + '</span></span>' +
+                        '<span class="ar" style="color:var(--dim)">' + ic('arr', 14) + '</span></div>';
+                }).join('') + '</div>' +
+            '</div>' +
+        '</div>' +
+        /* рабочая площадь */
+        '<div class="fl">' +
+            '<div class="card"><div class="cbody" style="padding:14px 18px">' + indexCard(uid, 560, 92) + '</div></div>' +
+            '<div class="card">' +
+                '<div class="chead line">' +
+                    '<span class="ico">' + ic('grid') + '</span>' +
+                    '<span class="ctitle">Карта индекса<small>46 БУМАГ</small></span><span class="spacer"></span>' +
+                    liveChip() + segPeriod('День') + segView('Карта') +
+                '</div>' +
+                '<div style="padding:12px 14px 8px">' + treemap(930, 392, 'light') + '</div>' +
+                '<div class="chead" style="padding-top:0"><span class="lgd">−3% <i></i> +3%</span>' +
+                    '<span class="hint">размер — вес в индексе, цвет — изменение за день</span></div>' +
+            '</div>' +
+            '<div class="row" style="grid-template-columns:1fr 1fr">' +
+                '<div class="card">' + breadthCard() + '</div>' +
+                '<div class="card">' + moversCard() + '</div>' +
+            '</div>' +
+        '</div>' +
+    '</div></div>';
+}
+
+document.getElementById('v1').innerHTML  = v1('a', false);
+document.getElementById('v2').innerHTML  = v2('b');
+document.getElementById('v3').innerHTML  = v3('c');
+document.getElementById('v4').innerHTML  = v4('d');
+document.getElementById('v1d').innerHTML = v1('e', true);
+</script>
+</body>
+</html>

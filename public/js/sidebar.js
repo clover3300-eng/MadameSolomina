@@ -237,9 +237,19 @@
             var row = document.getElementById('sbCmd');
             if (row && row.classList.contains('on')) {
                 row.classList.remove('on');
-                document.body.classList.remove('sbs-open');
                 var inp = document.getElementById('sbSearchInput');
                 if (inp) { inp.value = ''; try { inp.blur(); } catch (e) {} }
+                // ПРИШВАРТОВКУ СНИМАЕМ ПОСЛЕ УХОДА ПАЛИТРЫ (фикс 2026-08-04).
+                // Оверлей гасит видимость с задержкой 0,24с (плавный уход), а
+                // sbs-open снимался тут же — на эти доли секунды палитра
+                // возвращалась к своему обычному месту в правом верхнем углу и
+                // мигала там «фантомом» уже на выходе. Ждём столько же; если за
+                // это время поиск открыли снова, класс не трогаем.
+                setTimeout(function () {
+                    var back = document.getElementById('sbCmd');
+                    if (back && back.classList.contains('on')) return;
+                    document.body.classList.remove('sbs-open');
+                }, 260);
             }
             return r;
         };

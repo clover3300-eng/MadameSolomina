@@ -14,12 +14,13 @@
 @media (min-width: 1024px) { #panel-portfolios { max-width: none !important; padding: 20px 30px 82px !important; margin: 0 !important; } }
 @media (min-width: 1440px) { #panel-portfolios { padding: 24px 40px 84px !important; } }
 @media (min-width: 1800px) { #panel-portfolios { padding: 26px 56px 84px !important; } }
-/* Слева отдаём 12px — ровно инсет строк сайдбара до края его колонки: без этого
-   просвет «колонка → карточка» был на 12px шире, чем «карточка → край экрана»
-   (см. блок «ОПТИЧЕСКИЙ ЗАЗОР» в css/sidebar-rail.css). В рейке инсета нет. */
-@media (min-width: 1024px) { body:not(.sb-rail) #panel-portfolios { padding-left: 18px !important; } }
-@media (min-width: 1440px) { body:not(.sb-rail) #panel-portfolios { padding-left: 28px !important; } }
-@media (min-width: 1800px) { body:not(.sb-rail) #panel-portfolios { padding-left: 44px !important; } }
+/* Слева отдаём ровно инсет сайдбара до края его колонки (--sb-gapfix: 12px у
+   раскрытой, 20px у свёрнутой рейки) — без этого просвет «колонка → карточка»
+   был шире, чем «карточка → край экрана». См. блок «ОПТИЧЕСКИЙ ЗАЗОР» в
+   css/sidebar-rail.css; !important — потому что базовый padding тут тоже он. */
+@media (min-width: 1024px) { #panel-portfolios { padding-left: calc(30px - var(--sb-gapfix, 0px)) !important; } }
+@media (min-width: 1440px) { #panel-portfolios { padding-left: calc(40px - var(--sb-gapfix, 0px)) !important; } }
+@media (min-width: 1800px) { #panel-portfolios { padding-left: calc(56px - var(--sb-gapfix, 0px)) !important; } }
 
 /* Типографика страницы — ДВА текстовых голоса, как на карточке регистрации
    Главной (.hr-title + .hr-sub, home-register.css): Georgia serif = заголовки

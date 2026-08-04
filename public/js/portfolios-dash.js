@@ -2963,18 +2963,29 @@
         // возвращаем как было (синхронно, без мигания). Утянул ниже natH → блок сворачивается в АВТО.
         var natH = (function () {
             var sh = item.style.height, smh = item.style.minHeight, smx = item.style.maxHeight,
+                sas = item.style.alignSelf,
                 hh = item.classList.contains('pfd-hset'), pt = item.classList.contains('pfd-ptall');
             item.style.height = ''; item.style.minHeight = ''; item.style.maxHeight = '';
+            // ЛОВУШКА (фикс 2026-08-04): у сетки align-items:stretch, и блок в ряду с
+            // высоким соседом «натурально» меряется в ВЫСОТУ РЯДА. У «Ставок» это
+            // давало natH 663 вместо своих ~85 — окно снапа уезжало вниз, и вернуть
+            // полосу в одну строку было нельзя вовсе: тяга упиралась в пол 88px и
+            // блок навсегда оставался с заданной высотой. На время замера снимаем
+            // растяжение — читаем высоту СОБСТВЕННОГО контента.
+            item.style.alignSelf = 'start';
             item.classList.remove('pfd-hset'); item.classList.remove('pfd-ptall');
             var n = item.offsetHeight;
             item.style.height = sh; item.style.minHeight = smh; item.style.maxHeight = smx;
+            item.style.alignSelf = sas;
             if (hh) item.classList.add('pfd-hset'); if (pt) item.classList.add('pfd-ptall');
             return n;
         })();
         // R7: блок можно УЖИМАТЬ НИЖЕ натуральной высоты (контент клипуется hset и скроллится
         // внутри) — «снап» в авто-высоту только в узком окне ±16px вокруг натуральной.
         var snapLo = natH - 16, snapHi = natH + 16;
-        var minH = 88;                // абсолютный пол тяги (совсем в нитку не ужать)
+        // абсолютный пол тяги (совсем в нитку не ужать), но НЕ выше натуральной
+        // высоты блока: у полосы-строки она сама ~85px, и пол в 88 отрезал бы снап
+        var minH = Math.min(88, Math.max(48, natH));
         var newSpan = 0, newH = 0, hMode = hadH || axis === 'y';
         var sideAxis = axis === 'x' || axis === 'xl' || axis === 'both';   // жесты, меняющие ширину
         // ---- ширина: считаем текущую стартовую колонку и «колонку за правым краем» из
