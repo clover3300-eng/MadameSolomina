@@ -691,8 +691,9 @@
         var f = s.filter(function (pt) { return new Date(pt.d).getTime() >= cutoff; });
         return f.length >= 2 ? f : s.slice(-2);
     }
-    // R7: пилюли периода НИЖНИМ рядом (как в референсе): 1Д 1Н 1М 3М 1Г Все
-    var PFD_CAP_RANGES = [['1', '1Д'], ['7', '1Н'], ['30', '1М'], ['90', '3М'], ['365', '1Г'], ['all', 'Все']];
+    // Сегменты периода живут в ПРАВОМ СЛОТЕ ШАПКИ виджета, рядом со «Сравнить»
+    // (мокап overview3, экраны 13 и 18): оба контрола про то, «что показывать».
+    var PFD_CAP_RANGES = [['30', '30д'], ['90', '90д'], ['365', 'Год'], ['all', 'Всё']];
     function pfdCapRangesHtml() {
         return '<div class="pfcap-ranges">' + PFD_CAP_RANGES.map(function (r) {
             return '<button class="pfcap-rb' + (PF.pfdCapRange === r[0] ? ' on' : '') + '" onclick="pfdCapSetRange(\'' + r[0] + '\')">' + r[1] + '</button>';
@@ -1086,9 +1087,8 @@
                 (pay ? '<span><i class="pfcap-lg"></i>выплаты по дням <em>' + esc(fmtRub(pay.total)) + '</em></span>' : '') +
                 '<span class="pfcap-leg-r">' + (cmpBase ? 'обе кривые — в процентах от начала окна' : 'шкала — от начала окна') +
                 '</span></div>' : '') +
-            (cmpPts ? pfdCmpDiffHtml(s, cmpPts, cmpBase, daysShown) : '') +
-            pfdCapRangesHtml();
-            if (!opts.noCmp) right = pfdCapCmpBtnHtml();
+            (cmpPts ? pfdCmpDiffHtml(s, cmpPts, cmpBase, daysShown) : '');
+            right = pfdCapRangesHtml() + (opts.noCmp ? '' : pfdCapCmpBtnHtml());
         }
         return { hero: hero, body: body, right: right, empty: s.length < 2 };
     }
@@ -1183,7 +1183,9 @@
                     '</div>' +
                 '</div>' +
                 '<div class="pfh-c">' +
-                    '<div class="pfh-ct"><span class="pfh-k">Капитал по дням</span></div>' +
+                    // пилюли периода и «Сравнить» — в строке заголовка графика
+                    // (мокап overview3, экран 02: .hx-pills + cmpBtn в .hx-ct)
+                    '<div class="pfh-ct"><span class="pfh-k">Капитал по дням</span>' + parts.right + '</div>' +
                     chart +
                 '</div>' +
                 '<div class="pfh-r">' +
@@ -1285,8 +1287,8 @@
                     '<span class="pfcap-y pfcap-y--min">' + fmtRub(min) + '</span>' +
                     '<div class="pfcapb-plot">' + barsHtml + '</div>' +
                 '</div>' +
-                '<div class="pfcap-x"><span>' + ruDate(s[0].d) + '</span><span>' + ruDate(last.d) + '</span></div>' +
-                pfdCapRangesHtml();
+                '<div class="pfcap-x"><span>' + ruDate(s[0].d) + '</span><span>' + ruDate(last.d) + '</span></div>';
+            right = pfdCapRangesHtml();
         }
         return '<div class="dash2-card pf-card2 pf-capblk pf-capblk--bars" title="Дневные снимки хранятся на этом устройстве (до 400 дней)">' +
             PF.pfCardHead('', 'График капитала', 'стоимость всех портфелей', right) +
@@ -1294,12 +1296,14 @@
             '<div class="pfcap-body">' + body + '</div></div>';
     }
     window.pfdCapSetRange = function (r) { if (PF.pfdCapRange === r) return; PF.pfdCapRange = r; pfdCapRepaint(); };
-    // перерисовать ВСЕ блоки графика капитала (линия и/или столбцы могут быть оба на дашборде)
+    // перерисовать ВСЕ блоки графика капитала (линия и/или столбцы могут быть оба
+    // на дашборде) и героя «Обзора» — его пилюли периода живут в той же сессии
     function pfdCapRepaint() {
-        var cards = document.querySelectorAll('#pfWrap .pf-capblk'); if (!cards.length) return;
+        var cards = document.querySelectorAll('#pfWrap .pf-capblk, #pfWrap .pf-heroblk'); if (!cards.length) return;
         cards.forEach(function (card) {
-            var bars = card.classList.contains('pf-capblk--bars');
-            var tmp = document.createElement('div'); tmp.innerHTML = bars ? pfdCapChartHtmlB() : pfdCapChartHtml();
+            var html = card.classList.contains('pf-heroblk') ? pfxHeroBlockHtml()
+                : card.classList.contains('pf-capblk--bars') ? pfdCapChartHtmlB() : pfdCapChartHtml();
+            var tmp = document.createElement('div'); tmp.innerHTML = html;
             card.parentNode.replaceChild(tmp.firstChild, card);
         });
         pfdRepackSoon();
