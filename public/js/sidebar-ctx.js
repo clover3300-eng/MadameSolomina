@@ -351,12 +351,6 @@
                 first = false;
                 return;
             }
-            // ПЕРЕЧЕНЬ «ОТКРЫТЫЕ ПОРТФЕЛИ» УЕХАЛ В ПЕРВЫЙ УРОВЕНЬ (мокап В4–В5,
-            // portsHtml выше): под «Моими портфелями» он и живёт. Печатать его
-            // ещё и вторым уровнем значило бы ставить те же строки дважды в
-            // одной колонке. «Новый портфель» не теряется: он есть кнопкой
-            // «+ Портфель» в углу самой вкладки.
-            if (tab === 'portfolios' && lab === 'Открытые портфели') return;
             if (first) {
                 // «Разделы» — служебное имя группы; вслух блок называется именем
                 // раздела, а его могли переименовать из админки (js/tab-gates.js)
@@ -536,48 +530,10 @@
     var flatMoreOpen = (function () {
         try { return localStorage.getItem(FLAT_MORE_KEY) === '1'; } catch (e) { return false; }
     })();
-
-    // ---- ОТКРЫТЫЕ ПОРТФЕЛИ ПОД «МОИ ПОРТФЕЛИ» (мокап В4–В5) ----
-    // Аналог TEAM-списка референса: строки с цветной точкой, именем и днём.
-    // Источник — та же модель, что кормила второй уровень (PF.sbSideModel):
-    // открытые вкладки-портфели, СКРЫТЫЕ (p.hidden, cls 'dim') не печатаются —
-    // список в навигации короткий, скрытое возвращает меню «Видимость».
-    // Пока PF не загружен лениво (#pfLazySrc), списка честно нет — как и
-    // счётчиков: числа не выдумываем.
-    var PORTS_KEY = 'sb_ports_v1';
-    var portsOpen = (function () {
-        try { return localStorage.getItem(PORTS_KEY) !== '0'; } catch (e) { return true; }
-    })();
-    function portsRows() {
-        try {
-            if (!(window.PF && PF.sbSideModel)) return [];
-            var m = PF.sbSideModel();
-            if (!m || !m.groups) return [];
-            var g = null;
-            m.groups.forEach(function (x) { if (x.label === 'Открытые портфели') g = x; });
-            if (!g || !g.items) return [];
-            return g.items.filter(function (it) { return it.act === 'pf' && it.cls !== 'dim'; });
-        } catch (e) { return []; }
-    }
-    function portsHtml() {
-        if (!portsOpen) return '';
-        var rows = portsRows();
-        if (!rows.length) return '';
-        var h = '<div class="sb-ports">';
-        rows.forEach(function (it) {
-            h += '<button type="button" class="sb-item sb-port' + (it.on ? ' on' : '') + '"' +
-                ' data-act="pf" data-key="' + esc(it.key) + '"' +
-                (it.on ? ' aria-current="page"' : '') +
-                (it.title ? ' title="' + esc(it.title) + '"' : '') + '>' +
-                '<span class="sb-pdot" style="--pc:' + esc(it.dot || '') + '"></span>' +
-                '<span class="sb-label">' + esc(it.tx) + '</span>' +
-                (it.chg && it.chg.tx
-                    ? '<span class="sb-chg' + (it.chg.neg ? ' neg' : '') + '">' + esc(it.chg.tx) + '</span>'
-                    : '') +
-                '</button>';
-        });
-        return h + '</div>';
-    }
+    // Список открытых портфелей ЖИВЁТ ВТОРЫМ УРОВНЕМ (#sbCtx, группа «Открытые
+    // портфели» из PF.sbSideModel) — как и жил. Раскрытие под «Моими портфелями»
+    // в первом уровне пробовали (мокап В4–В5) и откатили по просьбе владельца
+    // 2026-08-04: первый уровень — разделы, перечни — под чертой.
 
     function plural(n, one, few, many) {
         var m10 = n % 10, m100 = n % 100;
@@ -655,13 +611,6 @@
                 plural(drift, 'портфель просит', 'портфеля просят', 'портфелей просят') +
                 ' ребаланса') + '">' + drift + '</span>' : '') +
             (num != null ? '<span class="sb-n">' + esc(num) + '</span>' : '') +
-            // шеврон-складка списка портфелей — только на «Моих портфелях» и
-            // только когда список есть (мокап: клик по шеврону, не по строке)
-            (key === 'ports' && portsRows().length
-                ? '<span class="sb-pchev' + (portsOpen ? ' open' : '') + '" data-act="flatports" data-key=""' +
-                  ' title="' + (portsOpen ? 'Свернуть список портфелей' : 'Показать список портфелей') + '">' +
-                  svg(IC.chev) + '</span>'
-                : '') +
             '</button>';
     }
     // Состав первого уровня одним списком: гость и «Главная» — это фильтры над
@@ -685,12 +634,7 @@
     function flatHtml() {
         var ids = flatIds();
         var h = '';
-        // список открытых портфелей встаёт СРАЗУ ПОД «Моими портфелями»
-        // (мокап В4–В5) — на «Главной» пункта ports нет, и списка там нет тоже
-        ids.main.forEach(function (id) {
-            h += flatOne(id);
-            if (id === 'pf:ports') h += portsHtml();
-        });
+        ids.main.forEach(function (id) { h += flatOne(id); });
         // Считаем ТОЛЬКО то, что реально видно: «Админка» приходит по роли, и в
         // закрытом виде её в счёте «Ещё» быть не должно.
         var hidden = ids.more.filter(function (id) {
@@ -794,9 +738,9 @@
             return;
         }
         var html = m.why ? whyHtml() : listHtml(m, tab);
-        // Перечень мог ЦЕЛИКОМ уехать в первый уровень («Открытые портфели» —
-        // мокап В4–В5): пустой блок с волосяной чертой не показываем, но
-        // footSync выше уже отработал — шестерёнка «Настроек» остаётся.
+        // Модель могла не отдать ни одной группы: пустой блок с волосяной
+        // чертой не показываем, но footSync выше уже отработал — шестерёнка
+        // «Настроек» остаётся.
         if (html === '<div class="sbc-list"></div>') {
             document.body.classList.remove('sb-ctx');
             if (host.__sbcHtml) { host.innerHTML = ''; host.__sbcHtml = ''; }
@@ -846,14 +790,6 @@
         if (act === 'flatmore') {
             flatMoreOpen = !flatMoreOpen;
             try { localStorage.setItem(FLAT_MORE_KEY, flatMoreOpen ? '1' : '0'); } catch (e) {}
-            flatSync();
-            return;
-        }
-        // шеврон на «Моих портфелях»: складывает список открытых портфелей,
-        // не трогая сам переход (клик по строке остаётся переходом)
-        if (act === 'flatports') {
-            portsOpen = !portsOpen;
-            try { localStorage.setItem(PORTS_KEY, portsOpen ? '1' : '0'); } catch (e) {}
             flatSync();
             return;
         }

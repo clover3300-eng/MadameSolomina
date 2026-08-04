@@ -557,57 +557,9 @@
     body.sb-rail #sbNav .sb-more,
     body.sb-rail #sbNav .sb-morebox { display: none; }
 
-    /* ---------- ОТКРЫТЫЕ ПОРТФЕЛИ ПОД «МОИ ПОРТФЕЛИ» (мокап В4–В5) ----------
-       Строки того же ряда, что разделы: цветная точка-маркер стоит по оси
-       иконок, имя, день — тихим моно у правого края. Наполняет portsHtml
-       (js/sidebar-ctx.js) из PF.sbSideModel; шеврон на строке раздела
-       складывает список (persist sb_ports_v1). */
-    #sbNav .sb-ports { display: flex; flex-direction: column; }
-    #sbNav .sb-ports .sb-item.sb-port,
-    body.dark-mode #sbNav .sb-ports .sb-item.sb-port {
-        height: 30px;
-        font-size: 13px;
-        font-weight: 500;
-        border-radius: 10px;
-        border: 0;
-        cursor: pointer;
-    }
-    .sb-pdot {
-        flex: none;
-        width: 8px; height: 8px;
-        border-radius: 50%;
-        margin: 0 5px;
-        background: var(--pc, var(--sbr-sel));
-        box-shadow: 0 0 0 3px color-mix(in srgb, var(--pc, var(--sbr-sel)) 16%, transparent);
-    }
-    #sbNav .sb-port .sb-chg {
-        flex: none;
-        margin-left: auto;
-        font-family: var(--font-num, 'JetBrains Mono', monospace);
-        font-variant-numeric: tabular-nums;
-        font-size: 10.5px;
-        font-weight: 600;
-        color: var(--sbr-up);
-    }
-    #sbNav .sb-port .sb-chg.neg { color: var(--sbr-dn); }
-    /* активный портфель (его вкладка открыта) — тихая пилюля, не карточка:
-       карточка в колонке одна, у активного РАЗДЕЛА */
-    #sbNav .sb-port.on,
-    body.dark-mode #sbNav .sb-port.on { background: var(--sbr-page); color: var(--sbr-ink); }
-    /* шеврон-складка на строке «Мои портфели» */
-    #sbNav .sb-pchev {
-        flex: none;
-        display: grid;
-        place-items: center;
-        width: 18px; height: 18px;
-        margin-left: 2px;
-        color: var(--sbr-dim);
-        cursor: pointer;
-    }
-    #sbNav .sb-pchev svg { width: 13px; height: 13px; transition: transform 0.16s ease; }
-    #sbNav .sb-pchev.open svg { transform: rotate(180deg); }
-    body.sb-rail #sbNav .sb-ports,
-    body.sb-rail #sbNav .sb-pchev { display: none; }
+    /* Список открытых портфелей живёт ВТОРЫМ УРОВНЕМ (#sbCtx, .sbc-it с
+       цветной точкой) — раскрытие под «Моими портфелями» в первом уровне
+       откатано по просьбе владельца 2026-08-04. */
 
     /* Метка дрейфа у «Ребаланса» — ЯНТАРНАЯ ПИЛЮЛЯ в ряду с индиговыми (мокап):
        не кружок на иконке, а счёт у правого края. Янтарь, а не красный
@@ -1410,8 +1362,12 @@
        высоту, и марка с кабинетом живут именно в ней.
        ================================================================ */
     body:not(.tab-home) #headerWrapper { display: none; }
-    /* Контент занимал место под шапкой отступом — снимаем вместе с ней */
-    body:not(.tab-home) #contentArea { padding-top: 18px; }
+    /* Контент занимал место под шапкой отступом — снимаем вместе с ней.
+       НОЛЬ, А НЕ 18 (доведение 2026-08-04): вшитая колонка и контент стоят на
+       одном фоне, и их верхние кромки обязаны совпадать — марка «Madame
+       Solomi'na» стояла на 22px выше первой карточки вкладки. Свой верхний
+       отступ (~20px) вкладки несут сами. */
+    body:not(.tab-home) #contentArea { padding-top: 0; }
 
     /* ---------- Палитра поиска, открытая из подвала ----------
        Та же палитра (#searchPalette), но пришвартована к сайдбару и без своего
