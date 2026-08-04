@@ -631,9 +631,10 @@
     }
 
     // ---------- Этаж «Лидеры дня»: по 6 строк роста и падения ----------
-    // Строка: тикер + ИМЯ КОМПАНИИ (ширины колонки 366px на это хватает),
-    // полоса от нуля (падение растёт справа налево) и процент. Направление
-    // читается без цвета: стрелка в заголовке группы, знак в числе.
+    // Полосы — язык ЛИНИИ БАЛАНСА стакана (.d-bal в trading-scene.css):
+    // тонкая пилюля 5px, полупрозрачный цвет 55%, без серого трека. Рост
+    // растёт от тикера, падение — от процента (зеркало спроса/предложения).
+    // Имя компании снято — строка одноэтажная: тикер, линия, процент.
     function renderLeaders() {
         var el = leadEl(); if (!el || !state.rows) return;
         var body = el.querySelector('.mh-lead-body'); if (!body) return;
@@ -644,10 +645,10 @@
         var maxAbs = 0; withChg.forEach(function (r) { var a = Math.abs(r.chg); if (a > maxAbs) maxAbs = a; });
         maxAbs = maxAbs || 1;
         function row(r, dir) {
-            var w = Math.max(4, Math.abs(r.chg) / maxAbs * 100);
-            return '<div class="mh-lg ' + dir + '" data-tk="' + esc(r.ticker) + '" role="button" tabindex="0" ' +
-                'title="Карточка компании">' +
-                '<span class="mh-lg-id"><b>' + esc(r.ticker) + '</b><span>' + esc(r.name) + '</span></span>' +
+            var w = Math.max(6, Math.abs(r.chg) / maxAbs * 100);
+            return '<div class="mh-lg ' + dir + '" data-tk="' + esc(r.ticker) + '" ' +
+                'role="button" tabindex="0" title="' + esc(r.name) + ' — карточка компании">' +
+                '<b>' + esc(r.ticker) + '</b>' +
                 '<span class="mh-lg-bar"><i style="width:' + w.toFixed(0) + '%"></i></span>' +
                 '<em>' + fmtPct(r.chg) + '</em></div>';
         }
@@ -726,9 +727,12 @@
                         '<span class="mh-id-tkr">' + esc(r.ticker) + '</span>' +
                         '<span class="mh-id-name">' + esc(r.name) + '</span>' +
                     '</span>' +
+                    // звезда ПЕРВОЙ: кнопка карточки до ховера невидима (opacity 0),
+                    // но ширину держит — стоя перед звездой, она отодвигала её от
+                    // тикера призрачным зазором (владелец, 2026-08-04)
                     '<span class="mh-tk-actions">' +
-                        '<button class="mh-tk-card" type="button" data-act="card" data-tk="' + esc(r.ticker) + '" title="Карточка компании" aria-label="Карточка компании">' + CARD_SVG + '</button>' +
                         '<button class="mh-tk-fav' + (isFav ? ' active' : '') + '" type="button" data-act="fav" data-tk="' + esc(r.ticker) + '" title="' + (isFav ? 'Убрать из избранного' : 'В избранное') + '" aria-label="Избранное">' + STAR_SVG + '</button>' +
+                        '<button class="mh-tk-card" type="button" data-act="card" data-tk="' + esc(r.ticker) + '" title="Карточка компании" aria-label="Карточка компании">' + CARD_SVG + '</button>' +
                     '</span>' +
                 '</span></td>' +
                 '<td class="num">' + fmtPrice(r.last) + '</td>' +

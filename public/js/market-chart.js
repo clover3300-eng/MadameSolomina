@@ -1,132 +1,131 @@
 /* ============================================================================
    МОДУЛЬ «ГРАФИК ИНДЕКСА МОСБИРЖИ» — вкладка Рынок
    ----------------------------------------------------------------------------
-   Advanced-chart TradingView (символ RUS:IRUS = IMOEX). После раунда
-   «Разворот» отдельного вида «График» больше нет: виджет живёт ПОСТОЯННО в
-   герое вкладки (#mhHero, см. js/market-heatmap.js) площадным графиком, а
-   период задаёт сегмент 1Д/1Н/1М/1Г рядом с ним. Этот модуль только
-   собирает виджет:
+   СВОЙ площадной график в герое #mhHero (раунд «Разворот»): виджет TradingView
+   не вписывался в язык вкладки (своя палитра, свой фон, свой шрифт) и заменён
+   лёгким SVG по свечам ISS Мосбиржи. Кривая красится знаком периода (рост —
+   мята, падение — клэй, токены --mh-up/--mh-down), заливка — градиент в
+   currentColor, оси — три даты снизу. viewBox + non-scaling-stroke: график
+   тянется с карточкой без пересчёта.
 
-     window.mkChartMount(host, range) — построить график в переданном
-       контейнере на диапазон range ('1D'|'5D'|'1M'|'12M'; по умолчанию '1M').
-       Ленивая загрузка: внешний скрипт TradingView тянется при первом вызове;
-       повторные вызовы — no-op, пока не сменились тема/диапазон/хост.
-     window.mkChartUnmount() — снести виджет (iframe TradingView со своим
-       рендер-циклом): зовётся при уходе со вкладки «Рынок». Держать его живым
-       в фоне незачем — это самый тяжёлый объект страницы.
+     window.mkChartMount(host, range) — нарисовать график диапазона
+       ('1D'|'5D'|'1M'|'12M'); свечи кэшируются на 60 с, повторный вызов с теми
+       же host/range — no-op.
+     window.mkChartUnmount() — очистить хост (уход со вкладки «Рынок»).
 
-   При переключении темы (день/ночь) смонтированный виджет пересобирается
-   под новую палитру. Грузится ПЕРЕД market-heatmap.js.
+   Классический скрипт, грузится ПЕРЕД market-heatmap.js.
    ========================================================================== */
 (function () {
     'use strict';
 
-    var TV_SRC = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-    var hostEl = null;     // контейнер, в котором смонтирован виджет
-    var curTheme = null;   // тема, под которую он построен ('light' | 'dark')
-    var curRange = '1M';   // диапазон, под который он построен
+    var ISS = 'https://iss.moex.com/iss/';
+    // Диапазон → [интервал свечи ISS, дней назад]. Интервалы ISS: 1/10/60 мин,
+    // 24 — день, 7 — неделя. Запас дней покрывает выходные и праздники.
+    var CFG = {
+        '1D':  { interval: 10, days: 7,   axis: 'time' },
+        '5D':  { interval: 60, days: 12,  axis: 'day'  },
+        '1M':  { interval: 24, days: 34,  axis: 'day'  },
+        '12M': { interval: 7,  days: 372, axis: 'mon'  }
+    };
+    var TTL = 60000;                 // кэш свечей, мс
+    var cache = {};                  // { range: { t, pts:[{d:Date,v:Number}] } }
+    var hostEl = null, curRange = null, seq = 0;
 
-    function isDark() { return document.body.classList.contains('dark-mode'); }
-    function theme() { return isDark() ? 'dark' : 'light'; }
+    function pad2(n) { return n < 10 ? '0' + n : '' + n; }
+    function dstr(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
 
-    // Свечной ТФ под каждый диапазон: день — получас, неделя — час, месяц —
-    // день, год — неделя (иначе TV рисует год из дневных свечей кашей).
-    var RANGE_TF = { '1D': '30', '5D': '60', '1M': 'D', '12M': 'W' };
-
-    // Конфиг виджета: площадной график (style 3) без тулбаров — герой уже несёт
-    // и заголовок, и цифры, и переключатель периода; виджету остаётся кривая.
-    // Фон прозрачный: карточка героя — стекло, белая плита его бы закрыла.
-    function cfg(t, range) {
-        var dark = (t === 'dark');
-        return {
-            autosize: true,
-            symbol: 'RUS:IRUS',
-            interval: RANGE_TF[range] || 'D',
-            range: range,
-            timezone: 'Europe/Moscow',
-            theme: dark ? 'dark' : 'light',
-            style: '3',      // area — как в мокапе Р2 (свечи остались в терминале)
-            locale: 'ru',
-            allow_symbol_change: false,
-            calendar: false,
-            details: false,
-            hide_side_toolbar: true,
-            hide_top_toolbar: true,
-            hide_legend: true,
-            hide_volume: true,
-            hotlist: false,
-            save_image: false,
-            withdateranges: false,
-            backgroundColor: dark ? 'rgba(28,39,53,0)' : 'rgba(255,255,255,0)',
-            gridColor: dark ? 'rgba(255,255,255,0.06)' : 'rgba(46,46,46,0.06)',
-            watchlist: [],
-            compareSymbols: [],
-            studies: [],
-            support_host: 'https://www.tradingview.com'
-        };
+    function fetchPts(range) {
+        var hit = cache[range];
+        if (hit && Date.now() - hit.t < TTL) return Promise.resolve(hit.pts);
+        var cfg = CFG[range];
+        var from = new Date(); from.setDate(from.getDate() - cfg.days);
+        var url = ISS + 'engines/stock/markets/index/securities/IMOEX/candles.json' +
+            '?iss.meta=off&interval=' + cfg.interval + '&from=' + dstr(from) +
+            '&candles.columns=close,begin';
+        return fetch(url, { cache: 'no-store' })
+            .then(function (r) { if (!r.ok) throw new Error('candles ' + r.status); return r.json(); })
+            .then(function (j) {
+                var d = j.candles.data, pts = [], i;
+                for (i = 0; i < d.length; i++) {
+                    if (d[i][0] == null) continue;
+                    pts.push({ v: +d[i][0], d: new Date(String(d[i][1]).replace(' ', 'T')) });
+                }
+                // «1Д» — только последний торговый день из недельного запаса
+                if (range === '1D' && pts.length) {
+                    var last = dstr(pts[pts.length - 1].d);
+                    pts = pts.filter(function (p) { return dstr(p.d) === last; });
+                }
+                if (pts.length < 2) throw new Error('candles empty');
+                cache[range] = { t: Date.now(), pts: pts };
+                return pts;
+            });
     }
 
-    // Полностью (пере)собирает разметку виджета в hostEl. Внешний скрипт
-    // TradingView читает свой textContent как конфиг и рисует график в
-    // соседний .tradingview-widget-container__widget.
-    function build() {
-        if (!hostEl) return;
-        var t = theme();
-        hostEl.innerHTML = '';
-
-        var container = document.createElement('div');
-        container.className = 'tradingview-widget-container';
-
-        var widget = document.createElement('div');
-        widget.className = 'tradingview-widget-container__widget';
-
-        var copy = document.createElement('div');
-        copy.className = 'tradingview-widget-copyright';
-        copy.innerHTML = '<a href="https://ru.tradingview.com/symbols/RUS-IRUS/" rel="noopener nofollow" target="_blank">' +
-                         '<span class="blue-text">Track all markets on TradingView</span></a>';
-
-        var script = document.createElement('script');
-        script.type = 'text/javascript';
-        script.src = TV_SRC;
-        script.async = true;
-        script.innerHTML = JSON.stringify(cfg(t, curRange));
-
-        container.appendChild(widget);
-        container.appendChild(copy);
-        container.appendChild(script);
-        hostEl.appendChild(container);
-
-        curTheme = t;
+    var MONTHS = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+    function axisLabel(p, kind) {
+        if (kind === 'time') return pad2(p.d.getHours()) + ':' + pad2(p.d.getMinutes());
+        if (kind === 'mon')  return MONTHS[p.d.getMonth()] + ' ' + String(p.d.getFullYear()).slice(2);
+        return p.d.getDate() + ' ' + MONTHS[p.d.getMonth()];
     }
 
-    // Публичная точка входа: смонтировать график в host на диапазон range (или
-    // пересобрать, если host/тема/диапазон устарели). Актуальный не трогаем.
+    // Площадной график: линия + градиентная заливка в currentColor. Ось —
+    // первая/средняя/последняя точка. uid у градиента — на случай двух графиков.
+    function draw(host, pts, kind) {
+        var W = 100, H = 40, PAD = 2;
+        var min = Infinity, max = -Infinity, i;
+        for (i = 0; i < pts.length; i++) { var v = pts[i].v; if (v < min) min = v; if (v > max) max = v; }
+        var span = (max - min) || 1;
+        var line = '';
+        for (i = 0; i < pts.length; i++) {
+            var x = (i / (pts.length - 1)) * W;
+            var y = PAD + (1 - (pts[i].v - min) / span) * (H - PAD * 2);
+            line += (i ? 'L' : 'M') + x.toFixed(2) + ' ' + y.toFixed(2);
+        }
+        var dir = pts[pts.length - 1].v >= pts[0].v ? 'up' : 'down';
+        var id = 'mkcg' + (++seq);
+        var mid = pts[Math.floor((pts.length - 1) / 2)];
+        host.innerHTML =
+            '<svg class="mkc ' + dir + '" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true">' +
+            '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1">' +
+            '<stop offset="0" stop-color="currentColor" stop-opacity=".22"/>' +
+            '<stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs>' +
+            '<path d="' + line + 'L' + W + ' ' + H + 'L0 ' + H + 'Z" fill="url(#' + id + ')" stroke="none"/>' +
+            '<path d="' + line + '" fill="none" stroke="currentColor" stroke-width="1.8" ' +
+                'vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>' +
+            '</svg>' +
+            '<div class="mkc-ax">' +
+            '  <span>' + axisLabel(pts[0], kind) + '</span>' +
+            '  <span>' + axisLabel(mid, kind) + '</span>' +
+            '  <span>' + axisLabel(pts[pts.length - 1], kind) + '</span>' +
+            '</div>';
+    }
+
+    function render(host, range) {
+        var my = ++seq;
+        // скелет только на холодный старт: при смене диапазона из кэша мигать нечему
+        if (!host.firstChild) host.innerHTML = '<div class="mkc-skel"></div>';
+        fetchPts(range).then(function (pts) {
+            if (hostEl !== host || curRange !== range || my < seq) return; // устаревший ответ
+            draw(host, pts, CFG[range].axis);
+        }).catch(function (e) {
+            if (hostEl !== host || curRange !== range) return;
+            host.innerHTML = '<div class="mkc-err">График Мосбиржи сейчас недоступен</div>';
+            if (window.console) console.warn('[market-chart]', e);
+        });
+    }
+
+    // Публичная точка входа. Актуальный график не трогаем.
     window.mkChartMount = function (host, range) {
         if (!host) return;
-        if (range && RANGE_TF[range]) { var next = range; } else { next = curRange; }
-        if (hostEl === host && curTheme === theme() && curRange === next && host.firstChild) return;
-        hostEl = host;
-        curRange = next;
-        build();
+        if (!range || !CFG[range]) range = curRange || '1M';
+        if (hostEl === host && curRange === range && host.querySelector('.mkc')) return;
+        hostEl = host; curRange = range;
+        render(host, range);
     };
 
-    // Снести виджет: iframe TradingView крутит свой рендер-цикл и держит
-    // соединение, даже когда вкладка скрыта. Следующий mkChartMount соберёт
-    // заново (скрипт уже в кэше браузера — сборка быстрая).
     window.mkChartUnmount = function () {
         if (!hostEl) return;
         hostEl.innerHTML = '';
-        hostEl = null;
-        curTheme = null;
-    };
-
-    // Пересобрать под тему при переключении день/ночь (если уже смонтирован)
-    var _origToggle = window.toggleTheme;
-    window.toggleTheme = function () {
-        var r = _origToggle ? _origToggle.apply(this, arguments) : undefined;
-        setTimeout(function () {
-            if (hostEl && curTheme !== theme()) build();
-        }, 0);
-        return r;
+        hostEl = null; curRange = null;
     };
 })();

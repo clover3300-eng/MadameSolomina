@@ -267,17 +267,16 @@ body.dark-mode .mh-seg-view .mh-seg-btn.active .mh-cb-ico { color: #10201a; }
 .mh-brd-ratio { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: var(--mh-muted2); }
 .mh-brd-ratio b { font-size: 15px; }
 .mh-brd-ratio b.up { color: var(--mh-up); } .mh-brd-ratio b.down { color: var(--mh-down); }
-/* Тонкий плоский трек: три залитых сегмента (рост/нейтр./падение), без глянца, бликов,
-   3D-теней и свечения — чтобы блок не выбивался из общего плоского дашборда.
-   Проценты вынесены в подписи под баром. */
-.mh-breadth-bar { position: relative; display: flex; height: 8px; border-radius: 99px; overflow: hidden;
-    background: var(--mh-well); box-shadow: inset 0 0 0 1px var(--mh-line); }
-.mh-breadth-bar i { height: 100%; min-width: 0; transition: width .55s cubic-bezier(.4,0,.2,1); }
-.mh-breadth-bar i.up { background: var(--mh-up); }
-.mh-breadth-bar i.down { background: var(--mh-down); }
-.mh-breadth-bar i.flat { background: var(--mh-muted2); opacity: .3; }
-/* тонкий разделитель между сегментами под цвет фона трека */
-.mh-breadth-bar i + i { box-shadow: inset 1px 0 0 var(--mh-card-soft); }
+/* Полоса ширины рынка — язык линии баланса стакана (.d-bal в
+   trading-scene.css): тонкая 5px, сегменты-пилюли с зазором 2px,
+   полупрозрачные цвета вместо плотной заливки, без трека и рамок. */
+.mh-breadth-bar { position: relative; display: flex; height: 5px; border-radius: 99px;
+    gap: 2px; }
+.mh-breadth-bar i { height: 100%; min-width: 0; border-radius: 99px;
+    transition: width .55s cubic-bezier(.4,0,.2,1); }
+.mh-breadth-bar i.up { background: color-mix(in srgb, var(--mh-up) 55%, transparent); }
+.mh-breadth-bar i.down { background: color-mix(in srgb, var(--mh-down) 55%, transparent); }
+.mh-breadth-bar i.flat { background: color-mix(in srgb, var(--mh-muted2) 35%, transparent); }
 .mh-breadth-lbl { display: flex; align-items: center; justify-content: space-between; gap: 8px;
     font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: var(--mh-muted2); }
 .mh-breadth-lbl span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
@@ -353,19 +352,26 @@ body.dark-mode .mh-seg-view .mh-seg-btn.active .mh-cb-ico { color: #10201a; }
     margin: 2px 22px 0; border-radius: 14px; overflow: hidden; background: var(--mh-plot-bg);
     border: 1px solid var(--mh-well-edge); }
 
-/* Хост графика TradingView — живёт в ГЕРОЕ (площадной график, 1Д/1Н/1М/1Г).
-   Фон прозрачный: под ним стекло героя, белая плита закрыла бы материал. */
+/* Хост графика героя (свой SVG из js/market-chart.js — виджет TradingView
+   снят: его палитра/фон/шрифт не вписывались в язык вкладки). Фон прозрачный:
+   под графиком стекло героя. Кривая красится знаком периода. */
 .mh-chart-host { position: relative; width: 100%; height: 192px; box-sizing: border-box;
-    border-radius: 12px; overflow: hidden; background: transparent; }
+    border-radius: 12px; overflow: hidden; background: transparent;
+    display: flex; flex-direction: column; }
 .mh-chart-host[hidden] { display: none; }
-.mh-chart-host .tradingview-widget-container { height: 100%; width: 100%; }
-.mh-chart-host .tradingview-widget-container__widget { height: calc(100% - 22px); width: 100%; }
-.mh-chart-host .tradingview-widget-copyright {
-    height: 22px; line-height: 22px; font-size: 10px;
-    font-family: 'Inter', sans-serif; text-align: right; padding-right: 8px;
-    color: var(--mh-muted2); }
-.mh-chart-host .tradingview-widget-copyright a,
-.mh-chart-host .tradingview-widget-copyright .blue-text { color: var(--mh-muted2) !important; text-decoration: none; }
+.mkc { flex: 1 1 auto; min-height: 0; width: 100%; display: block; }
+.mkc.up { color: var(--mh-up); }
+.mkc.down { color: var(--mh-down); }
+/* ось: три даты, тихий моно — как подписи легенды */
+.mkc-ax { flex: none; display: flex; justify-content: space-between; padding-top: 6px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600;
+    letter-spacing: .04em; color: var(--mh-muted2); }
+/* скелет холодного старта и тихая ошибка */
+.mkc-skel { flex: 1; border-radius: 10px;
+    background: linear-gradient(100deg, var(--mh-well) 30%, var(--mh-card-soft) 50%, var(--mh-well) 70%);
+    background-size: 220% 100%; animation: mhShimmer 1.25s linear infinite; }
+.mkc-err { flex: 1; display: flex; align-items: center; justify-content: center;
+    font-size: 12.5px; font-weight: 600; color: var(--mh-muted2); }
 
 .mh-tile { position: absolute; overflow: hidden; cursor: pointer; opacity: 1;
     box-sizing: border-box;
@@ -515,16 +521,18 @@ body.dark-mode .mh-retry { box-shadow: none; }
 .mh-table tbody tr:nth-child(3) .mh-rank { color: #c79a3a; font-weight: 700; }
 
 /* ===== Ячейка идентичности: тикер + название + действия (паттерн таблицы «Акции») =====
-   тикер моноширинным сверху, название мелким серым под ним; справа — кластер действий
-   (карточка по наведению + звезда «в избранное»). min-width у текста держит звёзды на
-   одной вертикали (не «лесенкой»). */
+   тикер моноширинным сверху, название мелким серым под ним; действия (звезда
+   «в избранное» + карточка по наведению) — РОВНЫМ СТОЛБИКОМ сразу за текстом:
+   фиксированная ширина текста держит звёзды друг под другом, но близко к
+   тикеру, а не у правого края колонки (владелец, 2026-08-04). */
 .mh-td-id { padding-top: 7px; padding-bottom: 7px; }
-.mh-id-cell { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.mh-id-text { display: flex; flex-direction: column; gap: 1px; line-height: 1.2; min-width: 150px; text-align: left; }
+.mh-id-cell { display: flex; align-items: center; justify-content: flex-start; gap: 7px; }
+.mh-id-text { display: flex; flex-direction: column; gap: 1px; line-height: 1.2;
+    flex: none; width: 118px; text-align: left; }
 .mh-id-tkr { font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 13px;
     letter-spacing: -.01em; color: var(--mh-text); transition: color .15s ease; }
 .mh-id-name { font-weight: 600; font-size: 11.5px; color: var(--mh-muted);
-    max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mh-table tbody tr:hover .mh-id-tkr { color: var(--mh-accent); }
 .mh-tk-actions { display: inline-flex; align-items: center; gap: 2px; flex-shrink: 0; }
 .mh-tk-card, .mh-tk-fav {
@@ -588,9 +596,11 @@ body.dark-mode .mh-retry { box-shadow: none; }
 /* ============================================================
    ЭТАЖИ РАУНДА «РАЗВОРОТ» (мокап Р2·С)
    ============================================================ */
-/* второй этаж: карта + лидеры. align-items: start — карточки своего роста */
+/* второй этаж: карта + лидеры. stretch — нижняя грань лидеров ровняется
+   с нижней гранью карты (владелец, 2026-08-04); недостающую высоту строки
+   лидеров разбирают между собой (flex в .mh-lead-body) */
 .mh-row2 { display: grid; grid-template-columns: minmax(0, 1fr) 366px; gap: 20px;
-    align-items: start; }
+    align-items: stretch; }
 
 /* --- герой: цифры слева, график справа --- */
 .mh-hero-body { display: grid; grid-template-columns: 300px minmax(0, 1fr);
@@ -618,36 +628,39 @@ body.dark-mode .mh-retry { box-shadow: none; }
 .mh-hero-foot .mh-breadth-lbl { margin-top: 8px; }
 .mh-breadth-lbl .flat::before { display: none; } /* у центральной подписи точка не нужна */
 
-/* --- лидеры дня: по 6 строк роста и падения с именем компании --- */
+/* --- лидеры дня: полосы — язык ЛИНИИ БАЛАНСА стакана (.d-bal в
+   trading-scene.css): тонкая пилюля 5px, полупрозрачный цвет 55%, без
+   серого трека и рамок. Рост растёт от тикера, падение — от процента
+   (зеркало спроса/предложения). Карточка тянется до нижней грани карты
+   (см. .mh-row2): строки распределяют высоту между собой. --- */
+.mh-lead { display: flex; flex-direction: column; }
 .mh-lead-hint { font-size: 11.5px; font-weight: 600; color: var(--mh-muted2);
     white-space: nowrap; flex-shrink: 0; }
-.mh-lead-body { padding: 2px 18px 14px; }
-.mh-lg-h { display: flex; align-items: center; justify-content: space-between; height: 26px;
+.mh-lead-body { padding: 2px 18px 14px; flex: 1 1 auto; min-height: 0;
+    display: flex; flex-direction: column; }
+.mh-lg-h { flex: none; display: flex; align-items: center; justify-content: space-between;
+    height: 26px;
     font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700;
     letter-spacing: .1em; text-transform: uppercase; color: var(--mh-muted2); }
 .mh-lg-h em { font-style: normal; font-size: 10.5px; letter-spacing: 0; }
 .mh-lg-h em.up { color: var(--mh-up); } .mh-lg-h em.down { color: var(--mh-down); }
-.mh-lg { display: grid; grid-template-columns: 118px minmax(0, 1fr) 56px;
-    align-items: center; gap: 10px; height: 34px; cursor: pointer;
-    border-top: 1px solid var(--mh-line-soft); border-radius: 6px;
+.mh-lg { flex: 1 1 auto; min-height: 26px; display: flex; align-items: center; gap: 12px;
+    padding: 0 8px; cursor: pointer; border-radius: 6px;
     transition: background .12s ease; }
-.mh-lg:hover, .mh-lg:focus-visible { background: var(--mh-hover); outline: none; }
-.mh-lg-id { min-width: 0; }
-.mh-lg-id b { display: block; font-family: 'JetBrains Mono', monospace; font-weight: 800;
-    font-size: 12px; letter-spacing: -.01em; line-height: 1.15; color: var(--mh-text); }
-.mh-lg-id span { display: block; font-size: 10.5px; font-weight: 600; color: var(--mh-muted2);
-    margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* полоса от нуля: рост слева направо, падение — справа налево */
-.mh-lg-bar { position: relative; height: 7px; border-radius: 4px; background: var(--mh-well);
-    overflow: hidden; }
-.mh-lg-bar i { position: absolute; top: 0; bottom: 0; border-radius: 4px;
+.mh-lg:hover, .mh-lg:focus-visible {
+    background: color-mix(in srgb, var(--mh-accent) 8%, transparent); outline: none; }
+.mh-lg b { flex: none; width: 52px; font-family: 'JetBrains Mono', monospace; font-weight: 800;
+    font-size: 12px; letter-spacing: -.01em; color: var(--mh-text); }
+.mh-lg-bar { flex: 1 1 auto; min-width: 0; height: 5px; border-radius: 99px; position: relative; }
+.mh-lg-bar i { position: absolute; top: 0; bottom: 0; border-radius: 99px;
     transition: width .55s cubic-bezier(.4,0,.2,1); }
-.mh-lg.u .mh-lg-bar i { left: 0; background: var(--mh-up); opacity: .75; }
-.mh-lg.d .mh-lg-bar i { right: 0; background: var(--mh-down); opacity: .75; }
-.mh-lg em { font-style: normal; text-align: right; font-family: 'JetBrains Mono', monospace;
-    font-weight: 700; font-size: 12px; white-space: nowrap; }
+.mh-lg.u .mh-lg-bar i { left: 0; background: color-mix(in srgb, var(--mh-up) 55%, transparent); }
+.mh-lg.d .mh-lg-bar i { right: 0; background: color-mix(in srgb, var(--mh-down) 55%, transparent); }
+.mh-lg em { flex: none; width: 54px; text-align: right; font-style: normal;
+    font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12px;
+    white-space: nowrap; }
 .mh-lg.u em { color: var(--mh-up); } .mh-lg.d em { color: var(--mh-down); }
-.mh-lg-gap { height: 14px; }
+.mh-lg-gap { flex: 0 0 14px; }
 .mh-lg-empty { padding: 10px 0; font-size: 12px; color: var(--mh-muted2);
     border-top: 1px solid var(--mh-line-soft); }
 
