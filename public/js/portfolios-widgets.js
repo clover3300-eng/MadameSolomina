@@ -958,8 +958,12 @@
             var t = m.when.length > 1
                 ? m.when.length + ' ' + PF.plural(m.when.length, 'выплата', 'выплаты', 'выплат')
                 : ruDate(m.when[0]);
-            return '<span class="pfcap-paym" style="left:' + m.x.toFixed(2) + '%;top:' + m.y.toFixed(2) +
-                '%" title="' + esc(t + ' · +' + fmtRub(m.sum)) + '"></span>';
+            // подпись — мгновенная плашка по :hover (язык .pfcv-pay карточки), а не
+            // нативный title с его секундной задержкой. У кромок полотна плашка
+            // прижимается к точке классами: dn — под точкой, l/r — без центровки.
+            var cls = (m.y < 34 ? ' dn' : '') + (m.x < 12 ? ' l' : m.x > 88 ? ' r' : '');
+            return '<span class="pfcap-paym' + cls + '" style="left:' + m.x.toFixed(2) + '%;top:' + m.y.toFixed(2) + '%">' +
+                '<b>' + esc(t) + ' · <span data-money>+' + fmtRub(m.sum) + '</span></b></span>';
         }).join('');
     }
     // Полотно графика капитала вынесено в отдельную функцию: тот же плот нужен

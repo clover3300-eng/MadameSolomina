@@ -2643,8 +2643,21 @@ body.dark-mode .pfcap-mk b, .pfd-item.pfd-thm-dark .pfcap-mk b { color: #d3dcea;
 /* полоса выплат: столбик на колонку дней. Пустая колонка — насечка-основание
    3px (шкала дней), колонка с деньгами — зелёный столбик до 15px и подсказка
    с датой и суммой; масштаб полосы свой, от крупнейшей выплаты окна. */
-/* метки выплат на полотне — язык мини-графика карточки (.pfcv-pay): полая точка */
+/* метки выплат на полотне — язык мини-графика карточки (.pfcv-pay): полая точка,
+   подпись — мгновенная плашка по ховеру (не нативный title с его задержкой) */
 .pfcap-paym { position: absolute; width: 9px; height: 9px; border-radius: 50%;
     transform: translate(-50%, -50%); background: #fff; border: 2px solid #16a34a; z-index: 5; }
+.pfcap-paym::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; }
 body.dark-mode .pfcap-paym,
 .pfd-item.pfd-thm-dark .pfcap-paym { background: #1a232f; border-color: #34d399; }
+.pfcap-paym b { display: none; position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 10px; font-weight: 700;
+    color: #16a34a; background: color-mix(in srgb, #fff 88%, transparent); padding: 2px 7px;
+    border-radius: 6px; white-space: nowrap; backdrop-filter: blur(2px); pointer-events: none; }
+.pfcap-paym:hover { border-width: 3px; }
+.pfcap-paym:hover b { display: block; }
+.pfcap-paym.dn b { bottom: auto; top: 12px; }
+.pfcap-paym.l b { left: -4px; transform: none; }
+.pfcap-paym.r b { left: auto; right: -4px; transform: none; }
+body.dark-mode .pfcap-paym b,
+.pfd-item.pfd-thm-dark .pfcap-paym b { color: #34d399; background: color-mix(in srgb, #1a232f 86%, transparent); }
