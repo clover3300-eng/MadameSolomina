@@ -905,11 +905,11 @@
     });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') pfdCapCmpClose(); });
 
-    // ═══════════ ПОЛОСА ВЫПЛАТ ПОД ПОЛОТНОМ (мокап overview3, экран 18) ═══════════
-    // «Показывает, что доход бывает не только от цены». Расписание берём то же,
+    // ═══════════ ВЫПЛАТЫ ДЛЯ МЕТОК НА ПОЛОТНЕ ═══════════
+    // «Показывают, что доход бывает не только от цены». Расписание берём то же,
     // что кормит «Календарь выплат»: купоны — по датам зачисления, дивиденды — по
-    // дате отсечки. Пока расписание грузится, полосы просто нет: ensureSchedule по
-    // приходе дёргает softRerender, и она появляется сама.
+    // дате отсечки. Пока расписание грузится, меток просто нет: ensureSchedule по
+    // приходе дёргает softRerender, и они появляются сами.
     function pfdPayByDate(from, till) {
         var map = {}, total = 0, max = 0;
         visibleItems().forEach(function (p) {
@@ -936,36 +936,31 @@
         Object.keys(map).forEach(function (k) { if (map[k] > max) max = map[k]; });
         return { map: map, total: total, max: max };
     }
-    // Полоса под полотном: столбик на день. Дней в окне бывает и 400 — тогда бы
-    // столбики стали уже пикселя, поэтому раскладываем по колонкам (не больше 60)
-    // и выплату суммируем в ту колонку, в чей день она попала. Пустые колонки —
-    // насечка-основание высотой 3px: она показывает шкалу дней, а не «немного
-    // денег каждый день» (сумму и дату говорит подсказка на колонке).
-    var PFD_PAY_COLS = 60;
-    function pfdPayBandHtml(s, pay) {
-        var n = s.length, cols = Math.min(n, PFD_PAY_COLS);
-        var sum = new Array(cols), when = new Array(cols), i;
-        for (i = 0; i < cols; i++) { sum[i] = 0; when[i] = []; }
-        var byIdx = {}; s.forEach(function (pt, k) { byIdx[pt.d] = k; });
-        Object.keys(pay.map).forEach(function (d) {
-            var k = byIdx[d];
-            if (k == null) {                                  // выплата в день без снимка —
-                for (var j = 0; j < n; j++) {                 // кладём в ближайший прошлый
-                    if (s[j].d <= d) k = j; else break;
-                }
+    // Метки выплат НА полотне — тот же язык, что у мини-графика карточки портфеля
+    // («Табло», .pfcv-pay в drawPfChart): полая зелёная точка на линии в день
+    // выплаты, сумму и дату говорит подсказка. Была полоса-гистограмма под
+    // полотном (мокап overview3, экран 18) — заменена по решению 2026-08-04:
+    // отдельная шкала спорила с полотном, точки эстетичнее. Близкие метки
+    // (< 4% ширины) склеиваются в одну «N выплат · сумма» — как на карточке.
+    function pfdPayMarksHtml(s, pay, xP, yP) {
+        var n = s.length, marks = [];
+        Object.keys(pay.map).sort().forEach(function (d) {
+            var k = null;                                     // выплата в день без снимка —
+            for (var j = 0; j < n; j++) {                     // кладём в ближайший прошлый
+                if (s[j].d <= d) k = j; else break;
             }
             if (k == null) k = 0;
-            var c = cols > 1 ? Math.round(k / (n - 1) * (cols - 1)) : 0;
-            sum[c] += pay.map[d]; when[c].push(d);
+            var x = xP(k), prev = marks[marks.length - 1];
+            if (prev && x - prev.x < 4) { prev.sum += pay.map[d]; prev.when.push(d); }
+            else marks.push({ x: x, y: yP(s[k].v), sum: pay.map[d], when: [d] });
         });
-        var bars = '';
-        for (i = 0; i < cols; i++) {
-            if (!(sum[i] > 0)) { bars += '<i style="height:3px"></i>'; continue; }
-            var hgt = Math.max(5, Math.round(sum[i] / pay.max * 15));
-            bars += '<i class="on" style="height:' + hgt + 'px" title="' +
-                esc(when[i].map(ruDate).join(', ')) + ' · ' + esc(fmtRub(sum[i])) + '"></i>';
-        }
-        return '<div class="pfcap-pay">' + bars + '</div>';
+        return marks.map(function (m) {
+            var t = m.when.length > 1
+                ? m.when.length + ' ' + PF.plural(m.when.length, 'выплата', 'выплаты', 'выплат')
+                : ruDate(m.when[0]);
+            return '<span class="pfcap-paym" style="left:' + m.x.toFixed(2) + '%;top:' + m.y.toFixed(2) +
+                '%" title="' + esc(t + ' · +' + fmtRub(m.sum)) + '"></span>';
+        }).join('');
     }
     // Полотно графика капитала вынесено в отдельную функцию: тот же плот нужен
     // и виджету «График капитала», и герою «Обзора». Возвращает {hero, body} —
@@ -1078,8 +1073,10 @@
                 yTicks + marks +
                 '<div class="pfcap-cursor"></div><span class="pfcap-cdot"></span><div class="pfcap-tip"></div>' +
                 '<div class="pfcap-hit" onmousemove="pfdCapHover(event)" onmouseleave="pfdCapHoverEnd(event)"></div>' +
+                // метки выплат — ПОСЛЕ .pfcap-hit: слой перекрестия накрывает полотно,
+                // и только так у точек работает своя подсказка с датой и суммой
+                (pay ? pfdPayMarksHtml(s, pay, xP, yP) : '') +
             '</div>' +
-            (pay ? pfdPayBandHtml(s, pay) : '') +
             '<div class="pfcap-x"><span>' + ruDate(s[0].d) + '</span><span>' + ruDate(last.d) + '</span></div>' +
             (cmpBase || pay ? '<div class="pfcap-leg"><span><i class="pfcap-lp" style="background:' + col + '"></i>капитал</span>' +
                 (cmpBase ? '<span><i class="pfcap-li"></i>' + esc(cmpBase.n) +
