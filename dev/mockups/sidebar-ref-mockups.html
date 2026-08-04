@@ -68,7 +68,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   --badge-bg:#e8eafb; --badge-tx:#5158e2;
   --seg-bg:#ecedf3;
   position:relative;display:flex;gap:22px;align-items:stretch;
-  width:640px;height:800px;padding:22px;border-radius:16px;overflow:hidden;
+  width:640px;height:940px;padding:22px;border-radius:16px;overflow:hidden;
   border:1px solid rgba(15,23,42,.09);
   box-shadow:0 2px 4px rgba(15,23,42,.05),0 34px 70px -34px rgba(24,38,60,.4);
   color:var(--ink);
@@ -170,12 +170,54 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   background:var(--badge-tx)}
 .stage.rail .sb-it .dot.amb{background:var(--amb)}
 
+/* --- открытые портфели под «Мои портфели» (аналог TEAM-списка референса) --- */
+.sb-ports{margin:1px 0 3px;padding-left:24px}
+.sb-port{display:flex;align-items:center;gap:9px;height:31px;padding:0 10px 0 12px;
+  border-left:1px solid var(--hair);color:var(--item);font-size:13px;font-weight:550;white-space:nowrap}
+.sb-port .pa{flex:none;width:20px;height:20px;border-radius:6px;background:var(--c,#4453ef);
+  color:#fff;font-size:9.5px;font-weight:700;display:grid;place-items:center;letter-spacing:.02em}
+.sb-port .pn{flex:1;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.sb-port .pd{font-family:var(--fN);font-size:10.5px;font-weight:600;font-variant-numeric:tabular-nums;color:#12a35c}
+.sb-port .pd.neg{color:#d8452b}
+.stage.dark .sb-port .pd{color:#3fd08b}
+.stage.dark .sb-port .pd.neg{color:#ff7a5c}
+.stage.rail .sb-ports{display:none}
+/* шеврон-раскрыватель списка на строке «Мои портфели» */
+.sb-it .chev{margin-left:2px;color:var(--dim)}
+.sb-it .chev svg{width:13px;height:13px;stroke-width:2}
+.stage.rail .sb-it .chev{display:none}
+
 /* --- подвал-карточка (аналог SUPPORT-блока референса) --- */
 .sb-foot{margin-top:auto;border:1px solid var(--hair);border-radius:14px;padding:6px;background:var(--card)}
 .stage.dark .sb-foot{background:rgba(255,255,255,.04)}
 .sb-foot .sb-it{height:36px;margin:0}
 .sb-foot .sb-it.slim{color:var(--item)}
 .stage.rail .sb-foot{border:none;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:2px}
+/* шапка подвала: капитель + шеврон — блок СВОРАЧИВАЕТСЯ (persist по аналогии
+   с sb_flat_more_v1); точка на шапке = внутри есть непрочитанные события */
+.sb-fhead{display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;
+  font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.sb-fhead svg{width:12px;height:12px;margin-left:auto;stroke-width:2}
+.sb-fhead .fdot{width:6px;height:6px;border-radius:50%;background:var(--badge-tx)}
+
+/* --- «вшитый» вид: колонка сидит прямо на фоне, контент — белая карта --- */
+.stage.seam{background:#f4f5fa}
+.stage.seam.dark{background:#101319}
+.stage.seam .sb{background:transparent;border:none;box-shadow:none;padding-left:6px;padding-right:6px}
+.stage.seam .sb-cmd{border-color:rgba(28,32,42,.1)}
+.stage.seam.dark .sb-cmd{border-color:rgba(233,237,246,.1);background:rgba(255,255,255,.05)}
+.stage.seam .ghost{opacity:1}
+.paper{flex:1;min-width:0;border-radius:16px;background:#fff;border:1px solid rgba(28,32,42,.07);
+  box-shadow:0 1px 2px rgba(16,24,40,.04),0 12px 34px -18px rgba(24,38,60,.18);
+  padding:22px 24px;display:flex;flex-direction:column;gap:14px}
+.stage.seam.dark .paper{background:#181d27;border-color:rgba(255,255,255,.07);
+  box-shadow:0 1px 2px rgba(0,0,0,.4)}
+.pline{height:12px;border-radius:6px;background:rgba(28,32,42,.06)}
+.pline.w40{width:40%}.pline.w60{width:60%}.pline.h28{height:28px;width:34%}
+.pline.grow{flex:1;min-height:120px;border-radius:12px}
+.stage.seam.dark .pline{background:rgba(255,255,255,.06)}
+.prow{display:flex;gap:14px}
+.prow .pline{flex:1}
 
 /* сегмент темы: Тёмная · Светлая · Системная */
 .sb-seg{margin:6px 4px;display:flex;background:var(--seg-bg);border-radius:10px;padding:3px}
@@ -234,7 +276,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <div class="mk-h"><span class="mk-n">В1</span><h2>Развёрнутая колонка, светлая тема</h2><span class="mk-tag">Основной вид</span></div>
   <p class="mk-sub">268 px, как сейчас. Список плоский, порядок — как в коде: Обзор · Мои портфели · Ребаланс ·
      Торговля · Рынок · Расчёт · Академия; «Ещё» — единственная группа (по умолчанию свёрнута — здесь раскрыта,
-     чтобы показать состав: Аналитика, Отчёты, Операции, Тест, Админка). Активный раздел — «Мои портфели».</p>
+     чтобы показать состав: Аналитика, Отчёты, Операции, Тест, Админка). Активный раздел — «Мои портфели»,
+     под ним — открытые портфели. Подвал «Сервис» в В1 раскрыт, в В2 (тёмной) — свёрнут до шапки.</p>
   <div class="scroller"><div class="row">
 
   <div class="stage">
@@ -257,6 +300,14 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       <div class="sb-it on">
         <svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg>
         <span class="lbl">Мои портфели</span><span class="bdg">4</span>
+        <span class="chev"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg></span>
+      </div>
+      <!-- открытые (не скрытые) портфели из PF.store — имена здесь примерные -->
+      <div class="sb-ports">
+        <div class="sb-port"><i class="pa" style="--c:#4453ef">О</i><span class="pn">Основной</span><span class="pd">+0,42%</span></div>
+        <div class="sb-port"><i class="pa" style="--c:#0e9488">И</i><span class="pn">ИИС</span><span class="pd">+0,18%</span></div>
+        <div class="sb-port"><i class="pa" style="--c:#7c5cff">Д</i><span class="pn">Дивидендный</span><span class="pd neg">−0,35%</span></div>
+        <div class="sb-port"><i class="pa" style="--c:#64748b">Т</i><span class="pn">Т-Инвестиции</span><span class="pd">+0,07%</span></div>
       </div>
       <div class="sb-it">
         <svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
@@ -303,6 +354,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       </div>
 
       <div class="sb-foot">
+        <div class="sb-fhead"><em>Сервис</em><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg></div>
         <div class="sb-it slim nf">
           <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
           <span class="lbl">Уведомления</span><span class="bdg">3</span>
@@ -349,6 +401,14 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       <div class="sb-it on">
         <svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg>
         <span class="lbl">Мои портфели</span><span class="bdg">4</span>
+        <span class="chev"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg></span>
+      </div>
+      <!-- открытые (не скрытые) портфели из PF.store — имена здесь примерные -->
+      <div class="sb-ports">
+        <div class="sb-port"><i class="pa" style="--c:#4453ef">О</i><span class="pn">Основной</span><span class="pd">+0,42%</span></div>
+        <div class="sb-port"><i class="pa" style="--c:#0e9488">И</i><span class="pn">ИИС</span><span class="pd">+0,18%</span></div>
+        <div class="sb-port"><i class="pa" style="--c:#7c5cff">Д</i><span class="pn">Дивидендный</span><span class="pd neg">−0,35%</span></div>
+        <div class="sb-port"><i class="pa" style="--c:#64748b">Т</i><span class="pn">Т-Инвестиции</span><span class="pd">+0,07%</span></div>
       </div>
       <div class="sb-it">
         <svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
@@ -374,16 +434,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
       <div class="sb-cap"><em>Ещё</em><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></div>
 
+      <!-- подвал СВЁРНУТ: осталась шапка с точкой непрочитанного и профиль -->
       <div class="sb-foot">
-        <div class="sb-it slim nf">
-          <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-          <span class="lbl">Уведомления</span><span class="bdg">3</span>
-        </div>
-        <div class="sb-it slim">
-          <svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
-          <span class="lbl">Настройки</span>
-        </div>
-        <div class="sb-seg"><span class="on">Тёмная</span><span>Светлая</span><span>Системная</span></div>
+        <div class="sb-fhead"><em>Сервис</em><span class="fdot"></span><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
         <div class="sb-prof">
           <div class="sb-ava">MS</div>
           <div class="nm"><b>Madame Solomi'na</b><span>owner</span></div>
@@ -464,6 +517,176 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
 <!-- ================================================================= -->
 <div class="mk">
+  <div class="mk-h"><span class="mk-n">В4–В5</span><h2>Вшитая колонка: сайдбар прямо на фоне</h2><span class="mk-tag">как в референсе</span></div>
+  <p class="mk-sub">Референсная посадка: колонка — не карточка, а часть фона приложения; карточкой становится
+     САМ КОНТЕНТ — белая «бумага» справа. Кнопка-свёртка сидит кружком на границе фона и бумаги. В4 — светлая,
+     подвал раскрыт; В5 — тёмная, подвал свёрнут до шапки «Сервис» (точка = есть непрочитанное).</p>
+  <div class="scroller"><div class="row">
+
+  <div class="stage seam">
+    <aside class="sb">
+      <div class="sb-head">
+        <div class="sb-mark">M</div>
+        <div class="sb-name"><b><i>Madame&nbsp;</i>Solomi'na</b><span>Terminal</span></div>
+      </div>
+      <div class="sb-edge"><svg viewBox="0 0 24 24"><polyline points="14 6 8 12 14 18"/></svg></div>
+
+      <div class="sb-cmd">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span>Бумага, портфель, действие…</span><kbd>⌘K</kbd>
+      </div>
+
+      <div class="sb-it first">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/></svg>
+        <span class="lbl">Обзор</span>
+      </div>
+      <div class="sb-it on">
+        <svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg>
+        <span class="lbl">Мои портфели</span><span class="bdg">4</span>
+        <span class="chev"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg></span>
+      </div>
+      <div class="sb-ports">
+        <div class="sb-port"><i class="pa" style="--c:#4453ef">О</i><span class="pn">Основной</span><span class="pd">+0,42%</span></div>
+        <div class="sb-port"><i class="pa" style="--c:#0e9488">И</i><span class="pn">ИИС</span><span class="pd">+0,18%</span></div>
+        <div class="sb-port"><i class="pa" style="--c:#7c5cff">Д</i><span class="pn">Дивидендный</span><span class="pd neg">−0,35%</span></div>
+        <div class="sb-port"><i class="pa" style="--c:#64748b">Т</i><span class="pn">Т-Инвестиции</span><span class="pd">+0,07%</span></div>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        <span class="lbl">Ребаланс</span><span class="bdg amb">2</span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M8 3v3.5"/><rect x="5.8" y="6.5" width="4.4" height="8" rx="1.2"/><path d="M8 14.5V21"/><path d="M16 3v5.5"/><rect x="13.8" y="8.5" width="4.4" height="7" rx="1.2"/><path d="M16 15.5V21"/></svg>
+        <span class="lbl">Торговля</span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span class="lbl">Рынок</span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+        <span class="lbl">Расчёт</span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M22 9.5L12 4.5 2 9.5l10 5 10-5z"/><path d="M6 11.8V17c0 1.6 2.7 3 6 3s6-1.4 6-3v-5.2"/></svg>
+        <span class="lbl">Академия</span>
+      </div>
+      <div class="sb-cap"><em>Ещё</em><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></div>
+
+      <div class="sb-foot">
+        <div class="sb-fhead"><em>Сервис</em><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg></div>
+        <div class="sb-it slim nf">
+          <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="lbl">Уведомления</span><span class="bdg">3</span>
+        </div>
+        <div class="sb-it slim">
+          <svg viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+          <span class="lbl">Настройки</span>
+        </div>
+        <div class="sb-seg"><span>Тёмная</span><span class="on">Светлая</span><span>Системная</span></div>
+        <div class="sb-prof">
+          <div class="sb-ava">MS</div>
+          <div class="nm"><b>Madame Solomi'na</b><span>owner</span></div>
+          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </div>
+      </div>
+    </aside>
+
+    <div class="ghost">
+      <div class="paper">
+        <div class="pline w40"></div>
+        <div class="pline h28"></div>
+        <div class="prow"><div class="pline"></div><div class="pline"></div><div class="pline"></div></div>
+        <div class="pline grow"></div>
+        <div class="pline w60"></div>
+        <div class="pline grow"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage seam dark">
+    <aside class="sb">
+      <div class="sb-head">
+        <div class="sb-mark">M</div>
+        <div class="sb-name"><b><i>Madame&nbsp;</i>Solomi'na</b><span>Terminal</span></div>
+      </div>
+      <div class="sb-edge"><svg viewBox="0 0 24 24"><polyline points="14 6 8 12 14 18"/></svg></div>
+
+      <div class="sb-cmd">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <span>Бумага, портфель, действие…</span><kbd>⌘K</kbd>
+      </div>
+
+      <div class="sb-it first">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="1.6"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="1.6"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.6"/></svg>
+        <span class="lbl">Обзор</span>
+      </div>
+      <div class="sb-it on">
+        <svg viewBox="0 0 24 24"><path d="M3 7h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 13h20"/></svg>
+        <span class="lbl">Мои портфели</span><span class="bdg">4</span>
+        <span class="chev"><svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15"/></svg></span>
+      </div>
+      <div class="sb-ports">
+        <div class="sb-port"><i class="pa" style="--c:#4453ef">О</i><span class="pn">Основной</span><span class="pd">+0,42%</span></div>
+        <div class="sb-port"><i class="pa" style="--c:#0e9488">И</i><span class="pn">ИИС</span><span class="pd">+0,18%</span></div>
+        <div class="sb-port"><i class="pa" style="--c:#7c5cff">Д</i><span class="pn">Дивидендный</span><span class="pd neg">−0,35%</span></div>
+        <div class="sb-port"><i class="pa" style="--c:#64748b">Т</i><span class="pn">Т-Инвестиции</span><span class="pd">+0,07%</span></div>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M23 6l-9.5 9.5-5-5L1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        <span class="lbl">Ребаланс</span><span class="bdg amb">2</span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M8 3v3.5"/><rect x="5.8" y="6.5" width="4.4" height="8" rx="1.2"/><path d="M8 14.5V21"/><path d="M16 3v5.5"/><rect x="13.8" y="8.5" width="4.4" height="7" rx="1.2"/><path d="M16 15.5V21"/></svg>
+        <span class="lbl">Торговля</span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span class="lbl">Рынок</span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+        <span class="lbl">Расчёт</span>
+      </div>
+      <div class="sb-it">
+        <svg viewBox="0 0 24 24"><path d="M22 9.5L12 4.5 2 9.5l10 5 10-5z"/><path d="M6 11.8V17c0 1.6 2.7 3 6 3s6-1.4 6-3v-5.2"/></svg>
+        <span class="lbl">Академия</span>
+      </div>
+      <div class="sb-cap"><em>Ещё</em><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></div>
+
+      <div class="sb-foot">
+        <div class="sb-fhead"><em>Сервис</em><span class="fdot"></span><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
+        <div class="sb-prof">
+          <div class="sb-ava">MS</div>
+          <div class="nm"><b>Madame Solomi'na</b><span>owner</span></div>
+          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </div>
+      </div>
+    </aside>
+
+    <div class="ghost">
+      <div class="paper">
+        <div class="pline w40"></div>
+        <div class="pline h28"></div>
+        <div class="prow"><div class="pline"></div><div class="pline"></div><div class="pline"></div></div>
+        <div class="pline grow"></div>
+        <div class="pline w60"></div>
+        <div class="pline grow"></div>
+      </div>
+    </div>
+  </div>
+
+  </div></div>
+
+  <div class="notes">
+    <div class="note"><i>7</i><span>Колонка без рамки и заливки — тон фона и есть её полотно; бумага контента забирает карточность себе. Это ближе всего к посадке референса.</span></div>
+    <div class="note"><i>8</i><span>Открытые портфели — строки под «Мои портфели» с квадратиком-инициалом и дневным %: аналог TEAM-списка референса. Имена примерные, реальные придут из <code>PF.store.items</code> (без скрытых <code>p.hidden</code>).</span></div>
+    <div class="note"><i>9</i><span>Подвал «Сервис» сворачивается по шапке (persist по образцу <code>sb_flat_more_v1</code>); в свёрнутом виде остаются шапка с точкой непрочитанного и профиль.</span></div>
+  </div>
+</div>
+
+<!-- ================================================================= -->
+<div class="mk">
   <div class="mk-h"><span class="mk-n">КАРТА</span><h2>Референс → наша колонка</h2><span class="mk-tag mute">внедрение</span></div>
   <table class="map">
     <tr><th>Элемент референса</th><th>У нас</th><th>Где живёт</th></tr>
@@ -472,8 +695,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <tr><td>Группы OVERVIEW / MY PAGES с шевронами</td><td>Аналога нет — список остаётся плоским, как в коде; капитель с шевроном достаётся только «Ещё» (она и так группа)</td><td><code>#sbFlat</code> (js/sidebar-ctx.js)</td></tr>
     <tr><td>Активный пункт — белая карточка</td><td>То же; сегодняшняя подсветка заливкой уходит</td><td><code>.sb-item.on</code></td></tr>
     <tr><td>Счётчики-пилюли (4, 7)</td><td>Величины событий из <code>data-sb-note</code> (badgeSync) — индиго/янтарь</td><td>js/sidebar-ctx.js</td></tr>
-    <tr><td>TEAM (люди с аватарами)</td><td>Аналога нет — место занимает группа «Ещё»</td><td>—</td></tr>
-    <tr><td>SUPPORT-блок в рамке</td><td>Подвал: Уведомления (<code>#nfBell</code>), Настройки (<code>#sbSettingsBtn</code>), тема, профиль (<code>#sbPersonalSlot</code>)</td><td><code>#sbRailFoot</code></td></tr>
+    <tr><td>TEAM (люди с аватарами)</td><td>Открытые портфели под «Мои портфели»: инициал-квадратик + имя + день; состав — <code>PF.store.items</code> без <code>p.hidden</code></td><td>js/sidebar-ctx.js</td></tr>
+    <tr><td>SUPPORT-блок в рамке</td><td>Подвал «Сервис»: Уведомления (<code>#nfBell</code>), Настройки (<code>#sbSettingsBtn</code>), тема, профиль (<code>#sbPersonalSlot</code>); СВОРАЧИВАЕТСЯ по шапке, свой persist</td><td><code>#sbRailFoot</code></td></tr>
     <tr><td>Сегмент Dark · Light · System</td><td>Тёмная · Светлая · Системная — новое поведение (сейчас одна кнопка <code>#themeFab</code>)</td><td>theme-scope</td></tr>
     <tr><td>Sign Out</td><td>Иконка выхода в строке профиля (меню кабинета остаётся по клику на аватар)</td><td>js/profile-menu.js</td></tr>
   </table>
