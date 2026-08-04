@@ -344,7 +344,13 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   </section>
 
   <section class="mk">
-    <div class="mk-h"><span class="mk-n">02</span><h2>Что решить перед реализацией</h2></div>
+    <div class="mk-h"><span class="mk-n">02</span><h2>Состояния новых блоков</h2></div>
+    <div class="mk-sub">Сегодня на вкладке есть только «всё загрузилось». Новые этажи добавляют источники, которые падают независимо друг от друга: ISS может ответить по индексу и промолчать по составу, курс валют идёт с другого эндпоинта. Поэтому у каждого этажа своё состояние, и отказ одного не гасит страницу.</div>
+    <div id="vst"></div>
+  </section>
+
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">03</span><h2>Что решить перед реализацией</h2></div>
     <table class="map">
       <thead><tr><th></th><th style="width:34%">Вопрос</th><th>Мой ответ</th></tr></thead>
       <tbody>
@@ -917,12 +923,12 @@ function v4(uid){
         /* левая колонка */
         '<div class="fl">' +
             '<div class="card"><div class="cbody" style="padding:6px 14px">' +
-                MACRO.slice(0, 5).map(function (m, i){
+                MACRO.map(function (m, i){
                     return '<div style="display:flex;align-items:center;gap:10px;height:40px' + (i ? ';border-top:1px solid var(--line2)' : '') + '">' +
                         '<span style="flex:1;min-width:0"><b style="display:block;font-family:var(--fN);font-size:10.5px;font-weight:700;letter-spacing:.08em">' + esc(m.tk) + '</b>' +
                         '<span style="font-size:10px;color:var(--dim)">' + esc(m.nm) + '</span></span>' +
                         '<span class="num" style="font-size:13px;font-weight:600">' + m.v + '</span>' +
-                        (m.chg != null ? pill(m.chg) : '<span class="pl flat">–</span>') +
+                        (m.chg != null ? pill(m.chg) : '<span style="font-size:10px;color:var(--dim);white-space:nowrap">' + esc(m.note.split(' · ')[0]) + '</span>') +
                     '</div>';
                 }).join('') +
             '</div></div>' +
@@ -966,6 +972,73 @@ function v4(uid){
     '</div></div>';
 }
 
+/* ======================================================================
+   Состояния: загрузка / частичный отказ / устаревшие данные / гость
+   ====================================================================== */
+function sk(w, h, r){ return '<span class="sk" style="display:inline-block;width:' + w + ';height:' + h + 'px' + (r ? ';border-radius:' + r + 'px' : '') + '"></span>'; }
+function stateCard(cap, sub, body){
+    return '<div style="min-width:0">' +
+        '<div class="clbl" style="margin-bottom:7px">' + cap + '</div>' +
+        '<div class="card" style="min-height:196px">' + body + '</div>' +
+        '<div class="hint" style="margin-top:8px;line-height:1.5">' + sub + '</div>' +
+    '</div>';
+}
+function vst(){
+    /* 1. загрузка — скелет повторяет форму содержимого, а не крутилку */
+    var load = '<div class="cbody">' +
+        '<div class="clbl">Индекс МосБиржи</div>' +
+        '<div style="margin-top:10px">' + sk('148px', 32, 8) + '</div>' +
+        '<div style="margin-top:10px">' + sk('82px', 16, 6) + '</div>' +
+        '<div style="display:flex;gap:6px;margin-top:18px">' +
+            sk('30%', 54, 6) + sk('22%', 54, 6) + sk('26%', 54, 6) + sk('16%', 54, 6) +
+        '</div></div>';
+
+    /* 2. частичный отказ — упал только состав индекса, остальные этажи живы */
+    var err = '<div class="cbody">' +
+        '<div style="display:flex;align-items:center;gap:9px">' +
+            '<span class="clbl">Карта индекса</span>' +
+            '<span class="pl dn" style="font-family:var(--fU);font-weight:700;font-size:10px;letter-spacing:.06em">НЕТ ДАННЫХ</span>' +
+        '</div>' +
+        '<div class="st" style="margin-top:12px;align-items:flex-start;line-height:1.5">' +
+            'Мосбиржа не отдала состав индекса. Значение IMOEX, курсы и ставки на странице актуальны.' +
+        '</div>' +
+        '<div style="display:flex;gap:8px;margin-top:12px">' +
+            '<span class="gbtn" style="border-color:var(--acc);color:var(--acc)">Повторить</span>' +
+            '<span class="gbtn">Открыть терминал</span>' +
+        '</div></div>';
+
+    /* 3. устаревшие данные — цифры остаются на экране, но помечены возрастом */
+    var stale = '<div class="cbody">' +
+        '<div style="display:flex;align-items:center;gap:8px">' +
+            '<span class="live" style="opacity:.75"><i style="background:var(--dim)"></i><span>данные за 18:12 · обновляем</span></span>' +
+        '</div>' +
+        '<div style="display:flex;align-items:baseline;gap:10px;margin-top:12px;opacity:.6">' +
+            '<span class="num" style="font-size:30px;font-weight:600;letter-spacing:-.03em">' + fmt(2264.16) + '</span>' + pill(0.06) +
+        '</div>' +
+        '<div class="hint" style="margin-top:12px;line-height:1.5">Значения не прячутся и не мигают: последнее известное состояние остаётся читаемым, пока идёт повторный запрос.</div>' +
+    '</div>';
+
+    /* 4. гость — четвёртый выход подвала подменяется приглашением */
+    var guest = '<div class="cbody">' +
+        '<div class="clbl">Ваши бумаги на карте</div>' +
+        '<div style="display:flex;align-items:center;gap:11px;margin-top:14px">' +
+            '<span class="ico">' + ic('star') + '</span>' +
+            '<span style="font-size:12.5px;line-height:1.45">Войдите, чтобы подсветить на карте позиции ваших портфелей.</span>' +
+        '</div>' +
+        '<div style="display:flex;gap:8px;margin-top:14px">' +
+            '<span class="gbtn" style="border-color:var(--acc);color:var(--acc)">Войти</span>' +
+            '<span class="gbtn">Собрать портфель</span>' +
+        '</div></div>';
+
+    return '<div class="stage"><div class="row" style="grid-template-columns:repeat(4,1fr);width:1276px">' +
+        stateCard('Загрузка', 'Скелет повторяет форму будущего содержимого. Крутилки нет: она не даёт понять, что именно грузится.', load) +
+        stateCard('Частичный отказ', 'Падает один источник, а не страница. Ошибка живёт в своей карточке и называет, что именно недоступно.', err) +
+        stateCard('Данные устарели', 'Котировки ISS приходят с задержкой ~15 мин. Возраст данных подписан всегда, а не только когда что-то сломалось.', stale) +
+        stateCard('Гость', 'Пустое состояние объясняет, что появится после входа, и даёт оба следующих шага.', guest) +
+    '</div></div>';
+}
+
+document.getElementById('vst').innerHTML = vst();
 document.getElementById('v1').innerHTML  = v1('a', false);
 document.getElementById('v2').innerHTML  = v2('b');
 document.getElementById('v3').innerHTML  = v3('c');
