@@ -110,21 +110,27 @@
     /* ---------- Оболочка ---------- */
     /* sb-peek (hover-peek) больше никто не ставит — вариантов селектора под
        него здесь нет; правила в site-layout.css остались нейтральными. */
+    /* ВОЗДУХ ВОКРУГ ВШИТОЙ КОЛОНКИ (мокап В4–В6): колонка не прижата к кромке
+       окна — слева у неё поле 14px, сверху и снизу 20px (в мокапе сцена держит
+       22px со всех сторон). Поле добавляется К ширине грид-колонки, а не
+       вычитается из колонки: --sbr-w остаётся честной шириной самой колонки.
+       «Главная» ниже переопределяет свои значения, как и раньше. */
     body:not(.sb-collapsed) #appShell,
     body.sb-collapsed #appShell {
-        grid-template-columns: var(--sbr-w) minmax(0, 1fr);
+        grid-template-columns: calc(var(--sbr-w) + 14px) minmax(0, 1fr);
     }
     body.sb-rail #appShell {
-        grid-template-columns: var(--sbr-rail-w) minmax(0, 1fr);
+        grid-template-columns: calc(var(--sbr-rail-w) + 14px) minmax(0, 1fr);
     }
     body:not(.sb-collapsed),
-    body.sb-collapsed { --sb-w: var(--sbr-w); }
-    body.sb-rail { --sb-w: var(--sbr-rail-w); }
+    body.sb-collapsed { --sb-w: calc(var(--sbr-w) + 14px); }
+    body.sb-rail { --sb-w: calc(var(--sbr-rail-w) + 14px); }
 
     /* Сайдбар печатается поверх контента. 60 — выше карточек вкладок и ниже
        FAB-ов/шторок (1250+). Селектор в два id намеренно: свои 50 сайдбару уже
        назначают tab-gates.css и home-register.css (`body.gx-on #sideBar`). */
     #appShell > #sideBar { position: relative; z-index: 60; padding: 0; }
+    body:not(.tab-home) #appShell > #sideBar { padding: 20px 0 20px 14px; }
 
     /* ---------- Корпус: ВШИТЫЙ (мокап В4–В6) ----------
        Колонка сидит прямо на фоне приложения: ни заливки, ни стекла, ни
