@@ -6044,6 +6044,23 @@
     }
     // закрытие — ТОЛЬКО кликом вне рейки (владелец 2026-07-24: выбор бумаги
     // рейку не сворачивает — листать избранное можно подряд)
+    // открытие/закрытие рейки — БЕЗ полного ре-рендера сцены (владелец
+    // 2026-07-31: «моргает блок стакана и счёта»). renderNoAnim пересобирал
+    // ВСЁ: у стакана сплита перезапускалась анимация входа, «Счёт» строился
+    // заново. Точечно: контент рейки, атрибут сцены, звезда в кластере;
+    // движку о новой ширине героя скажет его ResizeObserver + scnKResizeSoon
+    function wlSync() {
+        var sc = dq('btScene');
+        if (sc) sc.dataset.wl = wlOn() ? '1' : '0';
+        wlPaint();
+        var b = document.querySelector('.bts-right .bts-star');
+        if (b) {
+            b.classList.toggle('on', wlOn());
+            b.textContent = wlOn() ? '★' : '☆';
+            b.setAttribute('aria-pressed', String(wlOn()));
+        }
+        scnKResizeSoon();
+    }
     function wlOutside(e) {
         if (!wlOn()) { document.removeEventListener('click', wlOutside, true); return; }
         var t = e.target;
@@ -6056,8 +6073,7 @@
         var o = stageObj();
         o.layers.wl = 0;
         saveStageRaw(o);
-        if (PF.renderNoAnim) PF.renderNoAnim();
-        scnKResizeSoon();
+        wlSync();
     }
     window.pftScWl = function () {
         var o = stageObj();
@@ -6068,8 +6084,7 @@
             // capture: клики по холсту глушатся движком — снаружи всё равно услышим
             setTimeout(function () { document.addEventListener('click', wlOutside, true); }, 0);
         }
-        if (PF.renderNoAnim) PF.renderNoAnim();
-        scnKResizeSoon();
+        wlSync();
     };
     var wlData = {};   // ticker -> {last, d, closes[]} | 'busy' | 'err'
     var wlUid = {};    // ticker -> uid брокера (для загрузки в сцену)
@@ -6095,7 +6110,20 @@
             }, function () { wlData[tk] = 'err'; wlPaint(); })
             .catch(function () { wlData[tk] = 'err'; wlPaint(); });
     }
-    // спарклайн рейки удалён вместе с тяжёлой строкой (мокап: тикер + процент)
+    // МИНИ-СПАРКЛАЙН строки «Моих» (владелец 2026-07-31, «сделать красивее»):
+    // месяц закрытий wlData полилинией 46×14, цвет — знак дня приглушённо
+    function wlSparkSvg(closes, up) {
+        if (!closes || closes.length < 2) return '';
+        var w = 46, h = 14;
+        var min = Math.min.apply(null, closes), max = Math.max.apply(null, closes);
+        var span = (max - min) || 1;
+        var pts = closes.map(function (v, i) {
+            return (i / (closes.length - 1) * w).toFixed(1) + ',' +
+                (h - 1 - (v - min) / span * (h - 2)).toFixed(1);
+        }).join(' ');
+        return '<svg class="wl-sp ' + (up ? 'up' : 'dn') + '" viewBox="0 0 ' + w + ' ' + h + '" ' +
+            'preserveAspectRatio="none" aria-hidden="true"><polyline points="' + pts + '"/></svg>';
+    }
     // Рейка F знает два режима: «Избранное» (стор stk_fav_v1) и «Список» —
     // все бумаги из таблицы вкладки «Расчёт» (глобали bonds/echelonTableData,
     // загруженные data.js): акции с потенциалом и эшелоном, облигации с
@@ -6150,15 +6178,19 @@
                 right = '<em class="' + (up ? 'pos' : 'neg') + '">' + (up ? '+' : '−') +
                     Math.abs(d.d).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + '%</em>';
             } else if (d === 'err') right = '<em>—</em>';
-            // СТРОКА МОКАПА (.wl-i): тикер и процент — всё. Клавиша-цифра,
-            // спарклайн, имя компании и цена в два этажа делали рейку вчетверо
-            // тяжелее задуманного; номер клавиши остался в подсказке, спарклайн
-            // и цена — тоже (рейка узкая, ей хватает одной строки на бумагу).
-            return '<div class="wl-i' + (on ? ' on' : '') + '" role="button" tabindex="0" ' +
+            // СТРОКА «МОИХ» — двухэтажная карточка (владелец 2026-07-31,
+            // «сделать красивее»): тикер + дневная дельта, под ними цена и
+            // месячный спарклайн. Модификатор .wl-i2 — базовый .wl-i остаётся
+            // мокапной одноэтажной строкой для режима «Расчёт»
+            var live = d && d !== 'busy' && d !== 'err';
+            var r2 = live
+                ? '<span class="wl-r2">' + d.last.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) +
+                  ' ₽' + wlSparkSvg(d.closes, d.d >= 0) + '</span>'
+                : '';
+            return '<div class="wl-i wl-i2' + (on ? ' on' : '') + '" role="button" tabindex="0" ' +
                 'onclick="pftScWlGo(\'' + jsArg(tk) + '\')" title="' + esc(nm || tk) +
-                (d && d !== 'busy' && d !== 'err' ? ' · ' + d.last.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' ₽' : '') +
-                ' — в сцену, клавиша ' + (i + 1) + '">' +
-                esc(tk) + right + '</div>';
+                ' — график, стакан и заявка; клавиша ' + (i + 1) + '">' +
+                '<span class="wl-r1">' + esc(tk) + right + '</span>' + r2 + '</div>';
         }).join('');
         // подвала-абзаца в мокапе нет: он занимал четверть рейки. Правило про
         // звезду и клавиши переехало в подсказку самой рейки (title у заголовка).
@@ -6283,6 +6315,10 @@
     // клик или цифра: тикер превращается в uid брокера один раз, дальше кэш
     window.pftScWlGo = function (tk) {
         function go(uid) {
+            // из рейки открывается ВСЁ сразу — график, стакан и заявка
+            // (владелец 2026-07-31): вид тикета принудительно «Сплит»
+            var o = stageObj();
+            if (o.layers.tktView !== 'split') { o.layers.tktView = 'split'; saveStageRaw(o); }
             loadInstrument(sxSlot(), uid, function () {
                 simpleSum = ''; scnUnit = ''; scnLim = 0;
                 scnActive = sxSlot();
