@@ -610,9 +610,11 @@
         overflow-x: hidden;
         scrollbar-width: none;
         margin: 0;
-        /* 8 + 10 у строки = левый край текста на 18px, как у марки, капитала и
-           подвала; вложенность добавляет к этому 12px в .sbc-list */
-        padding: 6px 8px 6px;
+        /* Левый край текста прежний (12 + 8 в .sbc-list + 10 у строки = 30px,
+           то есть 18px базы плюс 12px вложенности), а ПРАВЫЙ выровнен с первым
+           уровнем: у #sbNav инсет 12px, и до 2026-08-04 второй уровень заходил
+           на 4px правее — правый край колонки был рваным. */
+        padding: 6px 12px 6px;
         font-family: var(--font-ui, 'Inter', sans-serif);
         color: var(--sbr-ink);
     }
@@ -626,9 +628,24 @@
        отступ читается спокойнее. */
     #sbCtx .sbc-list {
         overflow: visible;
-        padding: 0 0 0 12px;
+        /* 8px здесь + 12px у #sbCtx = те же 20px вложенности, что и раньше */
+        padding: 0 0 0 8px;
         -webkit-mask-image: none;
     }
+    /* ---- ОПТИЧЕСКИЙ ЗАЗОР КОЛОНКА↔КОНТЕНТ (2026-08-04) ----
+       Слева контент отделяли ДВА отступа подряд: собственный инсет строк
+       сайдбара (12px до края колонки) и боковой padding панели — итого 52px
+       против 40px справа, и колонка визуально «отставала» от контента (замечено
+       владельцем). Панель отдаёт слева ровно столько, сколько добирает сайдбар:
+       12 + 28 = 40, просветы по краям экрана становятся одинаковыми. В рейке
+       (сайдбар свёрнут или «Главная») своего инсета у неё нет — padding базовый.
+       Панели со своим !important-padding компенсируют это у себя же
+       (#panel-portfolios — в css/portfolios.css). */
+    body:not(.sb-rail) .tab-panel { padding-left: 28px; }
+}
+@media (min-width: 1440px) {
+    /* базовый padding панели тут 56px — отдаём те же 12px */
+    body:not(.sb-rail) .tab-panel { padding-left: 44px; }
 
     /* Строка второго уровня ТИШЕ строки раздела по всем шкалам сразу: 34 против
        44px, 12,5 против 14,5px, --sbr-mut против --sbr-ink, глиф 14 против 20.
@@ -705,6 +722,29 @@
         color: var(--sbr-mut);
     }
     .sbc-val + .sbc-chg { margin-left: 6px; }
+    /* ДОХОДНОСТЬ ПОРТФЕЛЯ ЗА ВСЁ ВРЕМЯ — тихая пилюля в тоне знака (2026-08-04).
+       В колонке она стоит на месте суммы, поэтому и ширина колонки прежняя;
+       табличные цифры держат правый край, а тон подложки делает знак читаемым
+       без крика — тот же приём, что у дельты на карточке портфеля. */
+    .sbc-ret {
+        margin-left: auto;
+        flex: none;
+        font-family: var(--font-num, 'JetBrains Mono', monospace);
+        font-variant-numeric: tabular-nums;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        line-height: 1;
+        padding: 3px 7px;
+        border-radius: 7px;
+        color: #12A35C;
+        background: rgba(18, 163, 92, 0.11);
+    }
+    .sbc-ret.neg { color: #DC2626; background: rgba(220, 38, 38, 0.1); }
+    body.dark-mode .sbc-ret { color: #34D399; background: rgba(52, 211, 153, 0.14); }
+    body.dark-mode .sbc-ret.neg { color: #F87171; background: rgba(248, 113, 113, 0.14); }
+    /* приглушённый портфель — и пилюля приглушена вместе с ним */
+    .sbc-it.dim .sbc-ret { opacity: 0.55; }
     /* точке дано ровно то же место 15px, что и глифу строки: имена всех строк
        второго уровня стоят на одной вертикали */
     /* ТОЧКА ПОРТФЕЛЯ — С ГАЛО (мокап В4–В5): 8px ядро и кольцо 3px того же цвета
@@ -839,6 +879,7 @@
        портфеля, ЛИБО действия над ним — вместе они не помещаются в 288px без того,
        чтобы срезать имя до двух букв */
     .sbc-it:hover .sbc-chg,
+    .sbc-it:hover .sbc-ret,
     .sbc-it:hover .sbc-val { display: none; }
     .sbc-it.gh { color: var(--sbr-dim); font-weight: 600; }
     .sbc-it.dim .sbc-tx { opacity: 0.6; }

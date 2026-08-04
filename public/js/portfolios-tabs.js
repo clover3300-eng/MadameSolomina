@@ -353,13 +353,18 @@
         var curPid = pfxIsPfTab(eff) ? eff.slice(3) : null;
         var ports = pfxOpenPfTabs.map(findPf).filter(Boolean).map(function (p) {
             var c = calcPf(p);
+            // ДОХОДНОСТЬ ЗА ВСЁ ВРЕМЯ ВМЕСТО СУММЫ (просьба 2026-08-04). Сумма
+            // отвечала на «сколько здесь», но в перечне из четырёх строк это
+            // четыре длинных числа, между которыми нечего сравнивать. Процент
+            // сравним сразу — и он же говорит, стоило ли; сама сумма осталась в
+            // подсказке строки. Считаем к вложенному (c.pnlPct), как на карточке.
+            var ret = c.invested > 0 && isFinite(c.pnlPct)
+                ? { tx: fmtPct(c.pnlPct), neg: c.pnlPct < 0 } : null;
             return {
                 act: 'pf', key: p.id, tx: p.name, dot: colorVal(p.color),
                 on: curPid === p.id, cls: p.hidden ? 'dim' : '',
-                title: p.name + ' · ' + fmtRub(c.value),
-                // сумма портфеля жила только в подсказке — «Верстак» пишет её
-                // строкой: колонка обязана показывать состояние, а не оглавление
-                val: c.value > 0 ? fmtRub(c.value) : null,
+                title: p.name + ' · ' + fmtRub(c.value) + (ret ? ' · ' + ret.tx + ' за всё время' : ''),
+                ret: ret,
                 chg: pfxSideDay(p, c.value),
                 // всплывающий глаз (js/sidebar-ctx.js, act 'pf-hide'): скрытие портфеля
                 // осталось единственным в проекте, и держать его только в меню «Видимость»
@@ -982,7 +987,11 @@
             (canTrade && !empty ? '<button type="button" class="pfab-btn pfab-term" onclick="pftEnterTerminal()" title="Полноэкранный терминал: стакан, заявка и график во весь экран">' + PFX_TERM_SVG + '<span>Терминал</span></button><span class="pfab-hr" aria-hidden="true"></span>' : '') +
             // у гостя «Портфель» — единственное осмысленное действие: подсвечен синим
             '<button type="button" class="pfab-btn' + (empty ? ' primary' : '') + '" onclick="pfAddPortfolio()" data-tip="Портфель" title="Создать новый портфель">' + PF.PLUS_SVG + '<span>Портфель</span></button>' +
-            (empty ? '' : PF.eyeWrapHtml()) +
+            // «ВИДИМОСТЬ» ИЗ ПАНЕЛИ УБРАНА (2026-08-04): глаз стоит на самой строке
+            // портфеля во втором уровне сайдбара (js/sidebar-ctx.js, act 'pf-hide') —
+            // там, где портфель и живёт. Меню в углу было вторым входом в то же
+            // действие, причём дальше от объекта. На мобиле кнопка остаётся
+            // (topBarActionsHtml): колонки сайдбара там нет.
             PF.backupWrapHtml() +
             '<span class="pfab-hr" aria-hidden="true"></span>' +
             (noCfg ? '' :
@@ -1174,7 +1183,7 @@
                 '<span class="pf-impbody"><b>' + esc(p.name) + '</b><i>' + fmtRub(c.value) + (off ? ' · скрыт' : '') + '</i></span>' +
                 '<span class="pf-eyestate">' + (off ? PF.EYEOFF_SVG : PF.EYE_SVG) + '</span></button>';
         });
-        rows += '<div class="pf-eyenote">Скрытые портфели не показываются в списках и календаре, но их капитал учитывается в сводке. Виджеты здесь не прячутся: лишний убирает корзина на его карточке, вернуть — кнопкой «Виджет».</div>';
+        rows += '<div class="pf-eyenote">Скрытый портфель выходит из учёта: его нет в сетке и календаре, а деньги не входят в суммы, KPI и графики. В перечнях («Список портфелей», лидерборд сводки) он остаётся с пометкой. Виджеты здесь не прячутся: лишний убирает корзина на его карточке, вернуть — кнопкой «Виджет».</div>';
         return '<div class="pfx-setlist">' + rows + '</div>';
     }
     function pfxSetCardHtml(title, sub, inner) {

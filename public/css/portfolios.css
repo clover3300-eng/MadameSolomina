@@ -14,6 +14,12 @@
 @media (min-width: 1024px) { #panel-portfolios { max-width: none !important; padding: 20px 30px 82px !important; margin: 0 !important; } }
 @media (min-width: 1440px) { #panel-portfolios { padding: 24px 40px 84px !important; } }
 @media (min-width: 1800px) { #panel-portfolios { padding: 26px 56px 84px !important; } }
+/* Слева отдаём 12px — ровно инсет строк сайдбара до края его колонки: без этого
+   просвет «колонка → карточка» был на 12px шире, чем «карточка → край экрана»
+   (см. блок «ОПТИЧЕСКИЙ ЗАЗОР» в css/sidebar-rail.css). В рейке инсета нет. */
+@media (min-width: 1024px) { body:not(.sb-rail) #panel-portfolios { padding-left: 18px !important; } }
+@media (min-width: 1440px) { body:not(.sb-rail) #panel-portfolios { padding-left: 28px !important; } }
+@media (min-width: 1800px) { body:not(.sb-rail) #panel-portfolios { padding-left: 44px !important; } }
 
 /* Типографика страницы — ДВА текстовых голоса, как на карточке регистрации
    Главной (.hr-title + .hr-sub, home-register.css): Georgia serif = заголовки
@@ -2845,9 +2851,7 @@ body.pfd-dragging-now .pfd-grid.editing .pfd-item { cursor: grabbing; }
 .pfd-rmable > .pfd-body > .dash2-card > .pf-ch { padding-right: 46px; }
 /* виджеты с полноценной шапкой (заголовок начинается на 22px от верха карточки) —
    опускаем корзину на УРОВЕНЬ ЗАГОЛОВКА, а не под самый верх блока */
-/* heat/news здесь больше нет: их кнопки уехали в поток шапки (PFD_OWN_CHROME) */
-.pfd-item[data-pfd="cap"] .pfd-cardrm,
-.pfd-item[data-pfd="cap2"] .pfd-cardrm,
+/* heat/news/cap здесь больше нет: их кнопки уехали в поток шапки (PFD_OWN_CHROME) */
 .pfd-item[data-pfd="alloc"] .pfd-cardrm { top: 24px; right: 20px; }
 /* бейдж текущего размера — появляется только во время ресайза (JS пишет текст) */
 .pfd-size {
@@ -3219,7 +3223,7 @@ body.dark-mode .pf-kpi-d { color: #b9c6d6; }
 }
 .pfcap-y--max { top: 0; }
 .pfcap-y--min { bottom: 0; }
-.pfcap-x { display: flex; justify-content: space-between; margin-top: 6px; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 10.5px; font-weight: 600; color: #94a3b8; }
+/* .pfcap-x (даты «начало — сейчас» под полотном) удалён 2026-08-04 вместе с разметкой */
 .pfcap-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; text-align: center; padding: 26px 18px; }
 .pfcap-empty-t { font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 800; color: #334155; }
 .pfcap-empty-s { font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 600; color: #8494a7; max-width: 340px; line-height: 1.45; }
@@ -3846,7 +3850,6 @@ body.dark-mode .pfd-pv-svg .pv-line2 { fill: #2c3a56; }
 body.dark-mode .pf-kpi-v { color: #e7eef7; }
 body.dark-mode .pfcap-val { color: #eaf0f8; }
 body.dark-mode .pfcap-y { background: rgba(11, 18, 32, 0.75); color: #8fa2b8; }
-body.dark-mode .pfcap-x { color: #8fa2b8; }
 body.dark-mode .pfcap-empty-t { color: #cbd5e1; }
 body.dark-mode .pfcap-empty-s { color: #8fa2b8; }
 body.dark-mode .pfnt-badge { background: color-mix(in srgb, var(--nt) 24%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nt) 34%, transparent); }

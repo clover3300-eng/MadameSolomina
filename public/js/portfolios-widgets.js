@@ -502,7 +502,7 @@
             inv = demo.inv; val = demo.val; dd = demo.dd; hasDd = demo.hasDd !== false; mv = demo.mv || null;
         } else {
             inv = 0; val = 0; dd = 0; hasDd = false; mv = null;
-            PF.store.items.forEach(function (p) {
+            visibleItems().forEach(function (p) {
                 var c = calcPf(p); inv += c.invested; val += c.value;
                 var d = dayDelta(p, c.value); if (d != null) { dd += d; hasDd = true; }
                 var m = topMover(p); if (m && (!mv || Math.abs(m.chg) > Math.abs(mv.chg))) mv = m;
@@ -568,7 +568,7 @@
     PF.livePatchers.kpi = function () {
         if (pfQuotesWarming()) return;
         var inv = 0, val = 0, dd = 0, hasDd = false, mv = null;
-        PF.store.items.forEach(function (p) {
+        visibleItems().forEach(function (p) {
             var c = calcPf(p); inv += c.invested; val += c.value;
             var d = dayDelta(p, c.value); if (d != null) { dd += d; hasDd = true; }
             var m = topMover(p); if (m && (!mv || Math.abs(m.chg) > Math.abs(mv.chg))) mv = m;
@@ -619,7 +619,7 @@
         var ds = Object.keys(dates).sort();
         var totals = ds.map(function () { return 0; });
         // forward-fill: в день без снимка портфель идёт по последнему известному значению
-        PF.store.items.forEach(function (p) {
+        visibleItems().forEach(function (p) {
             var m = snaps[p.id]; if (!m) return;
             var ks = Object.keys(m).sort(), j = 0, cur = null;
             for (var i = 0; i < ds.length; i++) {
@@ -630,7 +630,7 @@
         var out = ds.map(function (d, i) { return { d: d, v: totals[i] }; });
         if (PF.quotesTs) {   // сегодняшняя точка — живая, не ждёт снимка
             var live = 0, any = false;
-            PF.store.items.forEach(function (p) { var v = calcPf(p).value; if (v > 0) { live += v; any = true; } });
+            visibleItems().forEach(function (p) { var v = calcPf(p).value; if (v > 0) { live += v; any = true; } });
             if (any) {
                 var t = todayStr();
                 if (out.length && out[out.length - 1].d === t) out[out.length - 1].v = live;
@@ -707,7 +707,12 @@
     window.pfdCapShowToggle = function (k) {
         var m = PF.dashCfg.capShow || (PF.dashCfg.capShow = {});
         m[k] = pfdCapShow(k) ? 0 : 1;
-        saveDashCfg(); pfdRerender();
+        saveDashCfg();
+        // ТОЧЕЧНАЯ ПЕРЕРИСОВКА, А НЕ ВЕСЬ ДАШБОРД (фикс 2026-08-04): тумблеры
+        // «Что показать на полотне» живут ещё и в магазине виджетов, а полный
+        // pfdRerender пересобирает и саму панель магазина — на каждом нажатии
+        // она мигала и теряла место прокрутки. Меняется только полотно графика.
+        pfdCapRepaint();
     };
     // ═══════════ СРАВНЕНИЕ ГРАФИКА КАПИТАЛА С ИНДЕКСОМ ═══════════
     // (мокап overview3, экран 19). Шкала графика уже в процентах от старта окна,
@@ -726,7 +731,7 @@
         btFetchHistorySeries('/iss/history/engines/stock/markets/index/securities/' + bench + '.json', from, till)
             .then(function (rows) {
                 pfdCmpCache[key] = (rows && rows.length > 1) ? rows : 'err';
-                if (PF.pfdCapCmp === bench) pfdRerender();
+                if (PF.pfdCapCmp === bench) pfdCapRepaint();   // пришла серия индекса — перерисовываем только полотно
             })
             .catch(function () { pfdCmpCache[key] = 'err'; });
         return null;
@@ -738,7 +743,7 @@
     // Индекс по составу: чисто облигационному портфелю IMOEX не соперник — ему RGBI.
     function pfdCapBench() {
         var bond = 0, all = 0;
-        PF.store.items.forEach(function (p) { var c = calcPf(p); bond += c.bondVal; all += c.value; });
+        visibleItems().forEach(function (p) { var c = calcPf(p); bond += c.bondVal; all += c.value; });
         return all > 0 && bond / all > 0.7 ? 'RGBI' : 'IMOEX';
     }
     // ---- ЧЕТЫРЕ БАЗЫ СРАВНЕНИЯ (мокап overview3, экран 19) ----
@@ -896,7 +901,7 @@
         if (ev) { ev.stopPropagation(); ev.preventDefault(); }
         PF.pfdCapCmp = k || null;
         pfdCapCmpClose();
-        pfdRerender();
+        pfdCapRepaint();   // как и у тумблеров полотна: мигать всей страницей незачем
     };
     document.addEventListener('click', function (e) {
         if (!PF.pfdCapCmpOpen) return;
@@ -1081,7 +1086,10 @@
                 // и только так у точек работает своя подсказка с датой и суммой
                 (pay ? pfdPayMarksHtml(s, pay, xP, yP) : '') +
             '</div>' +
-            '<div class="pfcap-x"><span>' + ruDate(s[0].d) + '</span><span>' + ruDate(last.d) + '</span></div>' +
+            // ПОДПИСЕЙ ДАТ ПОД ПОЛОТНОМ БОЛЬШЕ НЕТ (просьба 2026-08-04): «дата
+            // начала — дата сейчас» повторяли выбранное окно, которое и так
+            // названо пилюлей периода в шапке и подписью «за N дн» в герое.
+            // Точную дату любой точки говорит перекрестие, крайние — пилюля.
             (cmpBase || pay ? '<div class="pfcap-leg"><span><i class="pfcap-lp" style="background:' + col + '"></i>капитал</span>' +
                 (cmpBase ? '<span><i class="pfcap-li"></i>' + esc(cmpBase.n) +
                     (cmpState === 'load' ? ' <em>грузим…</em>' : cmpState === 'err' ? ' <em>нет данных</em>' : '') + '</span>' : '') +
@@ -1096,7 +1104,13 @@
     function pfdCapChartHtml(demoSeries) {
         var parts = pfdCapParts(demoSeries);
         return '<div class="dash2-card pf-card2 pf-capblk" title="Дневные снимки хранятся на этом устройстве (до 400 дней)">' +
-            PF.pfCardHead('', 'График капитала', 'стоимость всех портфелей', parts.right) +
+            // Правый угол занят пилюлями периода и «Сравнить», поэтому шестерёнка и
+            // корзина идут В ПОТОКЕ шапки СЛЕВА от них ('cap' в PFD_OWN_CHROME) —
+            // общее правило для виджетов с собственным контентом в углу. Раньше
+            // тут висел угловой оверлей .pfd-cardcfg/.pfd-cardrm со сдвигом в px,
+            // и на узком блоке он ложился прямо на пилюли.
+            PF.pfCardHead('', 'График капитала', 'стоимость всех портфелей',
+                pfdInChromeHtml('cap') + parts.right) +
             parts.hero +
             '<div class="pfcap-body">' + parts.body + '</div></div>';
     }
@@ -1109,13 +1123,13 @@
     // и одна строка вердикта с единственным на странице акцентным действием.
     function pfxHeroBlockHtml() {
         var inv = 0, val = 0, dd = 0, hasDd = false, papers = {}, free = 0;
-        PF.store.items.forEach(function (p) {
+        visibleItems().forEach(function (p) {
             var c = calcPf(p); inv += c.invested; val += c.value;
             var d = dayDelta(p, c.value); if (d != null) { dd += d; hasDd = true; }
             (p.holdings || []).forEach(function (h) { if (h.ticker && aggHolding(h).qty > 0) papers[h.ticker] = 1; });
             free += (+p.cash || 0);
         });
-        var n = PF.store.items.length;
+        var n = visibleItems().length;
         var pnl = val - inv, pnlPct = inv > 0 ? pnl / inv * 100 : 0;
         var ddPct = hasDd && val - dd > 0 ? dd / (val - dd) * 100 : null;
         var warm = pfQuotesWarming();
@@ -1134,7 +1148,7 @@
 
         // кто двигал сегодня: тот же расчёт вклада в рублях, что у «Лидеров дня»
         var byTk = {}, order = [];
-        PF.store.items.forEach(function (p) {
+        visibleItems().forEach(function (p) {
             (p.holdings || []).forEach(function (h) {
                 if (!h.ticker) return;
                 var q = quotes[h.ticker]; if (!q || q.chgPct == null) return;
@@ -1205,7 +1219,7 @@
     // порог — общий PF.DRIFT_THR. Концентрация — доля самой крупной бумаги в капитале.
     function pfxHeroVerdict(val, movers) {
         var thr = PF.DRIFT_THR || 3, worst = null;
-        PF.store.items.forEach(function (p) {
+        visibleItems().forEach(function (p) {
             if (p.targetBond == null) return;
             var c = calcPf(p), drift = Math.abs(c.bondPct - p.targetBond);
             if (!worst || drift > worst.drift) worst = { p: p, drift: drift, c: c };
@@ -1219,7 +1233,7 @@
         }
         // концентрация: одна бумага держит слишком много капитала
         var top = null, byTk = {};
-        PF.store.items.forEach(function (p) {
+        visibleItems().forEach(function (p) {
             (p.holdings || []).forEach(function (h) {
                 if (!h.ticker) return;
                 var v = PF.calcHold(h).value; if (!(v > 0)) return;
@@ -1237,8 +1251,8 @@
                 text: '<b>' + share + '% капитала стоит в одной бумаге</b> — ' + esc(top.tk) + '. ' + lead,
                 cta: 'Диверсификация ›', act: 'pfdShowBlock(\'conc\')' };
         }
-        var noTarget = PF.store.items.filter(function (p) { return p.targetBond == null; }).length;
-        if (noTarget === PF.store.items.length && noTarget > 0) {
+        var noTarget = visibleItems().filter(function (p) { return p.targetBond == null; }).length;
+        if (noTarget === visibleItems().length && noTarget > 0) {
             return { warn: false,
                 text: 'Целевых долей не задано ни у одного портфеля — «Ребаланс» не подскажет, когда сверяться.',
                 cta: 'Задать цель ›', act: 'pfxGoTab(\'rebal\')' };
@@ -1287,12 +1301,12 @@
                     '<span class="pfcap-y pfcap-y--max">' + fmtRub(max) + '</span>' +
                     '<span class="pfcap-y pfcap-y--min">' + fmtRub(min) + '</span>' +
                     '<div class="pfcapb-plot">' + barsHtml + '</div>' +
-                '</div>' +
-                '<div class="pfcap-x"><span>' + ruDate(s[0].d) + '</span><span>' + ruDate(last.d) + '</span></div>';
+                '</div>';   // подписи дат под полотном сняты — см. pfdCapParts
             right = pfdCapRangesHtml();
         }
         return '<div class="dash2-card pf-card2 pf-capblk pf-capblk--bars" title="Дневные снимки хранятся на этом устройстве (до 400 дней)">' +
-            PF.pfCardHead('', 'График капитала', 'стоимость всех портфелей', right) +
+            PF.pfCardHead('', 'График капитала', 'стоимость всех портфелей',
+                pfdInChromeHtml('cap2') + right) +
             hero +
             '<div class="pfcap-body">' + body + '</div></div>';
     }
@@ -2188,68 +2202,15 @@
         var h = 0; for (var i = 0; i < tk.length; i++) h = (h * 31 + tk.charCodeAt(i)) % 997;
         return FAV_LOGO_COLORS[h % FAV_LOGO_COLORS.length];
     }
-    // ── ВТОРОЙ РАЗДЕЛ «ИЗ РАСЧЁТА» (мокап overview3, экран 17) ──
-    // «Избранное» — не реестр звёздочек, а лента поводов посмотреть на бумагу.
-    // Половину поводов даёт «Расчёт»: облигации по доходности к погашению и
-    // акции по потенциалу. Раньше их приходилось искать на другой вкладке.
-    // Источник тот же, что у «Расчёта» и мастера ребаланса, — без своих расчётов.
-    function favCalcBonds(n) {
-        var out = [];
-        try {
-            if (PF.rbOfzMarket && PF.rbOfzCand) {
-                (PF.rbOfzMarket() || []).forEach(function (b) {
-                    if (!(b.price > 0)) return;
-                    var cd = PF.rbOfzCand(b);
-                    var y = (cd && cd.econ && isFinite(cd.econ.annual)) ? cd.econ.annual : toNum(b.sheetYield);
-                    if (!isFinite(y)) return;
-                    out.push({ cls: 'bd', tag: 'ОФЗ', tk: b.n || b.t, sub: 'к погашению без реинвеста',
-                        val: fmtPct(y), lbl: 'доходность', px: b.price + (b.nkd || 0) });
-                });
-            }
-        } catch (e) { }
-        return out.sort(function (a, b) { return parseFloat(b.val) - parseFloat(a.val); }).slice(0, n);
-    }
-    function favCalcStocks(n) {
-        var out = [];
-        try {
-            // Источник — ИМЕННО таблица эшелонов «Расчёта» (echelonTableData), а не
-            // весь список компаний: раздел называется «Из „Расчёта"» и обязан
-            // показывать его подбор. По всем 207 бумагам сверху всплывали
-            // +809% у неликвида — это артефакт данных, а не рекомендация.
-            // Пока таблица не подгрузилась (она живёт на своей вкладке), половина
-            // с акциями просто пуста — облигационная половина работает всегда.
-            // ВАЖНО: echelonTableData объявлена через let в core.js — на window её нет,
-            // достучаться можно только голым идентификатором (так же делает мастер
-            // ребаланса в allEch). window.echelonTableData всегда undefined.
-            var ed = (typeof echelonTableData !== 'undefined' && Array.isArray(echelonTableData)) ? echelonTableData : [];
-            ed.forEach(function (arr) {
-                (arr || []).forEach(function (a) {
-                    var tk = a && a.t; if (!tk) return;
-                    var pot = toNum(a.target); if (!isFinite(pot)) pot = potentialOf(tk);
-                    if (pot == null || !isFinite(pot) || pot <= 0) return;
-                    out.push({ cls: 'st', tag: 'АКЦ', tk: tk, sub: a.n || 'акция',
-                        val: fmtPct(pot), lbl: 'потенциал', px: (quotes[tk] || {}).price });
-                });
-            });
-        } catch (e) { }
-        return out.sort(function (a, b) { return parseFloat(b.val) - parseFloat(a.val); }).slice(0, n);
-    }
-    function favCalcRowsHtml(list) {
-        return list.map(function (c) {
-            return '<div class="pff-cx" role="button" onclick="pfOpenTicker(\'' + jsArg(c.tk) + '\')">' +
-                '<span class="cl ' + c.cls + '">' + c.tag + '</span>' +
-                '<span class="tx"><b>' + esc(c.tk) + '</b><span>' + esc(c.sub) + '</span></span>' +
-                '<span class="up"><b class="pos">' + c.val + '</b><span>' + c.lbl + '</span></span>' +
-                '<span class="px">' + (c.px > 0 ? PF.fmtPrice(c.px) : '—') + '</span>' +
-            '</div>';
-        }).join('');
-    }
+    // Раздел «Из „Расчёта"» (облигации по доходности и акции по потенциалу) удалён
+    // 2026-08-04 по просьбе владельца: «Избранное» — про то, что человек отметил
+    // сам, а подбор живёт на вкладке «Расчёт». Вместе с разделом ушли favCalcBonds,
+    // favCalcStocks и favCalcRowsHtml — своих расчётов у виджета не осталось.
     // заголовок раздела внутри виджета: имя · пояснение · переход
     function favSecHtml(title, sub, go) {
         return '<div class="pff-sec"><b>' + title + '</b><span>' + sub + '</span>' +
             (go ? '<span class="go" onclick="' + go.onclick + '">' + esc(go.label) + ' ›</span>' : '') + '</div>';
     }
-    var FAV_ARROW_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><polyline points="5 12 12 5 19 12"/></svg>';
     var FAV_STAR_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
     function favHtml(showHide) {
         if (typeof window.stkEnsureLoaded === 'function') { try { window.stkEnsureLoaded(); } catch (e) {} }
@@ -2274,8 +2235,9 @@
                 var name = co && co.name ? co.name : tk;
                 var pot = potentialOf(tk);
                 var dir = pot == null ? 'mut' : (pot >= 0 ? 'pos' : 'neg');
+                // Стрелки у числа в мокапе нет — знак несёт сам «+/−» и цвет
                 var potHtml = pot == null ? '<span class="pff-pot muted">—</span>'
-                    : '<span class="pff-pot ' + (pot >= 0 ? 'pos' : 'neg') + '">' + FAV_ARROW_SVG + fmtPct(pot) + '</span>';
+                    : '<span class="pff-pot ' + (pot >= 0 ? 'pos' : 'neg') + '">' + fmtPct(pot) + '</span>';
                 // «Топ 1» — только при сортировке «Потенциал», только у первой строки
                 // и только при положительном потенциале; при «Новизне» бейджа нет
                 var top1 = favSort === 'pot' && i === 0 && pot != null && pot > 0;
@@ -2284,18 +2246,21 @@
                         'title="Открыть тикет на покупку в терминале — заявка не отправляется">Купить</button>'
                     : '';
                 return '<div class="pff-tile pff3-row' + (top1 ? ' pff3-top1' : '') + '">' +
-                    (top1 ? '<div class="pff3-badge">' + FAV_STAR_SVG + 'Топ 1</div>' : '') +
                     '<div class="pff3-line">' +
                         '<button class="pff-id pff3-id" onclick="pfOpenTicker(\'' + jsArg(tk) + '\')" title="Открыть карточку компании">' +
                             '<span class="pff3-logo" style="background:' + favLogoColor(tk) + '">' + esc(tk.charAt(0)) + '</span>' +
-                            '<span class="pff3-idt"><span class="pff-tk">' + esc(tk) + '</span><span class="pff-nm">' + esc(name) + '</span></span>' +
+                            '<span class="pff3-idt"><span class="pff-tk">' + esc(tk) + '</span><span class="pff-nm">' + esc(name) + '</span>' +
+                                // «Топ 1» — пилюлей ВНУТРИ ячейки тикера (мокап .fv3-top),
+                                // а не отдельным этажом над строкой
+                                (top1 ? '<span class="pff3-top">Топ 1</span>' : '') +
+                            '</span>' +
                         '</button>' +
                         '<div class="pff-news pff3-news" id="pf-news-' + esc(tk) + '"><div class="pff-news-inner"><span class="pff-news-load">загрузка новости…</span></div></div>' +
-                        '<div class="pff3-pot">' + potHtml +
-                            // слот спарклайна заполняет renderFavSparks (кэш на сессию);
-                            // класс знака красит линию в цвет потенциала
-                            '<span class="pff3-spark ' + dir + '" id="pf-spk-' + esc(tk) + '"></span>' +
-                        '</div>' +
+                        '<div class="pff3-pot">' + potHtml + '<span class="pff3-potl">потенциал</span></div>' +
+                        // слот спарклайна заполняет renderFavSparks (кэш на сессию);
+                        // класс знака красит линию в цвет потенциала. Своя колонка
+                        // сетки (мокап .fv3-sp), а не довесок под числом
+                        '<span class="pff3-spark ' + dir + '" id="pf-spk-' + esc(tk) + '"></span>' +
                     '</div>' +
                     // «Купить» и корзина — по hover строки, поверх декоративного спарклайна
                     // (число потенциала остаётся видно); раскрытие кнопок — базовые правила
@@ -2306,22 +2271,17 @@
                 '</div>';
             }).join('') + '</div>';
         }
-        // второй раздел: подбор «Расчёта». Показываем по две строки каждого класса —
-        // виджет остаётся лентой поводов, а не вторым терминалом
-        var cb = favCalcBonds(2), cs = favCalcStocks(2);
-        var calcN = cb.length + cs.length;
-        var calcSec = calcN
-            ? favSecHtml('Из «Расчёта»', 'подбор под ваш профиль риска',
-                { label: 'Открыть расчёт', onclick: "switchTab('calc')" }) +
-              '<div class="pff-cxlist">' + favCalcRowsHtml(cb.concat(cs)) + '</div>'
-            : '';
+        // РАЗДЕЛА «ИЗ РАСЧЁТА» БОЛЬШЕ НЕТ (просьба 2026-08-04): виджет про то, что
+        // человек отметил сам; подбор «Расчёта» живёт на своей вкладке и здесь
+        // только удваивал длину карточки. Вместе с ним ушли favCalcBonds/
+        // favCalcStocks/favCalcRowsHtml и строки .pff-cx.
         var mySec = favs.length
             ? favSecHtml('Мои звёздочки', 'отмечены в «Рынок · Акции»',
                 { label: 'Все акции', onclick: "pfGoTerminal(event)" })
             : '';
         return '<div class="dash2-card pf-card2 pf-fav">' +
-            PF.pfCardHead(favs.length + (calcN ? ' + ' + calcN : ''), 'Избранное',
-                'что вы отметили сами и что подобрал «Расчёт»',
+            PF.pfCardHead(favs.length, 'Избранное',
+                'потенциал и свежая новость по вашим бумагам',
                 // «+» → терминал стоит НАПРОТИВ заголовка (голый плюс, без плашки).
                 // R9.3: шестерёнка и корзина конструктора — СЛЕВА от «+», в потоке шапки
                 // (PFD_OWN_CHROME). Угловой оверлей ложился ровно на «+» (замерено: обе
@@ -2336,13 +2296,13 @@
                     '<button class="pff-sort-b' + (favSort === 'pot' ? ' on' : '') + '" onclick="pfSetFavSort(\'pot\')" title="Сначала с наибольшим потенциалом">По потенциалу</button>' +
                     '<button class="pff-sort-b' + (favSort === 'news' ? ' on' : '') + '" onclick="pfSetFavSort(\'news\')" title="Сначала со свежими новостями">По свежести</button>' +
                 '</div>') +
-            '<div class="pff-body" data-skey="fav">' + mySec + inner + calcSec + '</div>' +
+            '<div class="pff-body" data-skey="fav">' + mySec + inner + '</div>' +
             // пояснение «что такое потенциал» переехало в подвал: оно про колонку
             // чисел, а не про действие, и в шапке занимало место контрола
             PF.pfCardFoot('<span class="pff-info-wrap"><button class="pff-info" type="button" aria-label="Что такое потенциал">' + PF.INFO_SVG +
                     '<span>Что такое потенциал?</span></button>' +
                     '<span class="pff-tipbox" role="tooltip">' + esc(POT_TIP) + '</span></span>', '',
-                { label: 'Весь подбор', onclick: "switchTab('calc')" }) +
+                { label: 'Все акции', onclick: "pfGoTerminal(event)" }) +
         '</div>';
     }
     // Готовый HTML новости + ссылку складываем в кэш (новость = клик по ссылке, не карточка)
@@ -3023,7 +2983,7 @@
         var year = 0;
         evs.forEach(function (e) { year += e.amount; });
         var val = 0;
-        PF.store.items.forEach(function (p) { if (!p.hidden) val += calcPf(p).value; });
+        visibleItems().forEach(function (p) { val += calcPf(p).value; });
         var monthly = year / 12, yPct = val > 0 ? year / val * 100 : 0;
         var body;
         if (!(year > 0)) {
@@ -3173,10 +3133,11 @@
         }, 700);
     }
     function pfwPlistHtml() {
-        // Список — ПОЛНЫЙ, включая скрытые (просьба 2026-07-18): «скрыть» убирает
-        // карточку с «Обзора», но не сам портфель — иначе спрятанный портфель
-        // пропадал из единственного места, где виден весь их перечень.
-        // Скрытые помечены значком-глазом, числа у них настоящие.
+        // Список — ПОЛНЫЙ, включая скрытые (просьба 2026-07-18): скрытие выводит
+        // портфель из УЧЁТА (2026-08-04), но не удаляет его — иначе спрятанный
+        // портфель пропадал из единственного места, где виден весь их перечень.
+        // Скрытые помечены значком-глазом, числа у них настоящие; в общей доле
+        // капитала они не участвуют.
         var all = PF.store.items;
         if (!all.length) {
             return '<div class="dash2-card pf-card2 pf-plistblk">' +
@@ -3186,7 +3147,9 @@
                 '<div class="pfal-empty">Создайте первый портфель кнопкой «Портфель» в шапке.</div></div>';
         }
         var rows = all.map(function (p) { return { p: p, c: calcPf(p) }; });
-        var total = 0; rows.forEach(function (r) { total += r.c.value; });
+        // база для чипа «N% капитала» — только видимые: скрытый выведен из учёта,
+        // и считать его долю в капитале, которого он больше не составляет, нельзя
+        var total = 0; rows.forEach(function (r) { if (!r.p.hidden) total += r.c.value; });
         if (pfPlistSort === 'name') rows.sort(function (a, b) { return a.p.name.localeCompare(b.p.name, 'ru'); });
         else if (pfPlistSort === 'yield') rows.sort(function (a, b) { return (b.c.invested > 0 ? b.c.pnlPct : -1e9) - (a.c.invested > 0 ? a.c.pnlPct : -1e9); });
         else rows.sort(function (a, b) { return b.c.value - a.c.value; });
@@ -3219,7 +3182,7 @@
             // одного она всегда 100% и смысла не несёт), у доходности — процент.
             function chip(cls, tx) { return '<span class="pfsm-chip ' + cls + '">' + tx + '</span>'; }
             function absPct(x) { return Math.abs(x).toFixed(1).replace('.', ',') + '%'; }
-            var shareChip = (rows.length > 1 && total > 0 && c.value > 0)
+            var shareChip = (rows.length > 1 && total > 0 && c.value > 0 && !p.hidden)
                 ? chip('', Math.round(c.value / total * 100) + '% капитала') : '';
             var yld = has
                 ? kpi((c.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(c.pnl)), c.pnl >= 0 ? 'pos' : 'neg',
@@ -3230,13 +3193,13 @@
             // вернуть портфель можно было только из «Видимости», а список — самое
             // очевидное место. pfToggleHidden сам гасит клик строки (stopPropagation)
             var hidMark = hid
-                ? '<button type="button" class="pfpl-hid" onclick="pfToggleHidden(\'' + p.id + '\',event)" title="Карточка убрана с «Обзора» — нажмите, чтобы вернуть" aria-label="Показать портфель на «Обзоре»">' + PF.EYEOFF_SVG + '</button>'
+                ? '<button type="button" class="pfpl-hid" onclick="pfToggleHidden(\'' + p.id + '\',event)" title="Портфель выведен из учёта — нажмите, чтобы вернуть" aria-label="Вернуть портфель в учёт">' + PF.EYEOFF_SVG + '</button>'
                 : '';
             return '<div class="pfpl-row' + (hid ? ' hid' : '') + '" role="button" tabindex="0" onclick="pfxOpenPf(\'' + p.id + '\')" title="Открыть дашборд портфеля">' +
                 '<span class="pfpl-ic" style="--pc:' + ac + '">' + PFPL_CASE_SVG + '</span>' +
                 '<span class="pfpl-id"><b><span class="pfpl-nm">' + esc(p.name) + '</span>' + hidMark + '</b>' +
                     '<i>' + n + ' ' + PF.plural(n, 'актив', 'актива', 'активов') +
-                    (hid ? ' · скрыт с «Обзора»' : '') + '</i></span>' +
+                    (hid ? ' · вне учёта' : '') + '</i></span>' +
                 kpi(fmtRub(c.value), '', shareChip, 'pfpl:' + p.id + ':val') +
                 yld +
                 kpi(has ? fmtRub(c.invested) : '—', has ? '' : 'muted') +

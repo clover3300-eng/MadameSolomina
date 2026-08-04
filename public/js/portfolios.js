@@ -622,7 +622,7 @@
             '</button>';
         }).join('')) : '';
         var pfGroup = multi ? '<div class="pf-impgrp">Какие портфели показывать</div>' + pfRows +
-            '<div class="pf-eyenote">Скрытые карточки не показываются в сетке и в календаре выплат, но их капитал по-прежнему учитывается в общей сводке. Открытая вкладка портфеля при скрытии не закрывается. Виджеты здесь не прячутся — их убирает корзина на самой карточке.</div>' : '';
+            '<div class="pf-eyenote">Скрытый портфель выходит из учёта целиком: его карточки нет в сетке и в календаре выплат, а деньги не входят в суммы, KPI и графики. Открытая вкладка портфеля при скрытии не закрывается. Виджеты здесь не прячутся — их убирает корзина на самой карточке.</div>' : '';
         // .has-off — янтарная точка «часть портфелей скрыта»: счётчик «2/3» тонет
         // среди подписей, а скрытый портфель без сигнала легко забыть насовсем
         return '<div class="pf-impwrap">' +
@@ -640,11 +640,19 @@
     function summaryCardHtml() {
         var inv = 0, val = 0, bondVal = 0, cashTotal = 0, paySum = 0, payPending = false;
         var rows = [];
+        // ИТОГИ — ТОЛЬКО ПО ВИДИМЫМ (2026-08-04): глаз в сайдбаре теперь убирает
+        // портфель из УЧЁТА, а не только его карточку с «Обзора», — иначе сводка
+        // спорила бы с KPI и графиком, которые скрытый уже не считают. Сам
+        // ЛИДЕРБОРД остаётся полным: это перечень, и скрытая строка в нём просто
+        // помечена (.pfs2-hid).
         PF.store.items.forEach(function (p) {
-            var c = calcPf(p); inv += c.invested; val += c.value; bondVal += c.bondVal;
-            cashTotal += (+p.cash || 0);
-            var po = pfPayouts(p);
-            if (po.pending) payPending = true; else paySum += po.sum;
+            var c = calcPf(p);
+            if (!p.hidden) {
+                inv += c.invested; val += c.value; bondVal += c.bondVal;
+                cashTotal += (+p.cash || 0);
+                var po = pfPayouts(p);
+                if (po.pending) payPending = true; else paySum += po.sum;
+            }
             rows.push({ id: p.id, name: p.name, color: p.color, pct: c.pnlPct, value: c.value, has: c.invested > 0, hid: !!p.hidden });
         });
         var pnl = val - inv, pnlPct = inv > 0 ? pnl / inv * 100 : 0;
@@ -706,8 +714,11 @@
     // греются, капитал/доход не пишем — скелетоны заменит первый тик после прогрева.
     PF.livePatchers.summary = function () {
         var inv = 0, val = 0;
+        // строки лидерборда пишем ВСЕМ (они в разметке все), а в итог берём только
+        // видимые — тем же правилом, что и summaryCardHtml
         PF.store.items.forEach(function (p) {
-            var c = calcPf(p); inv += c.invested; val += c.value;
+            var c = calcPf(p);
+            if (!p.hidden) { inv += c.invested; val += c.value; }
             var has = c.invested > 0;
             PF.liveSet('pfs2:' + p.id + ':cap', { text: c.value > 0 ? fmtRub(c.value) : '—' });
             PF.liveSet('pfs2:' + p.id + ':pct', {
