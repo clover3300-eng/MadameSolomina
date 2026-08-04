@@ -2577,22 +2577,25 @@
    омнибокс вставал лишь на полпути */
 #btScene .bts-omni { margin: 0 14px 0 auto; }
 #btScene .bts-right { margin-left: 0; }
-/* РЕЙКА КРАСИВЕЕ (владелец 2026-07-31): строка «Моих» — двухэтажная карточка
-   .wl-i2 (тикер + дневная дельта, под ними цена и месячный спарклайн);
-   базовый .wl-i остаётся мокапной одноэтажной строкой для режима «Расчёт» */
+/* РЕЙКА (владелец 2026-07-31): обе вкладки — мокапная одноэтажная строка;
+   спарклайны и двухэтажные карточки жили один раунд и удалены, активная
+   строка — только стекло, без канта */
 #btScene .wl-i em.pos { color: var(--grn); }
 #btScene .wl-i em.neg { color: var(--red); }
-#btScene .wl-i2 { flex-direction: column; align-items: stretch; gap: 3px; }
-#btScene .wl-i2 .wl-r1 { display: flex; align-items: baseline; gap: 8px; }
-#btScene .wl-i2 .wl-r1 em { margin-left: auto; font-style: normal; font-size: 10.5px; font-weight: 700; }
-#btScene .wl-i2 .wl-r2 {
-    display: flex; align-items: center; gap: 8px;
-    font: 600 9.5px var(--font-num); color: var(--dim); font-variant-numeric: tabular-nums;
-}
-#btScene .wl-i2 .wl-r2 .wl-sp { margin-left: auto; width: 46px; height: 14px; flex: none; }
-#btScene .wl-sp polyline { fill: none; stroke-width: 1.4; vector-effect: non-scaling-stroke; }
-#btScene .wl-sp.up polyline { stroke: var(--grn); opacity: 0.7; }
-#btScene .wl-sp.dn polyline { stroke: var(--red); opacity: 0.7; }
 #btScene .wl-i { cursor: pointer; }
 #btScene .wl-i:hover { background: color-mix(in srgb, var(--ink) 4%, transparent); }
-#btScene .wl-i.on { background: var(--gl-in); box-shadow: inset 2px 0 0 var(--acc); }
+#btScene .wl-i.on { background: var(--gl-in); }
+/* подписи разделов — всегда одной строкой (узкая рейка переносила
+   «Облигации · доходность» на два этажа) */
+#btScene .wl-h { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* обводка фокуса — только с клавиатуры: мышиный клик по вкладкам Мои/Расчёт
+   и строкам рисовал «кант» браузерного focus ring */
+#btScene [tabindex]:focus:not(:focus-visible) { outline: none; }
+/* ВСПЛЫВАЮЩИЕ ПОВЕРХНОСТИ НЕПРОЗРАЧНЫ (владелец 2026-07-31: «блоки
+   подтверждения прозрачные, плохо читается»). var(--card) = стекло .52 —
+   годится карточкам НА фоне сцены, но поверх контента сквозил текст.
+   Подтверждение (.cf2), итог сделки и ход заявки (.cf3), меню «⋯» и звоночек —
+   плотной плитой */
+#btScene { --pop: #ffffff; }
+#btScene.night { --pop: #151d29; }
+#btScene .cf2, #btScene .cf3, #btScene .bts-menu, #btScene .bellpop { background: var(--pop); }

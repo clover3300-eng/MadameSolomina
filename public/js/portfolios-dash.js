@@ -186,7 +186,10 @@
     // экран существует, пока у него есть конфиг (первый — всегда). Экран мог
     // приехать/уехать из облака, поэтому проверяем оба хранилища
     function pfxTradeAlive(t) {
-        return t === 'trading' || (pfxIsTradeTab(t) && !!(pfTabCfgs[t] || pfTabsStore[t]));
+        // скрытый базовый экран (см. pfxTradeTabs) для роутинга мёртв — заход
+        // на /trading уводит на первый живой trading:N через pfxEffTab
+        if (t === 'trading') return pfxTradeTabs().indexOf('trading') >= 0;
+        return pfxIsTradeTab(t) && !!(pfTabCfgs[t] || pfTabsStore[t]);
     }
     // ПОРЯДОК ЭКРАНОВ, заданный перетаскиванием. Отдельный ключ, а не номера в
     // именах: номер вшит в id блоков (trade:ob:2), переименовывать их на каждом
@@ -207,11 +210,26 @@
         [pfTabCfgs, pfTabsStore].forEach(function (m) {
             Object.keys(m || {}).forEach(function (k) { if (pfxIsTradeTab(k)) set[k] = 1; });
         });
+        // базовый экран тоже удаляем (владелец 2026-07-31): модель его всегда
+        // добавляет сама, поэтому «удалён» — это флаг скрытия. Действует, только
+        // пока есть другие экраны: последний экран не удаляется, и когда все
+        // trading:N снесли — базовый возвращается сам
+        try {
+            if (localStorage.getItem(TRADE_BASE_HIDDEN_KEY) === '1' && Object.keys(set).length > 1) delete set.trading;
+        } catch (e) {}
         var all = Object.keys(set);
         var order = pfxTradeOrder().filter(function (k) { return set[k]; });
         var rest = all.filter(function (k) { return order.indexOf(k) < 0; })
                       .sort(function (a, b) { return pfxTradeNo(a) - pfxTradeNo(b); });
         return order.concat(rest);
+    }
+    var TRADE_BASE_HIDDEN_KEY = 'pf_trade_base_hidden';
+    // «удалить»/«вернуть» базовый экран — точка для pftScScreenDel сцены
+    function pfxTradeBaseHide(on) {
+        try {
+            if (on) localStorage.setItem(TRADE_BASE_HIDDEN_KEY, '1');
+            else localStorage.removeItem(TRADE_BASE_HIDDEN_KEY);
+        } catch (e) {}
     }
     // перестановка: двигаем drag ПЕРЕД target (или в самый конец, если target пуст)
     PF.pfxReorderTrade = function (drag, target) {
@@ -333,7 +351,12 @@
         // экран «Торговли» мог исчезнуть (удалили его здесь или на другом
         // устройстве — раскладки едут через облако): возвращаемся на первый,
         // а не показываем пустую сетку с чужим именем
-        if (pfxIsTradeTab(t) && !pfxTradeAlive(t)) return 'trading';
+        if (pfxIsTradeTab(t) && !pfxTradeAlive(t)) {
+            // мёртвый экран (удалили здесь или на другом устройстве) и скрытый
+            // базовый: уходим на первый живой экран «Торговли»
+            var alive = pfxTradeTabs();
+            return alive[0] || 'trading';
+        }
         return t;
     }
     function pfxSyncCfg() {
@@ -4105,6 +4128,7 @@
     PF.PFD_PLUS_SVG = PFD_PLUS_SVG; PF.pfTabCfgs = pfTabCfgs; PF.pfTabsStore = pfTabsStore;
     // экраны «Торговли» (полосу рисует js/portfolios-screens.js)
     PF.pfxIsTradeTab = pfxIsTradeTab; PF.pfxTradeNo = pfxTradeNo; PF.pfxTradeTabs = pfxTradeTabs;
+    PF.pfxTradeBaseHide = pfxTradeBaseHide;
     PF.pfxTradeName = pfxTradeName; PF.pfxTradeAlive = pfxTradeAlive; PF.pfxDropTabCfg = pfxDropTabCfg;
     PF.pfxTabSeed = pfxTabSeed; PF.normTabCfg = normTabCfg;
 })();

@@ -5262,15 +5262,22 @@
                 'aria-selected="' + (v === k) + '" title="' + tip + '" onclick="pftScTkt(\'' + k + '\')">' +
                 icon + '</i>';
         }
+        // сплит-тумблер ПЕРВЫМ (владелец 2026-07-31): он раскрывает стакан
+        // рядом с заявкой, повторное нажатие прячет стакан обратно
         return '<span class="tkt-tabs" role="tablist">' +
+            it('split', IC_SPLIT, 'Стакан рядом с заявкой — повторное нажатие прячет') +
             it('deal', IC_FORM, 'Заявка') +
-            it('depth', IC_BOOK, 'Стакан — книга во всю карточку') +
-            it('split', IC_SPLIT, 'Заявка со стаканом рядом') + '</span>';
+            it('depth', IC_BOOK, 'Стакан — книга во всю карточку') + '</span>';
     }
     window.pftScTkt = function (k) {
         var o = stageObj();
         if (RP && k !== 'deal') { toast('В реплее стакана нет — только цена плёнки', true); return; }
-        if (scnTktView() === k) return;
+        // повторное нажатие активного вида-со-стаканом прячет стакан — назад
+        // к чистой заявке (владелец 2026-07-31: сплит-иконка это тумблер)
+        if (scnTktView() === k) {
+            if (k === 'deal') return;
+            k = 'deal';
+        }
         o.layers.tktView = k;
         saveStageRaw(o);
         // класс и атрибут — ДО перерисовки: ширину карточки и сжатие героя
@@ -5358,14 +5365,14 @@
         // стакан на всю карточку — заголовок «Стакан» в шапке (слова «Сплит» нет)
         if (vw === 'depth') {
             var head = '<div class="tkt-h"><b class="tkt-title">Стакан</b>' + scnTktTabsHtml() + '</div>';
-            return head + '<div class="tkt-depth" id="btScnTkDepth" onmouseover="pftScDepthHov(event)" ' +
+            return head + '<div class="tkt-depth" id="btScnTkDepth" onmouseover="pftScDepthHov(event)" onpointerdown="pftScDepDown(event)" ' +
                 'onmouseleave="pftScDepthHovOff()">' + scnDepthHtml(s, 1, scnDepthDeep()) + '</div>';
         }
         // сплит: стакан слева (своя карточка), заявка справа с id #btScnDeal —
         // именно её точечно перерисовывает scnTicketRedraw, стакан не моргает
         if (vw === 'split') {
             return '<div class="tkt-sub tkt-sub-depth"><div class="tkt-depth" id="btScnTkDepth" ' +
-                    'onmouseover="pftScDepthHov(event)" onmouseleave="pftScDepthHovOff()">' +
+                    'onmouseover="pftScDepthHov(event)" onpointerdown="pftScDepDown(event)" onmouseleave="pftScDepthHovOff()">' +
                     scnDepthHtml(s, 0, scnDepthDeep()) + '</div></div>' +
                 '<div class="tkt-sub tkt-sub-deal" id="btScnDeal">' + scnDealHtml(n) + '</div>';
         }
@@ -6110,20 +6117,9 @@
             }, function () { wlData[tk] = 'err'; wlPaint(); })
             .catch(function () { wlData[tk] = 'err'; wlPaint(); });
     }
-    // МИНИ-СПАРКЛАЙН строки «Моих» (владелец 2026-07-31, «сделать красивее»):
-    // месяц закрытий wlData полилинией 46×14, цвет — знак дня приглушённо
-    function wlSparkSvg(closes, up) {
-        if (!closes || closes.length < 2) return '';
-        var w = 46, h = 14;
-        var min = Math.min.apply(null, closes), max = Math.max.apply(null, closes);
-        var span = (max - min) || 1;
-        var pts = closes.map(function (v, i) {
-            return (i / (closes.length - 1) * w).toFixed(1) + ',' +
-                (h - 1 - (v - min) / span * (h - 2)).toFixed(1);
-        }).join(' ');
-        return '<svg class="wl-sp ' + (up ? 'up' : 'dn') + '" viewBox="0 0 ' + w + ' ' + h + '" ' +
-            'preserveAspectRatio="none" aria-hidden="true"><polyline points="' + pts + '"/></svg>';
-    }
+    // спарклайны в рейке жили один раунд (владелец 2026-07-31: «убрать графики,
+    // привести Мои/Расчёт к одинаковому отображению») — обе вкладки рисуют
+    // мокапную одноэтажную строку .wl-i: тикер и число
     // Рейка F знает два режима: «Избранное» (стор stk_fav_v1) и «Список» —
     // все бумаги из таблицы вкладки «Расчёт» (глобали bonds/echelonTableData,
     // загруженные data.js): акции с потенциалом и эшелоном, облигации с
@@ -6143,15 +6139,15 @@
     // ВНИМАНИЕ: класс .wl-h в мокапе занят ПОДПИСЬЮ РАЗДЕЛА («ОТМЕЧЕНО ЗВЕЗДОЙ»,
     // капс-моно 8px), а не шапкой рейки — у нас он стоял на шапке и ломал сверку.
     // Шапка теперь .wl-top, подпись раздела — .wl-h, как в мокапе.
+    // ШАПКА РЕЙКИ = ровно мокап (владелец 2026-07-31): .wl-tabs первым узлом,
+    // без обёртки .wl-top и без ✕ — закрывают звезда ★ и клик мимо (wlOutside)
     function wlHeadHtml() {
-        return '<div class="wl-top">' +
-            '<div class="wl-tabs" role="tablist" aria-label="Что показывать в рейке">' +
-                '<b class="' + (wlMode === 'fav' ? 'on' : '') + '" role="tab" tabindex="0" ' +
-                    'aria-selected="' + (wlMode === 'fav') + '" onclick="pftScWlMode(\'fav\')">Мои</b>' +
-                '<b class="' + (wlMode === 'all' ? 'on' : '') + '" role="tab" tabindex="0" ' +
-                    'aria-selected="' + (wlMode === 'all') + '" onclick="pftScWlMode(\'all\')">Расчёт</b>' +
-            '</div>' +
-            '<button type="button" class="wl-x" onclick="pftScWl()" aria-label="Свернуть полосу">✕</button></div>';
+        return '<div class="wl-tabs" role="tablist" aria-label="Что показывать в рейке">' +
+            '<b class="' + (wlMode === 'fav' ? 'on' : '') + '" role="tab" tabindex="0" ' +
+                'aria-selected="' + (wlMode === 'fav') + '" onclick="pftScWlMode(\'fav\')">Мои</b>' +
+            '<b class="' + (wlMode === 'all' ? 'on' : '') + '" role="tab" tabindex="0" ' +
+                'aria-selected="' + (wlMode === 'all') + '" onclick="pftScWlMode(\'all\')">Расчёт</b>' +
+        '</div>';
     }
     // подпись раздела рейки — та же, что в мокапе: тихий капс над списком
     function wlCapHtml(t) { return '<span class="wl-h">' + t + '</span>'; }   // = .wl-h мокапа
@@ -6178,19 +6174,15 @@
                 right = '<em class="' + (up ? 'pos' : 'neg') + '">' + (up ? '+' : '−') +
                     Math.abs(d.d).toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + '%</em>';
             } else if (d === 'err') right = '<em>—</em>';
-            // СТРОКА «МОИХ» — двухэтажная карточка (владелец 2026-07-31,
-            // «сделать красивее»): тикер + дневная дельта, под ними цена и
-            // месячный спарклайн. Модификатор .wl-i2 — базовый .wl-i остаётся
-            // мокапной одноэтажной строкой для режима «Расчёт»
+            // СТРОКА МОКАПА (.wl-i) — одноэтажная, РОВНО как в «Расчёте»
+            // (владелец 2026-07-31): тикер и дневная дельта; цена и имя
+            // компании — в подсказке, клавиша-цифра — тоже
             var live = d && d !== 'busy' && d !== 'err';
-            var r2 = live
-                ? '<span class="wl-r2">' + d.last.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) +
-                  ' ₽' + wlSparkSvg(d.closes, d.d >= 0) + '</span>'
-                : '';
-            return '<div class="wl-i wl-i2' + (on ? ' on' : '') + '" role="button" tabindex="0" ' +
+            return '<div class="wl-i' + (on ? ' on' : '') + '" role="button" tabindex="0" ' +
                 'onclick="pftScWlGo(\'' + jsArg(tk) + '\')" title="' + esc(nm || tk) +
+                (live ? ' · ' + d.last.toLocaleString('ru-RU', { maximumFractionDigits: 2 }) + ' ₽' : '') +
                 ' — график, стакан и заявка; клавиша ' + (i + 1) + '">' +
-                '<span class="wl-r1">' + esc(tk) + right + '</span>' + r2 + '</div>';
+                esc(tk) + right + '</div>';
         }).join('');
         // подвала-абзаца в мокапе нет: он занимал четверть рейки. Правило про
         // звезду и клавиши переехало в подсказку самой рейки (title у заголовка).
@@ -6314,6 +6306,13 @@
     }
     // клик или цифра: тикер превращается в uid брокера один раз, дальше кэш
     window.pftScWlGo = function (tk) {
+        // мгновенный отклик по УЖЕ активной бумаге: грузить нечего — просто
+        // раскрыть сплит (раньше клик по ней выглядел как «не работает»)
+        var cur = S(sxSlot());
+        if (cur.meta && cur.meta.ticker === tk) {
+            if (scnTktView() !== 'split') window.pftScTkt('split');
+            return;
+        }
         function go(uid) {
             // из рейки открывается ВСЁ сразу — график, стакан и заявка
             // (владелец 2026-07-31): вид тикета принудительно «Сплит»
@@ -6396,8 +6395,10 @@
                 tooltip: { showRule: 'none' }
             },
             indicator: {
-                // легенды индикаторов движок и так держит слева у своих панелей
-                tooltip: { showRule: 'follow_cross',
+                // легенды индикаторов — слева у своих панелей, но НИЖЕ строки
+                // OHLC (#btScnOhlc, DOM в верхнем левом углу): offsetTop разводит
+                // их по этажам — накладывались друг на друга (владелец 2026-07-31)
+                tooltip: { showRule: 'follow_cross', offsetTop: 22,
                     legend: { color: nightMode ? '#e9eef8' : '#0f172a', size: 11.5 } },
                 ohlc: { upColor: up, downColor: down, noChangeColor: txt },
                 bars: [{ upColor: 'rgba(22,163,74,0.45)', downColor: 'rgba(220,38,38,0.45)', noChangeColor: txt }],
@@ -7033,15 +7034,10 @@
         var html = '';
         if (c && isFinite(c.close)) {
             var s = S(sxSlot());
-            var per = sxPer()[0];
-            var dt = new Date(c.timestamp);
-            var tTxt = per === 'day' || per === 'week'
-                ? dt.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }) + ' ' +
-                  dt.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
-                : dt.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
+            // даты в строке нет (владелец 2026-07-31): она дублирует ось X
+            // и удлиняла строку до наложения на легенды индикаторов
             var up = c.close >= c.open;
-            html = '<em>' + esc(tTxt) + '</em>' +
-                '<span>откр <b>' + fmtPx(c.open, s) + '</b></span>' +
+            html = '<span>откр <b>' + fmtPx(c.open, s) + '</b></span>' +
                 '<span>макс <b>' + fmtPx(c.high, s) + '</b></span>' +
                 '<span>мин <b>' + fmtPx(c.low, s) + '</b></span>' +
                 '<span>закр <b class="' + (up ? 'g' : 'r') + '">' + fmtPx(c.close, s) + '</b></span>' +
@@ -7160,26 +7156,74 @@
         });
         return { money: money, lots: lots, edge: edge || px, lot: lot };
     }
-    window.pftScRowPx = function (px, ask) {
+    // ---- жесты лесенки (владелец 2026-07-31) ----
+    // ПРОСТОЙ КЛИК по строке = своя лимитка ПО ЦЕНЕ СТРОКИ: зелёная (спрос) —
+    // покупка, красная (предложение) — продажа. СВИП «скупить/продать до
+    // уровня» — только ЗАЖАТЬ И ПРОТЯНУТЬ по строкам своей стороны.
+    window.pftScRowOrder = function (side, px) {
         var n = sxSlot(), s = S(n);
-        var side = ask ? 'ask' : 'bid';
-        // повторный клик по тому же краю — снять выбор (и заявку не трогаем)
-        if (scnSweep && scnSweep.uid === s.uid && scnSweep.side === side &&
-            Math.abs(scnSweep.px - px) < 1e-9) { scnSweepClear(); return; }
+        scnSweepClear();
+        s.side = side === 'bid' ? 'buy' : 'sell';
+        s.kind = 'limit';
+        s.price = String(scnSnap(px, s));
+        saveSlots();
+        if (scnTktView() === 'depth') { window.pftScTkt('split'); return; }  // redraw внутри
+        scnTicketRedraw(n);
+        scnDepthRepaint();
+        var i = dq('btScnLimIn'); if (i) try { i.focus(); } catch (e) {}
+    };
+    window.pftScSweepTo = function (side, px) {
+        var n = sxSlot(), s = S(n);
         var sw = scnSweepCalc(s, side, px);
         scnSweep = { uid: s.uid, side: side, px: px };
         // сторона + лимит по краю пути; сумма-нетто (без комиссии — её добавит
         // строка «спишется») уходит в поле суммы заявки. Продажа считает по
         // рублям и сама упрётся в размер позиции — гвардам ничего не ломаем
-        s.side = ask ? 'buy' : 'sell';
+        s.side = side === 'ask' ? 'buy' : 'sell';
         s.kind = 'limit';
         s.price = String(scnSnap(sw.edge, s));
         scnUnit = 'rub';
         simpleSum = sw.money > 0 ? String(Math.round(sw.money)) : '';
         saveSlots();
-        if (scnTktView() === 'depth') { window.pftScTkt('deal'); return; }  // redraw внутри
+        if (scnTktView() === 'depth') { window.pftScTkt('split'); return; }  // redraw внутри
         scnTicketRedraw(n);
         scnDepthRepaint();
+    };
+    // разводка клик/драг: pointerdown запоминает строку, pointermove по СВОЕЙ
+    // стороне тянет свип с живой подсветкой, pointerup без движения = лимитка
+    var scnDrag = null;
+    window.pftScDepDown = function (ev) {
+        if (ev.button != null && ev.button !== 0) return;
+        var box = dq('btScnTkDepth');
+        var r = ev.target && ev.target.closest ? ev.target.closest('.dep-r') : null;
+        if (!r || !box || !box.contains(r)) return;
+        ev.preventDefault();
+        var side = r.classList.contains('a') ? 'ask' : 'bid';
+        scnDrag = { side: side, startPx: +r.dataset.px, lastPx: +r.dataset.px, moved: false };
+        function mv(e) {
+            if (!scnDrag) return;
+            var el = document.elementFromPoint(e.clientX, e.clientY);
+            var row = el && el.closest ? el.closest('.dep-r') : null;
+            if (!row || !box.contains(row)) return;
+            if ((row.classList.contains('a') ? 'ask' : 'bid') !== scnDrag.side) return;
+            var px = +row.dataset.px;
+            if (Math.abs(px - scnDrag.startPx) > 1e-9) scnDrag.moved = true;
+            if (Math.abs(px - scnDrag.lastPx) > 1e-9) {
+                scnDrag.lastPx = px;
+                scnSweep = { uid: S(sxSlot()).uid, side: scnDrag.side, px: px };
+                scnDepthRepaint();
+            }
+        }
+        function up() {
+            document.removeEventListener('pointermove', mv);
+            document.removeEventListener('pointerup', up);
+            var d = scnDrag; scnDrag = null;
+            if (!d) return;
+            if (d.moved) window.pftScSweepTo(d.side, d.lastPx);
+            else window.pftScRowOrder(d.side, d.startPx);
+        }
+        document.addEventListener('pointermove', mv);
+        document.addEventListener('pointerup', up);
     };
     function scnSweepClear() {
         if (!scnSweep) return;
@@ -7199,7 +7243,8 @@
     // Брокер отдаёт аски от лучшего — на экран идут в ОБРАТНОМ порядке.
     var SCN_DEPTH = 6;        // плоскость «Разгона»/«Контроля»: высота делится с графиком
     var SCN_DEPTH_CARD = 14;  // потолок «в полный рост» (владелец 2026-07-31: было 10 — половина карточки пустовала)
-    var SCN_DEPTH_MIN = 5;    // на сторону в сжатой колонке (владелец 2026-07-31: было 3)
+    var SCN_DEPTH_MIN = 5;    // пол: меньше лесенка не сжимается даже на низких экранах
+    var SCN_DEPTH_SPLIT = 8;  // цель раскрытого сплитом стакана (владелец 2026-07-31: было 5)
     var SCN_TAPE = 5;         // строк ленты в СЖАТОЙ колонке сплита
     var SCN_TAPE_MAX = 12;    // потолок ленты «в полный рост»: остаток высоты после лесенки
     // мерки в CSS-пикселях (offsetHeight!) после переноса разметки мокапа:
@@ -7213,12 +7258,13 @@
     // лишний воздух уходит вниз (лента прижата margin-top:auto). Стакан во всю
     // карточку растёт по фактической высоте — до SCN_DEPTH_CARD
     function scnDepthDeep() {
-        if (!RP && scnTktView() === 'split') return SCN_DEPTH_MIN;
+        var split = !RP && scnTktView() === 'split';
+        var cap = split ? SCN_DEPTH_SPLIT : SCN_DEPTH_CARD;
         var el = dq('btScnTkDepth');
-        if (!el || !el.clientHeight) return SCN_DEPTH_CARD;
+        if (!el || !el.clientHeight) return cap;
         var head = el.querySelector('.dep-hd') ? SCN_DHEAD_H : 0;
         var free = el.clientHeight - head - SCN_BAL_H - SCN_MID_H - SCN_TAPE_H;
-        return Math.max(SCN_DEPTH_MIN, Math.min(SCN_DEPTH_CARD, Math.floor(free / SCN_ROW_H / 2)));
+        return Math.max(SCN_DEPTH_MIN, Math.min(cap, Math.floor(free / SCN_ROW_H / 2)));
     }
     // строк ленты — остаток высоты после лесенки. В сжатой колонке сплита
     // потолок 5 (заказ владельца), «в полный рост» — до SCN_TAPE_MAX: лесенка
@@ -7317,8 +7363,7 @@
         var ask = l.cls.indexOf('d-ask') >= 0;
         return '<div class="dep-r ' + (ask ? 'a' : 'b') + (l.cls.indexOf('d-sel') >= 0 ? ' d-sel' : '') +
             (l.cls.indexOf('d-cum') >= 0 ? ' d-cum' : '') + (l.cls.indexOf('d-best') >= 0 ? ' d-best' : '') +
-            '" role="button" tabindex="0" data-px="' + l.px + '" data-v="' + l.lots + '" ' +
-            'onclick="pftScRowPx(+this.dataset.px, ' + (ask ? 1 : 0) + ')">' +
+            '" role="button" tabindex="0" data-px="' + l.px + '" data-v="' + l.lots + '">' +
             '<i class="d-fill" style="width:' + l.w + '%"></i>' +
             '<b>' + fmtPx(l.px, s) + '</b>' +
             '<u class="d-my">' + (l.my ? l.my + ' ' + PF.plural(l.my, 'лот', 'лота', 'лотов') : '') + '</u>' +
@@ -8101,11 +8146,14 @@
     function dockAlertRows() {
         if (!ALERTS.length) return '<div class="dk-empty">Алертов нет — звоночек в шапке бумаги следит за ценой' +
             '<u role="button" tabindex="0" onclick="event.stopPropagation(); pftScBell()">Поставить алерт</u></div>';
+        // колонки строго по шапке (Бумага·Условие·Цена·—·—·Статус·действие):
+        // «сработает один раз» кочевал по чужой колонке и ломал строй
         return ALERTS.map(function (a, i) {
             return '<div class="dk-r"><b>' + esc(a.ticker || '—') + '</b>' +
                 '<span>' + (a.dir === 'up' ? 'выше' : 'ниже') + '</span>' +
                 '<span><b>' + fmtPx(a.px, { meta: instrMem[a.uid] || null }) + ' ₽</b></span>' +
-                '<span>сработает один раз</span><span></span><span></span>' +
+                '<span></span><span></span>' +
+                '<span class="dk-st act" title="Сработает один раз">ждёт цены</span>' +
                 '<span class="dk-x" role="button" tabindex="0" onclick="pftScAlertDrop(' + i + ')">Убрать</span></div>';
         }).join('');
     }
@@ -8129,11 +8177,15 @@
             : dockTab === 'pos' ? dockPosRows()
             : dockTab === 'hist' ? dockHistRows()
             : dockAlertRows();
+        // шапка — у КАЖДОЙ вкладки (владелец 2026-07-31: «выровнять таблицы»):
+        // история и алерты жили голыми строками, и колонки нечем было читать
         var head = dockTab === 'orders'
             ? '<div class="dk-hd"><span>Бумага</span><span>Сторона</span><span>Тип и цена</span><span>Кол-во</span><span>Исполнено</span><span>Статус</span><span></span></div>'
             : dockTab === 'pos'
                 ? '<div class="dk-hd"><span>Бумага</span><span>Кол-во</span><span>Средняя</span><span>Текущая</span><span>Прибыль</span><span>Доходность</span><span></span></div>'
-                : '';
+            : dockTab === 'hist'
+                ? '<div class="dk-hd"><span>Бумага</span><span>Сторона</span><span>Цена</span><span>Кол-во</span><span>Сумма</span><span>Когда</span><span></span></div>'
+                : '<div class="dk-hd"><span>Бумага</span><span>Условие</span><span>Цена</span><span></span><span></span><span>Статус</span><span></span></div>';
         return tabs + head + '<div class="dk-body">' + body + '</div>';
     }
 
@@ -8227,8 +8279,9 @@
             // клик по чужой переключает экран с полной перерисовкой, и второй
             // клик двойного пришёлся бы в мёртвый узел (владелец 2026-07-23).
             // Перетаскивание — механика pfxReorderTrade полосы раунда 1; ✕ на
-            // ховере (кроме первого экрана) удаляет экран в два клика
-            var x = t !== 'trading'
+            // ховере удаляет ЛЮБОЙ экран, включая первый (владелец 2026-07-31) —
+            // ✕ нет только у последнего оставшегося
+            var x = tabs.length > 1
                 ? '<i class="sct-x" role="button" tabindex="0" aria-label="Удалить экран" ' +
                   'onclick="pftScScreenDel(event,\'' + jsArg(t) + '\')">✕</i>'
                 : '';
@@ -8328,7 +8381,10 @@
     window.pftScScreenDel = function (ev, t) {
         if (ev) ev.stopPropagation();
         var x = ev && ev.target && ev.target.closest ? ev.target.closest('.sct-x') : null;
-        if (!x || t === 'trading') return;
+        // удалять можно ЛЮБОЙ экран, включая первый (владелец 2026-07-31) —
+        // не удаляется только последний оставшийся (✕ на нём и не рисуется)
+        var tabs = PF.pfxTradeTabs ? PF.pfxTradeTabs() : ['trading'];
+        if (!x || tabs.length < 2) return;
         if (!x.classList.contains('arm')) {
             x.classList.add('arm');
             x.textContent = 'удалить?';
@@ -8338,9 +8394,13 @@
             return;
         }
         var wasCur = PF.pfxTab === t;
-        if (PF.pfxDropTabCfg) PF.pfxDropTabCfg(t);
+        // базовый 'trading' модель всегда возрождает — его «удаление» = флаг
+        // скрытия (pfxTradeBaseHide); настоящие trading:N сносятся конфигом
+        if (t === 'trading') { if (PF.pfxTradeBaseHide) PF.pfxTradeBaseHide(true); }
+        else if (PF.pfxDropTabCfg) PF.pfxDropTabCfg(t);
         toast('Экран удалён — бумаги остались в слотах');
-        if (wasCur && window.pfxGoTab) window.pfxGoTab('trading');
+        var left = PF.pfxTradeTabs ? PF.pfxTradeTabs() : ['trading'];
+        if (wasCur && window.pfxGoTab) window.pfxGoTab(left[0] || 'trading');
         else {
             var el = dq('btScnScr');
             if (el) { el.__btHtml = null; el.innerHTML = scnScreensHtml(); }
