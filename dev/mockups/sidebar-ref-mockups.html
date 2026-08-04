@@ -146,6 +146,25 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .stage.rail .sb-cap svg{display:none}
 .stage.rail .sb-cap::after{content:'';width:22px;height:1px;background:var(--hair)}
 
+/* --- «Ещё»: не голая капитель, а одетая строка-кнопка (в коде это и есть
+   кнопка data-act="flatmore") — счёт скрытых разделов пилюлей, шеврон
+   поворачивается; раскрытые пункты ложатся в мягкий «карман» --- */
+.sb-more{display:flex;align-items:center;gap:10px;width:100%;height:34px;margin:10px 0 2px;
+  padding:0 10px;border:1px solid var(--hair);border-radius:10px;background:transparent;
+  color:var(--mut);font-family:var(--fU);font-size:12.5px;font-weight:600;cursor:default}
+.sb-more .dots{width:16px;height:16px}
+.sb-more .dots circle{fill:currentColor;stroke:none}
+.sb-more .lbl{flex:1;text-align:left}
+.sb-more .cnt{font-family:var(--fN);font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;
+  min-width:20px;height:19px;padding:0 6px;border-radius:999px;display:grid;place-items:center;
+  background:color-mix(in srgb,var(--mut) 13%,transparent);color:var(--mut)}
+.sb-more .ch{width:13px;height:13px;stroke-width:2;color:var(--dim)}
+.sb-more.open .ch{transform:rotate(180deg)}
+.sb-morebox{margin:4px 0 2px;padding:3px;border-radius:12px;background:rgba(28,32,42,.04)}
+.stage.dark .sb-morebox{background:rgba(255,255,255,.05)}
+.sb-morebox .sb-it{height:34px;font-size:13px;border-radius:9px}
+.stage.rail .sb-more,.stage.rail .sb-morebox{display:none}
+
 /* --- пункт --- */
 .sb-it.first{margin-top:16px}
 .sb-it{display:flex;align-items:center;gap:10px;height:38px;padding:0 10px;margin:1px 0;
@@ -246,8 +265,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <p><b>Что меняется, а что нет.</b> Состав, порядок и поведение пунктов — прежние (это тот же
        <code>#sbFlat</code>: Обзор, Мои портфели, Ребаланс, Торговля, затем Рынок, Расчёт, Академия);
        меняется только одежда: полотно светлее фона страницы, активный раздел — белая карточка вместо
-       заливки, события — пилюли у правого края. Единственная группа с подписью-капителью — «Ещё», потому
-       что она и в коде группа (<code>sb_flat_more_v1</code>): Аналитика, Отчёты, Операции, Тест, Админка.
+       заливки, события — пилюли у правого края. «Ещё» — как и в коде, строка-кнопка
+       (<code>sb_flat_more_v1</code>), но одетая: счёт скрытых разделов пилюлей, шеврон-переворот, а
+       раскрытые пункты (Аналитика, Отчёты, Операции, Тест, Админка) ложатся в мягкий «карман».
        Командная строка поиска остаётся наверху, а подвал — ОДНА строка: профиль слева и отдельные звоночек
        с шестерёнкой справа; их содержимое открывается поповерами по клику (меню кабинета, <code>#nfPanel</code>),
        постоянной панели настроек нет.</p>
@@ -263,8 +283,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 <div class="mk">
   <div class="mk-h"><span class="mk-n">В1</span><h2>Развёрнутая колонка, светлая тема</h2><span class="mk-tag">Основной вид</span></div>
   <p class="mk-sub">268 px, как сейчас. Список плоский, порядок — как в коде: Обзор · Мои портфели · Ребаланс ·
-     Торговля · Рынок · Расчёт · Академия; «Ещё» — единственная группа (по умолчанию свёрнута — здесь раскрыта,
-     чтобы показать состав: Аналитика, Отчёты, Операции, Тест, Админка). Активный раздел — «Мои портфели»,
+     Торговля · Рынок · Расчёт · Академия; «Ещё» — строка-кнопка со счётом (по умолчанию свёрнута — здесь
+     раскрыта в «карман»: Аналитика, Отчёты, Операции, Тест, Админка). Активный раздел — «Мои портфели»,
      под ним — открытые портфели. Внизу — строка профиля с отдельными звоночком и шестерёнкой.</p>
   <div class="scroller"><div class="row">
 
@@ -319,26 +339,32 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         <span class="lbl">Академия</span>
       </div>
 
-      <div class="sb-cap"><em>Ещё</em><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></div>
-      <div class="sb-it">
-        <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        <span class="lbl">Аналитика</span>
-      </div>
-      <div class="sb-it">
-        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
-        <span class="lbl">Отчёты</span>
-      </div>
-      <div class="sb-it">
-        <svg viewBox="0 0 24 24"><path d="M7 8h13M7 12h13M7 16h13"/><path d="M4 8h.01M4 12h.01M4 16h.01"/></svg>
-        <span class="lbl">Операции</span>
-      </div>
-      <div class="sb-it">
-        <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg>
-        <span class="lbl">Тест</span>
-      </div>
-      <div class="sb-it">
-        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        <span class="lbl">Админка</span>
+      <button class="sb-more open">
+        <svg class="dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>
+        <span class="lbl">Свернуть</span>
+        <svg class="ch" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="sb-morebox">
+        <div class="sb-it">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span class="lbl">Аналитика</span>
+        </div>
+        <div class="sb-it">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>
+          <span class="lbl">Отчёты</span>
+        </div>
+        <div class="sb-it">
+          <svg viewBox="0 0 24 24"><path d="M7 8h13M7 12h13M7 16h13"/><path d="M4 8h.01M4 12h.01M4 16h.01"/></svg>
+          <span class="lbl">Операции</span>
+        </div>
+        <div class="sb-it">
+          <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M18 17l-5-5-4 4-3-3"/></svg>
+          <span class="lbl">Тест</span>
+        </div>
+        <div class="sb-it">
+          <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span class="lbl">Админка</span>
+        </div>
       </div>
 
       <div class="sb-bot">
@@ -409,7 +435,12 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         <span class="lbl">Академия</span>
       </div>
 
-      <div class="sb-cap"><em>Ещё</em><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></div>
+      <button class="sb-more">
+        <svg class="dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>
+        <span class="lbl">Ещё</span>
+        <span class="cnt">5</span>
+        <svg class="ch" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
 
       <div class="sb-bot">
         <div class="sb-ava">MS</div>
@@ -482,7 +513,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <div class="note"><i>1</i><span>Полотно колонки — на полтона светлее фона страницы (у референса #F7F7FB на белом): колонка отделяется тоном, без жирной границы.</span></div>
     <div class="note"><i>2</i><span>Активный раздел — белая карточка с мягкой тенью; заливок и левых полос нет. В тёмной теме карточка — ступень светлоты поверхности, не тень.</span></div>
     <div class="note"><i>3</i><span>Счётчики событий — пилюли: индиговая = счёт (портфели), янтарная = требует действия (дрейф ребаланса). В рейке пилюля сжимается в точку тех же цветов; непрочитанное на звоночке — тоже точка.</span></div>
-    <div class="note"><i>4</i><span>«Ещё» из строки-переключателя становится подписью группы с шевроном — тот же persist <code>sb_flat_more_v1</code>, в В2 показана свёрнутой.</span></div>
+    <div class="note"><i>4</i><span>«Ещё» — строка-кнопка в рамке-призраке: три точки, счёт скрытых разделов пилюлей, шеврон переворачивается. Раскрытое ложится в «карман» с лёгкой заливкой, подпись меняется на «Свернуть» — тот же persist <code>sb_flat_more_v1</code>; в В2 показана свёрнутой.</span></div>
     <div class="note"><i>5</i><span>Подвал — одна строка профиля с ОТДЕЛЬНЫМИ звоночком и шестерёнкой (те же узлы <code>#sbPersonalSlot</code>/<code>#sbSettingsBtn</code>); их содержимое — поповеры по клику, постоянной панели нет.</span></div>
     <div class="note"><i>6</i><span>Свёртка — тихий двойной шеврон в шапке (как <code>#sbHeadCollapse</code> сейчас); в рейке колонку разворачивает клик по марке «M» (markExpands), отдельной стрелки нигде нет.</span></div>
   </div>
@@ -546,7 +577,12 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         <svg viewBox="0 0 24 24"><path d="M22 9.5L12 4.5 2 9.5l10 5 10-5z"/><path d="M6 11.8V17c0 1.6 2.7 3 6 3s6-1.4 6-3v-5.2"/></svg>
         <span class="lbl">Академия</span>
       </div>
-      <div class="sb-cap"><em>Ещё</em><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></div>
+      <button class="sb-more">
+        <svg class="dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>
+        <span class="lbl">Ещё</span>
+        <span class="cnt">5</span>
+        <svg class="ch" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
 
       <div class="sb-bot">
         <div class="sb-ava">MS</div>
@@ -616,7 +652,12 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
         <svg viewBox="0 0 24 24"><path d="M22 9.5L12 4.5 2 9.5l10 5 10-5z"/><path d="M6 11.8V17c0 1.6 2.7 3 6 3s6-1.4 6-3v-5.2"/></svg>
         <span class="lbl">Академия</span>
       </div>
-      <div class="sb-cap"><em>Ещё</em><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg></div>
+      <button class="sb-more">
+        <svg class="dots" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>
+        <span class="lbl">Ещё</span>
+        <span class="cnt">5</span>
+        <svg class="ch" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
 
       <div class="sb-bot">
         <div class="sb-ava">MS</div>
@@ -707,7 +748,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <tr><th>Элемент референса</th><th>У нас</th><th>Где живёт</th></tr>
     <tr><td>Логотип-квадрат + имя воркспейса</td><td>Марка «M» + Madame Solomi'na / Terminal — без изменений</td><td><code>#sbHead</code></td></tr>
     <tr><td>Круглая кнопка « ‹ » на кромке панели</td><td>Не переносим (не вписалась): свёртка — двойной шеврон в шапке (<code>#sbHeadCollapse</code>), разворот рейки — клик по марке «M» (markExpands)</td><td><code>js/sidebar.js</code></td></tr>
-    <tr><td>Группы OVERVIEW / MY PAGES с шевронами</td><td>Аналога нет — список остаётся плоским, как в коде; капитель с шевроном достаётся только «Ещё» (она и так группа)</td><td><code>#sbFlat</code> (js/sidebar-ctx.js)</td></tr>
+    <tr><td>Группы OVERVIEW / MY PAGES с шевронами</td><td>Аналога нет — список остаётся плоским, как в коде; единственный раскрыватель — строка «Ещё» со счётом и «карманом» раскрытых пунктов</td><td><code>#sbFlat</code> (js/sidebar-ctx.js)</td></tr>
     <tr><td>Активный пункт — белая карточка</td><td>То же; сегодняшняя подсветка заливкой уходит</td><td><code>.sb-item.on</code></td></tr>
     <tr><td>Счётчики-пилюли (4, 7)</td><td>Величины событий из <code>data-sb-note</code> (badgeSync) — индиго/янтарь</td><td>js/sidebar-ctx.js</td></tr>
     <tr><td>TEAM (люди с аватарами)</td><td>Открытые портфели под «Мои портфели»: цветная точка-маркер + имя + день моно; состав — <code>PF.store.items</code> без <code>p.hidden</code></td><td>js/sidebar-ctx.js</td></tr>
