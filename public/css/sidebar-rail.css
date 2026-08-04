@@ -63,40 +63,48 @@
 
 @media (min-width: 1024px) {
     :root {
-        /* Ширина колонки. 268 было впритык: самое длинное реальное имя раздела
-           («Академия Ребалансировки» — вкладки переименовывают из админки)
-           занимало строку ровно до края, запас 0px, и следующая же буква
-           уводила подпись во вторую строку. 288 даёт 20px запаса и заодно
-           повторяет прежнюю сумму двух столбцов (76 + 212). */
-        --sbr-w:      288px;       /* колонка */
-        --sbr-rail-w:  84px;       /* свёрнутая рейка (мокап Л1) */
-        --sbr-card:  #FFFFFF;      /* поле колонки */
-        --sbr-page:  #F4F6FA;      /* цвет страницы = фон выбранной пилюли */
-        --sbr-ink:   #101828;
-        --sbr-mut:   #64748B;
-        --sbr-dim:   #98A4B4;
-        --sbr-line:  #E7ECF3;
-        --sbr-sel:   #2F6B4F;      /* активный раздел */
-        --sbr-sel-ic:#FFFFFF;      /* иконка внутри активного кружка */
-        --sbr-glass: rgba(255, 255, 255, 0.62);        /* поверхность колонки */
-        --sbr-glass-edge: rgba(255, 255, 255, 0.7);    /* её правая кромка */
+        /* ===== ПОСАДКА «ВШИТАЯ» (мокап В4–В6, dev/mockups/sidebar-ref-mockups.html)
+           Колонка — не карточка и не стекло, а часть фона приложения: полотна
+           у неё больше нет, карточкой становится сам контент. Палитра — из
+           мокапа: индиговый акцент, белая карточка активного, пилюли событий. */
+        --sbr-w:      268px;       /* колонка (мокап: 268px, «как сейчас») */
+        --sbr-rail-w:  80px;       /* свёрнутая рейка (мокап В6) */
+        --sbr-card:  #FFFFFF;      /* карточка активного пункта */
+        /* «page» больше не цвет страницы (страницы-полотна нет) — это тон
+           ховера и пилюль выбора поверх прозрачной колонки */
+        --sbr-page:  rgba(16, 24, 40, 0.055);
+        --sbr-ink:   #1C202A;
+        --sbr-mut:   #6B7183;
+        --sbr-dim:   #9BA1B3;
+        --sbr-item:  #585F70;      /* обычный пункт — средне-серый (мокап --item) */
+        --sbr-line:  rgba(28, 32, 42, 0.08);
+        --sbr-sel:   #4453EF;      /* акцент: фокус, активная иконка второго уровня */
+        --sbr-sel-ic:#FFFFFF;
+        --sbr-badge-bg: #E8EAFB;   /* индиговая пилюля счёта */
+        --sbr-badge-tx: #5158E2;
+        --sbr-amb:   #C2760A;      /* янтарь: требует действия (дрейф) */
+        --sbr-amb-bg: rgba(194, 118, 10, 0.13);
+        --sbr-up:    #12A35C;      /* день портфеля в списке */
+        --sbr-dn:    #D8452B;
     }
-    /* Тёмная тема — палитра самого визарда (body.dark-mode .rbw). Прежняя
-       инверсия «светлый сайдбар в обеих темах» снята: светлая рейка 76px
-       читалась кантом, светлая колонка во всю высоту — белой стеной.
-       Зелёный не меняется, а поднимается: #2F6B4F на #121722 даёт 2,8:1,
-       #4FB98C — 7,4:1. */
+    /* Тёмная тема — те же роли из тёмных экранов мокапа (В2/В5): активная
+       карточка — ступень светлоты поверхности, не тень. */
     body.dark-mode {
-        --sbr-card:  #121722;
-        --sbr-page:  #0A0E15;
-        --sbr-ink:   #E9EEF8;
-        --sbr-mut:   #93A1B8;
-        --sbr-dim:   #5E6C84;
-        --sbr-line:  rgba(255, 255, 255, 0.09);
-        --sbr-sel:   #4FB98C;
-        --sbr-sel-ic:#0A0E15;
-        --sbr-glass: rgba(18, 23, 34, 0.66);
-        --sbr-glass-edge: rgba(255, 255, 255, 0.09);
+        --sbr-card:  #232836;
+        --sbr-page:  rgba(255, 255, 255, 0.06);
+        --sbr-ink:   #E9EDF6;
+        --sbr-mut:   #9AA2B5;
+        --sbr-dim:   #68718A;
+        --sbr-item:  #A2A9BC;
+        --sbr-line:  rgba(233, 237, 246, 0.09);
+        --sbr-sel:   #8E9BFF;
+        --sbr-sel-ic:#12151D;
+        --sbr-badge-bg: rgba(120, 132, 255, 0.17);
+        --sbr-badge-tx: #9AA4FF;
+        --sbr-amb:   #E0A458;
+        --sbr-amb-bg: rgba(230, 160, 60, 0.15);
+        --sbr-up:    #3FD08B;
+        --sbr-dn:    #FF7A5C;
     }
 
     /* ---------- Оболочка ---------- */
@@ -118,31 +126,25 @@
        назначают tab-gates.css и home-register.css (`body.gx-on #sideBar`). */
     #appShell > #sideBar { position: relative; z-index: 60; padding: 0; }
 
-    /* ---------- Корпус ----------
-       Сплошная колонка на краю экрана, без скругления и тени: карточка с
-       жёлобом читалась «панелькой, положенной на страницу». */
-    /* СТЕКЛО, А НЕ БЕЛАЯ СТЕНА (мокап overview3, экран 02). Колонка была
-       сплошной заливкой #FFFFFF: на градиентном фоне она читалась вырезанным
-       белым прямоугольником, и вся идея «витража» кончалась на её кромке.
-       Теперь это та же полупрозрачная поверхность, что у виджетов, — фон
-       страницы виден сквозь неё, а кромка держится светлым волоском. */
+    /* ---------- Корпус: ВШИТЫЙ (мокап В4–В6) ----------
+       Колонка сидит прямо на фоне приложения: ни заливки, ни стекла, ни
+       кромки — тон фона и есть её полотно, карточность забирает контент.
+       Прежнее стекло с blur снято вместе с правой границей. */
     #sbPanel {
         flex-direction: row;
         width: var(--sbr-w);
         flex: 1 1 auto;
         height: 100%;
-        background: var(--sbr-glass, var(--sbr-card));
-        -webkit-backdrop-filter: blur(18px) saturate(1.3);
-        backdrop-filter: blur(18px) saturate(1.3);
+        background: transparent;
         border-radius: 0;
-        border-right: 1px solid var(--sbr-glass-edge, var(--sbr-line));
+        border-right: 0;
         box-shadow: none;
         overflow: hidden;
         transition: width 0.26s ease;
         color: var(--sbr-ink);
         font-family: var(--font-ui, 'Inter', sans-serif);
     }
-    body.dark-mode #sbPanel { background: var(--sbr-glass, var(--sbr-card)); }
+    body.dark-mode #sbPanel { background: transparent; }
     body:not(.sb-collapsed) #sbPanel,
     body.sb-collapsed #sbPanel { width: var(--sbr-w); }
     body.sb-rail #sbPanel { width: var(--sbr-rail-w); }
@@ -171,7 +173,7 @@
        («Madame » + «Solomi'na») — им достаточно сменить кегль и тон. */
     #sbHead {
         flex: 0 0 auto;
-        padding: 20px 18px 0;
+        padding: 16px 16px 0;
         border-bottom: 0;
         margin-bottom: 0;
         justify-content: flex-start;
@@ -206,39 +208,49 @@
     body.dark-mode #sbHead .sb-logo-mark {
         flex: none;
         width: 34px; height: 34px;
-        border-radius: 11px;
+        border-radius: 10px;
         display: grid;
         place-items: center;
-        background: linear-gradient(180deg, #232B3B 0%, #141A26 100%);
-        color: #F1F6FB;
+        background: #171A22;
+        color: #FFFFFF;
         font-family: var(--font-title, Georgia, serif);
         font-size: 17px;
         font-weight: 400;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+                    0 1px 2px rgba(16, 24, 40, 0.2);
     }
-    /* тёмная: тёмный знак на тёмном поле пропадает — инвертируем */
+    /* тёмная: тёмный знак на тёмном поле пропадает — инвертируем (мокап В5) */
     body.dark-mode #sbHead .sb-logo-mark {
-        background: #E9EEF8;
-        color: #0A0E15;
+        background: #E9EDF6;
+        color: #12151D;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
     }
-    #sbHead .sb-logo-text { display: block; opacity: 1 !important; min-width: 0; }
-    /* Марка в ОДНУ строку. У визарда шапка двухэтажная («надстрочник + Georgia»),
-       но здесь этажи занимало имя продукта, а не название раздела, и второй этаж
-       читался подписью ни к чему. Слова разделены не кеглем, а тоном: «Madame»
-       приглушено, «Solomi'na» — чернила. Инлайновые font-weight из разметки
-       перебиваем !important. */
+    #sbHead .sb-logo-text { display: flex; flex-direction: column; opacity: 1 !important; min-width: 0; line-height: 1.12; }
+    /* Марка ДВУМЯ этажами (мокап В4–В6): имя 14px Inter — «Madame» лёгким
+       начертанием, «Solomi'na» жирным, — а под ним надстрочник TERMINAL
+       моноширинной капителью. Инлайновые font-weight разметки (300/800)
+       совпадают с мокапом и остаются как есть. */
     #sbHead .sb-logo-name {
         display: block;
-        font-family: var(--font-title, Georgia, serif);
-        font-size: 18px;
-        font-weight: 400;
+        font-family: var(--font-ui, 'Inter', sans-serif);
+        font-size: 14px;
+        font-weight: 800;
         letter-spacing: -0.01em;
-        line-height: 1.15;
+        line-height: 1.12;
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
         color: var(--sbr-ink);
     }
-    #sbHead .sb-logo-name > span:first-child { font-weight: 400 !important; color: var(--sbr-mut); }
-    #sbHead .sb-logo-name > span:last-child  { font-weight: 700 !important; }
-    #sbHead .sb-logo-sub { display: none; }
+    #sbHead .sb-logo-sub {
+        display: block;
+        font-family: var(--font-num, 'JetBrains Mono', monospace);
+        font-size: 9.5px;
+        font-weight: 600;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--sbr-dim);
+    }
 
     /* Квадрат с «M» — кнопка обновления страницы (клик по имени по-прежнему
        ведёт на Главную), поэтому у него своя реакция на наведение */
@@ -259,28 +271,32 @@
         display: block;            /* базовое правило выше гасит узел на мобиле */
         position: relative;
         flex: 0 0 auto;
-        margin: 20px 8px 0;
+        margin: 16px 12px 0;
         font-family: var(--font-ui, 'Inter', sans-serif);
     }
-    /* кнопка живёт только в рейке 84px — там полю негде развернуться */
+    /* кнопка живёт только в рейке 80px — там полю негде развернуться */
     #sbCmdBtn { display: none; }
+    /* Поле — белая пилюля с волосяной рамкой (мокап): на прозрачной колонке
+       заливка «page» перестала существовать, полем поверх фона стоит карточка. */
     #sbSearchField {
         display: flex;
         align-items: center;
-        gap: 9px;
+        gap: 8px;
         box-sizing: border-box;
         width: 100%;
-        height: 38px;
-        padding: 0 12px;
-        border-radius: 11px;
-        background: var(--sbr-page);
+        height: 36px;
+        padding: 0 10px;
+        border-radius: 10px;
+        background: var(--sbr-card);
+        border: 1px solid var(--sbr-line);
         color: var(--sbr-dim);
-        transition: box-shadow 0.15s ease, background 0.15s ease;
+        transition: box-shadow 0.15s ease, border-color 0.15s ease;
     }
-    #sbCmd:hover #sbSearchField { background: color-mix(in srgb, var(--sbr-sel) 6%, var(--sbr-page)); }
+    body.dark-mode #sbSearchField { background: rgba(255, 255, 255, 0.05); }
+    #sbCmd:hover #sbSearchField { border-color: var(--sbr-dim); }
     /* палитра развёрнута — поле держит фокусную рамку, пока она открыта */
     #sbCmd.on #sbSearchField {
-        background: var(--sbr-card);
+        border-color: transparent;
         box-shadow: inset 0 0 0 1.5px var(--sbr-sel);
     }
     #sbSearchField > svg {
@@ -308,14 +324,14 @@
        «нажми ⌘K» тому, кто уже внутри поля, незачем. */
     #sbCmdKey {
         flex: none;
-        padding: 2px 6px;
+        padding: 2px 5px;
         border-radius: 6px;
-        background: var(--sbr-card);
+        background: transparent;
         box-shadow: 0 0 0 1px var(--sbr-line);
         font-family: var(--font-num, 'JetBrains Mono', monospace);
-        font-size: 9.5px;
-        font-weight: 700;
-        color: var(--sbr-mut);
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--sbr-dim);
     }
     #sbCmd.on #sbCmdKey { display: none; }
 
@@ -339,9 +355,9 @@
         flex: 0 0 auto;
         display: flex;
         flex-direction: column;
-        gap: 1px;
+        gap: 2px;
         overflow: visible;
-        padding: 26px 8px 16px;
+        padding: 16px 12px 12px;
     }
     #sbNav .sb-group { display: contents; }
     /* ПЛОСКИЙ СПИСОК ЖИВЁТ ВНУТРИ #sbNav. display:contents отдаёт его строки
@@ -388,42 +404,33 @@
         flex-wrap: nowrap;
         align-items: center;
         justify-content: flex-start;
-        gap: 12px;
+        gap: 10px;
         width: auto;
         min-width: 0;
-        height: 44px;
+        height: 38px;
         padding: 0 10px;
-        border-radius: 12px;
+        border-radius: 10px;
         background: transparent;
-        /* НЕАКТИВНЫЕ РАЗДЕЛЫ ПРИГЛУШЕНЫ. Первая редакция красила чернилами все
-           шесть — и колонка читалась шестью чёрными полосами, в которых
-           активный раздел терялся, а весь второй уровень уходил в серый фон.
-           Навигация не должна быть самым тёмным пятном экрана: голос ей даёт
-           РАЗМЕР (44px строки), а чернила — только там, где вы сейчас
-           находитесь. Кегль 13px — по мокапу «Обзора» р2 (просьба владельца
-           2026-07-30; было 14,5px — строки звучали громче контента). */
-        color: var(--sbr-mut);
+        /* строка 38px, кегль 13,5 — ровно мокап В4; обычный пункт — средне-серый
+           --sbr-item, приглушённее чернил, но темнее прежнего mut */
+        color: var(--sbr-item);
         font-family: var(--font-ui, 'Inter', sans-serif);
-        font-size: 13px;
+        font-size: 13.5px;
         font-weight: 600;
         letter-spacing: -0.005em;
         text-align: left;
     }
-    /* Кружок делает сама иконка: padding+radius на <svg> работают, viewBox
-       масштабируется внутрь content-box. ОБВОДКИ БОЛЬШЕ НЕТ — пять колец подряд
-       несли значение только у одного; кружок рисуется заливкой и только у
-       активного раздела. */
+    /* КРУЖКОВ БОЛЬШЕ НЕТ (мокап В4–В6): иконка — голый глиф 18px тоном mut,
+       у активного пункта — чернила. Язык маркировки один: белая карточка. */
     #sbNav .sb-item > svg {
         flex: none;
         box-sizing: border-box;
-        width: 30px; height: 30px;
-        padding: 5px;
+        width: 18px; height: 18px;
+        padding: 0;
         border: 0;
-        border-radius: 50%;
+        border-radius: 0;
         background: transparent;
-        /* в тон своей строке, а не отдельным серым: иначе при тёмном имени
-           иконка выглядела бледнее текста и строка распадалась надвое */
-        color: currentColor;
+        color: var(--sbr-mut);
     }
     /* Имя раздела в 190px строки. Переименование из админки (js/tab-gates.js)
        больше не ломает подпись: «Академия Ребалансировки» помещается целиком —
@@ -447,31 +454,29 @@
     /* Ховер держит всю строку (решение 29.07 про размер мишени в силе). */
     #sbNav .sb-item:hover,
     body.dark-mode #sbNav .sb-item:hover {
-        background: color-mix(in srgb, var(--sbr-page) 55%, transparent);
+        background: var(--sbr-page);
         color: var(--sbr-ink);
     }
-    #sbNav .sb-item:hover > svg { background: var(--sbr-page); color: var(--sbr-ink); }
-    /* АКТИВНЫЙ РАЗДЕЛ ПОМЕЧЕН ТРИЖДЫ — пилюлей, залитым кружком и начертанием.
-       Избыточность здесь намеренная: «где я нахожусь» — единственный вопрос, на
-       который навигация обязана отвечать мгновенно, а не при сравнении. У
-       подвкладки маркер остаётся один (пилюля), и спорить ему больше не с чем. */
-    /* Пилюля выбранного — ЧИСТЫЙ цвет страницы. Тонировать её зеленью пробовали
-       (9% акцента, чтобы связать с кружком внутри) — владелец отказал: зелёного
-       в колонке достаточно одного, в кружке. Не возвращать. */
+    #sbNav .sb-item:hover > svg { color: var(--sbr-ink); }
+    /* АКТИВНЫЙ РАЗДЕЛ — БЕЛАЯ КАРТОЧКА С МЯГКОЙ ТЕНЬЮ (мокап В4): заливок,
+       кружков и левых полос нет, карточка — единственный маркер. В тёмной теме
+       карточка — ступень светлоты поверхности (#232836), тень глуше. */
     #sbNav .sb-item.active,
-    body.dark-mode #sbNav .sb-item.active { background: var(--sbr-page); }
-    #sbNav .sb-item.active > svg {
-        background: var(--sbr-sel);
-        border-color: var(--sbr-sel);
-        color: var(--sbr-sel-ic);
+    body.dark-mode #sbNav .sb-item.active {
+        background: var(--sbr-card);
+        box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 5px 14px -6px rgba(16, 24, 40, 0.12);
     }
-    #sbNav .sb-item.active .sb-label { color: var(--sbr-ink); font-weight: 700; }
+    body.dark-mode #sbNav .sb-item.active {
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 5px 14px -6px rgba(0, 0, 0, 0.5);
+    }
+    #sbNav .sb-item.active > svg { color: var(--sbr-ink); }
+    #sbNav .sb-item.active .sb-label { color: var(--sbr-ink); font-weight: 600; }
     /* Тёмная тема ОБЯЗАТЕЛЬНА в списке селекторов: правило приглушения выше
        написано парой «#sbNav .sb-item, body.dark-mode #sbNav .sb-item», и его
        тёмная половина специфичнее одиночной .active — без этой строки активный
        раздел в тёмной теме оставался бы приглушённым. */
     #sbNav .sb-item.active,
-    body.dark-mode #sbNav .sb-item.active { color: var(--sbr-ink); font-weight: 700; }
+    body.dark-mode #sbNav .sb-item.active { color: var(--sbr-ink); }
     /* КЛАВИАТУРА: по колонке ходят стрелки (onSbKey в js/sidebar.js), и фокус
        обязан быть виден — иначе ход есть, а где ты стоишь, непонятно. Обводка
        та же, что у второго уровня и табло: один язык выделения на всю колонку. */
@@ -483,60 +488,154 @@
     #sbNav .sb-chev,
     #sbNav .sb-subs { display: none; }
 
-    /* Счётчик в строке первого уровня — та же справка, что и во втором уровне:
-       10,5px, табличные цифры, тон текста. Правый край общий у всех строк. */
+    /* Счётчик в строке первого уровня — ИНДИГОВАЯ ПИЛЮЛЯ (мокап): счёт — не
+       тревога; тревога (дрейф) — янтарная, см. .sb-badge ниже. */
     #sbNav .sb-n {
+        flex: none;
+        margin-left: auto;
+        min-width: 20px; height: 19px;
+        padding: 0 6px;
+        box-sizing: border-box;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        background: var(--sbr-badge-bg);
+        color: var(--sbr-badge-tx);
+        font-family: var(--font-num, 'JetBrains Mono', monospace);
+        font-variant-numeric: tabular-nums;
+        font-size: 10.5px;
+        font-weight: 700;
+        line-height: 1;
+    }
+    /* ---------- «ЕЩЁ» — ОДЕТАЯ СТРОКА-КНОПКА (мокап, раунд 4) ----------
+       Не голая капитель и не тихая строка: рамка-призрак, три точки, счёт
+       скрытых разделов пилюлей, шеврон-переворот. Раскрытые пункты ложатся в
+       «карман» .sb-morebox с лёгкой заливкой, подпись меняется на «Свернуть». */
+    #sbNav .sb-more,
+    body.dark-mode #sbNav .sb-more {
+        height: 34px;
+        margin: 10px 0 2px;
+        padding: 0 10px;
+        border: 1px solid var(--sbr-line);
+        border-radius: 10px;
+        color: var(--sbr-mut);
+        font-size: 12.5px;
+        font-weight: 600;
+    }
+    #sbNav .sb-more:hover,
+    body.dark-mode #sbNav .sb-more:hover { background: var(--sbr-page); color: var(--sbr-ink); }
+    #sbNav .sb-more .sb-mdots { width: 16px; height: 16px; }
+    #sbNav .sb-more .sb-mdots circle { fill: currentColor; stroke: none; }
+    #sbNav .sb-more .sb-cnt {
+        flex: none;
+        min-width: 20px; height: 19px;
+        padding: 0 6px;
+        box-sizing: border-box;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        background: color-mix(in srgb, var(--sbr-mut) 13%, transparent);
+        color: var(--sbr-mut);
+        font-family: var(--font-num, 'JetBrains Mono', monospace);
+        font-variant-numeric: tabular-nums;
+        font-size: 10.5px;
+        font-weight: 700;
+        line-height: 1;
+    }
+    #sbNav .sb-more .sb-mch { width: 13px; height: 13px; color: var(--sbr-dim); transition: transform 0.16s ease; }
+    #sbNav .sb-more.open .sb-mch { transform: rotate(180deg); }
+    /* «карман» раскрытых пунктов */
+    #sbNav .sb-morebox {
+        margin: 2px 0;
+        padding: 3px;
+        border-radius: 12px;
+        background: rgba(28, 32, 42, 0.04);
+    }
+    body.dark-mode #sbNav .sb-morebox { background: rgba(255, 255, 255, 0.05); }
+    #sbNav .sb-morebox .sb-item { height: 34px; font-size: 13px; border-radius: 9px; }
+    /* в рейке 80px «Ещё» и карман не показываются (мокап В6) */
+    body.sb-rail #sbNav .sb-more,
+    body.sb-rail #sbNav .sb-morebox { display: none; }
+
+    /* ---------- ОТКРЫТЫЕ ПОРТФЕЛИ ПОД «МОИ ПОРТФЕЛИ» (мокап В4–В5) ----------
+       Строки того же ряда, что разделы: цветная точка-маркер стоит по оси
+       иконок, имя, день — тихим моно у правого края. Наполняет portsHtml
+       (js/sidebar-ctx.js) из PF.sbSideModel; шеврон на строке раздела
+       складывает список (persist sb_ports_v1). */
+    #sbNav .sb-ports { display: flex; flex-direction: column; }
+    #sbNav .sb-ports .sb-item.sb-port,
+    body.dark-mode #sbNav .sb-ports .sb-item.sb-port {
+        height: 30px;
+        font-size: 13px;
+        font-weight: 500;
+        border-radius: 10px;
+        border: 0;
+        cursor: pointer;
+    }
+    .sb-pdot {
+        flex: none;
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        margin: 0 5px;
+        background: var(--pc, var(--sbr-sel));
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--pc, var(--sbr-sel)) 16%, transparent);
+    }
+    #sbNav .sb-port .sb-chg {
         flex: none;
         margin-left: auto;
         font-family: var(--font-num, 'JetBrains Mono', monospace);
         font-variant-numeric: tabular-nums;
         font-size: 10.5px;
         font-weight: 600;
-        color: var(--sbr-mut);
+        color: var(--sbr-up);
     }
-    /* «Ещё N разделов» — не пункт, а обещание показать остальные: тише прочих
-       строк и без активного состояния. Шеврон разворачивается вместе со списком. */
-    #sbNav .sb-more,
-    body.dark-mode #sbNav .sb-more { color: var(--sbr-dim); font-weight: 600; }
-    #sbNav .sb-more > svg { transition: transform 0.16s ease; }
-    #sbNav .sb-more.open > svg { transform: rotate(180deg); }
-    /* в рейке 84px «Ещё» не нужно: подпись «Ещё 5 разделов» под кружком
-       читалась бы разделом с таким именем */
-    body.sb-rail #sbNav .sb-more,
-    body.sb-rail #sbNav .sb-n { display: none; }
+    #sbNav .sb-port .sb-chg.neg { color: var(--sbr-dn); }
+    /* активный портфель (его вкладка открыта) — тихая пилюля, не карточка:
+       карточка в колонке одна, у активного РАЗДЕЛА */
+    #sbNav .sb-port.on,
+    body.dark-mode #sbNav .sb-port.on { background: var(--sbr-page); color: var(--sbr-ink); }
+    /* шеврон-складка на строке «Мои портфели» */
+    #sbNav .sb-pchev {
+        flex: none;
+        display: grid;
+        place-items: center;
+        width: 18px; height: 18px;
+        margin-left: 2px;
+        color: var(--sbr-dim);
+        cursor: pointer;
+    }
+    #sbNav .sb-pchev svg { width: 13px; height: 13px; transition: transform 0.16s ease; }
+    #sbNav .sb-pchev.open svg { transform: rotate(180deg); }
+    body.sb-rail #sbNav .sb-ports,
+    body.sb-rail #sbNav .sb-pchev { display: none; }
 
-    /* Бейдж на кружке (дрейф долей за порогом у «Ребаланса»). Кружок —
-       .sb-item > svg, у <svg> потомков-элементов разметки нет, поэтому метка
-       живёт отдельным узлом и позиционируется от строки. */
+    /* Метка дрейфа у «Ребаланса» — ЯНТАРНАЯ ПИЛЮЛЯ в ряду с индиговыми (мокап):
+       не кружок на иконке, а счёт у правого края. Янтарь, а не красный
+       (доведение 2026-07-29): дрейф — повод зайти в мастер, не поломка.
+       Узел, счёт и PF.DRIFT_THR прежние — меняется только одежда. */
     #sbNav .sb-item { position: relative; }
     #sbNav .sb-badge {
-        display: block;            /* базовое правило выше гасит метку на мобиле */
-        position: absolute;
-        /* якорь — правый верхний угол кружка. В строке кружок стоит слева и на
-           месте: 10px паддинга + 30px кружка = правый край на 40, метка шириной
-           15 начинается на 31. От центра ячейки считать больше нечего — сетки
-           с её 50% нет. */
-        top: 5px; left: 31px;
-        min-width: 15px; height: 15px;
-        padding: 0 3px;
+        display: grid;             /* базовое правило выше гасит метку на мобиле */
+        place-items: center;
+        position: static;
+        flex: none;
+        margin-left: auto;
+        min-width: 20px; height: 19px;
+        padding: 0 6px;
         box-sizing: border-box;
-        border: 2px solid var(--sbr-card);
-        border-radius: 8px;
-        /* ЯНТАРНЫЙ, А НЕ КРАСНЫЙ (доведение 2026-07-29): дрейф долей — не
-           поломка, а повод зайти в мастер. Красный в проекте говорит об
-           ошибке и отказе, и метка на разделе кричала громче события.
-           Узел, счёт и PF.DRIFT_THR прежние — меняется только тон. */
-        background: #C2760A;
-        color: #fff;
+        border: 0;
+        border-radius: 999px;
+        background: var(--sbr-amb-bg);
+        color: var(--sbr-amb);
         font-family: var(--font-num, 'JetBrains Mono', monospace);
-        font-size: 9px;
+        font-variant-numeric: tabular-nums;
+        font-size: 10.5px;
         font-weight: 700;
-        line-height: 11px;
+        line-height: 1;
         text-align: center;
     }
-    body.dark-mode #sbNav .sb-badge { background: #E0A33E; color: #1A0B0B; }
-    /* на активной ячейке обводка метки берёт цвет пилюли, а не поля */
-    #sbNav .sb-item.active .sb-badge { border-color: var(--sbr-page); }
+    /* бейдж и счётчик в одной строке: авто-отступ достаётся первому */
+    #sbNav .sb-badge ~ .sb-n { margin-left: 6px; }
 
     /* ---------- Второй уровень: блок ПОД СЕТКОЙ ----------
        Узел #sbCtx ставит js/sidebar-ctx.js сразу за #sbNav (в разметке он
@@ -925,9 +1024,10 @@
         stroke-linecap: round; stroke-linejoin: round;
     }
 
-    /* ---------- Подвал: раздел + ЛИЧНОЕ ----------
-       Две строки: сверху «Настройки» раздела и свёртка (как было), снизу —
-       аватар кабинета, звоночек и поиск, приехавшие из снятой шапки сайта. */
+    /* ---------- Подвал: ОДНА СТРОКА ПРОФИЛЯ (мокап В4–В6) ----------
+       Профиль слева (аватар + имя/роль), справа — ОТДЕЛЬНЫЙ звоночек и
+       ОТДЕЛЬНАЯ шестерёнка. Их содержимое — поповеры по клику (меню кабинета,
+       #nfPanel), постоянной панели нет, поэтому и сворачивать нечего. */
     #sbRailFoot {
         display: flex;
         flex-direction: column;
@@ -937,56 +1037,93 @@
         width: auto;
         margin-top: auto;
         flex: 0 0 auto;
-        /* 18px по бокам — тот же левый край, что у марки, капитала и разделов;
-           16 давало аватару собственную кромку */
-        padding: 12px 18px 16px;
+        padding: 10px 16px 14px;
         border-top: 1px solid var(--sbr-line);
     }
-    #sbRailFoot .sbf-main { display: flex; align-items: center; gap: 4px; }
     #sbRailFoot .sbc-it { font-size: 12px; }
-    /* В РАЗВЁРНУТОЙ КОЛОНКЕ ВЕРХНЕГО РЯДА ПОДВАЛА НЕТ (просьба владельца
-       2026-07-28). Свернуть колонку теперь можно шевроном у имени (#sbHeadCollapse),
-       а «Настройки» переехали шестерёнкой в ряд личного — ряд остался бы пустой
-       полосой с чертой. В рейке ряд ЖИВ: там это единственный способ вернуть
-       колонку, а шеврона у имени в 84px нет. */
-    body:not(.sb-rail) #sbRailFoot .sbf-main { display: none; }
+    /* КНОПКИ РАЗВОРОТА В ПОДВАЛЕ БОЛЬШЕ НЕТ НИГДЕ (мокап, раунд 3): свёртка —
+       двойной шеврон в шапке, разворот рейки — клик по марке «M» (markExpands
+       в js/sidebar.js). Ряд .sbf-main остаётся в разметке пустой командой. */
+    #sbRailFoot .sbf-main { display: none; }
 
-    /* ---------- Личное: аватар · звоночек · лупа ----------
-       Ряд не перестраивается при открытии поиска: поле ложится ПОВЕРХ него
-       (position:absolute), поэтому лупа остаётся ровно там же, где была, а
-       аватар и звоночек уходят фейдом, не дёргая раскладку. */
+    /* ---------- Личное: аватар · имя/роль · звоночек · шестерёнка ----------
+       Порядок мокапа против порядка DOM держат order'ы: слот отдаёт своих
+       детей ряду (display:contents), имя #sbUserName встаёт между аватаром и
+       звоночком. */
     #sbPersonal {
         position: relative;
         display: flex;         /* базовое правило выше гасит ряд на мобиле */
         align-items: center;
-        gap: 4px;
+        gap: 8px;
         min-height: 34px;
     }
-    #sbPersonalSlot { display: flex; align-items: center; gap: 4px; flex: 1 1 auto; min-width: 0; }
-    /* аватар и звоночек приезжают из шапки со своими стилями — приводим к
-       языку колонки: те же 30px кружки, что у служебных кнопок подвала */
-    #sbPersonalSlot #topProfileBtn,
-    #sbPersonalSlot #nfBell {
+    #sbPersonalSlot { display: contents; }
+    #sbPersonalSlot #topProfileBtn {
+        order: 1;
         position: relative;
-        width: 30px; height: 30px;
-        min-width: 30px;
+        width: 28px; height: 28px;
+        min-width: 28px;
         margin: 0;
         flex: none;
     }
-    #sbPersonalSlot #nfBell svg { width: 16px; height: 16px; }
-    /* шестерёнка «Настроек» раздела — тот же кружок, что у лупы; видимость и
-       адрес перехода ставит footSync (js/sidebar-ctx.js) */
-    #sbSettingsBtn {
+    /* точка-статус «сессия жива» на аватаре (мокап): зелёная, с ободком цвета
+       карточки; класс authed ставит userSync (js/sidebar-ctx.js) */
+    #sbPersonal.authed #topProfileBtn::after {
+        content: '';
+        position: absolute;
+        right: -1px; bottom: -1px;
+        width: 9px; height: 9px;
+        border-radius: 50%;
+        background: var(--sbr-up);
+        border: 2px solid var(--sbr-card);
+    }
+    /* имя и роль — из userSync (js/sidebar-ctx.js) */
+    #sbUserName {
+        order: 2;
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        line-height: 1.15;
+    }
+    #sbUserName b {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--sbr-ink);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    #sbUserName span {
+        font-size: 10.5px;
+        color: var(--sbr-dim);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    #sbPersonalSlot #nfBell {
+        order: 3;
+        position: relative;
+        width: 32px; height: 32px;
+        min-width: 32px;
+        margin: 0;
         flex: none;
-        width: 30px; height: 30px;
+    }
+    #sbPersonalSlot #nfBell svg { width: 17px; height: 17px; }
+    /* шестерёнка «Настроек» раздела — отдельная кнопка у правого края;
+       видимость и адрес перехода ставит footSync (js/sidebar-ctx.js) */
+    #sbSettingsBtn {
+        order: 4;
+        flex: none;
+        width: 32px; height: 32px;
         display: grid;
         place-items: center;
-        margin-left: auto;
+        margin-left: 0;
         padding: 0;
         border: 0;
         border-radius: 9px;
         background: transparent;
-        color: var(--sbr-dim);
+        color: var(--sbr-mut);
         cursor: pointer;
         transition: background 0.15s ease, color 0.15s ease, opacity 0.14s ease;
     }
@@ -1026,17 +1163,18 @@
     body:not(.sb-rail) #sbRailFoot .sbc-btn svg { transform: rotate(180deg); }
 
     /* =================================================================
-       СВЁРНУТОЕ СОСТОЯНИЕ — рейка 84px (мокап Л1 «Кружок + подпись»).
+       СВЁРНУТОЕ СОСТОЯНИЕ — рейка 80px (мокап В6 «Свёрнутый вшитый»).
        Сюда же попадает «Главная»: колонка во всю высоту на манифесте
        поверх живой карты читалась бы чужой (признак ставит sidebar.js).
 
-       Рейка говорит ЯЗЫКОМ КОЛОНКИ: раздел — тот же кружок-иконка, только
-       36px вместо 29, активный помечен той же зелёной заливкой. Прежняя
-       рейка меняла язык на голые иконки, и свёртка читалась не сужением
-       меню, а другим меню. Риска у левого края экрана снята: метка обязана
-       принадлежать пункту, а не краю окна.
+       Рейка ИКОННАЯ: плитки 40px без подписей, активный раздел — та же
+       белая карточка, что в колонке; счётчики сжимаются в точки тех же
+       цветов (индиго = счёт, янтарь = дрейф). Прежние кружки с подписями
+       сняты вместе с зелёной заливкой — язык маркировки один на оба
+       состояния. Отдельной стрелки разворота нет: колонку возвращает клик
+       по марке «M» (markExpands в js/sidebar.js).
        ================================================================= */
-    body.sb-rail #sbHead { padding: 18px 0 12px; justify-content: center; }
+    body.sb-rail #sbHead { padding: 16px 0 0; justify-content: center; }
     body.sb-rail #sbHead #sbLogo { justify-content: center; gap: 0; }
     body.sb-rail #sbHead .sb-logo-text { display: none; }
     /* В СВЁРНУТОЙ РЕЙКЕ КАПИТАЛА НЕТ. Чип «1,46 млн / +0,8%» из мокапа Б+3 был
@@ -1053,85 +1191,75 @@
         overflow: visible;
         align-items: center;
         gap: 2px;
-        padding: 6px 4px 10px;
+        padding: 14px 0 10px;
     }
     body.sb-rail #sbNav::after { display: none; }
-    /* В рейке ячейка снова вертикальная и кружок стоит по центру — значит и
-       якорь метки снова центр, а не левый край строки (см. базовое правило). */
-    body.sb-rail #sbNav .sb-badge { top: 6px; left: 50%; margin-left: 10px; }
     body.sb-rail #sbNav .sb-item,
     body.dark-mode.sb-rail #sbNav .sb-item {
-        flex-direction: column;
+        flex-direction: row;
         flex-wrap: nowrap;
         align-items: center;
         justify-content: center;
-        gap: 7px;
-        width: 76px;
-        /* height:auto ОБЯЗАТЕЛЕН: в развёрнутой колонке строка раздела ростом
-           44px, и без сброса рейка унаследовала бы её высоту вместе с подписью
-           под кружком — ячейка не влезла бы в собственный рост. */
-        height: auto;
-        padding: 7px 0 8px;
-        border-radius: 14px;
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 0;
-        text-align: center;
-        color: var(--sbr-mut);
+        gap: 0;
+        width: 40px;
+        height: 38px;
+        padding: 0;
+        border-radius: 10px;
+        color: var(--sbr-item);
         background: transparent;
     }
-    /* кружок 36px: 36 − 2×1,5 обводки − 2×7,5 паддинга = иконка 18px */
+    /* иконка — тот же голый глиф 18px, что и в колонке */
     body.sb-rail #sbNav .sb-item > svg {
-        width: 36px; height: 36px;
-        padding: 7.5px;
-        border: 1.5px solid var(--sbr-line);
-        border-radius: 50%;
-        background: var(--sbr-card);
-        color: var(--sbr-dim);
-    }
-    /* Подпись раздела. NB: имя вкладки МОЖНО ПЕРЕИМЕНОВАТЬ из админки
-       (js/tab-gates.js), и в проде уже есть «Академия Ребалансировки» — она
-       просит 185px и не влезает ни в какую рейку. Раньше её ломало на две
-       строки, отчего ряд скакал по высоте; теперь честное многоточие в одну
-       строку, а целиком имя показывает подсказка (title синхронизирует
-       sbTitleSync в sidebar.js — статический title после переименования врал). */
-    body.sb-rail #sbNav .sb-label {
-        flex: none;
-        display: block;
-        max-width: 100%;
-        padding: 0 4px;
-        line-height: 1.2;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        color: inherit;
-    }
-    body.sb-rail #sbNav .sb-item:hover,
-    body.dark-mode.sb-rail #sbNav .sb-item:hover {
+        width: 18px; height: 18px;
+        padding: 0;
+        border: 0;
+        border-radius: 0;
         background: transparent;
-        color: var(--sbr-ink);
+        color: var(--sbr-mut);
     }
-    body.sb-rail #sbNav .sb-item:hover > svg {
-        border-color: var(--sbr-dim);
-        background: var(--sbr-page);
-        color: var(--sbr-ink);
+    /* ПОДПИСЕЙ В РЕЙКЕ НЕТ (мокап В3/В6): рейка иконная, имя раздела — в
+       подсказке (title держит sbTitleSync в js/sidebar.js). */
+    body.sb-rail #sbNav .sb-label { display: none; }
+    body.sb-rail #sbNav .sb-item:hover,
+    body.dark-mode.sb-rail #sbNav .sb-item:hover { background: var(--sbr-page); }
+    body.sb-rail #sbNav .sb-item:hover > svg { color: var(--sbr-ink); }
+    /* активный — та же белая карточка, что в колонке */
+    body.sb-rail #sbNav .sb-item.active,
+    body.dark-mode.sb-rail #sbNav .sb-item.active {
+        background: var(--sbr-card);
+        box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 5px 14px -6px rgba(16, 24, 40, 0.12);
     }
-    body.sb-rail #sbNav .sb-item:hover .sb-label { color: inherit; }
-    body.sb-rail #sbNav .sb-item.active { color: var(--sbr-sel); font-weight: 700; }
-    body.sb-rail #sbNav .sb-item.active .sb-label { color: inherit; font-weight: 700; }
-    body.sb-rail #sbNav .sb-item.active > svg {
-        background: var(--sbr-sel);
-        border-color: var(--sbr-sel);
-        color: var(--sbr-sel-ic);
+    body.dark-mode.sb-rail #sbNav .sb-item.active {
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 5px 14px -6px rgba(0, 0, 0, 0.5);
     }
+    body.sb-rail #sbNav .sb-item.active > svg { color: var(--sbr-ink); }
     body.sb-rail #sbNav .sb-item::before { display: none; }
+    /* счётчики сжимаются в ТОЧКИ тех же цветов (мокап): индиго = счёт,
+       янтарь = требует действия; число остаётся в подсказке строки */
+    body.sb-rail #sbNav .sb-n,
+    body.sb-rail #sbNav .sb-badge {
+        position: absolute;
+        top: 7px; right: 7px;
+        min-width: 0;
+        width: 6px; height: 6px;
+        padding: 0;
+        margin: 0;
+        border-radius: 50%;
+        overflow: hidden;
+        font-size: 0;
+        line-height: 0;
+        background: var(--sbr-badge-tx);
+    }
+    body.sb-rail #sbNav .sb-badge { background: var(--sbr-amb); }
     body.sb-rail #sbCtx { display: none; }
-    /* подвал: волосяная черта и тот же кружок, что у разделов — колонка
-       читается единым ритмом сверху донизу */
+    /* подвал рейки: столбик звоночек · шестерёнка · аватар (мокап В6) над
+       волосяной чертой; никаких кнопок разворота — колонку возвращает марка */
     body.sb-rail #sbRailFoot {
         position: relative;
+        align-items: center;
         justify-content: center;
-        padding: 13px 0 14px;
+        padding: 10px 0 14px;
+        gap: 6px;
         border-top: 0;
     }
     body.sb-rail #sbRailFoot::before {
@@ -1142,59 +1270,45 @@
         width: 28px; height: 1px;
         background: var(--sbr-line);
     }
-    body.sb-rail #sbRailFoot .sbc-btn {
-        width: 36px; height: 36px;
-        border: 1.5px solid var(--sbr-line);
-        border-radius: 50%;
-        background: var(--sbr-card);
-        color: var(--sbr-dim);
-    }
-    body.sb-rail #sbRailFoot .sbc-btn svg { width: 18px; height: 18px; }
-    body.sb-rail #sbRailFoot .sbc-btn:hover {
-        border-color: var(--sbr-dim);
-        background: var(--sbr-page);
-        color: var(--sbr-ink);
-    }
-    /* В 84px три кнопки в ряд не встают — личное складывается в столбик над
-       свёрткой, теми же кружками 36px, что и разделы. Поле поиска в рейке не
-       живёт: ему нужна ширина, а колонка её как раз и не даёт — лупа
-       разворачивает колонку и открывает поиск уже в ней. */
-    body.sb-rail #sbRailFoot { padding: 10px 0 14px; gap: 8px; }
-    body.sb-rail #sbRailFoot .sbf-main { justify-content: center; order: 2; }
     body.sb-rail #sbPersonal {
         flex-direction: column;
-        gap: 4px;
+        gap: 6px;
         min-height: 0;
-        order: 1;
     }
-    body.sb-rail #sbPersonalSlot { flex-direction: column; gap: 4px; flex: none; }
-    /* В РЕЙКЕ 84px КОМАНДНАЯ СТРОКА СВОРАЧИВАЕТСЯ В КНОПКУ. Полю нужна ширина,
+    /* имени в рейке нет, а аватар уезжает В НИЗ столбика (мокап В6: звоночек ·
+       шестерёнка · аватар) — слот отдан ряду через display:contents, порядок
+       правит order */
+    body.sb-rail #sbUserName { display: none; }
+    body.sb-rail #sbPersonalSlot #topProfileBtn { order: 5; }
+    /* В РЕЙКЕ 80px КОМАНДНАЯ СТРОКА СВОРАЧИВАЕТСЯ В КНОПКУ. Полю нужна ширина,
        а рейка её как раз и не даёт: кнопка сперва разворачивает колонку и уже
-       в ней открывает палитру (sbSearchToggle в js/sidebar.js). */
+       в ней открывает палитру (sbSearchToggle в js/sidebar.js). Кнопка — та же
+       белая пилюля с волосяной рамкой, что и поле (мокап В6). */
     body.sb-rail #sbCmd { margin: 12px 0 0; display: grid; place-items: center; }
     body.sb-rail #sbSearchField { display: none; }
     body.sb-rail #sbCmdBtn {
         display: grid;
         place-items: center;
         box-sizing: border-box;
-        width: 36px; height: 36px;
+        width: 40px; height: 36px;
         padding: 0;
-        border: 1.5px solid var(--sbr-line);
-        border-radius: 50%;
+        border: 1px solid var(--sbr-line);
+        border-radius: 10px;
         background: var(--sbr-card);
         color: var(--sbr-dim);
         cursor: pointer;
         transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
     }
+    body.dark-mode.sb-rail #sbCmdBtn { background: rgba(255, 255, 255, 0.05); }
     body.sb-rail #sbCmdBtn svg {
-        width: 17px; height: 17px;
+        width: 15px; height: 15px;
         fill: none; stroke: currentColor; stroke-width: 1.9;
         stroke-linecap: round; stroke-linejoin: round;
     }
-    body.sb-rail #sbCmdBtn:hover { border-color: var(--sbr-dim); background: var(--sbr-page); color: var(--sbr-ink); }
+    body.sb-rail #sbCmdBtn:hover { border-color: var(--sbr-dim); color: var(--sbr-ink); }
     body.sb-rail #sbCmdBtn:focus-visible { outline: 2px solid var(--sbr-sel); outline-offset: 2px; }
-    body.sb-rail #sbPersonalSlot #topProfileBtn,
-    body.sb-rail #sbPersonalSlot #nfBell { width: 36px; height: 36px; min-width: 36px; }
+    body.sb-rail #sbPersonalSlot #topProfileBtn { width: 28px; height: 28px; min-width: 28px; }
+    body.sb-rail #sbPersonalSlot #nfBell { width: 32px; height: 32px; min-width: 32px; }
     /* На «Главной» шапка сайта жива и личное живёт в ней — ряд в подвале пуст,
        и лупа рядом с пустотой была бы вторым поиском на одном экране */
     body.tab-home #sbPersonal { display: none; }
@@ -1208,12 +1322,24 @@
         grid-template-columns: calc(var(--sbr-rail-w) + 14px) minmax(0, 1fr);
     }
     body.tab-home #appShell > #sideBar { padding: 14px 0 14px 14px; }
+    /* корпус в базе стал прозрачным (вшитая посадка) — карточке «Главной»
+       заливку возвращаем явно; пилюли и активная плитка на белом поле берут
+       СПЛОШНОЙ серый (полупрозрачный page на карточке тонул бы) */
     body.tab-home #sbPanel {
         flex: 0 1 auto;
         height: auto;
         border-radius: 20px;
         border-right: 0;
+        background: var(--sbr-card);
+        --sbr-page: #F1F3F8;
         box-shadow: 0 10px 30px rgba(20, 27, 45, 0.10);
+    }
+    /* белая карточка активного на белой карточке рейки невидима — на «Главной»
+       активную плитку метит пилюля цвета страницы, без тени */
+    body.tab-home #sbNav .sb-item.active,
+    body.dark-mode.tab-home #sbNav .sb-item.active {
+        background: var(--sbr-page);
+        box-shadow: none;
     }
     body.dark-mode.tab-home #sbPanel { box-shadow: 0 14px 34px rgba(0, 0, 0, 0.45); }
 
@@ -1227,25 +1353,33 @@
        откатываем те правила тёмной темы, где цвет прибит гвоздями. */
     body.dark-mode.tab-home #sbPanel {
         --sbr-card:  #FFFFFF;
-        --sbr-page:  #F4F6FA;
-        --sbr-ink:   #101828;
-        --sbr-mut:   #64748B;
-        --sbr-dim:   #98A4B4;
-        --sbr-line:  #E7ECF3;
-        --sbr-sel:   #2F6B4F;
+        --sbr-page:  #F1F3F8;
+        --sbr-ink:   #1C202A;
+        --sbr-mut:   #6B7183;
+        --sbr-dim:   #9BA1B3;
+        --sbr-item:  #585F70;
+        --sbr-line:  rgba(28, 32, 42, 0.08);
+        --sbr-sel:   #4453EF;
         --sbr-sel-ic:#FFFFFF;
+        --sbr-badge-bg: #E8EAFB;
+        --sbr-badge-tx: #5158E2;
+        --sbr-amb:   #C2760A;
+        --sbr-amb-bg: rgba(194, 118, 10, 0.13);
+        --sbr-up:    #12A35C;
+        --sbr-dn:    #D8452B;
         background: var(--sbr-card);
     }
     /* марка: на светлом поле снова тёмный знак */
     body.dark-mode.tab-home #sbHead .sb-logo-mark {
-        background: linear-gradient(180deg, #232B3B 0%, #141A26 100%);
-        color: #F1F6FB;
+        background: #171A22;
+        color: #FFFFFF;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+                    0 1px 2px rgba(16, 24, 40, 0.2);
     }
     /* зелёный/красный тёмной темы подняты под тёмное поле — на белом они блёклые.
        Правила табло (.sbcap-*) ушли вместе с ним; остался знак дня у строк. */
     body.dark-mode.tab-home .sbc-chg { color: #16A34A; }
     body.dark-mode.tab-home .sbc-chg.neg { color: #DC2626; }
-    body.dark-mode.tab-home #sbNav .sb-badge { background: #DC2626; color: #fff; }
 
     /* ---------- Марка на странице ровно ОДНА ----------
        Развёрнутая колонка сама пишет «Madame Solomi'na» — вторая такая же в

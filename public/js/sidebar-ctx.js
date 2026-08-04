@@ -45,6 +45,8 @@
         warn:      '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',
         collapse:  '<polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/>',
         chev:      '<polyline points="6 9 12 15 18 9"/>',
+        // три точки — глиф строки-кнопки «Ещё» (мокап сайдбара по референсу)
+        dots:      '<circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/>',
         // шеврон вправо — признак «пилюля нажимается» в табло капитала
         chevr:     '<polyline points="9 5 16 12 9 19"/>',
         // академическая шапочка — вход в шторку #rbxAcademy из блока «Академии»
@@ -349,6 +351,12 @@
                 first = false;
                 return;
             }
+            // ПЕРЕЧЕНЬ «ОТКРЫТЫЕ ПОРТФЕЛИ» УЕХАЛ В ПЕРВЫЙ УРОВЕНЬ (мокап В4–В5,
+            // portsHtml выше): под «Моими портфелями» он и живёт. Печатать его
+            // ещё и вторым уровнем значило бы ставить те же строки дважды в
+            // одной колонке. «Новый портфель» не теряется: он есть кнопкой
+            // «+ Портфель» в углу самой вкладки.
+            if (tab === 'portfolios' && lab === 'Открытые портфели') return;
             if (first) {
                 // «Разделы» — служебное имя группы; вслух блок называется именем
                 // раздела, а его могли переименовать из админки (js/tab-gates.js)
@@ -417,6 +425,40 @@
         var tx = f.tx || 'Настройки';
         if (btn.title !== tx) { btn.title = tx; btn.setAttribute('aria-label', tx); }
         btn.setAttribute('aria-current', f.on ? 'page' : 'false');
+    }
+    // ---- имя и роль в строке подвала (мокап В4–В6) ----
+    // Профиль читается из window.supa (имя из profiles, роль owner/admin из
+    // той же строки); технический email телеграм-аккаунтов не показываем
+    // (см. isTechEmail в js/profile-menu.js). Гость видит «Гость» — аватар
+    // рядом и так ведёт на вход. Класс authed на ряду зажигает зелёную
+    // точку-статус на аватаре (css/sidebar-rail.css).
+    function userSync() {
+        var el = document.getElementById('sbUserName');
+        var pers = document.getElementById('sbPersonal');
+        if (!el) return;
+        var name = '', sub = '', authedNow = false;
+        try {
+            if (window.supa && window.supa.enabled && window.supa.isAuthed()) {
+                authedNow = true;
+                var pr = window.supa.profile || {};
+                var email = pr.email ||
+                    (window.supa.session && window.supa.session.user && window.supa.session.user.email) || '';
+                var tech = email.toLowerCase().indexOf('@telegram.mstelegram.local') !== -1;
+                name = pr.name || (!tech && email ? email.split('@')[0] : 'Кабинет');
+                sub = pr.role === 'owner' ? 'owner'
+                    : pr.role === 'admin' ? 'admin'
+                    : (!tech ? email : '');
+            } else if (window.supa && window.supa.enabled) {
+                name = 'Гость';
+                sub = 'вход — по аватару';
+            } else {
+                // демо-режим без облака: сессии не бывает вовсе — подписи не врём
+                name = 'Кабинет';
+            }
+        } catch (e) { name = 'Кабинет'; }
+        if (pers) pers.classList.toggle('authed', authedNow);
+        var html = '<b>' + esc(name) + '</b>' + (sub ? '<span>' + esc(sub) + '</span>' : '');
+        if (el.__unHtml !== html) { el.innerHTML = html; el.__unHtml = html; }
     }
 
     // ---------- ВЕРХ КОЛОНКИ БОЛЬШЕ НЕ ПОКАЗЫВАЕТ ДАННЫХ ----------
@@ -495,6 +537,48 @@
         try { return localStorage.getItem(FLAT_MORE_KEY) === '1'; } catch (e) { return false; }
     })();
 
+    // ---- ОТКРЫТЫЕ ПОРТФЕЛИ ПОД «МОИ ПОРТФЕЛИ» (мокап В4–В5) ----
+    // Аналог TEAM-списка референса: строки с цветной точкой, именем и днём.
+    // Источник — та же модель, что кормила второй уровень (PF.sbSideModel):
+    // открытые вкладки-портфели, СКРЫТЫЕ (p.hidden, cls 'dim') не печатаются —
+    // список в навигации короткий, скрытое возвращает меню «Видимость».
+    // Пока PF не загружен лениво (#pfLazySrc), списка честно нет — как и
+    // счётчиков: числа не выдумываем.
+    var PORTS_KEY = 'sb_ports_v1';
+    var portsOpen = (function () {
+        try { return localStorage.getItem(PORTS_KEY) !== '0'; } catch (e) { return true; }
+    })();
+    function portsRows() {
+        try {
+            if (!(window.PF && PF.sbSideModel)) return [];
+            var m = PF.sbSideModel();
+            if (!m || !m.groups) return [];
+            var g = null;
+            m.groups.forEach(function (x) { if (x.label === 'Открытые портфели') g = x; });
+            if (!g || !g.items) return [];
+            return g.items.filter(function (it) { return it.act === 'pf' && it.cls !== 'dim'; });
+        } catch (e) { return []; }
+    }
+    function portsHtml() {
+        if (!portsOpen) return '';
+        var rows = portsRows();
+        if (!rows.length) return '';
+        var h = '<div class="sb-ports">';
+        rows.forEach(function (it) {
+            h += '<button type="button" class="sb-item sb-port' + (it.on ? ' on' : '') + '"' +
+                ' data-act="pf" data-key="' + esc(it.key) + '"' +
+                (it.on ? ' aria-current="page"' : '') +
+                (it.title ? ' title="' + esc(it.title) + '"' : '') + '>' +
+                '<span class="sb-pdot" style="--pc:' + esc(it.dot || '') + '"></span>' +
+                '<span class="sb-label">' + esc(it.tx) + '</span>' +
+                (it.chg && it.chg.tx
+                    ? '<span class="sb-chg' + (it.chg.neg ? ' neg' : '') + '">' + esc(it.chg.tx) + '</span>'
+                    : '') +
+                '</button>';
+        });
+        return h + '</div>';
+    }
+
     function plural(n, one, few, many) {
         var m10 = n % 10, m100 = n % 100;
         if (m10 === 1 && m100 !== 11) return one;
@@ -571,6 +655,13 @@
                 plural(drift, 'портфель просит', 'портфеля просят', 'портфелей просят') +
                 ' ребаланса') + '">' + drift + '</span>' : '') +
             (num != null ? '<span class="sb-n">' + esc(num) + '</span>' : '') +
+            // шеврон-складка списка портфелей — только на «Моих портфелях» и
+            // только когда список есть (мокап: клик по шеврону, не по строке)
+            (key === 'ports' && portsRows().length
+                ? '<span class="sb-pchev' + (portsOpen ? ' open' : '') + '" data-act="flatports" data-key=""' +
+                  ' title="' + (portsOpen ? 'Свернуть список портфелей' : 'Показать список портфелей') + '">' +
+                  svg(IC.chev) + '</span>'
+                : '') +
             '</button>';
     }
     // Состав первого уровня одним списком: гость и «Главная» — это фильтры над
@@ -594,20 +685,35 @@
     function flatHtml() {
         var ids = flatIds();
         var h = '';
-        ids.main.forEach(function (id) { h += flatOne(id); });
+        // список открытых портфелей встаёт СРАЗУ ПОД «Моими портфелями»
+        // (мокап В4–В5) — на «Главной» пункта ports нет, и списка там нет тоже
+        ids.main.forEach(function (id) {
+            h += flatOne(id);
+            if (id === 'pf:ports') h += portsHtml();
+        });
         // Считаем ТОЛЬКО то, что реально видно: «Админка» приходит по роли, и в
         // закрытом виде её в счёте «Ещё» быть не должно.
         var hidden = ids.more.filter(function (id) {
             return id.indexOf('pf:') === 0 || !flatTabOff(flatTabNode(id.slice(4)));
         });
         if (!hidden.length) return h;
-        if (flatMoreOpen) hidden.forEach(function (id) { h += flatOne(id); });
+        // «Ещё» — одетая строка-кнопка (мокап, раунд 4): три точки, счёт
+        // скрытых пилюлей, шеврон-переворот; раскрытые пункты ложатся в
+        // «карман» .sb-morebox ПОД кнопкой, подпись меняется на «Свернуть».
         h += '<button type="button" class="sb-item sb-more' + (flatMoreOpen ? ' open' : '') + '"' +
-            ' data-act="flatmore" data-key="" aria-expanded="' + (flatMoreOpen ? 'true' : 'false') + '">' +
-            svg(IC.chev) +
-            '<span class="sb-label">' + (flatMoreOpen ? 'Свернуть'
-                : ('Ещё ' + hidden.length + ' ' + plural(hidden.length, 'раздел', 'раздела', 'разделов'))) +
-            '</span></button>';
+            ' data-act="flatmore" data-key="" aria-expanded="' + (flatMoreOpen ? 'true' : 'false') + '"' +
+            ' title="' + esc(flatMoreOpen ? 'Свернуть'
+                : ('Ещё ' + hidden.length + ' ' + plural(hidden.length, 'раздел', 'раздела', 'разделов'))) + '">' +
+            '<svg class="sb-mdots" viewBox="0 0 24 24" aria-hidden="true">' + IC.dots + '</svg>' +
+            '<span class="sb-label">' + (flatMoreOpen ? 'Свернуть' : 'Ещё') + '</span>' +
+            (flatMoreOpen ? '' : '<span class="sb-cnt">' + hidden.length + '</span>') +
+            '<svg class="sb-mch" viewBox="0 0 24 24" aria-hidden="true">' + IC.chev + '</svg>' +
+            '</button>';
+        if (flatMoreOpen) {
+            h += '<div class="sb-morebox">';
+            hidden.forEach(function (id) { h += flatOne(id); });
+            h += '</div>';
+        }
         return h;
     }
     // Пересборка только при разнице html: тик котировок зовёт нас раз в минуту,
@@ -667,6 +773,7 @@
     // каждую секунду, а живой :hover и фокус в колонке рвать нельзя.
     function sbCtxSync() {
         flatSync();                                 // первый уровень живёт на любой вкладке
+        userSync();                                 // имя/роль в подвале — тоже
         // крошка в шапке несёт подвкладку («Портфели · Обзор»), а меняется та
         // без switchTab — обновляем здесь, на каждом рендере «Портфелей»
         if (window.renderHeaderBadge && typeof currentTab !== 'undefined' && currentTab) {
@@ -687,6 +794,14 @@
             return;
         }
         var html = m.why ? whyHtml() : listHtml(m, tab);
+        // Перечень мог ЦЕЛИКОМ уехать в первый уровень («Открытые портфели» —
+        // мокап В4–В5): пустой блок с волосяной чертой не показываем, но
+        // footSync выше уже отработал — шестерёнка «Настроек» остаётся.
+        if (html === '<div class="sbc-list"></div>') {
+            document.body.classList.remove('sb-ctx');
+            if (host.__sbcHtml) { host.innerHTML = ''; host.__sbcHtml = ''; }
+            return;
+        }
         if (host.__sbcHtml !== html) {
             var ae = document.activeElement;
             var keepKey = ae && host.contains(ae) && ae.getAttribute ? ae.getAttribute('data-key') : null;
@@ -731,6 +846,14 @@
         if (act === 'flatmore') {
             flatMoreOpen = !flatMoreOpen;
             try { localStorage.setItem(FLAT_MORE_KEY, flatMoreOpen ? '1' : '0'); } catch (e) {}
+            flatSync();
+            return;
+        }
+        // шеврон на «Моих портфелях»: складывает список открытых портфелей,
+        // не трогая сам переход (клик по строке остаётся переходом)
+        if (act === 'flatports') {
+            portsOpen = !portsOpen;
+            try { localStorage.setItem(PORTS_KEY, portsOpen ? '1' : '0'); } catch (e) {}
             flatSync();
             return;
         }
@@ -816,7 +939,12 @@
     // вошедший — семь; без подписки на onChange список остался бы гостевым до
     // первой смены вкладки, то есть сразу после входа человек не увидел бы своих
     // портфелей в навигации.
-    try { if (window.supa && window.supa.onChange) window.supa.onChange(flatSync); } catch (e) {}
+    try {
+        if (window.supa && window.supa.onChange) window.supa.onChange(function () {
+            flatSync();
+            userSync();   // вход/выход меняют и имя с ролью в подвале
+        });
+    } catch (e) {}
     // Свой тик бейджа. На «Портфелях» его пересобирает рендер, но на остальных
     // вкладках сайдбар — единственный, кто вообще спрашивает цены: без тика
     // метка дрейфа замерла бы на числе, посчитанном при заходе на вкладку.
