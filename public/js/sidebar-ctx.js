@@ -268,8 +268,11 @@
             // на себя состояние: перечёркнутый глаз внутри того же кружка того же
             // цвета. Правый край строки при этом остаётся под одно число, а
             // переключает видимость по-прежнему кластер по наведению.
+            // цвет портфеля отдаём ПЕРЕМЕННОЙ --pc: из неё css строит и заливку
+            // ядра, и кольцо-гало (мокап В4–В5) — с голым background кольцо
+            // посчитать было бы не из чего
             (it.dot ? '<span class="sbc-dot' + (it.hide && it.hide.off ? ' off' : '') +
-                '" style="background:' + esc(it.dot) + '"' +
+                '" style="--pc:' + esc(it.dot) + '"' +
                 (it.hide && it.hide.off ? ' title="Скрыт с «Обзора»"' : '') + '>' +
                 (it.hide && it.hide.off ? EYEOFF_SVG : '') + '</span>' : '') +
             (icon ? svg(icon) : '') +
@@ -769,6 +772,10 @@
     // Модуль ленивый: switchTab поднимает цепочку #pfLazySrc, но pfxGoTab
     // появляется только ПОСЛЕ неё — поэтому действие ждёт колбэка
     // ensurePortfoliosJs. Тот же договор, что у rbxGoPf в js/rebalance.js.
+    // Куда вернуть по повторному клику на шестерёнке (см. act 'pfx'/'settings').
+    // Живёт в памяти вкладки, а не в localStorage: «откуда я открыл настройки» —
+    // факт этого сеанса, переживать перезагрузку ему незачем.
+    var settingsBack = '';
     function goPf(run) {
         var away = (typeof currentTab === 'undefined') || currentTab !== 'portfolios';
         if (away && window.switchTab) window.switchTab('portfolios');
@@ -825,6 +832,25 @@
             }
             if (window.cxSetMode) window.cxSetMode('mix');
             setTimeout(function () { if (window.r5OpenQuiz) window.r5OpenQuiz(); }, 140);
+            return;
+        }
+        // ШЕСТЕРЁНКА «НАСТРОЕК» — ПЕРЕКЛЮЧАТЕЛЬ, А НЕ ОДНОСТОРОННЯЯ ДВЕРЬ
+        // (доведение 2026-08-04). Кнопка помечается активной (footSync ставит
+        // .on), а повторный клик по подсвеченной кнопке не делал ничего:
+        // pfxGoTab выходит сразу, если подвкладка уже текущая. Возвращаемся
+        // туда, откуда пришли: настройки — единственная подвкладка без своей
+        // строки в колонке, и уйти из них было нечем, кроме соседнего раздела.
+        if (act === 'pfx' && key === 'settings') {
+            var eff = '';
+            try { eff = (window.PF && PF.pfxEffTab) ? PF.pfxEffTab() : ''; } catch (e) { eff = ''; }
+            if (eff === 'settings') {
+                var back = settingsBack || 'overview';
+                settingsBack = '';
+                goPf(function () { if (window.pfxGoTab) window.pfxGoTab(back); });
+            } else {
+                settingsBack = eff;
+                goPf(function () { if (window.pfxGoTab) window.pfxGoTab('settings'); });
+            }
             return;
         }
         if (act === 'pfx') { goPf(function () { if (window.pfxGoTab) window.pfxGoTab(key); }); return; }
