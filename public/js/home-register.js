@@ -532,7 +532,8 @@
     var changes = null;  // {TICKER: изм.% за день}
 
     function jget(url) {
-        return fetch(url, { cache: 'no-store' }).then(function (r) {
+        // через прокси (window.issUrl из core.js): прямой ISS у части пользователей режется
+        return fetch(window.issUrl ? window.issUrl(url) : url, { cache: 'no-store' }).then(function (r) {
             if (!r.ok) throw new Error(url + ' ' + r.status);
             return r.json();
         });

@@ -216,6 +216,9 @@
     // fetch с повтором и экспоненциальной задержкой (устойчивость к флапам сети / 5xx MOEX)
     function fetchRetry(url, opts, tries, delay) {
         tries = tries || 3; delay = delay || 500;
+        // ISS — через прокси (window.issUrl из core.js): прямой iss.moex.com у
+        // части пользователей режется; не-ISS URL хелпер пропускает насквозь
+        if (window.issUrl) url = window.issUrl(url);
         return fetch(url, opts).then(function (r) {
             if (!r.ok) throw new Error('HTTP ' + r.status);
             return r;

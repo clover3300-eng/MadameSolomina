@@ -287,8 +287,12 @@
     // ====================================================================
     //  ЗАГРУЗКА ДАННЫХ
     // ====================================================================
-    function jget(url) { return fetch(url, { cache: 'no-store' }).then(function (r) {
-        if (!r.ok) throw new Error(url + ' ' + r.status); return r.json(); }); }
+    // Все запросы вкладки идут через прокси (window.issUrl из core.js): прямой
+    // iss.moex.com у части пользователей режется (CORS/сеть), и карта с лидерами
+    // висели пустыми. URL строятся прямыми, заворачиваются в момент fetch.
+    function jget(url) {
+        return fetch(window.issUrl ? window.issUrl(url) : url, { cache: 'no-store' }).then(function (r) {
+            if (!r.ok) throw new Error(url + ' ' + r.status); return r.json(); }); }
 
     function fetchConstituents() {
         if (state.constituents) return Promise.resolve(state.constituents);
@@ -818,6 +822,11 @@
         var o = overlay(); if (!o) return;
         o.hidden = false;
         o.innerHTML = 'Не удалось загрузить данные Мосбиржи.<button class="mh-retry" type="button" data-act="retry">Повторить</button>';
+        // «Лидеры дня» кормятся теми же данными — без заметки карточка висела
+        // молчаливо пустой; успешный refresh перерисует body через renderLeaders
+        var el = leadEl(), body = el && el.querySelector('.mh-lead-body');
+        if (body && !body.firstChild) body.innerHTML =
+            '<div class="mh-lg-empty">Мосбиржа недоступна — данные не загрузились</div>';
     }
     function spin(on) {
         var h = hero(), b = h && h.querySelector('.mh-refresh');
@@ -964,7 +973,9 @@
         state.chartRange = v;
         var h = hero();
         if (h) {
-            h.querySelectorAll('.mh-seg-range .mh-seg-btn').forEach(function (b) {
+            // строго [data-range]: сегмент «Линия/Свечи» носит класс mh-seg-range
+            // ради размеров, и без атрибута клик по диапазону гасил его подсветку
+            h.querySelectorAll('.mh-seg-range .mh-seg-btn[data-range]').forEach(function (b) {
                 b.classList.toggle('active', b.getAttribute('data-range') === v);
             });
             var host = h.querySelector('.mh-chart-host');

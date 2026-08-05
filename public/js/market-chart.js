@@ -167,6 +167,9 @@
             '?iss.meta=off&interval=' + cfg.iss +
             '&from=' + dstr(new Date(fromMs)) + '&till=' + dstr(new Date(tillMs)) +
             '&candles.columns=open,close,high,low,begin';
+        // через прокси (window.issUrl из core.js): прямой iss.moex.com у части
+        // пользователей режется (CORS/сеть) и график оставался пустым
+        if (window.issUrl) url = window.issUrl(url);
         return fetch(url, { cache: 'no-store' })
             .then(function (r) { if (!r.ok) throw new Error('candles ' + r.status); return r.json(); })
             .then(function (j) {

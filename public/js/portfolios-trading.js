@@ -4488,9 +4488,10 @@
             // индексы — MOEX ISS (карта рынка уже ходит туда же, CORS открыт)
             var iv = { day: 10, week: 60, month: 24, year: 24, all: 7 }[per[0]] || 24;
             var from = new Date(Date.now() - per[3] * 86400000).toISOString().slice(0, 10);
-            fetch('https://iss.moex.com/iss/engines/stock/markets/index/securities/' +
-                encodeURIComponent(c.key) + '/candles.json?iss.meta=off&interval=' + iv + '&from=' + from,
-                { credentials: 'omit' })
+            // через прокси (window.issUrl из core.js): прямой ISS у части пользователей режется
+            var issU = 'https://iss.moex.com/iss/engines/stock/markets/index/securities/' +
+                encodeURIComponent(c.key) + '/candles.json?iss.meta=off&interval=' + iv + '&from=' + from;
+            fetch(window.issUrl ? window.issUrl(issU) : issU, { credentials: 'omit' })
                 .then(function (r) { if (!r.ok) throw 0; return r.json(); })
                 .then(function (j) {
                     var cd = j && j.candles, cols = (cd && cd.columns) || [], data = (cd && cd.data) || [];
@@ -6099,8 +6100,10 @@
         if (wlData[tk]) return;
         wlData[tk] = 'busy';
         var from = new Date(Date.now() - 45 * 86400000).toISOString().slice(0, 10);
-        fetch('https://iss.moex.com/iss/engines/stock/markets/shares/securities/' + encodeURIComponent(tk) +
-            '/candles.json?iss.meta=off&interval=24&from=' + from, { credentials: 'omit' })
+        // через прокси (window.issUrl из core.js): прямой ISS у части пользователей режется
+        var issU = 'https://iss.moex.com/iss/engines/stock/markets/shares/securities/' + encodeURIComponent(tk) +
+            '/candles.json?iss.meta=off&interval=24&from=' + from;
+        fetch(window.issUrl ? window.issUrl(issU) : issU, { credentials: 'omit' })
             .then(function (r) { if (!r.ok) throw 0; return r.json(); })
             .then(function (j) {
                 var cd = j && j.candles, cols = (cd && cd.columns) || [], data = (cd && cd.data) || [];

@@ -1510,7 +1510,8 @@
     var pfdHeatW = null;    // [{tk, value}] веса по убыванию
     var pfdHeatC = null;    // {TICKER: изм.% за день}
     var pfdHeatTs = 0, pfdHeatLoading = false;
-    function pfhmJget(u) { return fetch(u, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }); }
+    // ISS — через прокси (window.issUrl из core.js): прямой iss.moex.com у части пользователей режется
+    function pfhmJget(u) { return fetch(window.issUrl ? window.issUrl(u) : u, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.json(); }); }
     function pfdHeatLoad(cb) {
         if (pfdHeatLoading) return;
         if (pfdHeatW && pfdHeatC && Date.now() - pfdHeatTs < 60000) { cb && cb(); return; }
@@ -2395,8 +2396,10 @@
             var tk = favSparkQueue.shift(); favSparkActive++;
             (function (tk) {
                 var from = new Date(Date.now() - 31 * 864e5).toISOString().slice(0, 10);
-                fetch('https://iss.moex.com/iss/engines/stock/markets/shares/securities/' + encodeURIComponent(tk) +
-                      '/candles.json?iss.meta=off&interval=24&from=' + from, { credentials: 'omit' })
+                // через прокси (window.issUrl из core.js): прямой ISS у части пользователей режется
+                var u = 'https://iss.moex.com/iss/engines/stock/markets/shares/securities/' + encodeURIComponent(tk) +
+                      '/candles.json?iss.meta=off&interval=24&from=' + from;
+                fetch(window.issUrl ? window.issUrl(u) : u, { credentials: 'omit' })
                     .then(function (r) { if (!r.ok) throw new Error('iss ' + r.status); return r.json(); })
                     .then(function (j) {
                         var c = j && j.candles, cols = (c && c.columns) || [], rows = (c && c.data) || [];

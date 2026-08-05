@@ -307,7 +307,10 @@
         return isNaN(t) ? 0 : t;
     }
     function moexFetch(ticker, mkt, tf, from, to) {
-        return fetch(moexUrl(ticker, mkt, tf, from, to), { credentials: 'omit' })
+        // через прокси (window.issUrl из core.js, НЕ путать с локальным moexUrl):
+        // прямой iss.moex.com у части пользователей режется (CORS/сеть)
+        var u = moexUrl(ticker, mkt, tf, from, to);
+        return fetch(window.issUrl ? window.issUrl(u) : u, { credentials: 'omit' })
             .then(function (r) {
                 if (!r.ok) throw new Error('moex ' + r.status);
                 return r.json();

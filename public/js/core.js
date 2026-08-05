@@ -5,6 +5,15 @@
     // тот же прокси, что и «Рынок», иначе прямой iss.moex.com у части
     // пользователей режется (CORS/сеть) и данные не грузятся.
     window.moexUrl = moexUrl;
+    // Обёртка для ГОТОВОГО прямого URL ISS: модули по-прежнему строят строку
+    // 'https://iss.moex.com/iss/…', а в момент fetch заворачивают её сюда —
+    // запрос уходит через прокси. Не-ISS URL проходит насквозь, так что ей
+    // можно оборачивать любой fetch без разбора адреса.
+    window.issUrl = function (u) {
+        return (typeof u === 'string' && u.indexOf('https://iss.moex.com/') === 0)
+            ? moexUrl(u.slice('https://iss.moex.com'.length))
+            : u;
+    };
 
     // ========== SKELETON LOADER SYSTEM ==========
     function hideSkeleton(id) {
