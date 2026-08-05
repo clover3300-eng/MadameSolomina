@@ -1183,10 +1183,12 @@
             }
             list = '<div class="pfsn-list">' + rows + '</div>';
         }
+        // .pfsc-noarch — архива ещё нет: внутри колонки список прячется целиком,
+        // потому что о пустоте уже сказала плитка «Снимки капитала» над секцией
         return '<div class="pfpt-snaps" id="pfptSnaps-' + p.id + '">' +
             '<div class="pfpt-chart-h"><span class="pfpt-chart-t">Снимки капитала' +
                 '<i>' + (stored ? stored + ' ' + PF.plural(stored, 'снимок', 'снимка', 'снимков') + ' · ' : '') + 'хранится до 400 дней</i></span></div>' +
-            '<div class="pfsc-wrap">' +
+            '<div class="pfsc-wrap' + (s.length < 2 ? ' pfsc-noarch' : '') + '">' +
                 '<div class="pfsc-listcol">' + list + '</div>' +
                 '<aside class="pfsc-side">' + pfxScCalHtml(p, st) + pfxScDayHtml(p, st) + pfxScFreqHtml() + '</aside>' +
             '</div>' +
@@ -1254,11 +1256,12 @@
         if (!card) return;
         // входов два — строка в плитке колонки и плитка узкой ленты; шеврон/подсветка синхронно
         card.querySelectorAll('.pfz-snapo, .pfz-tbtn').forEach(function (b) { b.classList.toggle('on', open); });
+        card.classList.toggle('pfz-snapopen', open);
         var sec = dq('pfptSnaps-' + pid);
         if (!open) { if (sec) sec.remove(); }
         else if (!sec) {
-            var head = card.querySelector('.pfz-strip');
-            if (head) head.insertAdjacentHTML('afterend', pfxPtSnapsHtml(p, calcPf(p)));
+            var side = card.querySelector('.pfz-side');
+            if (side) side.insertAdjacentHTML('beforeend', pfxPtSnapsHtml(p, calcPf(p)));
             // история MOEX для записи задним числом — греем, если карточка портфеля
             // (обычный поставщик chartRaw) с вкладки убрана
             if (!PF.chartRaw[pid]) try { PF.loadPfChart(pid); } catch (e) {}
@@ -1345,8 +1348,16 @@
     // Значка класса у тикера НЕТ (правка 2026-08-05): бумаги и так разложены по
     // группам «Акции»/«Облигации», а полоска доли несёт классовый цвет — метка
     // у каждой строки повторяла это в третий раз.
-    function pfzAsCell(h) {
-        return '<div class="pfpt-as"><b>' + esc(h.ticker) + '</b><span>' + esc(PF.assetDisplayName(h)) + '</span></div>';
+    // Ячейка бумаги ДВУХСТРОЧНАЯ (правка «таблица нагружена, взгляд теряется»):
+    // сверху тикер и имя, снизу позиция «100 шт × 287,85 ₽». Кол-во и цена были
+    // отдельными колонками, но их не сравнивают между строками (у каждой бумаги
+    // свой масштаб цены) — колонок стало 7, а числовых столбцов для сканирования
+    // всего четыре: стоимость, доля, доход, годовых. Теперь их ровно четыре.
+    function pfzAsCell(h, hc) {
+        var pos = hc ? fmtQty(hc.qty) + ' шт × ' + (hc.curSrc === 'buy' ? '…' : fmtPrice(hc.cur)) + ' ₽' : '';
+        return '<div class="pfpt-as"><span class="pfz-asn"><b>' + esc(h.ticker) + '</b>' +
+            '<span>' + esc(PF.assetDisplayName(h)) + '</span></span>' +
+            (pos ? '<span class="pfz-aspos' + (hc && hc.live ? ' live' : '') + '">' + pos + '</span>' : '') + '</div>';
     }
     function pfzRowHtml(x, c) {
         var h = x.h, hc = x.c, isB = h.type === 'bond';
@@ -1354,9 +1365,7 @@
         var noQ = hc.curSrc === 'buy';
         var has = hc.invested > 0 && !noQ;
         return '<tr class="pfpt-tr"' + (isB ? '' : ' role="button" onclick="pfOpenTicker(\'' + jsArg(h.ticker) + '\')"') + '>' +
-            '<td>' + pfzAsCell(h) + '</td>' +
-            '<td class="pfpt-num">' + fmtQty(hc.qty) + '</td>' +
-            '<td class="pfpt-num pfz-wc' + (hc.live ? ' pfpt-live' : '') + '">' + (noQ ? '…' : fmtPrice(hc.cur)) + '</td>' +
+            '<td>' + pfzAsCell(h, hc) + '</td>' +
             '<td class="pfpt-num pfpt-val">' + fmtRub(hc.value) + '</td>' +
             '<td class="pfz-shrc">' + pfzShare(share, isB) + '</td>' +
             // рубли дохода НЕЙТРАЛЬНЫЕ (знак в числе) — цвет несёт только чип годовых
@@ -1374,19 +1383,18 @@
         // же теперь и единственный признак класса у строки — значков у тикеров нет,
         // поэтому в узкой ширине группы НЕ прячем.
         function grp(name) {
-            return '<tr class="pfz-grp"><td colspan="7"><b>' + name + '</b></td></tr>';
+            return '<tr class="pfz-grp"><td colspan="5"><b>' + name + '</b></td></tr>';
         }
         var rows = '';
         if (stocks.length) { rows += grp('Акции'); rows += stocks.map(function (x) { return pfzRowHtml(x, c); }).join(''); }
         if (bonds.length) { rows += grp('Облигации'); rows += bonds.map(function (x) { return pfzRowHtml(x, c); }).join(''); }
         var n = c.hs.length, has = c.invested > 0;
         rows += '<tr class="pfz-tot"><td>Итого · ' + n + ' ' + PF.plural(n, 'бумага', 'бумаги', 'бумаг') + '</td>' +
-            '<td></td><td class="pfz-wc"></td>' +
             '<td class="pfpt-num pfpt-val">' + fmtRub(c.value) + '</td><td></td>' +
             '<td class="pfpt-num pfz-wc">' + (has ? (c.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(c.pnl)) : '—') + '</td>' +
             '<td class="pfz-chipc">' + (has ? pfzChip(c.annual) : '<span class="pfz-nochip">—</span>') + '</td></tr>';
         return '<div class="pfpt-tablewrap"><table class="pfpt-table pfz-tbl"><thead><tr>' +
-            '<th>Бумага</th><th class="pfpt-num">Кол-во</th><th class="pfpt-num pfz-wc">Сейчас</th>' +
+            '<th>Бумага</th>' +
             '<th class="pfpt-num">Стоимость</th><th class="pfpt-num">Доля</th><th class="pfpt-num pfz-wc">Доход</th>' +
             // «Годовых» одним словом: двухэтажный заголовок «Доходность/годовых»
             // ломал ритм шапки, где все прочие колонки — одно слово. Здесь это
@@ -1459,8 +1467,10 @@
         var kind = ev.kind === 'div' ? 'дивиденды' : ev.kind === 'redeem' ? 'погашение' : 'купон';
         var name = ev.kind === 'div' ? ev.ticker : (ev.name || ev.ticker);
         var iso = PF.dateToIso(ev.date);
+        // сумма ЗЕЛЁНАЯ и со знаком: это единственные деньги виджета, которые
+        // придут, а не переоценятся, — и читается как приход, а не как остаток
         return '<div class="pfz-tile pfz-pay"><i>Ближайшая выплата</i>' +
-            '<b data-money>' + fmtRub(ev.amount) + '</b>' +
+            '<b class="pos" data-money>+' + fmtRub(ev.amount) + '</b>' +
             '<span class="pfz-what">' + kind + ' ' + esc(name) + (ev.qty > 0 ? ' · ' + fmtQty(ev.qty) + ' шт' : '') + '</span>' +
             '<div class="pfz-hr"></div>' +
             '<div class="pfz-when"><span>' + pfzRuDateLong(iso) + '</span><i>' + esc(PF.daysUntilText(ev.date)) + '</i></div></div>';
@@ -1504,7 +1514,7 @@
                         '<span class="bs">' + pctOf + '% дневного движения</span>'
                       : '<span class="bv q">—</span><span class="bs">появится с котировками</span>') + '</div>' +
             '<div class="pfz-tile pfz-pay"><i>Выплата</i>' +
-                (ev ? '<b data-money>' + fmtRub(ev.amount) + '</b><span class="pfz-what">' + ruDate(iso).slice(0, 5) + ' · ' + esc(PF.daysUntilText(ev.date)) + '</span>'
+                (ev ? '<b class="pos" data-money>+' + fmtRub(ev.amount) + '</b><span class="pfz-what">' + ruDate(iso).slice(0, 5) + ' · ' + esc(PF.daysUntilText(ev.date)) + '</span>'
                     : '<span class="bv q">—</span><span class="bs">не ожидается</span>') + '</div>' +
             '<button type="button" class="pfz-tile pfz-tbtn' + (PF.pfptSnapsOpen[p.id] ? ' on' : '') + '" onclick="pfxPtSnapsToggle(\'' + jsArg(p.id) + '\')"><i>Снимки</i>' +
                 (snapV != null ? '<span class="bv" data-money>' + fmtRub(snapV) + (last ? ' · ' + (last.d === (function(){var d=new Date();d.setDate(d.getDate()-1);return d.getFullYear()+'-'+PF.pad2(d.getMonth()+1)+'-'+PF.pad2(d.getDate());})() ? 'вчера' : ruDate(last.d).slice(0, 5)) : ' · сегодня') + '</span>'
@@ -1550,8 +1560,8 @@
             return '<div class="pfz-tile">' + skelHtml(52, 8) + '<span class="pfz-skgap"></span>' + skelHtml(84, 15) + '<span class="pfz-skgap"></span>' + skelHtml(64, 8) + '</div>';
         }
         function row() {
-            return '<tr class="pfpt-tr"><td>' + skelHtml(170, 13) + '</td><td class="pfpt-num">' + skelHtml(28, 11) + '</td>' +
-                '<td class="pfpt-num pfz-wc">' + skelHtml(56, 11) + '</td><td class="pfpt-num">' + skelHtml(64, 11) + '</td>' +
+            return '<tr class="pfpt-tr"><td>' + skelHtml(170, 13) + '<br>' + skelHtml(96, 9) + '</td>' +
+                '<td class="pfpt-num">' + skelHtml(64, 11) + '</td>' +
                 '<td class="pfz-shrc">' + skelHtml(52, 11) + '</td><td class="pfpt-num pfz-wc">' + skelHtml(56, 11) + '</td>' +
                 '<td class="pfz-chipc">' + skelHtml(52, 18) + '</td></tr>';
         }
@@ -1560,8 +1570,8 @@
         return pfzStripHtml(p, c, i, c.hs.length + ' ' + PF.plural(c.hs.length, 'бумага', 'бумаги', 'бумаг') + ' · котировки загружаются…') +
             '<div class="pfz-band on">' + tile() + tile() + tile() + tile() + '</div>' +
             '<div class="pfpt-tablewrap"><table class="pfpt-table pfz-tbl"><thead><tr>' +
-            '<th>Бумага</th><th class="pfpt-num">Кол-во</th><th class="pfpt-num pfz-wc">Сейчас</th>' +
-            '<th class="pfpt-num">Стоимость</th><th class="pfpt-num">Доля</th><th class="pfpt-num pfz-wc">Доход</th>' +
+            '<th>Бумага</th><th class="pfpt-num">Стоимость</th><th class="pfpt-num">Доля</th>' +
+            '<th class="pfpt-num pfz-wc">Доход</th>' +
             '<th class="pfpt-num" title="Доходность в процентах годовых">Годовых</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
     }
     // состояние «Пусто»: объяснение и ОДНО действие; плитки — прочерки, не нули
@@ -1604,7 +1614,8 @@
         return '<div class="pfx-ports">' + vis.map(function (p, i) {
             var c = calcPf(p), ac = colorVal(p.color);
             var open = function (inner) {
-                return '<div class="dash2-card pf-card2 pfpt-card pfz-card" data-pid="' + esc(p.id) + '" style="--pf-accent:' + ac + '">' + inner + '</div>';
+                return '<div class="dash2-card pf-card2 pfpt-card pfz-card' + (PF.pfptSnapsOpen[p.id] ? ' pfz-snapopen' : '') +
+                    '" data-pid="' + esc(p.id) + '" style="--pf-accent:' + ac + '">' + inner + '</div>';
             };
             // состояние 2: пусто — объяснение и одно действие
             if (!c.hs.length) return open(pfzEmptyHtml(p, i));
@@ -1620,12 +1631,16 @@
                 ? '<div class="pfz-alert">Биржа недоступна<span>· показаны цены покупки</span>' +
                   '<button type="button" class="re" onclick="PF.ensureQuotes(true)">Повторить</button></div>'
                 : '';
+            // Календарь снимков раскрывается ВНИЗУ БОКОВОЙ КОЛОНКИ (правка
+            // 2026-08-05): раньше секция вставлялась под шапку во всю ширину и
+            // отжимала таблицу вниз. Теперь это последняя секция панели — прямо
+            // под плиткой, из которой её открыли.
             var snapsBlock = PF.pfptSnapsOpen[p.id] ? pfxPtSnapsHtml(p, c) : '';
             return open(
-                pfzStripHtml(p, c, i) + snapsBlock + alert +
+                pfzStripHtml(p, c, i) + alert +
                 '<div class="pfz-body">' +
                     '<div class="pfz-main">' + pfzBandHtml(p, c, dd) + pfzTableHtml(p, c) + '</div>' +
-                    '<aside class="pfz-side">' + pfzHeroCard(p, c, dd) + pfzAllocCard(p, c) + pfzMoveCard(p, c) + pfzPayCard(p) + pfzSnapCard(p) + '</aside>' +
+                    '<aside class="pfz-side">' + pfzHeroCard(p, c, dd) + pfzAllocCard(p, c) + pfzMoveCard(p, c) + pfzPayCard(p) + pfzSnapCard(p) + snapsBlock + '</aside>' +
                 '</div>');
         }).join('') + '</div>';
     }

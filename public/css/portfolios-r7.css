@@ -977,10 +977,18 @@ body.dark-mode .pfpt-tr td { border-bottom-color: rgba(255, 255, 255, 0.06); }
 .pfpt-tr[role="button"] { cursor: pointer; }
 .pfpt-tr[role="button"]:hover td { background: #f8fafc; }
 body.dark-mode .pfpt-tr[role="button"]:hover td { background: rgba(255, 255, 255, 0.04); }
-.pfpt-as { display: flex; align-items: center; gap: 8px; min-width: 0; }
+/* ячейка бумаги ДВУХСТРОЧНАЯ: тикер с именем сверху, позиция «100 шт × 287,85 ₽»
+   снизу (правка «таблица нагружена»: кол-во и цена были отдельными колонками) */
+.pfpt-as { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pfz-asn { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
 .pfpt-as b { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; white-space: nowrap; }
 body.dark-mode .pfpt-as b { color: #f4f8fd; }
 .pfpt-as span { min-width: 0; font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #8494a7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfpt-as .pfz-aspos {
+    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 10.5px;
+    font-weight: 500; color: #a5b1c2; font-variant-numeric: tabular-nums; overflow: visible;
+}
+body.dark-mode .pfpt-as .pfz-aspos { color: #64748b; }
 td.pfpt-num, .pfpt-table td.pfpt-num { text-align: right; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 13px; font-weight: 600; color: #334155; white-space: nowrap; }
 body.dark-mode td.pfpt-num { color: #cbd6e4; }
 td.pfpt-num.pfpt-val { font-weight: 700; color: #0f172a; }
@@ -1017,6 +1025,14 @@ body.dark-mode .pfz-chip.neg { background: rgba(251, 146, 60, 0.14); color: #fb9
    имя бумаги обрезается раньше — колонкам чипов и долей хватает места */
 .pfz-tbl th { padding-left: 11px; padding-right: 11px; }
 .pfz-tbl .pfpt-tr td, .pfz-tbl .pfz-tot td { padding-left: 11px; padding-right: 11px; }
+/* Линий между строками НЕТ (правка «взгляд теряется»): полосатость из hairline
+   у каждой строки спорила с числами. Границы остались там, где несут смысл:
+   под шапкой и над итогом; строки держит воздух и подсветка под курсором. */
+.pfz-tbl .pfpt-tr td { border-bottom: 0; padding-top: 9px; padding-bottom: 9px; }
+.pfz-tbl .pfpt-tr:hover td { background: rgba(15, 23, 42, 0.028); }
+body.dark-mode .pfz-tbl .pfpt-tr:hover td { background: rgba(255, 255, 255, 0.035); }
+.pfz-tbl .pfpt-tr td:first-child { border-radius: 9px 0 0 9px; }
+.pfz-tbl .pfpt-tr td:last-child { border-radius: 0 9px 9px 0; }
 .pfz-tbl th:first-child, .pfz-tbl .pfpt-tr td:first-child, .pfz-tbl .pfz-tot td:first-child { padding-left: 0; }
 .pfz-tbl th:last-child, .pfz-tbl .pfpt-tr td:last-child, .pfz-tbl .pfz-tot td:last-child { padding-right: 0; }
 .pfz-tbl .pfpt-as span { max-width: 150px; }
@@ -1040,12 +1056,58 @@ body.dark-mode .pfz-tot td { border-top-color: rgba(255, 255, 255, 0.18); }
     letter-spacing: 0.07em; text-transform: uppercase; color: #8494a7;
 }
 
+/* — «Снимки капитала» внутри приборной панели: секция становится последней и
+   разворачивается ОДНОЙ колонкой (календарь сверху, архив под ним со скроллом).
+   Двухколоночная раскладка секции (список + календарь сбоку) в 268px не живёт. — */
+.pfz-side .pfpt-snaps { margin: 0; padding: 13px 16px; border-top: 1px solid rgba(15, 23, 42, 0.07); }
+body.dark-mode .pfz-side .pfpt-snaps { border-top-color: rgba(255, 255, 255, 0.07); }
+/* заголовка секции в колонке нет: её называет плитка прямо над ней. Пустой архив
+   тоже молчит — о пустоте сказала та же плитка (класс .pfsc-noarch ставит рендер) */
+.pfz-side .pfpt-chart-h { display: none; }
+.pfz-side .pfsc-noarch .pfsc-listcol { display: none; }
+.pfz-side .pfpt-chart-h { margin-bottom: 10px; }
+.pfz-side .pfpt-chart-t { font-size: 9.5px; letter-spacing: 0.09em; color: #a5b1c2; }
+.pfz-side .pfpt-chart-t i { font-size: 9.5px; }
+.pfz-side .pfsc-wrap { flex-direction: column; gap: 12px; margin-top: 0; }
+.pfz-side .pfsc-side { order: 1; flex: none; width: 100%; gap: 10px; }
+.pfz-side .pfsc-listcol { order: 2; flex: none; width: 100%; min-width: 0; }
+.pfz-side .pfsc-listcol .pfsn-list { max-height: 210px; }
+.pfz-side .pfsc-cal { padding: 10px 10px 8px; }
+.pfz-side .pfsc-d { height: 25px; font-size: 10.5px; }
+.pfz-side .pfsc-fb { font-size: 9.5px; padding: 6px 2px; }
+.pfz-side .pfsn-row { padding: 7px 1px; }
+.pfz-side .pfsn-d { width: 56px; font-size: 10px; }
+.pfz-side .pfsn-v { font-size: 11.5px; }
+.pfz-side .pfsn-c { width: 62px; font-size: 10px; }
+.pfz-side .pfsn-mon { padding: 9px 1px 2px; }
+.pfz-side .pfal-empty { font-size: 11px; }
+
 /* контейнерный порог: узкий блок складывает колонку в ленту, таблица теряет
    «Сейчас», «Доход» и группы (мокап v3, экран 02); 2×2 — в самой узкой ширине */
 @container pfz (max-width: 1040px) {
     .pfz-side { display: none; }
     .pfz-band { display: grid; }
     .pfz-tbl .pfz-wc { display: none; }
+    /* панели тут нет, но открытый календарь показать надо: колонка возвращается
+       ПОЛНОЙ ШИРИНОЙ и только ради секции — плитки в ней дублирует лента */
+    .pfz-snapopen .pfz-body { flex-wrap: wrap; }
+    .pfz-snapopen .pfz-side {
+        display: block; flex: 1 1 100%; border: 0; border-radius: 0;
+        background: none; box-shadow: none; overflow: visible;
+    }
+    .pfz-snapopen .pfz-side > .pfz-tile { display: none; }
+    .pfz-snapopen .pfz-side .pfpt-snaps { padding: 14px 0 0; }
+    /* в ленте плитки скрыты — секции нужен собственный заголовок и пустой архив */
+    .pfz-snapopen .pfz-side .pfpt-chart-h { display: flex; }
+    .pfz-snapopen .pfz-side .pfsc-noarch .pfsc-listcol { display: block; }
+    /* полной ширины хватает на родную двухколоночную раскладку секции */
+    .pfz-snapopen .pfz-side .pfsc-wrap { flex-direction: row; gap: 26px; }
+    .pfz-snapopen .pfz-side .pfsc-side { order: 2; flex: 0 0 250px; }
+    .pfz-snapopen .pfz-side .pfsc-listcol { order: 1; flex: 1 1 320px; }
+    .pfz-snapopen .pfz-side .pfsc-listcol .pfsn-list { max-height: 300px; }
+    .pfz-snapopen .pfz-side .pfsc-d { height: 28px; font-size: 11px; }
+    .pfz-snapopen .pfz-side .pfsn-d { width: 62px; font-size: 11px; }
+    .pfz-snapopen .pfz-side .pfsn-c { width: 76px; font-size: 11px; }
 }
 @container pfz (max-width: 559px) {
     .pfz-band { grid-template-columns: 1fr 1fr; }

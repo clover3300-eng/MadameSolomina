@@ -299,12 +299,15 @@
         // смотрит на этот портфель (allocPf). Рядом рендерится обучающий «теневой
         // виджет» добавления (см. pfdBodyHtml → pfxGhostClick).
         if (pfxIsPfTab(tab)) {
-            cfg.order.push(tab); cfg.col[tab] = 1; cfg.span[tab] = 5; cfg.hidden[tab] = 0;
-            cfg.allocPf = tab.slice(3);
-            cfg.pdPf = tab.slice(3);   // «Составы» из пикера тоже сразу про этот портфель
-            // «Составы портфелей» — ЧАСТЬ СИДА (просьба 2026-08-05): полная
-            // таблица бумаг этого портфеля во всю ширину, высота по содержимому
+            // Сид вкладки-портфеля (просьба 2026-08-05, вторая правка) — ОДИН виджет
+            // «Составы портфелей» про этот портфель во всю ширину. Карточки портфеля
+            // здесь больше нет: «Штурманская» показывает те же капитал, доход и
+            // доходность своей колонкой, а действия (ребаланс, настройки, снимки)
+            // живут в её шапке — две карточки об одном портфеле дублировали друг друга.
             cfg.order.push('pdetail'); cfg.col.pdetail = 1; cfg.span.pdetail = 12; cfg.hidden.pdetail = 0;
+            cfg.hidden[tab] = 1;       // карточка портфеля выключена, но её можно вернуть из пикера
+            cfg.allocPf = tab.slice(3);
+            cfg.pdPf = tab.slice(3);
             return cfg;
         }
         // НОВЫЙ экран «Торговли»: та же раскладка, что у первого (график | стакан |
@@ -341,16 +344,20 @@
             // пользователя (виджеты, заметки, другой span) конфиг от миграции уводит
             if (pfxIsPfTab(tab) && pfTabsStore[tab] && c.order.length === 1 && c.order[0] === tab &&
                 +c.span[tab] === 12 && !c.notes.length) c.span[tab] = 5;
-            // мягкая миграция 2026-08-05: НЕТРОНУТЫЙ сид вкладки-портфеля (одна
-            // карточка, ничего не добавлено и не удалено) получает «Составы» во всю
-            // ширину — как у свежего сида выше. Явный выбор пользователя миграцию
-            // отменяет: удалённый корзиной pdetail (hidden=1), «Очистить подвкладку»
-            // (cleared) или любая своя раскладка остаются как есть
-            if (pfxIsPfTab(tab) && pfTabsStore[tab] && !c.cleared && !c.notes.length &&
-                c.order.length === 1 && c.order[0] === tab &&
-                !Object.prototype.hasOwnProperty.call(c.hidden, 'pdetail')) {
-                c.order.push('pdetail'); c.col.pdetail = 1; c.span.pdetail = 12; c.hidden.pdetail = 0;
-                if (!c.pdPf || c.pdPf === 'all') c.pdPf = tab.slice(3);
+            // мягкая миграция 2026-08-05: НЕТРОНУТЫЙ сид вкладки-портфеля получает
+            // «Составы» во всю ширину, а карточку портфеля гасит — как у свежего сида
+            // выше. Явный выбор пользователя миграцию отменяет: удалённый корзиной
+            // pdetail (hidden=1), «Очистить подвкладку» (cleared), заметки или любая
+            // своя раскладка (лишние виджеты) остаются как есть.
+            if (pfxIsPfTab(tab) && pfTabsStore[tab] && !c.cleared && !c.notes.length) {
+                var onlyOwn = c.order.length === 1 && c.order[0] === tab;
+                var ownPlusPd = c.order.length === 2 && c.order.indexOf(tab) >= 0 && c.order.indexOf('pdetail') >= 0;
+                if ((onlyOwn || ownPlusPd) && !c.hidden.pdetail) {
+                    if (c.order.indexOf('pdetail') < 0) c.order.push('pdetail');
+                    c.col.pdetail = 1; c.span.pdetail = 12; c.hidden.pdetail = 0;
+                    c.hidden[tab] = 1;   // карточка портфеля — прочь со своей же вкладки
+                    if (!c.pdPf || c.pdPf === 'all') c.pdPf = tab.slice(3);
+                }
             }
             // та же мягкая миграция для «Торговли»: НЕТРОНУТЫЙ старый сид (ровно
             // три карточки терминала) получает график во всю ширину. Любая правка
