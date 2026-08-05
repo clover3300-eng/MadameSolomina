@@ -37,7 +37,7 @@
     var POLL_MS = 30000;     // период автообновления котировок
     var HEADER_H = 22;       // высота полосы с названием сектора
     var GAP = 3;             // «гэп» между плитками (по GAP с каждой стороны → ~6px между)
-    var SECGAP = 10;         // «гэп»-жёлоб вокруг каждого сектора (бенто-разделение)
+    var SECGAP = 6;          // «гэп»-жёлоб вокруг сектора: 10 → 6, просветы читались дырами (владелец 2026-08-05)
 
     // Периоды тепловой карты: насыщение цвета (±cap%) и порог «мувера» подобраны
     // под типичный размах изменений за день/неделю/месяц.
@@ -126,10 +126,11 @@
         refCloses: {},       // { week: {TICKER:close}, month: {...} } — закрытие на опорную дату
         refIndex: {},        // { week: closeIMOEX, month: ... }
         zoom: null,          // имя сектора при drill-down или null
-        // Диапазон графика-героя ('1D'|'5D'|'1M'|'12M'); сегмент 1Д/1Н/1М/1Г.
-        // Прежний переключатель видов (карта/график/таблица) снят раундом
-        // «Разворот»: все три объекта стоят этажами и видны одновременно.
+        // График-герой: диапазон ('1D'|'5D'|'1M'|'12M', сегмент 1Д/1Н/1М/1Г)
+        // и вид ('line' — площадной, 'candles' — свечи). Прежний переключатель
+        // видов вкладки (карта/график/таблица) снят раундом «Разворот».
         chartRange: '1M',
+        chartKind: 'line',
         // Таблица состава: свёрнута до топ-8 текущей сортировки; «Все 46 бумаг»
         // разворачивает на месте (в пределах сессии, в prefs не пишем)
         compOpen: false,
@@ -156,6 +157,7 @@
             if (!p || typeof p !== 'object') return;
             // p.view из прежних версий молча игнорируем: видов больше нет
             if (p.range && RANGES[p.range]) state.chartRange = p.range;
+            if (p.kind === 'line' || p.kind === 'candles') state.chartKind = p.kind;
             if (p.period === 'day' || p.period === 'week' || p.period === 'month') state.period = p.period;
             if (p.sizeMode === 'weight' || p.sizeMode === 'value' || p.sizeMode === 'change') state.sizeMode = p.sizeMode;
             if (p.tableMode === 'simple' || p.tableMode === 'full') state.tableMode = p.tableMode;
@@ -166,7 +168,7 @@
     function savePrefs() {
         try {
             localStorage.setItem(PREFS_KEY, JSON.stringify({
-                range: state.chartRange, period: state.period, sizeMode: state.sizeMode,
+                range: state.chartRange, kind: state.chartKind, period: state.period, sizeMode: state.sizeMode,
                 tableMode: state.tableMode, sortKey: state.sortKey, sortDir: state.sortDir
             }));
         } catch (e) {}
@@ -966,7 +968,21 @@
                 b.classList.toggle('active', b.getAttribute('data-range') === v);
             });
             var host = h.querySelector('.mh-chart-host');
-            if (host && typeof window.mkChartMount === 'function') window.mkChartMount(host, v);
+            if (host && typeof window.mkChartMount === 'function') window.mkChartMount(host, v, state.chartKind);
+        }
+        savePrefs();
+    }
+    // Вид графика: площадная линия ↔ свечи (данные те же, меняются стили движка)
+    function setKind(v) {
+        if (state.chartKind === v || (v !== 'line' && v !== 'candles')) return;
+        state.chartKind = v;
+        var h = hero();
+        if (h) {
+            h.querySelectorAll('.mh-seg-kind .mh-seg-btn').forEach(function (b) {
+                b.classList.toggle('active', b.getAttribute('data-kind') === v);
+            });
+            var host = h.querySelector('.mh-chart-host');
+            if (host && typeof window.mkChartMount === 'function') window.mkChartMount(host, state.chartRange, v);
         }
         savePrefs();
     }
@@ -1023,6 +1039,11 @@
             '  <div class="mh-hero-chart">' +
             '    <div class="mh-hero-chart-top">' +
             '      <span class="mh-kpi-lbl">Динамика</span>' +
+            '      <span class="spacer" style="flex:1"></span>' +
+            '      <span class="mh-seg mh-seg-range mh-seg-kind" role="tablist" title="Вид графика">' +
+            '        <button class="mh-seg-btn' + (state.chartKind === 'line' ? ' active' : '') + '" type="button" data-kind="line">Линия</button>' +
+            '        <button class="mh-seg-btn' + (state.chartKind === 'candles' ? ' active' : '') + '" type="button" data-kind="candles">Свечи</button>' +
+            '      </span>' +
             '      <span class="mh-seg mh-seg-range" role="tablist" title="Диапазон графика индекса">' +
             RANGE_LBL.map(function (p) {
                 return '<button class="mh-seg-btn' + (state.chartRange === p[0] ? ' active' : '') +
@@ -1042,7 +1063,10 @@
 
         h.querySelector('.mh-refresh').addEventListener('click', refresh);
         h.querySelectorAll('.mh-seg-range .mh-seg-btn').forEach(function (b) {
-            b.addEventListener('click', function () { setRange(b.getAttribute('data-range')); });
+            b.addEventListener('click', function () {
+                var k = b.getAttribute('data-kind');
+                if (k) setKind(k); else setRange(b.getAttribute('data-range'));
+            });
         });
     }
 
@@ -1219,7 +1243,7 @@
         // уходе мы сносим виджет TradingView (onLeave), и без этого вызова
         // возврат на вкладку показал бы пустой хост.
         var h = hero(), host = h && h.querySelector('.mh-chart-host');
-        if (host && typeof window.mkChartMount === 'function') window.mkChartMount(host, state.chartRange);
+        if (host && typeof window.mkChartMount === 'function') window.mkChartMount(host, state.chartRange, state.chartKind);
         refresh(); startPolling();
         // фоном тянем таблицу терминала — нужна и для ОДХС в карточке компании по
         // клику, и для кнопки «Сектор в Терминале» (sectorInTerminal)

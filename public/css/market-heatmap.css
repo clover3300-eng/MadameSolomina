@@ -352,26 +352,20 @@ body.dark-mode .mh-seg-view .mh-seg-btn.active .mh-cb-ico { color: #10201a; }
     margin: 2px 22px 0; border-radius: 14px; overflow: hidden; background: var(--mh-plot-bg);
     border: 1px solid var(--mh-well-edge); }
 
-/* Хост графика героя (свой SVG из js/market-chart.js — виджет TradingView
-   снят: его палитра/фон/шрифт не вписывались в язык вкладки). Фон прозрачный:
-   под графиком стекло героя. Кривая красится знаком периода. */
-.mh-chart-host { position: relative; width: 100%; height: 192px; box-sizing: border-box;
+/* Хост графика героя — KLineChart, тот же движок, что свечи терминала
+   (js/market-chart.js): ценовая шкала, перекрестье, зум, «Линия ↔ Свечи».
+   Фон прозрачный: под канвой стекло героя. Кривая красится знаком периода. */
+.mh-chart-host { position: relative; width: 100%; height: 224px; box-sizing: border-box;
     border-radius: 12px; overflow: hidden; background: transparent;
     display: flex; flex-direction: column; }
 .mh-chart-host[hidden] { display: none; }
-.mkc { flex: 1 1 auto; min-height: 0; width: 100%; display: block; }
-.mkc.up { color: var(--mh-up); }
-.mkc.down { color: var(--mh-down); }
-/* ось: три даты, тихий моно — как подписи легенды */
-.mkc-ax { flex: none; display: flex; justify-content: space-between; padding-top: 6px;
-    font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600;
-    letter-spacing: .04em; color: var(--mh-muted2); }
-/* скелет холодного старта и тихая ошибка */
+.mkc-kl { flex: 1 1 auto; min-height: 0; width: 100%; }
+/* скелет холодного старта и тихая ошибка (поверх пустой канвы) */
 .mkc-skel { flex: 1; border-radius: 10px;
     background: linear-gradient(100deg, var(--mh-well) 30%, var(--mh-card-soft) 50%, var(--mh-well) 70%);
     background-size: 220% 100%; animation: mhShimmer 1.25s linear infinite; }
-.mkc-err { flex: 1; display: flex; align-items: center; justify-content: center;
-    font-size: 12.5px; font-weight: 600; color: var(--mh-muted2); }
+.mkc-err { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 12.5px; font-weight: 600; color: var(--mh-muted2); pointer-events: none; }
 
 .mh-tile { position: absolute; overflow: hidden; cursor: pointer; opacity: 1;
     box-sizing: border-box;
@@ -541,12 +535,19 @@ body.dark-mode .mh-retry { box-shadow: none; }
     transition: opacity .15s ease, color .15s ease, background .15s ease;
 }
 .mh-tk-card svg, .mh-tk-fav svg { width: 15px; height: 15px; fill: none; }
-/* карточка компании — появляется при наведении на строку (не засоряет таблицу),
-   держим в потоке через opacity, чтобы не дёргалась ширина колонки */
-.mh-tk-card { opacity: 0; }
+/* карточка компании — появляется при наведении на строку СЛЕВА от звезды
+   (владелец 2026-08-05) и ВНЕ потока: в потоке её призрачная ширина либо
+   отодвигала звезду от тикера, либо двигала её при ховере. Плашка-подложка —
+   чтобы не сливалась с хвостом длинного названия под ней. */
+.mh-tk-actions { position: relative; }
+.mh-tk-card { opacity: 0; position: absolute; right: 100%; top: 50%;
+    transform: translateY(-50%); margin-right: 2px;
+    background: var(--mh-raise); border: 1px solid var(--mh-well-edge);
+    box-shadow: 0 1px 2px rgba(16, 24, 40, .08); }
 .mh-table tbody tr:hover .mh-tk-card, .mh-tk-card:focus-visible { opacity: 1; }
-.mh-tk-card:hover { color: var(--mh-accent); background: var(--mh-line-soft); }
-@media (hover: none) { .mh-tk-card { opacity: 1; } }
+.mh-tk-card:hover { color: var(--mh-accent); }
+@media (hover: none) { .mh-tk-card { opacity: 1; position: static; transform: none;
+    background: transparent; border: 0; box-shadow: none; } }
 /* звезда «в избранное» */
 .mh-tk-fav svg { transition: fill .15s ease; }
 .mh-tk-fav:hover { color: #e8a200; background: rgba(240, 165, 0, .12); }
@@ -707,7 +708,7 @@ body.dark-mode .mh-retry { box-shadow: none; }
     .mh-hero .mh-idx-val { font-size: 27px; }
     .mh-idx-val { font-size: 25px; }
     .mh-plot { height: 420px; margin: 2px 14px 0; width: calc(100% - 28px); }
-    .mh-chart-host { height: 168px; }
+    .mh-chart-host { height: 200px; }
     .mh-meta { padding: 10px 14px 12px; }
     /* на узком экране прячем сектор и объём, бар веса — остаётся #, тикер+имя, цена, изм., вес */
     .mh-table th.mh-th-sec, .mh-table td.mh-td-sec-col,

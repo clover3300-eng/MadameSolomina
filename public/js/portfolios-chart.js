@@ -513,9 +513,12 @@
     // случай, если общий множитель когда-нибудь сменится, множитель сам себя
     // калибрует. pageX/pageY движок использует только как ОТНОШЕНИЕ (масштаб оси
     // времени щипком), там поправка не нужна.
+    // Флаг ОБЩИЙ со вторым потребителем движка (js/market-chart.js, график
+    // IMOEX на «Рынке»): патч живёт на прототипе, один на страницу — второй
+    // поделил бы координаты на zoom дважды и увёл курсор в другую сторону.
     var zoomFixed = false;
     function fixZoomPointer(chart) {
-        if (zoomFixed) return;
+        if (zoomFixed || window.__kcZoomPatched) { zoomFixed = true; return; }
         try {
             var ev = chart._chartEvent && chart._chartEvent._event;
             var proto = ev && Object.getPrototypeOf(ev);
@@ -528,6 +531,7 @@
                 return r;
             };
             zoomFixed = true;
+            window.__kcZoomPatched = true;
         } catch (e) {}
     }
     function zoomOf(el) {
