@@ -789,22 +789,6 @@
     // Подвкладка «Портфели» (R7.2): не карточки-виджеты, а полноширинный обзор КАЖДОГО
     // портфеля — шапка с показателями и распределением + ПОЛНЫЙ состав таблицей с
     // показателями по каждой бумаге (кол-во, средняя, сейчас, стоимость, доля, доход).
-    function pfxPortHoldRowHtml(x, c) {
-        var h = x.h, hc = x.c, isB = h.type === 'bond';
-        var share = (c.value > 0 && hc.value > 0) ? hc.value / c.value * 100 : 0;
-        var noQ = hc.curSrc === 'buy';
-        var has = hc.invested > 0 && !noQ;
-        return '<tr class="pfpt-tr"' + (isB ? '' : ' role="button" onclick="pfOpenTicker(\'' + jsArg(h.ticker) + '\')"') + '>' +
-            '<td class="pfpt-as"><b>' + esc(h.ticker) + '</b><i class="' + (isB ? 'bond' : 'stock') + '">' + (isB ? 'обл' : 'акц') + '</i><span>' + esc(PF.assetDisplayName(h)) + '</span></td>' +
-            '<td class="pfpt-num">' + fmtQty(hc.qty) + '</td>' +
-            '<td class="pfpt-num">' + fmtPrice(hc.buy) + '</td>' +
-            '<td class="pfpt-num' + (hc.live ? ' pfpt-live' : '') + '">' + (noQ ? '…' : fmtPrice(hc.cur)) + '</td>' +
-            '<td class="pfpt-num pfpt-val">' + fmtRub(hc.value) + '</td>' +
-            '<td class="pfpt-share"><span class="pfpt-sharebar"><i style="width:' + clamp(share, 2, 100).toFixed(1) + '%"></i></span><b>' + share.toFixed(1).replace('.', ',') + '%</b></td>' +
-            '<td class="pfpt-num ' + (has ? (hc.pnl >= 0 ? 'pos' : 'neg') : '') + '">' + (has ? (hc.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(hc.pnl)) : '—') + '</td>' +
-            '<td class="pfpt-num ' + (has ? (hc.pnlPct >= 0 ? 'pos' : 'neg') : '') + '">' + (has ? fmtPct(hc.pnlPct) : '—') + '</td>' +
-        '</tr>';
-    }
     // ---- переход на «Обзор» ради карточки портфеля (R8) ----
     // R9: при 2+ видимых портфелях у каждого есть СВОЯ вкладка с карточкой — настройки
     // открываются там (pfxPortSettings ведёт на неё). «Обзор» остаётся местом карточки
@@ -1268,145 +1252,359 @@
         PF.pfptSnapsOpen[pid] = open;
         var card = document.querySelector('#pfWrap .pfpt-card[data-pid="' + pid + '"]');
         if (!card) return;
-        var btn = card.querySelector('.pfpt-snapsbtn');
-        if (btn) btn.classList.toggle('on', open);
+        // входов два — строка в плитке колонки и плитка узкой ленты; шеврон/подсветка синхронно
+        card.querySelectorAll('.pfz-snapo, .pfz-tbtn').forEach(function (b) { b.classList.toggle('on', open); });
         var sec = dq('pfptSnaps-' + pid);
         if (!open) { if (sec) sec.remove(); }
         else if (!sec) {
-            var head = card.querySelector('.pfpt-head');
+            var head = card.querySelector('.pfz-strip');
             if (head) head.insertAdjacentHTML('afterend', pfxPtSnapsHtml(p, calcPf(p)));
+            // история MOEX для записи задним числом — греем, если карточка портфеля
+            // (обычный поставщик chartRaw) с вкладки убрана
+            if (!PF.chartRaw[pid]) try { PF.loadPfChart(pid); } catch (e) {}
         }
         if (PF.pfdRepackSoon) PF.pfdRepackSoon();   // высота блока сменилась — перепаковать masonry
     };
+    // ================= «Составы портфелей» — «Штурманская», чистовик v3 =================
+    // Мокап dev/mockups/pdetail3-mockups (утверждён 2026-08-05): слева реестр бумаг
+    // с группами классов, долей-столбиком и чипами годовых; справа колонка плиток —
+    // капитал с кривой из снимков, движение дня, ближайшая выплата, снимки.
+    // Принципы: один факт — одно место; цвет только состоянию; ломаться локально.
+    // Узкий блок (контейнерный порог < 900px): колонка складывается в ленту плиток
+    // над таблицей, колонки «Сейчас»/«Доход» и группы уходят (CSS, @container pfz).
+    var PFZ_MON_G = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+        'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'];
+    function pfzRuDateLong(iso) {   // '2026-09-24' → «24 сентября»
+        var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+        return m ? (+m[3]) + ' ' + PFZ_MON_G[+m[2] - 1] : (iso || '');
+    }
+    // вклад бумаг в дневное изменение — из quotes[tk].chgPct (та же формула, что
+    // dayDeltaFromQuotes в ядре): при цене P и изменении k вчерашняя стоимость
+    // позиции = V/(1+k), вклад = V − V/(1+k). Облигации без дневного изменения
+    // MOEX в раскладку не попадают — движение честно только по тем, о ком знаем.
+    function pfzMoves(p, c) {
+        var list = [], total = 0;
+        c.hs.forEach(function (x) {
+            var tk = x.h.ticker;
+            if (!tk || x.h.type === 'bond' || !(x.c.value > 0)) return;
+            var q = PF.quotes[tk];
+            if (!q || q.chgPct == null) return;
+            var d = x.c.value - x.c.value / (1 + q.chgPct / 100);
+            if (!isFinite(d) || Math.abs(d) < 0.5) return;
+            list.push({ tk: tk, d: d, chg: q.chgPct, share: c.value > 0 ? x.c.value / c.value * 100 : 0 });
+            total += Math.abs(d);
+        });
+        list.sort(function (a, b) { return Math.abs(b.d) - Math.abs(a.d); });
+        return { list: list, total: total };
+    }
+    // ближайшая выплата ЭТОГО портфеля — те же расписания, что у календаря выплат
+    function pfzNextPay(p) {
+        try {
+            var evs = PF.collectUpcomingPayouts();
+            for (var i = 0; i < evs.length; i++) if (evs[i].pfId === p.id) return evs[i];
+        } catch (e) {}
+        return null;
+    }
+    // последний снимок ПРОШЛЫХ дней (сегодняшний ещё пишется и не «последний»)
+    function pfzLastSnap(p) {
+        var m = (PF.snaps || {})[p.id] || {};
+        var ks = Object.keys(m).sort(), today = PF.todayStr();
+        for (var i = ks.length - 1; i >= 0; i--) if (ks[i] < today) return { d: ks[i], v: m[ks[i]] };
+        return null;
+    }
+    // нейтральная кривая капитала в герое: последние 30 точек дневных снимков
+    // (плюс живая сегодняшняя из pfxPtSnapSeries); < 2 точек — честная заглушка
+    function pfzHeroCurve(p, c) {
+        var s = pfxPtSnapSeries(p, c).slice(-30);
+        if (s.length < 2) return '<div class="pfz-nochart">Кривая появится со второго дня наблюдений</div>';
+        var min = Infinity, max = -Infinity;
+        s.forEach(function (q) { if (q.v < min) min = q.v; if (q.v > max) max = q.v; });
+        var span = max - min;
+        var pts = s.map(function (q, i) {
+            var x = i / (s.length - 1) * 216;
+            var y = span > 0 ? 4 + (max - q.v) / span * 26 : 17;
+            return x.toFixed(1) + ',' + y.toFixed(1);
+        });
+        return '<svg class="pfz-herosvg" viewBox="0 0 216 34" preserveAspectRatio="none" aria-hidden="true">' +
+            '<path d="M' + pts.join(' L') + ' L216,34 L0,34 Z"/>' +
+            '<polyline points="' + pts.join(' ') + '"/></svg>';
+    }
+    // чип годовой доходности — ЕДИНСТВЕННЫЙ цветовой акцент строки таблицы
+    function pfzChip(v) {
+        if (v == null || !isFinite(v)) return '<span class="pfz-nochip">—</span>';
+        var pos = v >= 0;
+        return '<span class="pfz-chip ' + (pos ? 'pos' : 'neg') + '">' + (pos ? '▲' : '▼') + ' ' +
+            Math.abs(v).toFixed(1).replace('.', ',') + '%</span>';
+    }
+    // «Доля»: число и полоска — один правоприжатый элемент одной ширины,
+    // классовый цвет полоски (акции/облигации — те же, что в проекте всюду)
+    function pfzShare(share, isBond) {
+        return '<span class="pfz-shr"><b>' + Math.round(share) + '%</b>' +
+            '<u><i style="width:' + clamp(share, 2, 100).toFixed(0) + '%;background:' + (isBond ? '#7B9BBF' : '#D97757') + '"></i></u></span>';
+    }
+    function pfzAsCell(h) {
+        var isB = h.type === 'bond';
+        return '<div class="pfpt-as"><i class="' + (isB ? 'bond' : 'stock') + '">' + (isB ? 'обл' : 'акц') + '</i>' +
+            '<b>' + esc(h.ticker) + '</b><span>' + esc(PF.assetDisplayName(h)) + '</span></div>';
+    }
+    function pfzRowHtml(x, c) {
+        var h = x.h, hc = x.c, isB = h.type === 'bond';
+        var share = (c.value > 0 && hc.value > 0) ? hc.value / c.value * 100 : 0;
+        var noQ = hc.curSrc === 'buy';
+        var has = hc.invested > 0 && !noQ;
+        return '<tr class="pfpt-tr"' + (isB ? '' : ' role="button" onclick="pfOpenTicker(\'' + jsArg(h.ticker) + '\')"') + '>' +
+            '<td>' + pfzAsCell(h) + '</td>' +
+            '<td class="pfpt-num">' + fmtQty(hc.qty) + '</td>' +
+            '<td class="pfpt-num pfz-wc' + (hc.live ? ' pfpt-live' : '') + '">' + (noQ ? '…' : fmtPrice(hc.cur)) + '</td>' +
+            '<td class="pfpt-num pfpt-val">' + fmtRub(hc.value) + '</td>' +
+            '<td class="pfz-shrc">' + pfzShare(share, isB) + '</td>' +
+            // рубли дохода НЕЙТРАЛЬНЫЕ (знак в числе) — цвет несёт только чип годовых
+            '<td class="pfpt-num pfz-wc">' + (has ? (hc.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(hc.pnl)) : '—') + '</td>' +
+            '<td class="pfz-chipc">' + (has ? pfzChip(hc.annual) : '<span class="pfz-nochip">—</span>') + '</td>' +
+        '</tr>';
+    }
+    function pfzTableHtml(p, c) {
+        var stocks = [], bonds = [], sSum = 0, bSum = 0;
+        c.hs.forEach(function (x) {
+            if (x.h.type === 'bond') { bonds.push(x); bSum += x.c.value; }
+            else { stocks.push(x); sSum += x.c.value; }
+        });
+        var bondP = Math.round(clamp(c.bondPct, 0, 100)), stockP = 100 - bondP;
+        // группа: имя слева, СУММА — в колонке «Стоимость» (вертикаль складывается
+        // до итога); в узком режиме группы скрыты целиком (@container)
+        function grp(name, pct, sum) {
+            return '<tr class="pfz-grp"><td colspan="2"><b>' + name + '</b> · ' + pct + '%</td>' +
+                '<td class="pfz-wc"></td><td class="pfz-gsum">' + fmtRub(sum) + '</td><td></td><td class="pfz-wc"></td><td></td></tr>';
+        }
+        var rows = '';
+        if (stocks.length) { rows += grp('Акции', bonds.length ? stockP : 100, sSum); rows += stocks.map(function (x) { return pfzRowHtml(x, c); }).join(''); }
+        if (bonds.length) { rows += grp('Облигации', stocks.length ? bondP : 100, bSum); rows += bonds.map(function (x) { return pfzRowHtml(x, c); }).join(''); }
+        var n = c.hs.length, has = c.invested > 0;
+        rows += '<tr class="pfz-tot"><td>Итого · ' + n + ' ' + PF.plural(n, 'бумага', 'бумаги', 'бумаг') + '</td>' +
+            '<td></td><td class="pfz-wc"></td>' +
+            '<td class="pfpt-num pfpt-val">' + fmtRub(c.value) + '</td><td></td>' +
+            '<td class="pfpt-num pfz-wc">' + (has ? (c.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(c.pnl)) : '—') + '</td>' +
+            '<td class="pfz-chipc">' + (has ? pfzChip(c.annual) : '<span class="pfz-nochip">—</span>') + '</td></tr>';
+        return '<div class="pfpt-tablewrap"><table class="pfpt-table pfz-tbl"><thead><tr>' +
+            '<th>Бумага</th><th class="pfpt-num">Кол-во</th><th class="pfpt-num pfz-wc">Сейчас</th>' +
+            '<th class="pfpt-num">Стоимость</th><th class="pfpt-num">Доля</th><th class="pfpt-num pfz-wc">Доход</th>' +
+            '<th class="pfpt-num">Доходность<span class="pfz-thq">годовых</span></th>' +
+        '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+    }
+    // ---- плитки колонки (и их близнецы в узкой ленте) ----
+    function pfzHeroCard(p, c, dd) {
+        var pct = (dd != null && c.value - dd > 0) ? Math.abs(dd) / (c.value - dd) * 100 : null;
+        var chip = dd != null
+            ? '<span class="pfz-dchip ' + (dd >= 0 ? 'pos' : 'neg') + '">' + (dd >= 0 ? '▲' : '▼') + ' ' + fmtRub(Math.abs(dd)) +
+                (pct != null ? ' · ' + pct.toFixed(1).replace('.', ',') + '%' : '') + ' за сегодня</span>'
+            : '<span class="pfz-dquiet">изменение за день — со второго дня наблюдений</span>';
+        return '<div class="pfz-tile pfz-hero"><i>Капитал</i><span class="pfz-ts">30 дней</span>' +
+            '<b data-money>' + fmtRub(c.value) + '</b>' +
+            '<span class="pfz-inv">вложено <span data-money>' + fmtRub(c.invested) + '</span></span>' +
+            chip + pfzHeroCurve(p, c) + '</div>';
+    }
+    function pfzMoveCard(p, c) {
+        var mv = pfzMoves(p, c);
+        if (!mv.list.length) {
+            return '<div class="pfz-tile"><i>Движение дня</i>' +
+                '<div class="pfz-quiet">Появится с котировками: MOEX отдаёт дневное изменение только по акциям.</div></div>';
+        }
+        var lead = mv.list[0];
+        var pctOf = mv.total > 0 ? Math.round(Math.abs(lead.d) / mv.total * 100) : 100;
+        var rows = mv.list.slice(1, 3).map(function (m) {
+            return '<div class="pfz-mvrow"><b>' + esc(m.tk) + '</b><i data-money>' + (m.d >= 0 ? '+' : '−') + fmtRub(Math.abs(m.d)) + '</i></div>';
+        }).join('');
+        return '<div class="pfz-tile"><i>Движение дня</i>' +
+            '<div class="pfz-mvlead' + (lead.d >= 0 ? ' pos' : '') + '"><div class="t"><b>' + esc(lead.tk) + '</b>' +
+                '<i data-money>' + (lead.d >= 0 ? '+' : '−') + fmtRub(Math.abs(lead.d)) + '</i></div>' +
+                '<div class="s">' + pctOf + '% дневного изменения: ' + (lead.chg >= 0 ? '+' : '−') +
+                    Math.abs(lead.chg).toFixed(1).replace('.', ',') + '% при доле ' + Math.round(lead.share) + '%</div></div>' +
+            rows + '</div>';
+    }
+    // плитки выплаты НЕТ вовсе, когда выплат не ожидается — колонка честно короче
+    function pfzPayCard(p) {
+        var ev = pfzNextPay(p);
+        if (!ev) return '';
+        var kind = ev.kind === 'div' ? 'дивиденды' : ev.kind === 'redeem' ? 'погашение' : 'купон';
+        var name = ev.kind === 'div' ? ev.ticker : (ev.name || ev.ticker);
+        var iso = PF.dateToIso(ev.date);
+        return '<div class="pfz-tile pfz-pay"><i>Ближайшая выплата</i>' +
+            '<b data-money>' + fmtRub(ev.amount) + '</b>' +
+            '<span class="pfz-what">' + kind + ' ' + esc(name) + (ev.qty > 0 ? ' · ' + fmtQty(ev.qty) + ' шт' : '') + '</span>' +
+            '<div class="pfz-hr"></div>' +
+            '<div class="pfz-when"><span>' + pfzRuDateLong(iso) + '</span><i>' + esc(PF.daysUntilText(ev.date)) + '</i></div></div>';
+    }
+    var PFZ_FREQ_TX = { day: 'каждый день', week: 'раз в неделю', month: 'раз в месяц' };
+    function pfzSnapCard(p) {
+        var last = pfzLastSnap(p);
+        var today = PF.todayStr();
+        var y = new Date(); y.setDate(y.getDate() - 1);
+        var yIso = y.getFullYear() + '-' + PF.pad2(y.getMonth() + 1) + '-' + PF.pad2(y.getDate());
+        var lbl = last ? (last.d === yIso ? 'вчера' : ruDate(last.d)) : null;
+        var m = (PF.snaps || {})[p.id] || {};
+        var body = last
+            ? '<div class="pfz-srow"><span>Последний · ' + lbl + '</span><b data-money>' + fmtRub(last.v) + '</b></div>' +
+              '<div class="pfz-srow"><span>Автозапись</span><b class="q">' + (PFZ_FREQ_TX[PF.snapFreq ? PF.snapFreq() : 'day'] || 'каждый день') + '</b></div>'
+            : m[today] != null
+                ? '<div class="pfz-srow"><span>Первый · сегодня</span><b data-money>' + fmtRub(m[today]) + '</b></div>' +
+                  '<div class="pfz-srow"><span>Автозапись</span><b class="q">' + (PFZ_FREQ_TX[PF.snapFreq ? PF.snapFreq() : 'day'] || 'каждый день') + '</b></div>'
+                : '<div class="pfz-quiet">Снимков ещё нет: первый запишется при живых котировках. Календарь уже работает — можно записать задним числом.</div>';
+        return '<div class="pfz-tile pfz-snap"><i>Снимки капитала</i>' + body +
+            '<button type="button" class="pfz-snapo' + (PF.pfptSnapsOpen[p.id] ? ' on' : '') + '" onclick="pfxPtSnapsToggle(\'' + jsArg(p.id) + '\')">' +
+                PFSC_PULSE_SVG + '<span>Календарь снимков</span><em>' + NOTE_CHEVR_SVG + '</em></button></div>';
+    }
+    // узкая лента: те же четыре факта одной строкой плиток (2×2 в самой узкой)
+    function pfzBandHtml(p, c, dd) {
+        var mv = pfzMoves(p, c);
+        var lead = mv.list[0];
+        var pctOf = lead && mv.total > 0 ? Math.round(Math.abs(lead.d) / mv.total * 100) : 0;
+        var ev = pfzNextPay(p);
+        var last = pfzLastSnap(p);
+        var m = (PF.snaps || {})[p.id] || {};
+        var snapV = last ? last.v : m[PF.todayStr()];
+        var iso = ev ? PF.dateToIso(ev.date) : '';
+        return '<div class="pfz-band">' +
+            '<div class="pfz-tile pfz-hero"><i>Капитал</i><b data-money>' + fmtRub(c.value) + '</b>' +
+                (dd != null
+                    ? '<span class="bs ' + (dd >= 0 ? 'pos' : 'neg') + '" data-money>' + (dd >= 0 ? '▲' : '▼') + ' ' + fmtRub(Math.abs(dd)) + '</span>'
+                    : '<span class="bs">со второго дня</span>') + '</div>' +
+            '<div class="pfz-tile"><i>Движение дня</i>' +
+                (lead ? '<span class="bv" data-money>' + (lead.d >= 0 ? '+' : '−') + fmtRub(Math.abs(lead.d)) + ' · ' + esc(lead.tk) + '</span>' +
+                        '<span class="bs">' + pctOf + '% дневного движения</span>'
+                      : '<span class="bv q">—</span><span class="bs">появится с котировками</span>') + '</div>' +
+            '<div class="pfz-tile pfz-pay"><i>Выплата</i>' +
+                (ev ? '<b data-money>' + fmtRub(ev.amount) + '</b><span class="pfz-what">' + ruDate(iso).slice(0, 5) + ' · ' + esc(PF.daysUntilText(ev.date)) + '</span>'
+                    : '<span class="bv q">—</span><span class="bs">не ожидается</span>') + '</div>' +
+            '<button type="button" class="pfz-tile pfz-tbtn' + (PF.pfptSnapsOpen[p.id] ? ' on' : '') + '" onclick="pfxPtSnapsToggle(\'' + jsArg(p.id) + '\')"><i>Снимки</i>' +
+                (snapV != null ? '<span class="bv" data-money>' + fmtRub(snapV) + (last ? ' · ' + (last.d === (function(){var d=new Date();d.setDate(d.getDate()-1);return d.getFullYear()+'-'+PF.pad2(d.getMonth()+1)+'-'+PF.pad2(d.getDate());})() ? 'вчера' : ruDate(last.d).slice(0, 5)) : ' · сегодня') + '</span>'
+                            : '<span class="bv q">—</span>') +
+                '<span class="bs">календарь по клику</span></button>' +
+        '</div>';
+    }
+    function pfzStripHtml(p, c, i, extraMeta) {
+        var ac = colorVal(p.color);
+        var warm = PF.pfCardWarming && PF.pfCardWarming(p);
+        var stale = !warm && PF.quotesTs && (Date.now() - PF.quotesTs > 15 * 60000);
+        var meta;
+        if (extraMeta != null) meta = extraMeta;
+        else {
+            var n = c.hs.length;
+            var when = PF.quotesTs ? new Date(PF.quotesTs) : null;
+            var hhmm = when ? PF.pad2(when.getHours()) + ':' + PF.pad2(when.getMinutes()) : '';
+            meta = n + ' ' + PF.plural(n, 'бумага', 'бумаги', 'бумаг') + (warm
+                ? ' · котировки загружаются…'
+                : stale ? '' : (hhmm ? ' · котировки ' + hhmm : ''));
+            if (stale) return pfzStripCore(p, i, '<span class="pfz-meta stale">' +
+                n + ' ' + PF.plural(n, 'бумага', 'бумаги', 'бумаг') + ' · котировки устарели · ' + hhmm + '</span>');
+        }
+        return pfzStripCore(p, i, '<span class="pfz-meta">' + meta + '</span>');
+    }
+    function pfzStripCore(p, i, metaHtml, noRebal) {
+        var ac = colorVal(p.color);
+        var GEAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="17" r="2.5"/></svg>';
+        return '<div class="pfz-strip">' +
+            '<span class="pfz-dot" style="background:' + ac + '"></span>' +
+            '<span class="pfc-name" onclick="pfNameEdit(\'' + p.id + '\',event)" title="Нажмите, чтобы переименовать"><span class="pfc-name-ink">' + esc(p.name) + '</span></span>' +
+            metaHtml +
+            '<span class="pfz-sp"></span>' +
+            (i === 0 ? pfdInChromeHtml('pdetail') : '') +
+            // пустому составу ребалансировать нечего — кнопки нет (мокап v3, состояние 2)
+            (noRebal ? '' : '<button class="pfc-rebal pfpt-rebal" onclick="pfExpand(\'' + p.id + '\')">' + PF.REBAL_SVG + 'Ребалансировать</button>') +
+            '<button class="pfc-act" onclick="pfxPortSettings(\'' + p.id + '\')" title="Настройки портфеля" aria-label="Настройки портфеля">' + GEAR + '</button>' +
+        '</div>';
+    }
+    // состояние «Загрузка»: скелетоны формы контента (лента + строки по числу бумаг)
+    function pfzSkeletonHtml(p, c, i) {
+        function tile() {
+            return '<div class="pfz-tile">' + skelHtml(52, 8) + '<span class="pfz-skgap"></span>' + skelHtml(84, 15) + '<span class="pfz-skgap"></span>' + skelHtml(64, 8) + '</div>';
+        }
+        function row() {
+            return '<tr class="pfpt-tr"><td>' + skelHtml(170, 13) + '</td><td class="pfpt-num">' + skelHtml(28, 11) + '</td>' +
+                '<td class="pfpt-num pfz-wc">' + skelHtml(56, 11) + '</td><td class="pfpt-num">' + skelHtml(64, 11) + '</td>' +
+                '<td class="pfz-shrc">' + skelHtml(52, 11) + '</td><td class="pfpt-num pfz-wc">' + skelHtml(56, 11) + '</td>' +
+                '<td class="pfz-chipc">' + skelHtml(52, 18) + '</td></tr>';
+        }
+        var n = Math.max(2, Math.min(c.hs.length || 3, 8)), rows = '';
+        for (var k = 0; k < n; k++) rows += row();
+        return pfzStripHtml(p, c, i, c.hs.length + ' ' + PF.plural(c.hs.length, 'бумага', 'бумаги', 'бумаг') + ' · котировки загружаются…') +
+            '<div class="pfz-band on">' + tile() + tile() + tile() + tile() + '</div>' +
+            '<div class="pfpt-tablewrap"><table class="pfpt-table pfz-tbl"><thead><tr>' +
+            '<th>Бумага</th><th class="pfpt-num">Кол-во</th><th class="pfpt-num pfz-wc">Сейчас</th>' +
+            '<th class="pfpt-num">Стоимость</th><th class="pfpt-num">Доля</th><th class="pfpt-num pfz-wc">Доход</th>' +
+            '<th class="pfpt-num">Доходность<span class="pfz-thq">годовых</span></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    }
+    // состояние «Пусто»: объяснение и ОДНО действие; плитки — прочерки, не нули
+    function pfzEmptyHtml(p, i) {
+        function dashTile(lbl, sub) {
+            return '<div class="pfz-tile"><i>' + lbl + '</i><span class="bv q">—</span><span class="bs">' + sub + '</span></div>';
+        }
+        return pfzStripCore(p, i, '<span class="pfz-meta">0 бумаг</span>', true) +
+            '<div class="pfz-band on">' +
+                dashTile('Капитал', 'после первой покупки') + dashTile('Движение дня', 'появится с котировками') +
+                dashTile('Выплата', 'не ожидается') + dashTile('Снимки', 'после первого дня') +
+            '</div>' +
+            '<div class="pfz-empty"><b>Состав пуст</b>' +
+                '<span>Добавьте бумаги в настройках портфеля — таблица, доли и доходность соберутся сами.</span>' +
+                '<button type="button" class="pfc-rebal pfpt-rebal" onclick="pfxPortSettings(\'' + jsArg(p.id) + '\')">Добавить активы</button></div>';
+    }
     function pfxTabPortsHtml() {
         var vis = visibleItems();
         // область виджета (2026-07-30): «Составы» умеют показывать ОДИН портфель —
         // выбор задаётся при добавлении из пикера или в настройках виджета ⚙ и
         // живёт в PF.dashCfg.pdPf; исчезнувший портфель мягко откатывает на «Все»
-        // (тот же приём, что allocPf у «Распределения активов»)
         var pdScope = PF.dashCfg.pdPf || 'all';
         if (pdScope !== 'all') {
             var one = vis.filter(function (p) { return p.id === pdScope; });
             // вкладка-портфель СКРЫТОГО портфеля: visibleItems его не отдаёт, но
-            // вкладка — единственное место, где он виден (R9.2); без этого спасения
-            // «Составы» здесь молча откатывались на «все портфели»
+            // вкладка — единственное место, где он виден (R9.2)
             if (!one.length && pfxIsPfTab(PF.dashTab) && PF.dashTab.slice(3) === pdScope) {
                 var ownP = findPf(pdScope);
                 if (ownP) one = [ownP];
             }
             if (one.length) vis = one;
         }
-        // Пустое состояние — в обёртке со своими кнопками: pdetail в PFD_OWN_CHROME,
-        // угловой оверлей ему не ставится, а ранний выход отдавал голую заглушку —
-        // виджет висел на дашборде без шестерёнки и корзины, убрать его было нечем.
+        // Пустое состояние области — в обёртке со своими кнопками (PFD_OWN_CHROME)
         if (!vis.length) {
             return '<div class="pfx-ports"><div class="dash2-card pf-card2 pfpt-card">' +
                 PF.pfCardHead('', 'Составы портфелей', 'полные таблицы бумаг каждого портфеля', pfdInChromeHtml('pdetail')) +
                 (PF.store.items.length ? PF.allHiddenHtml() : PF.emptyHtml()) +
             '</div></div>';
         }
-        var GEAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="17" r="2.5"/></svg>';
         return '<div class="pfx-ports">' + vis.map(function (p, i) {
             var c = calcPf(p), ac = colorVal(p.color);
+            var open = function (inner) {
+                return '<div class="dash2-card pf-card2 pfpt-card pfz-card" data-pid="' + esc(p.id) + '" style="--pf-accent:' + ac + '">' + inner + '</div>';
+            };
+            // состояние 2: пусто — объяснение и одно действие
+            if (!c.hs.length) return open(pfzEmptyHtml(p, i));
+            // состояние 1: загрузка — скелетоны формы контента (self-gasящаяся:
+            // pfQuotesWarming живёт только пока fetch в полёте)
+            if (PF.pfCardWarming && PF.pfCardWarming(p)) return open(pfzSkeletonHtml(p, c, i));
             var dd = dayDelta(p, c.value);
-            var bondP = Math.round(clamp(c.bondPct, 0, 100)), stockP = 100 - bondP;
-            var has = c.invested > 0;
-            // R9.2: показатели — ПЛИТКАМИ в языке «Сводных показателей» (.pfsm-*): подпись,
-            // крупное моно-число и чип с контекстом. Чипы не украшение, а ответ на вопрос
-            // «от чего число»: у капитала — движение за сегодня (раньше чип болтался у
-            // имени), у вложено — число активов, у дохода — процент, у доходности —
-            // «годовых» (величина годовая, и по одному «+2,3%» это было не прочитать).
-            function tile(l, v, cls, chp) {
-                return '<div class="pfsm-tile"><i>' + l + '</i><b class="' + (cls || '') + '">' + v + '</b>' + (chp || '') + '</div>';
-            }
-            function chip(cls, tx) { return '<span class="pfsm-chip ' + cls + '">' + tx + '</span>'; }
-            function absPct(x) { return Math.abs(x).toFixed(1).replace('.', ',') + '%'; }
-            var ddChip = (dd != null && Math.abs(dd) >= 1)
-                ? chip(dd >= 0 ? 'pos' : 'neg', (dd >= 0 ? '▲ ' : '▼ ') + fmtRub(Math.abs(dd)) + ' за сегодня')
-                : chip('', 'появится со второго дня');
-            var nA = c.hs.length;
-            var head = '<div class="pfpt-head">' +
-                '<div class="pfpt-id">' +
-                    '<span class="pfc-name" onclick="pfNameEdit(\'' + p.id + '\',event)" title="Нажмите, чтобы переименовать"><span class="pfc-name-ink">' + esc(p.name) + '</span></span>' +
-                '</div>' +
-                '<div class="pfpt-kpis">' +
-                    tile('Капитал', fmtRub(c.value), '', ddChip) +
-                    tile('Вложено', has ? fmtRub(c.invested) : '—', '', chip('', nA + ' ' + PF.plural(nA, 'актив', 'актива', 'активов'))) +
-                    tile('Доход', has ? (c.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(c.pnl)) : '—', c.pnl >= 0 ? 'pos' : 'neg',
-                        has ? chip(c.pnlPct >= 0 ? 'pos' : 'neg', (c.pnlPct >= 0 ? '▲ ' : '▼ ') + absPct(c.pnlPct)) : '') +
-                    tile('Доходность', has ? fmtPct(c.annual) : '—', c.annual >= 0 ? 'pos' : 'neg', chip('', 'годовых')) +
-                '</div>' +
-                '<div class="pfpt-alloc">' +
-                    '<div class="pfc-dist-bar"><div style="width:' + stockP + '%;background:#D97757"></div><div style="width:' + bondP + '%;background:#7B9BBF"></div></div>' +
-                    '<div class="pfc-dist-lbl"><span><i style="background:#D97757"></i>Акции ' + stockP + '%</span><span><i style="background:#7B9BBF"></i>Облигации ' + bondP + '%</span></div>' +
-                '</div>' +
-                '<div class="pfpt-acts">' +
-                    // кнопки виджета — у ПЕРВОЙ карточки блока (блок один, кнопки одни) и
-                    // слева от действий портфеля, а не поверх них
-                    (i === 0 ? pfdInChromeHtml('pdetail') : '') +
-                    // «Снимки капитала» — тумблер-пилюля: пульс-глиф + подпись +
-                    // шеврон, который разворачивается вместе с секцией; в .on
-                    // кнопка тонируется акцентом портфеля (--pf-accent карточки)
-                    '<button class="pfpt-snapsbtn' + (PF.pfptSnapsOpen[p.id] ? ' on' : '') + '" onclick="pfxPtSnapsToggle(\'' + p.id + '\')" ' +
-                        'title="Дневные снимки стоимости этого портфеля — раскрываются прямо в карточке">' +
-                        PFSC_PULSE_SVG + '<span>Снимки капитала</span><i class="pfpt-sn-ch">' + NOTE_CHEVR_SVG + '</i></button>' +
-                    '<button class="pfc-rebal pfpt-rebal" onclick="pfExpand(\'' + p.id + '\')">' + PF.REBAL_SVG + 'Ребалансировать</button>' +
-                    '<button class="pfc-act" onclick="pfxPortSettings(\'' + p.id + '\')" title="Настройки портфеля" aria-label="Настройки портфеля">' + GEAR + '</button>' +
-                '</div>' +
-            '</div>';
-            // Сравнение с индексом (решение вопроса 2 плана PF-CARD): из карточки
-            // «Обзора» оно ушло — там график отвечает на «как у меня дела», а не
-            // «обгоняю ли рынок». Здесь для этого есть место: кривая доходности
-            // портфеля от первой покупки с наложением бенчмарка по кнопке.
-            // Бенчмарк выбирается сам: RGBI для чисто облигационного портфеля,
-            // иначе IMOEX (pfBench) — сравнивать ОФЗ с индексом акций бессмысленно.
-            var bench = PF.pfBench(p), benchOn = PF.benchOn(p.id);
-            var chartBlock = c.hs.length
-                ? '<div class="pfpt-chart">' +
-                    '<div class="pfpt-chart-h">' +
-                        '<span class="pfpt-chart-t">Доходность портфеля<i>с ' + PF.ruDate(PF.dateToIso(PF.pfFirstBuyDate(p))) + ' · первая покупка</i></span>' +
-                        '<div class="pfpt-chart-leg" id="pfcvLeg-' + p.id + '"></div>' +
-                        '<button class="pfpt-benchbtn' + (benchOn ? ' on' : '') + '" onclick="pfxBenchToggle(\'' + p.id + '\')" ' +
-                            'title="' + attr((benchOn ? 'Убрать кривую — ' : 'Наложить кривую — ') + bench.full) + '">' +
-                            '<span class="pfcv-imdot"></span>' + bench.label + '</button>' +
-                    '</div>' +
-                    '<div class="pfcv-chart" id="pfcvChart-' + p.id + '"></div>' +
-                '</div>'
+            // состояние 3: биржа недоступна — данные ОСТАЮТСЯ (цены покупки),
+            // янтарная плашка называет причину и даёт «Повторить»
+            var anyTicker = c.hs.some(function (x) { return !!x.h.ticker; });
+            var offline = anyTicker && !c.hs.some(function (x) { return x.c.live; });
+            var alert = offline
+                ? '<div class="pfz-alert">Биржа недоступна<span>· показаны цены покупки</span>' +
+                  '<button type="button" class="re" onclick="PF.ensureQuotes(true)">Повторить</button></div>'
                 : '';
-            var table = c.hs.length
-                ? '<div class="pfpt-tablewrap"><table class="pfpt-table"><thead><tr>' +
-                    // «Доля» — свой класс и на заголовке: колонка левоприжатая (полоска
-                    // растёт слева), и отступ от правоприжатой «Стоимости» задаётся
-                    // ОДИН раз для th и td, чтобы шапка не разъезжалась со значением
-                    '<th>Бумага</th><th class="pfpt-num">Кол-во</th><th class="pfpt-num">Средняя</th><th class="pfpt-num">Сейчас</th>' +
-                    '<th class="pfpt-num">Стоимость</th><th class="pfpt-share">Доля</th><th class="pfpt-num">Доход</th><th class="pfpt-num">Доходность</th>' +
-                  '</tr></thead><tbody>' + c.hs.map(function (x) { return pfxPortHoldRowHtml(x, c); }).join('') + '</tbody></table></div>'
-                : '<div class="pfal-empty">Состав пуст — добавьте активы в настройках портфеля ⚙.</div>';
-            // data-pid — адрес карточки для pfxPtSnapsToggle; открытая секция снимков
-            // переживает полные ре-рендеры (состояние в PF.pfptSnapsOpen)
             var snapsBlock = PF.pfptSnapsOpen[p.id] ? pfxPtSnapsHtml(p, c) : '';
-            return '<div class="dash2-card pf-card2 pfpt-card" data-pid="' + esc(p.id) + '" style="--pf-accent:' + ac + '">' + head + snapsBlock + chartBlock + table + '</div>';
+            return open(
+                pfzStripHtml(p, c, i) + snapsBlock + alert +
+                '<div class="pfz-body">' +
+                    '<div class="pfz-main">' + pfzBandHtml(p, c, dd) + pfzTableHtml(p, c) + '</div>' +
+                    '<aside class="pfz-side">' + pfzHeroCard(p, c, dd) + pfzMoveCard(p, c) + pfzPayCard(p) + pfzSnapCard(p) + '</aside>' +
+                '</div>');
         }).join('') + '</div>';
     }
-    // Кривые подвкладки «Портфель» дорисовываются после полного рендера — как
-    // мини-графики карточек (repaintMiniCharts). Пейн переживает своп разметки:
-    // loadPfChart отдаёт данные из кеша синхронно, если они уже загружены.
+    // История MOEX (PF.chartRaw) нужна календарю снимков для записи задним числом.
+    // Обычно её греет карточка портфеля (pfmChart → loadPfChart), но если карточку
+    // с вкладки убрали — догреваем сами для открытых секций снимков.
     PF.pfxPortChartsRepaint = function () {
         visibleItems().forEach(function (p) {
-            if (dq('pfcvChart-' + p.id)) PF.loadPfChart(p.id);
+            if (PF.pfptSnapsOpen[p.id] && !PF.chartRaw[p.id]) PF.loadPfChart(p.id);
         });
-    };
-    // тумблер бенчмарка: точечно — класс кнопки и перерисовка ЭТОГО графика,
-    // без PF.renderPortfolios (полный своп перерисовал бы все кривые вкладки)
-    window.pfxBenchToggle = function (pid) {
-        var on = !PF.benchOn(pid);
-        var p = findPf(pid);
-        var btn = document.querySelector('.pfpt-benchbtn[onclick*="\'' + pid + '\'"]');
-        if (btn && p) {
-            btn.classList.toggle('on', on);
-            btn.title = (on ? 'Убрать кривую — ' : 'Наложить кривую — ') + PF.pfBench(p).full;
-        }
-        PF.setBench(pid, on);   // сам перерисует график, когда серия придёт
     };
     // R8: только видимость ПОРТФЕЛЕЙ (глобальная). Тумблеров секций тут не было и
     // не будет: виджет убирают корзиной на его же карточке, а возвращают из пикера —

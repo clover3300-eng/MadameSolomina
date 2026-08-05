@@ -84,9 +84,12 @@
         // номер портфеля — его позиция среди ВИДИМЫХ карточек (там же нумеруются кольца)
         var visNum = {};
         visibleItems().forEach(function (p, i) { visNum[p.id] = i + 1; });
+        // pfId и qty — для плитки «Ближайшая выплата» виджета «Составы»
+        // («Штурманская» v3): ей нужен фильтр по портфелю и подпись «купон · 50 шт»
         function ev(date, kind, amount, x) {
             return { date: date, kind: kind, amount: amount, ticker: x.h.ticker, name: x.h.name || x.h.ticker,
-                pfName: x.p.name, pfColor: colorVal(x.p.color), pfNum: visNum[x.p.id] || '' };
+                pfName: x.p.name, pfColor: colorVal(x.p.color), pfNum: visNum[x.p.id] || '',
+                pfId: x.p.id, qty: aggHolding(x.h).qty };
         }
         allHeldBonds().forEach(function (x) {
             var qty = aggHolding(x.h).qty;
