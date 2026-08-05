@@ -105,6 +105,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .w-tbl th{text-align:right;font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
           color:var(--dim);padding:8px 11px;border-bottom:1px solid var(--hair);white-space:nowrap}
 .w-tbl th:first-child{text-align:left;padding-left:2px;width:100%}
+.w-tbl th .thq{display:block;font-size:8.5px;font-weight:700;letter-spacing:.06em;color:#a5b1c2;text-transform:lowercase;margin-top:1px}
 .w-tbl td{padding:10px 11px;border-bottom:1px solid var(--hair);text-align:right;font-family:var(--fN);
           font-size:13px;font-weight:600;color:#33415c;white-space:nowrap;vertical-align:middle}
 .w-tbl td:first-child{text-align:left;padding-left:2px}
@@ -166,15 +167,13 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .w2-mvrow b{color:var(--ink);font-weight:700}
 .w2-mvrow i{font-style:normal;font-family:var(--fN);font-size:11.5px;font-weight:600;color:var(--mut)}
 
-/* выплата: листок даты + сумма, без наезжающих чипов */
-.w2-payv{display:flex;align-items:center;gap:12px}
-.w2-date{flex:none;width:46px;border-radius:12px;overflow:hidden;border:1px solid var(--hair);text-align:center;background:rgba(255,255,255,.75)}
-.w2-date b{display:block;font-family:var(--fN);font-size:17px;font-weight:700;padding:5px 0 3px}
-.w2-date span{display:block;font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:#101828;padding:3px 0}
-.w2-payi{display:flex;flex-direction:column;gap:2px;min-width:0}
-.w2-payi b{font-family:var(--fN);font-size:15px;font-weight:700;color:var(--ink)}
-.w2-payi span{font-size:10.5px;font-weight:600;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.w2-payi .q{color:var(--dim)}
+/* выплата: тот же типографический скелет, что у «Капитала» и «Снимков»,
+   никакой декорации: подпись, крупная сумма, что это, линия, когда */
+.w2-pay2 b{font-family:var(--fN);font-size:18px;font-weight:700;color:var(--ink);display:block;letter-spacing:-.01em}
+.w2-pay2 .what{display:block;margin-top:2px;font-size:10.5px;font-weight:600;color:var(--mut)}
+.w2-pay2 .hr{height:1px;background:var(--hair);margin:9px 0 8px}
+.w2-pay2 .when{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;font-weight:700;color:var(--ink)}
+.w2-pay2 .when i{font-style:normal;font-weight:600;color:var(--dim)}
 
 /* снимки */
 .w2-snap{display:flex;flex-direction:column;gap:8px}
@@ -194,9 +193,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .w-band .w2-card > i{margin-bottom:3px}
 .w-band .bv{font-family:var(--fN);font-size:13px;font-weight:700;color:var(--ink);display:block}
 .w-band .bs{display:block;margin-top:2px;font-size:10px;font-weight:600;color:var(--mut)}
-.w-band .w2-payv{gap:8px}
-.w-band .w2-date{width:38px}
-.w-band .w2-date b{font-size:14px;padding:4px 0 2px}
+.w-band .w2-pay2 b{font-size:14px}
 </style>
 </head>
 <body>
@@ -204,16 +201,18 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
 <header class="doc-h">
   <div class="doc-kicker">Мокапы · Портфели · «Составы портфелей» · «Штурманская», чистовик</div>
-  <h1>Чистовик «Штурманской»: строки без графики, доля и доходность по уму</h1>
+  <h1>Чистовик «Штурманской»: строки без графики, доход и доходность разведены</h1>
   <p>Правки по замечаниям: спарклайны из строк убраны совсем; «Доля» стала одним элементом
-     (число, под ним полоска той же ширины, всё под одним правоприжатым заголовком); доходность
-     получила собственную колонку-чип с тинтом и стрелкой; «Ближайшая выплата» пересобрана в
-     плитку с календарным листком; из «Движения дня» убраны полоски-треки, лидер дня выделен строкой.</p>
+     (число, под ним полоска той же ширины, всё под одним правоприжатым заголовком); «Доход»
+     везде только в рублях, а «Доходность» — отдельная колонка-чип с процентом ГОДОВЫХ (это
+     разные числа, дублей «₽ и тут же %» больше нигде нет); «Ближайшая выплата» собрана тем же
+     типографическим скелетом, что «Капитал» и «Снимки»: сумма крупно, что это, линия, когда.</p>
   <div class="verdict">
-    <p><b>Принцип чистовика: в строках таблицы — только цифры и типографика.</b> Всё «живое»
-       (кривая капитала) живёт в одном месте, в герое колонки. Акценты делаются весом, тинтом и
-       выравниванием, а не мини-виджетами в каждой строке. Каждый заголовок стоит ровно над своим
-       значением, у каждой колонки один способ выравнивания.</p>
+    <p><b>Два принципа чистовика.</b> Первый: в строках таблицы — только цифры и типографика;
+       единственная графика виджета — кривая капитала в герое колонки. Второй: одно понятие — одно
+       место. «Доход» — рубли, «Доходность» — процент годовых, и ни в одной ячейке, строке сводки
+       или итоге они больше не склеены в «−6 101 ₽ · −6,1%». Все плитки колонки собраны одним
+       скелетом: подпись, крупное число, тихие строки.</p>
   </div>
 </header>
 
@@ -221,22 +220,22 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 <section class="mk">
   <div class="mk-h"><span class="mk-n">01</span><h2>Полный вид, span 12</h2>
     <span class="mk-tag">к реализации</span></div>
-  <p class="mk-sub">Колонки таблицы: Бумага · Кол-во · Сейчас · Стоимость · Доля · Доход · Доходность.
-     Единственная графика виджета — кривая капитала в герое колонки.</p>
+  <p class="mk-sub">Колонки таблицы: Бумага, Кол-во, Сейчас, Стоимость, Доля, Доход (₽),
+     Доходность (годовых). Единственная графика виджета — кривая капитала в герое колонки.</p>
   <div class="scroller"><div class="scr pad" id="m1"></div></div>
   <div class="notes">
     <div class="note"><i>1</i>Спарклайнов в строках нет. Движение отвечает чипом доходности и
       блоком «Движение дня» — по одному месту на каждый вопрос.</div>
     <div class="note"><i>2</i>«Доля»: число и полоска — один правоприжатый столбик под одним
       заголовком; полоска ровно под числом, той же ширины 52px.</div>
-    <div class="note"><i>3</i>Доходность — отдельная колонка-чип: тинт фона + стрелка + процент.
-      Худшая и лучшая позиции видны с расстояния, и не только цветом.</div>
-    <div class="note"><i>4</i>«Ближайшая выплата»: листок даты «24 СЕН», сумма на пакет крупно,
-      «через 50 дней» тихой строкой. Ничего не переносится и не наезжает.</div>
+    <div class="note"><i>3</i>«Доход» — только рубли; «Доходность» — чип с процентом ГОДОВЫХ
+      (подзаголовок в шапке колонки об этом говорит). Разные числа, разные колонки, ноль дублей.</div>
+    <div class="note"><i>4</i>«Ближайшая выплата» — скелет как у «Капитала»: 892 ₽ крупно,
+      «купон ОФЗ 26238 · 50 шт», волосяная линия, строка «24 сентября / через 50 дней».</div>
     <div class="note"><i>5</i>«Движение дня» без прогресс-баров: лидер — выделенная строка с
       подписью «85% дневного изменения», остальные — тихие строки.</div>
-    <div class="note"><i>6</i>Итог сходится с капиталом-героем; чип в итоге — суммарная
-      доходность портфеля.</div>
+    <div class="note"><i>6</i>Итог сходится с колонкой: −6 101 ₽ дохода и чип −13,6% годовых —
+      ровно те же числа, что в «Сводке».</div>
   </div>
 </section>
 
@@ -264,9 +263,11 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
     <tr><td>«Доля»: заголовок над процентами, полоска сбоку как что-то отдельное</td>
         <td class="ok">Число и полоска собраны в один правоприжатый элемент одной ширины под одним заголовком.</td></tr>
     <tr><td>Проценты доходности не акцентированы</td>
-        <td class="ok">Своя колонка «Доходность»: чип с тинтом, стрелкой и процентом; в итоговой строке — чип по портфелю.</td></tr>
+        <td class="ok">Своя колонка «Доходность, годовых»: чип с тинтом и стрелкой; в итоге — чип по портфелю (−13,6% год.).</td></tr>
+    <tr><td>В «Доходе» и доход, и доходность</td>
+        <td class="ok">Разведены везде: «Доход» — только ₽ (таблица, сводка, итог), процент живёт только в чипах «Доходности». Записей вида «−6 101 ₽ · −6,1%» больше нет.</td></tr>
     <tr><td>«Ближайшая выплата» оформлена неаккуратно</td>
-        <td class="ok">Плитка с календарным листком даты, суммой на пакет и тихой строкой «через 50 дней».</td></tr>
+        <td class="ok">Никакой декорации: тот же скелет, что у «Капитала» и «Снимков» — сумма крупно, «купон ОФЗ 26238 · 50 шт», линия, «24 сентября / через 50 дней».</td></tr>
     <tr><td>Карточка в целом не проработана</td>
         <td class="ok">Один принцип на весь виджет: в строках только цифры; акценты весом и тинтом; каждый заголовок ровно над своим значением; «Движение дня» без прогресс-баров.</td></tr>
   </table>
@@ -275,11 +276,13 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 </div>
 <script>
 /* ---------- данные (те же бумаги) ---------- */
+/* доход (₽) и доходность (годовых) — РАЗНЫЕ числа: ann = annual, как в
+   реальном виджете (pfxPortHoldRowHtml); дублей «₽ · %» нигде нет */
 var ROWS = [
-  { tk:'SBER', nm:'Сбербанк', type:'stock', qty:'100', cur:'286,38', val:'28 638', share:41, pnl:'+638', pnlP:'+2,3%', pos:true },
-  { tk:'YDEX', nm:'Яндекс', type:'stock', qty:'6', cur:'4 120,50', val:'24 723', share:35, pnl:'+1 383', pnlP:'+5,9%', pos:true },
-  { tk:'LKOH', nm:'Лукойл', type:'stock', qty:'3', cur:'4 577,00', val:'13 731', share:20, pnl:'−7 269', pnlP:'−34,6%', pos:false },
-  { tk:'SU26238', nm:'ОФЗ 26238', type:'bond', qty:'50', cur:'542,95', val:'27 148', share:39, pnl:'−853', pnlP:'−2,6%', pos:false }
+  { tk:'SBER', nm:'Сбербанк', type:'stock', qty:'100', cur:'286,38', val:'28 638', share:41, pnl:'+638 ₽', ann:'7,1%', pos:true },
+  { tk:'YDEX', nm:'Яндекс', type:'stock', qty:'6', cur:'4 120,50', val:'24 723', share:35, pnl:'+1 383 ₽', ann:'18,3%', pos:true },
+  { tk:'LKOH', nm:'Лукойл', type:'stock', qty:'3', cur:'4 577,00', val:'13 731', share:20, pnl:'−7 269 ₽', ann:'76,2%', pos:false },
+  { tk:'SU26238', nm:'ОФЗ 26238', type:'bond', qty:'50', cur:'542,95', val:'27 148', share:39, pnl:'−853 ₽', ann:'4,7%', pos:false }
 ];
 var CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="9 5 16 12 9 19"/></svg>';
 var PULSE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>';
@@ -290,7 +293,7 @@ function shr(r){
   return '<span class="w-shr"><b>' + r.share + '%</b><u><i style="width:' + r.share + '%;background:' + col + '"></i></u></span>';
 }
 function chip(r){
-  return '<span class="w-chip ' + (r.pos ? 'pos' : 'neg') + '">' + (r.pos ? '▲' : '▼') + ' ' + r.pnlP.replace('+','').replace('−','') + '</span>';
+  return '<span class="w-chip ' + (r.pos ? 'pos' : 'neg') + '">' + (r.pos ? '▲' : '▼') + ' ' + r.ann + '</span>';
 }
 function asCell(r){
   return '<div class="w-as"><i>' + (r.type === 'bond' ? 'ОФЗ' : 'АКЦ') + '</i><b>' + r.tk + '</b><span>' + r.nm + '</span></div>';
@@ -314,20 +317,20 @@ var CAP_PTS = '0,10 8,11 16,9 24,12 32,10 40,14 48,13 56,17 64,15 72,19 80,18 88
     return '<td>' + asCell(r) + '</td><td>' + r.qty + '</td>' +
       (withCur ? '<td>' + r.cur + ' ₽</td>' : '') +
       '<td><b>' + r.val + ' ₽</b></td><td>' + shr(r) + '</td>' +
-      '<td class="' + (r.pos ? 'pos' : 'neg') + '">' + r.pnl + ' ₽</td>' +
+      '<td class="' + (r.pos ? 'pos' : 'neg') + '">' + r.pnl + '</td>' +
       '<td>' + chip(r) + '</td>';
   }
   var stocks = ROWS.filter(function(r){ return r.type === 'stock'; });
   var bonds  = ROWS.filter(function(r){ return r.type === 'bond'; });
   var t = '<table class="w-tbl"><tr><th>Бумага</th><th>Кол-во</th><th>Сейчас</th>' +
-      '<th>Стоимость</th><th>Доля</th><th>Доход</th><th>Доходность</th></tr>';
+      '<th>Стоимость</th><th>Доля</th><th>Доход</th><th>Доходность<span class="thq">годовых</span></th></tr>';
   t += '<tr class="w-grp"><td colspan="7"><b>Акции</b> · 71% · 67 092 ₽</td></tr>';
   stocks.forEach(function(r){ t += '<tr>' + tds(r, true) + '</tr>'; });
   t += '<tr class="w-grp"><td colspan="7"><b>Облигации</b> · 29% · 27 148 ₽</td></tr>';
   bonds.forEach(function(r){ t += '<tr>' + tds(r, true) + '</tr>'; });
   t += '<tr class="w-tot"><td>Итого · 4 бумаги</td><td></td><td></td>' +
        '<td class="num">94 240 ₽</td><td></td><td class="neg num">−6 101 ₽</td>' +
-       '<td><span class="w-chip neg">▼ 6,1%</span></td></tr>';
+       '<td><span class="w-chip neg">▼ 13,6%</span></td></tr>';
   t += '</table>';
   var side =
     '<div class="w2-side">' +
@@ -340,7 +343,7 @@ var CAP_PTS = '0,10 8,11 16,9 24,12 32,10 40,14 48,13 56,17 64,15 72,19 80,18 88
       '</div>' +
       '<div class="w2-card"><i>Сводка</i>' +
         '<div class="w2-row"><span>Вложено</span><b class="num">100 341 ₽</b></div>' +
-        '<div class="w2-row"><span>Доход</span><b class="neg num">−6 101 ₽ · −6,1%</b></div>' +
+        '<div class="w2-row"><span>Доход</span><b class="neg num">−6 101 ₽</b></div>' +
         '<div class="w2-row"><span>Доходность</span><b class="neg num">−13,6% год.</b></div>' +
       '</div>' +
       '<div class="w2-card"><i>Движение дня</i>' +
@@ -349,11 +352,11 @@ var CAP_PTS = '0,10 8,11 16,9 24,12 32,10 40,14 48,13 56,17 64,15 72,19 80,18 88
         '<div class="w2-mvrow"><b>SBER</b><i class="num">−720 ₽</i></div>' +
         '<div class="w2-mvrow"><b>ОФЗ 26238</b><i class="num">−175 ₽</i></div>' +
       '</div>' +
-      '<div class="w2-card"><i>Ближайшая выплата</i>' +
-        '<div class="w2-payv">' +
-          '<div class="w2-date"><b>24</b><span>сен</span></div>' +
-          '<div class="w2-payi"><b>892 ₽</b><span>ОФЗ 26238 · купон на 50 шт</span><span class="q">через 50 дней</span></div>' +
-        '</div>' +
+      '<div class="w2-card w2-pay2"><i>Ближайшая выплата</i>' +
+        '<b class="num">892 ₽</b>' +
+        '<span class="what">купон ОФЗ 26238 · 50 шт</span>' +
+        '<div class="hr"></div>' +
+        '<div class="when"><span>24 сентября</span><i>через 50 дней</i></div>' +
       '</div>' +
       '<div class="w2-card w2-snap"><i>Снимки капитала</i>' +
         '<div class="w2-snap-row"><span>Последний · вчера</span><b class="num">48 137 ₽</b></div>' +
@@ -373,20 +376,20 @@ var CAP_PTS = '0,10 8,11 16,9 24,12 32,10 40,14 48,13 56,17 64,15 72,19 80,18 88
         '<span class="bs neg num">▼ 5 785 ₽ · 5,8%</span></div>' +
       '<div class="w2-card"><i>Движение дня</i><span class="bv neg num">−4 890 ₽ · LKOH</span>' +
         '<span class="bs">85% дневного минуса</span></div>' +
-      '<div class="w2-card"><i>Выплата</i>' +
-        '<div class="w2-payv"><div class="w2-date"><b>24</b><span>сен</span></div>' +
-        '<div class="w2-payi"><b class="num" style="font-size:13px">892 ₽</b><span class="q">через 50 дней</span></div></div></div>' +
+      '<div class="w2-card w2-pay2"><i>Выплата</i>' +
+        '<b class="num">892 ₽</b>' +
+        '<span class="what">24 сентября · через 50 дней</span></div>' +
       '<div class="w2-card"><i>Снимки</i><span class="bv num">48 137 ₽ · вчера</span>' +
         '<span class="bs">календарь по клику</span></div>' +
     '</div>';
-  var t = '<table class="w-tbl"><tr><th>Бумага</th><th>Кол-во</th><th>Стоимость</th><th>Доля</th><th>Доходность</th></tr>';
+  var t = '<table class="w-tbl"><tr><th>Бумага</th><th>Кол-во</th><th>Стоимость</th><th>Доля</th><th>Доходность<span class="thq">годовых</span></th></tr>';
   ROWS.forEach(function(r){
     t += '<tr><td>' + asCell(r) + '</td><td>' + r.qty + '</td>' +
       '<td><b>' + r.val + ' ₽</b></td><td>' + shr(r) + '</td>' +
       '<td>' + chip(r) + '</td></tr>';
   });
   t += '<tr class="w-tot"><td>Итого · 4 бумаги</td><td></td>' +
-       '<td class="num">94 240 ₽</td><td></td><td><span class="w-chip neg">▼ 6,1%</span></td></tr>';
+       '<td class="num">94 240 ₽</td><td></td><td><span class="w-chip neg">▼ 13,6%</span></td></tr>';
   t += '</table>';
   document.getElementById('m2').innerHTML = '<div class="wid narrow">' + stripHead() + band + t + '</div>';
 })();
