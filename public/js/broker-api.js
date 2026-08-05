@@ -374,12 +374,29 @@
     }
 
     // ---------- вызовы через воркер-прокси ----------
-    function ruError(status, brokerMsg) {
+    function ruError(status, brokerMsg, ownCode) {
+        // 401 приходит из ДВУХ мест: наш прокси отбраковал формат токена (своим
+        // кодом bad_token_format) или брокер отверг сам токен. Разводим их: иначе
+        // «токен неверный или отозван» появлялось и на опечатке в поле, и человек
+        // перевыпускал рабочий токен впустую (жалоба 2026-08-05).
+        if (ownCode === 'bad_token_format') return 'Токен не прошёл проверку формата: он должен начинаться с «t.» и не содержать пробелов';
+        if (ownCode === 'forbidden_origin') return 'Запрос пришёл с чужого адреса — прокси его не пропустил';
+        if (ownCode === 'scope_not_allowed') return 'Это торговое действие, а подключение — только на чтение';
         if (status === 401) return 'Брокер не принял токен — он неверный или отозван';
         if (status === 429) return 'Брокер ограничил частоту запросов — подождите минуту';
         if (status === 404) return 'Метод не входит в whitelist прокси';
         if (status === 403) return brokerMsg || 'Брокер отказал в доступе';
         if (status === 502) return 'Сервер брокера недоступен — попробуйте позже';
+        // 5xx СЕТИ CLOUDFLARE (не брокера): 526/525 — наш прокси не смог установить
+        // доверенное TLS-соединение с invest-public-api, 522/523/524 — не достучался.
+        // Сертификат T-Invest выдан Минцифры РФ, и его корень не входит в доверенные
+        // у Cloudflare — токен тут ни при чём, менять его бесполезно.
+        if (status === 526 || status === 525) {
+            return 'Наш прокси не может установить защищённое соединение с сервером Т-Инвестиций ' +
+                '(сертификат Минцифры РФ не признаётся сетью Cloudflare). Это проблема моста, а не токена — ' +
+                'смена токена не поможет.';
+        }
+        if (status === 522 || status === 523 || status === 524) return 'Прокси не достучался до сервера Т-Инвестиций — попробуйте позже';
         // 405/501 отдаёт голый статик-сервер без воркера (локальное превью)
         if (status === 405 || status === 501) return 'Прокси брокера недоступен в этом окружении — на боевом сайте всё заработает';
         return brokerMsg || ('Ошибка запроса к брокеру (' + status + ')');
@@ -404,9 +421,10 @@
                         var ra = parseFloat(res.headers.get('Retry-After'));
                         cooldownUntil = Date.now() + 1000 * Math.min(60, Math.max(1, isFinite(ra) && ra > 0 ? ra : 5));
                     }
-                    var err = new Error(ruError(res.status, data && data.message));
+                    var err = new Error(ruError(res.status, data && data.message, data && data.error));
                     err.status = res.status;
                     err.brokerCode = data && data.code;
+                    err.ownCode = data && data.error;   // код НАШЕГО прокси, если отказал он
                     throw err;
                 }
                 return data || {};
@@ -439,6 +457,8 @@
                 throw err;
             }
             return rawCall(method, body, token, c.scope, c.sandbox).catch(function (e) {
+                // формат забраковал НАШ прокси — подключение живо, токен не трогаем
+                if (e.status === 401 && e.ownCode === 'bad_token_format') throw e;
                 if (e.status === 401) {
                     // токен отозвали/перевыпустили: помечаем, UI покажет баннер.
                     // Гвард от гонки: пока запрос летел, могли нажать «Отключить» —

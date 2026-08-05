@@ -1365,8 +1365,14 @@
     // всего четыре: стоимость, доля, доход, годовых. Теперь их ровно четыре.
     function pfzAsCell(h, hc) {
         var pos = hc ? fmtQty(hc.qty) + ' шт × ' + (hc.curSrc === 'buy' ? '…' : fmtPrice(hc.cur)) + ' ₽' : '';
-        return '<div class="pfpt-as"><span class="pfz-asn"><b>' + esc(h.ticker) + '</b>' +
-            '<span>' + esc(PF.assetDisplayName(h)) + '</span></span>' +
+        var nm = PF.assetDisplayName(h) || h.ticker;
+        // ОБЛИГАЦИЯ НАЗЫВАЕТСЯ ИМЕНЕМ, а не тикером (просьба 2026-08-05): «ОФЗ 26238»
+        // человек читает, а «SU26238RMFS4» — служебный идентификатор бумаги. У акций
+        // наоборот: тикер и есть её имя на бирже, а название компании — уточнение.
+        var head = h.type === 'bond'
+            ? '<b title="' + attr(h.ticker) + '">' + esc(nm) + '</b>'
+            : '<b>' + esc(h.ticker) + '</b><span>' + esc(nm) + '</span>';
+        return '<div class="pfpt-as"><span class="pfz-asn">' + head + '</span>' +
             (pos ? '<span class="pfz-aspos' + (hc && hc.live ? ' live' : '') + '">' + pos + '</span>' : '') + '</div>';
     }
     // ---- иконка-подсказка в шапке колонки ----
