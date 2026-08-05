@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Составы портфелей · «Штурманская», доводка — живая колонка, группы и спарклайны</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+       --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+       --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding:44px 0 90px;-webkit-font-smoothing:antialiased}
+.page{width:1440px;max-width:100%;margin:0 auto;padding:0 20px}
+
+/* ---------------- документ ---------------- */
+.doc-h{margin-bottom:34px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-acc);margin-bottom:9px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
+.doc-h p{margin-top:12px;font-size:15px;line-height:1.6;color:var(--doc-mut);max-width:880px}
+.verdict{margin-top:20px;display:flex;gap:14px;align-items:flex-start;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid var(--doc-acc);border-radius:14px;padding:16px 20px;max-width:960px}
+.verdict p{margin:0;font-size:14.5px;line-height:1.62;color:var(--doc-quote)}
+.verdict p+p{margin-top:10px}
+.verdict b{font-weight:700;color:var(--doc-ink)}
+
+.mk{margin-top:52px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.62;max-width:960px;margin-bottom:18px}
+.notes{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 26px}
+.note{display:flex;gap:9px;font-size:13px;line-height:1.5;color:var(--doc-quote)}
+.note i{flex:none;width:18px;height:18px;border-radius:50%;background:var(--doc-ink);color:var(--doc-bg);font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.scroller{overflow-x:auto;padding:4px 0 44px;margin-bottom:-32px}
+@media (max-width:1000px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} }
+
+.map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th{text-align:left;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);padding:10px 14px;border-bottom:1px solid var(--doc-line)}
+.map td{padding:9px 14px;border-bottom:1px solid var(--doc-line);color:var(--doc-quote);line-height:1.5;vertical-align:top}
+.map tr:last-child td{border-bottom:0}
+.map .ok{color:#16a34a;font-weight:700}
+.map .no{color:#c2760a;font-weight:700}
+
+/* ======================================================================
+   ЭКРАН — виджет на стекле «Авроры» (фон и глубины — как в portfolios-r7.css)
+   ====================================================================== */
+.scr{--ink:#101828; --mut:#5c6a7d; --dim:#8d9aad; --hair:rgba(16,24,40,.09);
+     --acc:#3b82f6; --grn:#12a35c; --red:#d8452b; --amb:#c2760a; --stk:#D97757; --bnd:#7B9BBF;
+     --gl-work:rgba(255,255,255,.62); --gl-edge:rgba(255,255,255,.78);
+     position:relative;color:var(--ink);border-radius:16px;overflow:hidden;
+     box-shadow:0 2px 4px rgba(15,23,42,.05),0 34px 70px -34px rgba(24,38,60,.4);
+     border:1px solid rgba(15,23,42,.09);width:max-content;
+     background:
+       radial-gradient(760px 520px at 6% 8%, rgba(196,226,224,.88) 0%, rgba(196,226,224,0) 60%),
+       radial-gradient(820px 560px at 78% 4%, rgba(214,214,240,.82) 0%, rgba(214,214,240,0) 62%),
+       radial-gradient(940px 620px at 96% 88%, rgba(206,228,235,.7) 0%, rgba(206,228,235,0) 66%),
+       linear-gradient(160deg,#E3ECEF 0%,#E7EAF2 50%,#E4EBEE 100%)}
+.scr.pad{padding:30px 34px}
+
+/* карточка виджета */
+.wid{width:1100px;background:var(--gl-work);border:1px solid var(--gl-edge);border-radius:24px;
+     padding:20px 24px 22px;backdrop-filter:blur(8px)}
+.wid.narrow{width:720px}
+.num{font-family:var(--fN);font-variant-numeric:tabular-nums}
+.pos{color:var(--grn)} .neg{color:var(--red)}
+
+/* строка-шапка */
+.w-strip{display:flex;align-items:center;gap:14px;flex-wrap:nowrap;padding:2px 2px 14px;white-space:nowrap}
+.w-name{font-family:var(--fU);font-size:16px;font-weight:800;letter-spacing:-.01em}
+.w-name em{font-style:normal;display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--acc);margin-right:8px}
+.w-meta{font-size:11px;font-weight:600;color:var(--dim)}
+.w-strip .sp{flex:1}
+.w-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(16,24,40,.14);border-radius:999px;
+       background:rgba(255,255,255,.7);padding:6px 11px;font-size:11px;font-weight:700;color:var(--mut);white-space:nowrap}
+.w-btn.dark{background:#101828;color:#fff;border-color:transparent}
+.w-btn svg{width:12px;height:12px}
+.w-gear{width:30px;height:30px;border-radius:10px;border:1px solid rgba(16,24,40,.12);background:rgba(255,255,255,.7);
+        display:grid;place-items:center;color:var(--mut)}
+.w-gear svg{width:14px;height:14px}
+
+/* stacked-бар классов активов над таблицей */
+.w-mix{display:flex;align-items:center;gap:12px;margin:0 2px 12px}
+.w-mixbar{flex:1;display:flex;height:7px;border-radius:999px;overflow:hidden}
+.w-mixbar i{display:block;height:100%}
+.w-mixlbl{font-size:11px;font-weight:700;color:var(--mut);white-space:nowrap}
+.w-mixlbl b{color:var(--ink)}
+
+/* таблица состава */
+.w-tbl{width:100%;border-collapse:collapse}
+.w-tbl th{text-align:right;font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+          color:var(--dim);padding:8px 9px;border-bottom:1px solid var(--hair);white-space:nowrap}
+.w-tbl th:first-child{text-align:left;padding-left:2px;width:100%}
+.w-tbl th.shl{text-align:left}
+.w-tbl td{padding:11px 9px;border-bottom:1px solid var(--hair);text-align:right;font-family:var(--fN);
+          font-size:13px;font-weight:600;color:#33415c;white-space:nowrap;vertical-align:middle}
+.w-tbl td:first-child{text-align:left;padding-left:2px}
+.w-tbl tr:last-child td{border-bottom:0}
+.w-grp td{padding:13px 12px 5px 2px;border-bottom:0;text-align:left;font-family:var(--fU);
+          font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
+.w-grp td b{color:var(--ink)}
+.w-as{display:flex;align-items:center;gap:9px;font-family:var(--fU)}
+.w-as i{flex:none;width:30px;height:30px;border-radius:9px;background:rgba(16,24,40,.06);display:grid;place-items:center;
+        font-style:normal;font-family:var(--fN);font-size:9px;font-weight:800;color:var(--mut)}
+.w-as b{font-size:13px;font-weight:800;white-space:nowrap}
+.w-as span{font-size:11px;font-weight:600;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px}
+.w-spark{width:66px;height:26px}
+.w-spark polyline{fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.w-share{display:flex;align-items:center;gap:8px;justify-content:flex-start}
+.w-share u{flex:none;width:56px;height:5px;border-radius:999px;background:rgba(16,24,40,.08);text-decoration:none;overflow:hidden;display:block}
+.w-share u i{display:block;height:100%;border-radius:999px}
+.w-tot td{border-top:1.5px solid rgba(16,24,40,.16);border-bottom:0;padding-top:12px;font-weight:700;color:var(--ink)}
+.w-tot td:first-child{font-family:var(--fU);font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--mut)}
+
+/* две колонки */
+.w2{display:flex;gap:22px;align-items:flex-start}
+.w2-main{flex:1;min-width:0}
+.w2-side{flex:0 0 244px;display:flex;flex-direction:column;gap:10px}
+.w2-card{border:1px solid var(--hair);border-radius:16px;padding:12px 14px;background:rgba(255,255,255,.5)}
+.w2-card > i{font-style:normal;display:block;font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);margin-bottom:5px}
+
+/* капитал-герой с мини-графиком */
+.w2-hero{position:relative;overflow:hidden}
+.w2-hero b{font-family:var(--fN);font-size:22px;font-weight:700;display:block;letter-spacing:-.01em}
+.w2-chip{display:inline-flex;align-items:center;gap:5px;margin-top:5px;border-radius:999px;padding:3px 9px;
+         font-family:var(--fN);font-size:10.5px;font-weight:700}
+.w2-chip.neg{background:rgba(216,69,43,.1);color:var(--red)}
+.w2-chip.pos{background:rgba(18,163,92,.1);color:var(--grn)}
+.w2-herosvg{display:block;width:100%;height:34px;margin-top:8px}
+.w2-herosvg polyline{fill:none;stroke:var(--red);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.w2-herosvg path{fill:rgba(216,69,43,.08);stroke:none}
+.w2-hero .w2-ts{position:absolute;top:12px;right:14px;font-family:var(--fN);font-size:9px;font-weight:600;color:var(--dim)}
+
+/* строки сводки */
+.w2-row{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;font-weight:600;color:var(--mut);padding:6px 1px;border-bottom:1px solid var(--hair)}
+.w2-row:last-child{border-bottom:0;padding-bottom:1px}
+.w2-row b{font-family:var(--fN);font-size:12.5px;color:var(--ink)}
+
+/* движение дня: полоски вклада */
+.w2-mv{padding:5px 1px 6px;border-bottom:1px solid var(--hair)}
+.w2-mv:last-of-type{border-bottom:0}
+.w2-mv-t{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;font-weight:700}
+.w2-mv-t span{color:var(--ink)}
+.w2-mv-t b{font-family:var(--fN);font-size:12px}
+.w2-mv u{display:block;height:4px;border-radius:999px;background:rgba(16,24,40,.07);margin-top:5px;text-decoration:none;overflow:hidden}
+.w2-mv u i{display:block;height:100%;border-radius:999px;background:var(--red)}
+.w2-mv u i.pos{background:var(--grn)}
+.w2-vill{margin-top:7px;font-size:10.5px;font-weight:600;color:var(--dim);line-height:1.45}
+.w2-vill b{color:var(--ink)}
+
+/* выплата */
+.w2-pay{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.w2-pay-l{display:flex;flex-direction:column;gap:2px;font-size:11px;font-weight:600;color:var(--mut)}
+.w2-pay-l b{font-family:var(--fN);font-size:13.5px;font-weight:700;color:var(--ink)}
+.w2-days{flex:none;border-radius:999px;padding:4px 9px;background:rgba(59,130,246,.1);color:#2563cf;
+         font-family:var(--fN);font-size:10.5px;font-weight:700;white-space:nowrap}
+
+/* снимки: строка-превью + вход */
+.w2-snap{display:flex;flex-direction:column;gap:8px}
+.w2-snap-row{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;font-weight:600;color:var(--mut)}
+.w2-snap-row b{font-family:var(--fN);font-size:12.5px;font-weight:700;color:var(--ink)}
+.w2-snap-row .num{font-size:11px}
+.w2-open{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid rgba(16,24,40,.12);
+         border-radius:11px;padding:8px 11px;font-size:11px;font-weight:700;color:var(--mut);background:rgba(255,255,255,.6)}
+.w2-open > svg{flex:none;width:13px;height:13px;color:var(--acc)}
+.w2-open .chev{width:15px;height:15px;border-radius:999px;background:rgba(16,24,40,.07);display:grid;place-items:center}
+.w2-open .chev svg{width:8px;height:8px}
+
+/* узкий блок: колонка складывается в ленту плиток */
+.w-band{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 14px}
+.w-band .w2-card{padding:10px 12px}
+.w-band .w2-hero b{font-size:16px}
+.w-band .w2-card > i{margin-bottom:3px}
+.w-band .bv{font-family:var(--fN);font-size:13px;font-weight:700;color:var(--ink);display:block}
+.w-band .bs{display:block;margin-top:2px;font-size:10px;font-weight:600;color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="doc-h">
+  <div class="doc-kicker">Мокапы · Портфели · «Составы портфелей» · вариант В2</div>
+  <h1>«Штурманская» утверждена. Доводка: живая колонка, группы и спарклайны</h1>
+  <p>Первый экран «Штурманской» показал каркас: таблица слева, сводка справа. Здесь каркас доводится
+     до рабочего вида: в таблицу возвращаются группы классов, спарклайны и итог из «Реестра»,
+     а колонка перестаёт быть списком чисел — у капитала появляется мини-кривая, у движения дня
+     полоски вклада и виновник, у выплаты счётчик дней, у снимков превью вместо голой кнопки.</p>
+  <div class="verdict">
+    <p><b>Что изменилось против первого экрана В2.</b> Таблица: группы «Акции / Облигации» с долей
+       класса, колонка «30 дней» со спарклайном, тонкий бар классов над шапкой. Колонка: капитал
+       с кривой месяца и чипом дня; «Движение дня» с полосками вклада и строкой-выводом; выплата
+       со счётчиком «через N дней» и суммой на пакет, а не на бумагу; «Снимки капитала» — последний
+       снимок и частота автозаписи прямо в плитке, календарь открывается по строке-входу.</p>
+    <p>Второй экран отвечает на вопрос «а в узком блоке?»: колонка складывается в ленту из четырёх
+       плиток над таблицей, спарклайны из таблицы уходят, состав остаётся главным.</p>
+  </div>
+</header>
+
+<!-- ================================ 01 ================================ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">01</span><h2>«Штурманская», полный вид — span 12</h2>
+    <span class="mk-tag">к реализации</span></div>
+  <p class="mk-sub">Левая часть — реестр бумаг с группами и спарклайнами. Правая — приборная колонка:
+     капитал, сводка, движение дня, ближайшая выплата, снимки. «Ребалансировать» остаётся в шапке
+     виджета, шестерёнка — настройки виджета как сейчас.</p>
+  <div class="scroller"><div class="scr pad" id="m1"><div class="wid"><div class="w-strip"><span class="w-name"><em></em>Основной</span><span class="w-meta">4 бумаги · котировки 14:32</span><span class="sp"></span><span class="w-btn dark">Ребалансировать</span><span class="w-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="17" r="2.5"/></svg></span></div><div class="w2"><div class="w2-main"><div class="w-mix"><span class="w-mixlbl"><b>Акции</b> 71%</span><div class="w-mixbar"><i style="width:71%;background:var(--stk)"></i><i style="width:29%;background:var(--bnd)"></i></div><span class="w-mixlbl"><b>Облигации</b> 29%</span></div><table class="w-tbl"><tr><th>Бумага</th><th>30 дней</th><th>Кол-во</th><th>Сейчас</th><th>Стоимость</th><th class="shl">Доля</th><th>Доход</th></tr><tr class="w-grp"><td colspan="7"><b>Акции</b> · 71% · 67 092 ₽</td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>SBER</b><span>Сбербанк</span></div></td><td><svg class="w-spark" viewBox="0 0 84 26" preserveAspectRatio="none"><polyline points="0,20 4,16 8,17 12,14 16,15 20,12 24,13 28,10 32,11 36,8 40,9 44,7 48,8 52,5 56,6 60,4 64,5 68,3 72,4 76,2 80,3 84,2" style="stroke:#12a35c"/></svg></td><td>100</td><td>286,38 ₽</td><td><b>28 638 ₽</b></td><td class="shl"><div class="w-share"><span class="num">41%</span><u><i style="width:41%;background:var(--stk)"></i></u></div></td><td class="pos">+638 ₽ · +2,3%</td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>YDEX</b><span>Яндекс</span></div></td><td><svg class="w-spark" viewBox="0 0 84 26" preserveAspectRatio="none"><polyline points="0,22 4,20 8,21 12,18 16,19 20,16 24,17 28,14 32,15 36,12 40,13 44,10 48,11 52,9 56,10 60,8 64,9 68,6 72,7 76,4 80,5 84,3" style="stroke:#12a35c"/></svg></td><td>6</td><td>4 120,50 ₽</td><td><b>24 723 ₽</b></td><td class="shl"><div class="w-share"><span class="num">35%</span><u><i style="width:35%;background:var(--stk)"></i></u></div></td><td class="pos">+1 383 ₽ · +5,9%</td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>LKOH</b><span>Лукойл</span></div></td><td><svg class="w-spark" viewBox="0 0 84 26" preserveAspectRatio="none"><polyline points="0,4 4,5 8,3 12,6 16,8 20,7 24,10 28,12 32,11 36,14 40,16 44,15 48,18 52,19 56,18 60,21 64,22 68,21 72,23 76,24 80,23 84,24" style="stroke:#d8452b"/></svg></td><td>3</td><td>4 577,00 ₽</td><td><b>13 731 ₽</b></td><td class="shl"><div class="w-share"><span class="num">20%</span><u><i style="width:20%;background:var(--stk)"></i></u></div></td><td class="neg">−7 269 ₽ · −34,6%</td></tr><tr class="w-grp"><td colspan="7"><b>Облигации</b> · 29% · 27 148 ₽</td></tr><tr><td><div class="w-as"><i>ОФЗ</i><b>SU26238</b><span>ОФЗ 26238</span></div></td><td><svg class="w-spark" viewBox="0 0 84 26" preserveAspectRatio="none"><polyline points="0,12 6,12 12,13 18,12 24,13 30,14 36,13 42,14 48,15 54,14 60,15 66,14 72,15 78,16 84,15" style="stroke:#d8452b"/></svg></td><td>50</td><td>542,95 ₽</td><td><b>27 148 ₽</b></td><td class="shl"><div class="w-share"><span class="num">39%</span><u><i style="width:39%;background:var(--bnd)"></i></u></div></td><td class="neg">−853 ₽ · −2,6%</td></tr><tr class="w-tot"><td>Итого · 4 бумаги</td><td></td><td></td><td></td><td class="num">94 240 ₽</td><td class="shl num">100%</td><td class="neg num">−6 101 ₽ · −6,1%</td></tr></table></div><div class="w2-side"><div class="w2-card w2-hero"><i>Капитал</i><span class="w2-ts">30 дней</span><b class="num">94 240 ₽</b><span class="w2-chip neg">▼ 5 785 ₽ · 5,8% за сегодня</span><svg class="w2-herosvg" viewBox="0 0 216 34" preserveAspectRatio="none"><path d="M0,10 L0,10 L8,11 L16,9 L24,12 L32,10 L40,14 L48,13 L56,17 L64,15 L72,19 L80,18 L88,22 L96,20 L104,24 L112,23 L120,26 L128,25 L136,27 L144,26 L152,28 L160,27 L168,29 L176,28 L184,30 L192,29 L200,31 L208,30 L216,31 L216,34 L0,34 Z"/><polyline points="0,10 8,11 16,9 24,12 32,10 40,14 48,13 56,17 64,15 72,19 80,18 88,22 96,20 104,24 112,23 120,26 128,25 136,27 144,26 152,28 160,27 168,29 176,28 184,30 192,29 200,31 208,30 216,31"/></svg></div><div class="w2-card"><i>Сводка</i><div class="w2-row"><span>Вложено</span><b class="num">100 341 ₽</b></div><div class="w2-row"><span>Доход</span><b class="neg num">−6 101 ₽ · −6,1%</b></div><div class="w2-row"><span>Доходность</span><b class="neg num">−13,6% год.</b></div></div><div class="w2-card"><i>Движение дня</i><div class="w2-mv"><div class="w2-mv-t"><span>LKOH</span><b class="neg num">−4 890 ₽</b></div><u><i style="width:85%"></i></u></div><div class="w2-mv"><div class="w2-mv-t"><span>SBER</span><b class="neg num">−720 ₽</b></div><u><i style="width:12%"></i></u></div><div class="w2-mv"><div class="w2-mv-t"><span>ОФЗ 26238</span><b class="neg num">−175 ₽</b></div><u><i style="width:3%"></i></u></div><div class="w2-vill">85% дневного движения — <b>LKOH</b>: −2,1% при доле 20%.</div></div><div class="w2-card"><i>Ближайшая выплата</i><div class="w2-pay"><div class="w2-pay-l"><b class="num">892 ₽</b><span>ОФЗ 26238 · купон · 50 шт × 17,85 ₽</span><span>24.09.2026</span></div><span class="w2-days">через 50 дн</span></div></div><div class="w2-card w2-snap"><i>Снимки капитала</i><div class="w2-snap-row"><span>Последний · вчера</span><b class="num">48 137 ₽</b></div><div class="w2-snap-row"><span>Изменение за день</span><span class="neg num">−137 ₽</span></div><div class="w2-snap-row"><span>Автозапись</span><span class="num">каждый день</span></div><div class="w2-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="flex:1">Календарь снимков</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="9 5 16 12 9 19"/></svg></span></div></div></div></div></div></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i>Капитал-герой: кривая последних 30 дней из дневных снимков — та же
+      серия, что в секции снимков; чип дня вместо строки «за сегодня».</div>
+    <div class="note"><i>2</i>«Движение дня»: полоска — вклад бумаги в дневное изменение, вывод
+      называет виновника словами. Отвечает на «почему минус» без таблицы.</div>
+    <div class="note"><i>3</i>Выплата считается на пакет: 50 бумаг × 17,85 ₽ = 892 ₽, а «через
+      50 дней» избавляет от арифметики с датой.</div>
+    <div class="note"><i>4</i>Плитка снимков показывает последний снимок и режим автозаписи;
+      строка-вход открывает тот же календарь, что реализован сейчас.</div>
+    <div class="note"><i>5</i>Группы «Акции / Облигации» несут долю и стоимость класса —
+      отдельная полоса распределения не нужна, но тонкий бар остаётся ориентиром.</div>
+    <div class="note"><i>6</i>Итоговая строка сходится с капиталом-героем: таблица и колонка
+      проверяют друг друга.</div>
+  </div>
+</section>
+
+<!-- ================================ 02 ================================ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">02</span><h2>Узкий блок — колонка складывается в ленту</h2>
+    <span class="mk-tag mute">поведение</span></div>
+  <p class="mk-sub">Если виджет сузили (меньше ~9 колонок сетки), боковая колонка не падает вниз
+     простынёй, а сжимается в ленту из четырёх плиток над таблицей: капитал, движение дня,
+     выплата, снимки. Спарклайны из таблицы уходят, «Средняя» и «Доходность» тоже — состав
+     остаётся читаемым без горизонтального скролла.</p>
+  <div class="scroller"><div class="scr pad" id="m2"><div class="wid narrow"><div class="w-strip"><span class="w-name"><em></em>Основной</span><span class="w-meta">4 бумаги · котировки 14:32</span><span class="sp"></span><span class="w-btn dark">Ребалансировать</span><span class="w-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="17" r="2.5"/></svg></span></div><div class="w-band"><div class="w2-card w2-hero"><i>Капитал</i><b class="num">94 240 ₽</b><span class="bs neg num">▼ 5 785 ₽ · 5,8%</span></div><div class="w2-card"><i>Движение дня</i><span class="bv neg num">−4 890 ₽ · LKOH</span><span class="bs">85% дневного минуса</span></div><div class="w2-card"><i>Выплата</i><span class="bv num">892 ₽ · 24.09</span><span class="bs">ОФЗ 26238 · через 50 дн</span></div><div class="w2-card"><i>Снимки</i><span class="bv num">48 137 ₽ · вчера</span><span class="bs">календарь — по клику</span></div></div><table class="w-tbl"><tr><th>Бумага</th><th>Кол-во</th><th>Стоимость</th><th class="shl">Доля</th><th>Доход</th></tr><tr><td><div class="w-as"><i>АКЦ</i><b>SBER</b><span>Сбербанк</span></div></td><td>100</td><td><b>28 638 ₽</b></td><td class="shl"><div class="w-share"><span class="num">41%</span><u><i style="width:41%;background:var(--stk)"></i></u></div></td><td class="pos">+638 ₽ · +2,3%</td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>YDEX</b><span>Яндекс</span></div></td><td>6</td><td><b>24 723 ₽</b></td><td class="shl"><div class="w-share"><span class="num">35%</span><u><i style="width:35%;background:var(--stk)"></i></u></div></td><td class="pos">+1 383 ₽ · +5,9%</td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>LKOH</b><span>Лукойл</span></div></td><td>3</td><td><b>13 731 ₽</b></td><td class="shl"><div class="w-share"><span class="num">20%</span><u><i style="width:20%;background:var(--stk)"></i></u></div></td><td class="neg">−7 269 ₽ · −34,6%</td></tr><tr><td><div class="w-as"><i>ОФЗ</i><b>SU26238</b><span>ОФЗ 26238</span></div></td><td>50</td><td><b>27 148 ₽</b></td><td class="shl"><div class="w-share"><span class="num">39%</span><u><i style="width:39%;background:var(--bnd)"></i></u></div></td><td class="neg">−853 ₽ · −2,6%</td></tr><tr class="w-tot"><td>Итого · 4 бумаги</td><td></td><td class="num">94 240 ₽</td><td class="shl num">100%</td><td class="neg num">−6 101 ₽ · −6,1%</td></tr></table></div></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i>Лента — те же четыре плитки колонки, по одному главному числу и
+      одной подписи; ничего нового учить не надо.</div>
+    <div class="note"><i>2</i>Порог — контейнерный (ширина блока, не окна): виджет в конструкторе
+      тянут за кромку, и лента должна включаться от его собственной ширины.</div>
+    <div class="note"><i>3</i>В самой узкой ширине лента становится 2×2 — плитки не мельчают.</div>
+  </div>
+</section>
+
+<!-- ================================ 03 ================================ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">03</span><h2>Что изменилось против первого экрана В2</h2></div>
+  <table class="map">
+    <tr><th>Элемент</th><th>Первый экран В2</th><th>Доводка</th></tr>
+    <tr><td>Капитал</td><td>число + строка «за сегодня»</td>
+        <td class="ok">число + чип дня + кривая 30 дней из снимков</td></tr>
+    <tr><td>Движение дня</td><td>три строки с числами</td>
+        <td class="ok">полоски вклада + вывод «85% движения — LKOH»</td></tr>
+    <tr><td>Ближайшая выплата</td><td>купон на одну бумагу и дата</td>
+        <td class="ok">сумма на пакет + счётчик «через 50 дн»</td></tr>
+    <tr><td>Снимки капитала</td><td>кнопка внизу колонки</td>
+        <td class="ok">плитка: последний снимок, режим автозаписи, строка-вход в календарь</td></tr>
+    <tr><td>Таблица</td><td>плоская, 6 колонок</td>
+        <td class="ok">группы классов + спарклайн 30д + тонкий бар над шапкой</td></tr>
+    <tr><td>Узкий блок</td><td>«колонка падает вниз»</td>
+        <td class="ok">лента 4 плиток над таблицей (контейнерный порог)</td></tr>
+  </table>
+</section>
+
+</div>
+</body>
+</html>
