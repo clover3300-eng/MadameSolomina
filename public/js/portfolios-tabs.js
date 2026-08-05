@@ -1369,6 +1369,46 @@
             '<span>' + esc(PF.assetDisplayName(h)) + '</span></span>' +
             (pos ? '<span class="pfz-aspos' + (hc && hc.live ? ' live' : '') + '">' + pos + '</span>' : '') + '</div>';
     }
+    // ---- иконка-подсказка в шапке колонки ----
+    // Пузырёк рисуется в <body> (как .btx-help во вкладке «Тест»): таблица лежит
+    // в .pfpt-tablewrap с overflow-x:auto, а он по спеке делает и вертикаль
+    // прокручиваемой — CSS-подсказка внутри ячейки была бы обрезана.
+    var PFZ_HELP_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.3 9.2a2.8 2.8 0 0 1 5.4.9c0 1.9-2.7 2.4-2.7 2.4"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+    function pfzHelp(text) {
+        return '<span class="pfz-help" data-tip="' + attr(text) + '" tabindex="0" role="button" aria-label="Пояснение">' + PFZ_HELP_SVG + '</span>';
+    }
+    var pfzTipEl = null;
+    function pfzTipShow(icon) {
+        var tx = icon.getAttribute('data-tip'); if (!tx) return;
+        if (!pfzTipEl) {
+            pfzTipEl = document.createElement('div');
+            pfzTipEl.className = 'pfz-tip';
+            document.body.appendChild(pfzTipEl);
+        }
+        var tip = pfzTipEl;
+        tip.textContent = tx;
+        tip.style.maxWidth = Math.min(300, window.innerWidth - 24) + 'px';
+        tip.style.display = 'block';
+        tip.style.visibility = 'hidden';
+        var r = icon.getBoundingClientRect(), tr = tip.getBoundingClientRect();
+        var left = Math.max(12, Math.min(r.left + r.width / 2 - tr.width / 2, window.innerWidth - tr.width - 12));
+        var top = r.bottom + 8;
+        if (top + tr.height > window.innerHeight - 12) top = Math.max(12, r.top - tr.height - 8);
+        tip.style.left = Math.round(left) + 'px';
+        tip.style.top = Math.round(top) + 'px';
+        tip.style.visibility = 'visible';
+    }
+    function pfzTipHide() { if (pfzTipEl) pfzTipEl.style.display = 'none'; }
+    document.addEventListener('mouseover', function (e) {
+        var ic = e.target.closest && e.target.closest('.pfz-help');
+        if (ic) pfzTipShow(ic); else if (!e.target.closest || !e.target.closest('.pfz-tip')) pfzTipHide();
+    });
+    document.addEventListener('focusin', function (e) {
+        var ic = e.target.closest && e.target.closest('.pfz-help');
+        if (ic) pfzTipShow(ic); else pfzTipHide();
+    });
+    window.addEventListener('scroll', pfzTipHide, true);
+
     // НКД одной облигации (ACCRUEDINT с MOEX, обновляется каждый день — сторож
     // bondNkdDayGuard в ядре); в подсказке — накопленное по всей позиции
     function pfzNkdCell(h, hc) {
@@ -1404,14 +1444,19 @@
         // строкой вместо двух, а у облигаций появилось место под свою колонку НКД
         // (у акций её ячейки пустые — вертикаль чисел остаётся общей на всю таблицу).
         function head(name, withNkd) {
-            return '<tr class="pfz-hd"><th>' + name + '</th>' +
-                '<th class="pfpt-num pfz-nkd"' + (withNkd ? ' title="Накопленный купонный доход на одну бумагу, обновляется каждый день"' : '') + '>' +
-                    (withNkd ? 'НКД' : '') + '</th>' +
+            return '<tr class="pfz-hd"><th class="pfz-hcls">' + name + '</th>' +
+                '<th class="pfpt-num pfz-nkd">' + (withNkd
+                    ? 'НКД' + pfzHelp('НКД — накопленный купонный доход: часть купона, которая уже «капнула» с прошлой выплаты. ' +
+                        'Покупая облигацию, вы платите её продавцу сверх цены, а на следующем купоне получаете обратно. ' +
+                        'Здесь — текущий НКД на одну бумагу, свежий с Мосбиржи; в подсказке строки — накопленное по всей позиции.')
+                    : '') + '</th>' +
                 '<th class="pfpt-num">Стоимость</th><th class="pfpt-num">Доля</th>' +
                 '<th class="pfpt-num pfz-wc">Доход</th>' +
                 // «Годовых» одним словом: единица измерения чипов —
                 // «▲ 28,5%» читается «28,5% годовых»
-                '<th class="pfpt-num" title="Доходность в процентах годовых">Годовых</th></tr>';
+                '<th class="pfpt-num">Годовых' + pfzHelp('Доходность в процентах годовых: доход пересчитан на год владения. ' +
+                    'Бумага, купленная месяц назад и выросшая на 2%, даёт около 24% годовых — так позиции с разным сроком ' +
+                    'сравнимы между собой. Доход в рублях за всё время стоит в соседней колонке.') + '</th></tr>';
         }
         var rows = '';
         if (stocks.length) { rows += head('Акции', false); rows += stocks.map(function (x) { return pfzRowHtml(x, c); }).join(''); }
@@ -1594,7 +1639,7 @@
         return pfzStripHtml(p, c, i, c.hs.length + ' ' + PF.plural(c.hs.length, 'бумага', 'бумаги', 'бумаг') + ' · котировки загружаются…') +
             '<div class="pfz-band on">' + tile() + tile() + tile() + tile() + '</div>' +
             '<div class="pfpt-tablewrap"><table class="pfpt-table pfz-tbl"><tbody>' +
-            '<tr class="pfz-hd"><th>Бумага</th><th class="pfz-nkd"></th>' +
+            '<tr class="pfz-hd"><th class="pfz-hcls">Бумага</th><th class="pfz-nkd"></th>' +
             '<th class="pfpt-num">Стоимость</th><th class="pfpt-num">Доля</th>' +
             '<th class="pfpt-num pfz-wc">Доход</th>' +
             '<th class="pfpt-num">Годовых</th></tr>' + rows + '</tbody></table></div>';

@@ -600,8 +600,16 @@ body.dark-mode .pfcc-verdict, .pfd-item.pfd-thm-dark .pfcc-verdict { color: #8b9
    плиток над таблицей (@container pfz — меряется ширина САМОГО блока, не окна). */
 .pfx-ports { container-type: inline-size; container-name: pfz; }
 
-/* строка-шапка: точка, имя, мета, воздух, действия */
-.pfz-strip { display: flex; align-items: center; gap: 12px; padding: 0 0 14px; white-space: nowrap; }
+/* Строка-шапка: точка, имя, мета, воздух, действия. ПОЛОСА С НИЖНЕЙ ГРАНЬЮ
+   (правка 2026-08-05 «кнопка Ребалансировать будто нависает вверху»): без грани
+   тёмная кнопка стояла в пустоте над приборной панелью и ни с чем не смыкалась.
+   Линия делает шапку явной полосой карточки — кнопка сидит в ней, а не парит. */
+.pfz-strip {
+    display: flex; align-items: center; gap: 12px; white-space: nowrap;
+    padding: 0 0 13px; margin-bottom: 15px;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.07);
+}
+body.dark-mode .pfz-strip { border-bottom-color: rgba(255, 255, 255, 0.07); }
 .pfz-dot { flex: none; width: 9px; height: 9px; border-radius: 50%; }
 .pfz-strip .pfc-name { min-width: 0; }
 .pfz-meta { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600; color: #a5b1c2; overflow: hidden; text-overflow: ellipsis; }
@@ -611,7 +619,7 @@ body.dark-mode .pfz-meta.stale { color: #d79b2e; }
 .pfz-sp { flex: 1; }
 .pfz-strip .pfc-act { width: 38px; height: 38px; border-radius: 11px; flex: none; }
 .pfz-strip .pfc-act svg { width: 16px; height: 16px; }
-.pfpt-rebal { flex: 0 0 auto !important; padding: 10px 16px !important; }
+.pfpt-rebal { flex: 0 0 auto !important; padding: 9px 15px !important; }
 
 /* две колонки: реестр + приборная панель */
 .pfz-body { display: flex; align-items: flex-start; gap: 24px; }
@@ -1051,12 +1059,34 @@ body.dark-mode .pfz-tbl .pfpt-tr:hover td { background: rgba(255, 255, 255, 0.03
     letter-spacing: 0.08em; text-transform: uppercase; color: #a5b1c2;
 }
 body.dark-mode .pfz-tbl .pfz-hd th { border-bottom-color: rgba(255, 255, 255, 0.08); color: #64748b; }
-.pfz-tbl .pfz-hd th:first-child {
-    text-align: left; padding-left: 0; font-size: 11px; letter-spacing: 0.06em; color: #0f172a;
+/* Имя класса — ТОГО ЖЕ цвета, что остальные заголовки строки (правка
+   2026-08-05: тёмное слово рядом с серыми читалось как чужеродная вставка).
+   От соседей его отличают размер и вес, а блоки друг от друга — воздух сверху. */
+.pfz-tbl .pfz-hd th.pfz-hcls {
+    text-align: left; padding-left: 0; font-size: 11px; letter-spacing: 0.07em; font-weight: 800;
 }
-body.dark-mode .pfz-tbl .pfz-hd th:first-child { color: #f4f8fd; }
 .pfz-tbl .pfz-hd th:last-child { padding-right: 0; }
-.pfz-tbl tbody tr:first-child.pfz-hd th { padding-top: 2px; }
+
+/* иконка-подсказка в заголовке колонки */
+.pfz-help {
+    display: inline-grid; place-items: center; width: 14px; height: 14px;
+    margin-left: 5px; vertical-align: -2px; border-radius: 50%;
+    color: #b6c1cf; cursor: help; transition: color 0.13s;
+}
+.pfz-help svg { width: 12px; height: 12px; }
+.pfz-help:hover, .pfz-help:focus-visible { color: var(--pf-accent, #475569); outline: none; }
+body.dark-mode .pfz-help { color: #5b6a7d; }
+body.dark-mode .pfz-help:hover, body.dark-mode .pfz-help:focus-visible { color: #cbd6e4; }
+/* пузырёк живёт в <body>: таблица прокручиваемая, внутри её обрезало бы */
+.pfz-tip {
+    position: fixed; z-index: 9999; display: none; pointer-events: none;
+    max-width: 300px; padding: 10px 12px; border-radius: 12px;
+    background: #0f172a; color: #f4f8fd;
+    font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 500; line-height: 1.5;
+    white-space: pre-line; box-shadow: 0 10px 30px -12px rgba(15, 23, 42, 0.6);
+}
+body.dark-mode .pfz-tip { background: #e8eef7; color: #0f172a; box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.7); }
+.pfz-tbl tbody tr:first-child.pfz-hd th { padding-top: 0; }
 
 /* колонка НКД — только у облигаций; у акций ячейки пустые */
 .pfz-tbl .pfz-nkd { color: #64748b; font-size: 12px; }
