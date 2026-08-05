@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Составы портфелей · раунд 2 — таблица главнее, сводка тише</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+       --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+       --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding:44px 0 90px;-webkit-font-smoothing:antialiased}
+.page{width:1440px;max-width:100%;margin:0 auto;padding:0 20px}
+
+/* ---------------- документ ---------------- */
+.doc-h{margin-bottom:34px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-acc);margin-bottom:9px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
+.doc-h p{margin-top:12px;font-size:15px;line-height:1.6;color:var(--doc-mut);max-width:880px}
+.verdict{margin-top:20px;display:flex;gap:14px;align-items:flex-start;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid var(--doc-acc);border-radius:14px;padding:16px 20px;max-width:960px}
+.verdict p{margin:0;font-size:14.5px;line-height:1.62;color:var(--doc-quote)}
+.verdict p+p{margin-top:10px}
+.verdict b{font-weight:700;color:var(--doc-ink)}
+
+.mk{margin-top:52px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.62;max-width:960px;margin-bottom:18px}
+.notes{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 26px}
+.note{display:flex;gap:9px;font-size:13px;line-height:1.5;color:var(--doc-quote)}
+.note i{flex:none;width:18px;height:18px;border-radius:50%;background:var(--doc-ink);color:var(--doc-bg);font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.scroller{overflow-x:auto;padding:4px 0 44px;margin-bottom:-32px}
+@media (max-width:1000px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} }
+
+.map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th{text-align:left;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);padding:10px 14px;border-bottom:1px solid var(--doc-line)}
+.map td{padding:9px 14px;border-bottom:1px solid var(--doc-line);color:var(--doc-quote);line-height:1.5;vertical-align:top}
+.map tr:last-child td{border-bottom:0}
+.map code{font-family:var(--fN);font-size:11.5px;background:color-mix(in srgb,var(--doc-acc) 9%,transparent);color:var(--doc-acc);padding:1px 5px;border-radius:5px}
+.map .ok{color:#16a34a;font-weight:700}
+.map .no{color:#c2760a;font-weight:700}
+
+/* ======================================================================
+   ЭКРАН — виджет на стекле «Авроры» (фон и глубины — как в portfolios-r7.css)
+   ====================================================================== */
+.scr{--ink:#101828; --mut:#5c6a7d; --dim:#8d9aad; --hair:rgba(16,24,40,.09);
+     --acc:#3b82f6; --grn:#12a35c; --red:#d8452b; --amb:#c2760a; --stk:#D97757; --bnd:#7B9BBF;
+     --gl-work:rgba(255,255,255,.62); --gl-edge:rgba(255,255,255,.78);
+     position:relative;color:var(--ink);border-radius:16px;overflow:hidden;
+     box-shadow:0 2px 4px rgba(15,23,42,.05),0 34px 70px -34px rgba(24,38,60,.4);
+     border:1px solid rgba(15,23,42,.09);width:max-content;
+     background:
+       radial-gradient(760px 520px at 6% 8%, rgba(196,226,224,.88) 0%, rgba(196,226,224,0) 60%),
+       radial-gradient(820px 560px at 78% 4%, rgba(214,214,240,.82) 0%, rgba(214,214,240,0) 62%),
+       radial-gradient(940px 620px at 96% 88%, rgba(206,228,235,.7) 0%, rgba(206,228,235,0) 66%),
+       linear-gradient(160deg,#E3ECEF 0%,#E7EAF2 50%,#E4EBEE 100%)}
+.scr.pad{padding:30px 34px}
+
+/* карточка виджета */
+.wid{width:1100px;background:var(--gl-work);border:1px solid var(--gl-edge);border-radius:24px;
+     padding:20px 24px 22px;backdrop-filter:blur(8px)}
+.num{font-family:var(--fN);font-variant-numeric:tabular-nums}
+.pos{color:var(--grn)} .neg{color:var(--red)}
+
+/* строка-шапка (В1/В3): всё в одну линию */
+.w-strip{display:flex;align-items:baseline;gap:14px;flex-wrap:nowrap;padding:2px 2px 14px;white-space:nowrap}
+.w-name{font-family:var(--fU);font-size:16px;font-weight:800;letter-spacing:-.01em}
+.w-name em{font-style:normal;display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--acc);margin-right:8px}
+.w-cap{font-family:var(--fN);font-size:19px;font-weight:700}
+.w-kv{display:flex;align-items:baseline;gap:5px;font-size:11.5px;color:var(--mut);font-weight:600}
+.w-kv b{font-family:var(--fN);font-size:13px;font-weight:700;color:var(--ink)}
+.w-kv b.pos{color:var(--grn)} .w-kv b.neg{color:var(--red)}
+.w-strip .sp{flex:1}
+.w-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(16,24,40,.14);border-radius:999px;
+       background:rgba(255,255,255,.7);padding:6px 11px;font-size:11px;font-weight:700;color:var(--mut);white-space:nowrap}
+.w-btn.dark{background:#101828;color:#fff;border-color:transparent}
+.w-btn svg{width:12px;height:12px}
+
+/* stacked-бар классов активов над таблицей */
+.w-mix{display:flex;align-items:center;gap:12px;margin:2px 2px 14px}
+.w-mixbar{flex:1;display:flex;height:8px;border-radius:999px;overflow:hidden}
+.w-mixbar i{display:block;height:100%}
+.w-mixlbl{font-size:11px;font-weight:700;color:var(--mut);white-space:nowrap}
+.w-mixlbl b{color:var(--ink)}
+
+/* таблица состава */
+.w-tbl{width:100%;border-collapse:collapse}
+.w-tbl th{text-align:right;font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+          color:var(--dim);padding:8px 14px;border-bottom:1px solid var(--hair);white-space:nowrap}
+.w-tbl th:first-child{text-align:left;padding-left:2px;width:100%}
+.w-tbl th.shl{text-align:left}
+.w-tbl td{padding:11px 14px;border-bottom:1px solid var(--hair);text-align:right;font-family:var(--fN);
+          font-size:13px;font-weight:600;color:#33415c;white-space:nowrap;vertical-align:middle}
+.w-tbl td:first-child{text-align:left;padding-left:2px}
+.w-tbl tr:last-child td{border-bottom:0}
+.w-grp td{padding:14px 14px 5px 2px;border-bottom:0;text-align:left;font-family:var(--fU);
+          font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
+.w-grp td b{color:var(--ink)}
+.w-as{display:flex;align-items:center;gap:9px;font-family:var(--fU)}
+.w-as i{flex:none;width:30px;height:30px;border-radius:9px;background:rgba(16,24,40,.06);display:grid;place-items:center;
+        font-style:normal;font-family:var(--fN);font-size:9px;font-weight:800;color:var(--mut)}
+.w-as b{font-size:13px;font-weight:800;white-space:nowrap}
+.w-as span{font-size:11px;font-weight:600;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px}
+.w-spark{width:84px;height:26px}
+.w-spark polyline{fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.w-share{display:flex;align-items:center;gap:8px;justify-content:flex-start}
+.w-share u{flex:none;width:64px;height:5px;border-radius:999px;background:rgba(16,24,40,.08);text-decoration:none;overflow:hidden;display:block}
+.w-share u i{display:block;height:100%;border-radius:999px}
+.w-tot td{border-top:1.5px solid rgba(16,24,40,.16);border-bottom:0;padding-top:12px;font-weight:700;color:var(--ink)}
+.w-tot td:first-child{font-family:var(--fU);font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--mut)}
+
+/* этажи-аккордеоны под таблицей (В1) */
+.w-floors{margin-top:16px;display:flex;flex-direction:column;gap:8px}
+.w-floor{display:flex;align-items:center;gap:12px;border:1px solid var(--hair);border-radius:14px;
+         padding:11px 16px;background:rgba(255,255,255,.45);font-size:12px;font-weight:700;color:var(--mut)}
+.w-floor b{color:var(--ink);font-weight:800}
+.w-floor .sp{flex:1}
+.w-floor .num{font-size:12px}
+.w-floor .chev{width:16px;height:16px;border-radius:999px;background:rgba(16,24,40,.07);display:grid;place-items:center}
+.w-floor .chev svg{width:8px;height:8px}
+.w-floor.open{background:rgba(255,255,255,.68)}
+.w-floor-open{border:1px solid var(--hair);border-radius:14px;background:rgba(255,255,255,.68);padding:14px 16px}
+
+/* В2: две колонки */
+.w2{display:flex;gap:22px;align-items:flex-start}
+.w2-main{flex:1;min-width:0}
+.w2-side{flex:0 0 238px;display:flex;flex-direction:column;gap:12px}
+.w2-hero{border:1px solid var(--hair);border-radius:16px;padding:14px 16px;background:rgba(255,255,255,.5)}
+.w2-hero i{font-style:normal;display:block;font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);margin-bottom:4px}
+.w2-hero b{font-family:var(--fN);font-size:21px;font-weight:700;display:block}
+.w2-hero span{font-size:11px;font-weight:700}
+.w2-row{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;font-weight:600;color:var(--mut);padding:7px 2px;border-bottom:1px solid var(--hair)}
+.w2-row:last-child{border-bottom:0}
+.w2-row b{font-family:var(--fN);font-size:12.5px;color:var(--ink)}
+.w2-mini{border:1px solid var(--hair);border-radius:16px;padding:12px 16px;background:rgba(255,255,255,.5)}
+.w2-mini > i{font-style:normal;display:block;font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);margin-bottom:2px}
+
+/* В3: разворот строки */
+.w-exp{background:rgba(59,130,246,.05)}
+.w-exp-in td{border-bottom:1px solid var(--hair);padding:0}
+.w-exp-box{display:flex;gap:26px;padding:14px 16px;background:rgba(59,130,246,.04);border-left:2px solid var(--acc);margin:0 0 0 2px}
+.w-exp-col{display:flex;flex-direction:column;gap:5px;font-size:11.5px;font-weight:600;color:var(--mut)}
+.w-exp-col i{font-style:normal;font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.w-exp-col b{font-family:var(--fN);font-size:12.5px;font-weight:700;color:var(--ink)}
+.w-exp-col .num{font-size:11.5px}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="doc-h">
+  <div class="doc-kicker">Мокапы · Портфели · виджет «Составы портфелей»</div>
+  <h1>Составы портфелей, раунд 2: таблица — главная, всё остальное тише</h1>
+  <p>Сейчас карточка виджета — четыре крупные KPI-плитки, полоса распределения, большой график
+     доходности и только потом таблица бумаг. Состав, ради которого виджет ставят, оказывается под
+     сгибом. Три варианта ниже по-разному отвечают на один вопрос: как отдать таблице главную роль,
+     не потеряв сводку, график и снимки капитала.</p>
+  <div class="verdict">
+    <p><b>Рекомендация — В1 «Реестр».</b> Сводка сжимается в одну строку-шапку, классы активов —
+       в общий тонкий бар, таблица получает группы «Акции / Облигации», спарклайны и итоговую строку,
+       а график со снимками становятся тихими этажами-аккордеонами внизу. Виджет начинает отвечать
+       на «что у меня в портфеле» первым экраном.</p>
+    <p>В2 держит сводку постоянно видимой сбоку — хорош, если виджет живёт один на всю ширину.
+       В3 — минимальная правка текущей вёрстки плюс разворот строки бумаги; он самый дешёвый,
+       и его пункт 3 (разворот) стоит забрать в любой выбранный вариант.</p>
+  </div>
+</header>
+
+<!-- ================================ В1 ================================ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">01</span><h2>В1 · «Реестр» — таблица первым экраном</h2>
+    <span class="mk-tag">рекомендация</span></div>
+  <p class="mk-sub">Шапка — одна строка: имя, капитал, дельта дня, доход, доходность и кнопки.
+     Классы активов — тонкий общий бар. Таблица с группами, спарклайнами 30 дней и итогом.
+     График и «Снимки капитала» — этажи-аккордеоны: закрытый этаж — одна строка с главным числом.</p>
+  <div class="scroller"><div class="scr pad" id="m1"></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i>Строка-шапка вместо четырёх плиток: те же числа, в шесть раз ниже.
+      Плитки-дубли карточки портфеля уходят.</div>
+    <div class="note"><i>2</i>Группы «Акции / Облигации» с долей класса прямо в подзаголовке —
+      полоса распределения больше не нужна отдельной строкой.</div>
+    <div class="note"><i>3</i>Спарклайн 30 дней в строке: движение бумаги видно без открытия
+      терминала; данные — те же серии, что у мини-графиков карточек.</div>
+    <div class="note"><i>4</i>Итоговая строка: стоимость и доход сходятся с шапкой — таблица
+      проверяет сама себя.</div>
+    <div class="note"><i>5</i>Закрытый этаж графика показывает доходность и бенчмарк одной строкой —
+      открывать нужно только ради кривой.</div>
+    <div class="note"><i>6</i>Этаж «Снимки капитала» — тот же раскрытый вид с календарём, что уже
+      реализован; меняется только место входа.</div>
+  </div>
+</section>
+
+<!-- ================================ В2 ================================ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">02</span><h2>В2 · «Штурманская» — сводка постоянно сбоку</h2>
+    <span class="mk-tag mute">вариант</span></div>
+  <p class="mk-sub">Таблица занимает левые две трети, правая колонка — капитал-герой, распределение,
+     движение дня, ближайшая выплата и вход в снимки. Ничего не скрыто, но и ничего не стоит
+     над таблицей. Требует полной ширины (span 12) — в узком блоке колонка падает вниз.</p>
+  <div class="scroller"><div class="scr pad" id="m2"></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i>Сводка читается параллельно таблице: сравнил бумагу — тут же видишь
+      её вклад в целое.</div>
+    <div class="note"><i>2</i>«Движение дня» называет виновника: не «−5 785 ₽», а «LKOH −4 890 ₽
+      из −5 785 ₽».</div>
+    <div class="note"><i>3</i>Ближайшая выплата — то, чего в текущем виджете нет вовсе; данные
+      уже есть в календаре выплат.</div>
+  </div>
+</section>
+
+<!-- ================================ В3 ================================ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">03</span><h2>В3 · «Этажи» — текущая структура, сжатая и с разворотом</h2>
+    <span class="mk-tag mute">минимальная правка</span></div>
+  <p class="mk-sub">Порядок этажей не меняется: шапка, график, таблица. Но KPI сжаты в строку,
+     а строка бумаги разворачивается кликом: лоты, средняя, вклад в доход, последние сделки —
+     без ухода в терминал. Разворот стоит забрать в любой вариант.</p>
+  <div class="scroller"><div class="scr pad" id="m3"></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i>Разворот строки отвечает на «почему у LKOH −34%» на месте: видна
+      средняя, дата покупки и сделки.</div>
+    <div class="note"><i>2</i>Кнопки «Терминал» и «Продать» в развороте — прямой мост в торговлю
+      конкретной бумагой.</div>
+    <div class="note"><i>3</i>Самый дешёвый вариант: вёрстка шапки и таблицы почти не трогается.</div>
+  </div>
+</section>
+
+<!-- ================================ карта решений ================================ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">04</span><h2>Карта решений по элементам</h2></div>
+  <table class="map">
+    <tr><th>Элемент</th><th>Сейчас</th><th>В1</th><th>В2</th><th>В3</th></tr>
+    <tr><td>KPI (капитал, вложено, доход, доходность)</td><td>4 крупные плитки, ~120px высоты</td>
+        <td class="ok">строка-шапка</td><td class="ok">колонка сбоку</td><td class="ok">строка-шапка</td></tr>
+    <tr><td>Распределение акции/облигации</td><td>полоса отдельной строкой</td>
+        <td class="ok">в подзаголовках групп</td><td class="ok">в колонке</td><td class="no">как сейчас</td></tr>
+    <tr><td>График доходности</td><td>всегда развёрнут, ~280px</td>
+        <td class="ok">этаж-аккордеон</td><td class="no">по кнопке в колонке</td><td class="no">как сейчас</td></tr>
+    <tr><td>Снимки капитала</td><td>секция по кнопке в шапке</td>
+        <td class="ok">этаж-аккордеон рядом с графиком</td><td class="ok">вход из колонки</td><td class="no">как сейчас</td></tr>
+    <tr><td>Таблица бумаг</td><td>плоский список</td>
+        <td class="ok">группы + спарклайн + итог</td><td class="ok">группы + итог</td><td class="ok">плоская + разворот строки</td></tr>
+    <tr><td>Строка бумаги</td><td>переход по клику в терминал</td>
+        <td class="no">как сейчас</td><td class="no">как сейчас</td><td class="ok">инлайн-разворот с деталями</td></tr>
+  </table>
+</section>
+
+</div>
+<script>
+/* ---------- общие данные (те же бумаги, что в тестовом портфеле) ---------- */
+var ROWS = [
+  { tk:'SBER', nm:'Сбербанк', type:'stock', qty:'100', avg:'280,00', cur:'286,38', val:'28 638', share:41, pnl:'+638', pnlP:'+2,3%', pos:true,
+    sp:'0,20 2,16 4,14 6,15 8,12 10,13 12,10 14,11 16,8 18,9 20,7 22,8 24,5 26,6 28,4 30,5 32,3 34,4 36,2 38,3 40,1 42,2 44,3 46,2 48,1 50,2 52,1 54,2 56,1 58,1 60,2 62,1 64,1 66,2 68,1 70,1 72,2 74,1 76,1 78,2 80,1 82,1 84,1' },
+  { tk:'YDEX', nm:'Яндекс', type:'stock', qty:'6', avg:'3 890,00', cur:'4 120,50', val:'24 723', share:35, pnl:'+1 383', pnlP:'+5,9%', pos:true,
+    sp:'0,22 4,20 8,21 12,18 16,19 20,16 24,17 28,14 32,15 36,12 40,13 44,10 48,11 52,9 56,10 60,8 64,9 68,6 72,7 76,4 80,5 84,3' },
+  { tk:'LKOH', nm:'Лукойл', type:'stock', qty:'3', avg:'7 000,00', cur:'4 577,00', val:'13 731', share:20, pnl:'−7 269', pnlP:'−34,6%', pos:false,
+    sp:'0,4 4,5 8,3 12,6 16,8 20,7 24,10 28,12 32,11 36,14 40,16 44,15 48,18 52,19 56,18 60,21 64,22 68,21 72,23 76,24 80,23 84,24' },
+  { tk:'SU26238', nm:'ОФЗ 26238', type:'bond', qty:'50', avg:'560,00', cur:'542,95', val:'27 148', share:39, pnl:'−853', pnlP:'−2,6%', pos:false,
+    sp:'0,12 6,12 12,13 18,12 24,13 30,14 36,13 42,14 48,15 54,14 60,15 66,14 72,15 78,16 84,15' }
+];
+var CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="9 5 16 12 9 19"/></svg>';
+var PULSE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>';
+
+function spark(r){
+  var col = r.pos ? '#12a35c' : '#d8452b';
+  return '<svg class="w-spark" viewBox="0 0 84 26" preserveAspectRatio="none">' +
+    '<polyline points="' + r.sp + '" style="stroke:' + col + '"/></svg>';
+}
+function shareCell(r){
+  var col = r.type === 'bond' ? 'var(--bnd)' : 'var(--stk)';
+  return '<div class="w-share"><span class="num">' + r.share + '%</span>' +
+    '<u><i style="width:' + r.share + '%;background:' + col + '"></i></u></div>';
+}
+function asCell(r){
+  return '<div class="w-as"><i>' + (r.type === 'bond' ? 'ОФЗ' : 'АКЦ') + '</i><b>' + r.tk + '</b><span>' + r.nm + '</span></div>';
+}
+function rowTds(r, withSpark){
+  return '<td>' + asCell(r) + '</td>' +
+    (withSpark ? '<td>' + spark(r) + '</td>' : '') +
+    '<td>' + r.qty + '</td><td>' + r.avg + ' ₽</td><td>' + r.cur + ' ₽</td>' +
+    '<td><b>' + r.val + ' ₽</b></td><td class="shl">' + shareCell(r) + '</td>' +
+    '<td class="' + (r.pos ? 'pos' : 'neg') + '">' + r.pnl + ' ₽</td>' +
+    '<td class="' + (r.pos ? 'pos' : 'neg') + '">' + r.pnlP + '</td>';
+}
+function headRow(withSpark){
+  return '<tr><th>Бумага</th>' + (withSpark ? '<th>30 дней</th>' : '') +
+    '<th>Кол-во</th><th>Средняя</th><th>Сейчас</th><th>Стоимость</th><th class="shl">Доля</th><th>Доход</th><th>Доходность</th></tr>';
+}
+function strip(){
+  return '<div class="w-strip">' +
+    '<span class="w-name"><em></em>Основной</span>' +
+    '<span class="w-cap num">94 240 ₽</span>' +
+    '<span class="w-kv">за сегодня <b class="neg num">−5 785 ₽</b></span>' +
+    '<span class="w-kv">доход <b class="neg num">−6 101 ₽ · −6,1%</b></span>' +
+    '<span class="w-kv">доходность <b class="neg num">−13,6% год.</b></span>' +
+    '<span class="sp"></span>' +
+    '<span class="w-btn">' + PULSE + 'Снимки капитала</span>' +
+    '<span class="w-btn dark">Ребалансировать</span>' +
+  '</div>';
+}
+
+/* ---------------- В1 «Реестр» ---------------- */
+(function(){
+  var stocks = ROWS.filter(function(r){ return r.type === 'stock'; });
+  var bonds  = ROWS.filter(function(r){ return r.type === 'bond'; });
+  var t = '<table class="w-tbl">' + headRow(true);
+  t += '<tr class="w-grp"><td colspan="9"><b>Акции</b> · 71% · 67 092 ₽</td></tr>';
+  stocks.forEach(function(r){ t += '<tr>' + rowTds(r, true) + '</tr>'; });
+  t += '<tr class="w-grp"><td colspan="9"><b>Облигации</b> · 29% · 27 148 ₽</td></tr>';
+  bonds.forEach(function(r){ t += '<tr>' + rowTds(r, true) + '</tr>'; });
+  t += '<tr class="w-tot"><td>Итого · 4 бумаги</td><td></td><td></td><td></td><td></td>' +
+       '<td class="num">94 240 ₽</td><td class="shl num">100%</td><td class="neg num">−6 101 ₽</td><td class="neg num">−6,1%</td></tr>';
+  t += '</table>';
+  var floors =
+    '<div class="w-floors">' +
+      '<div class="w-floor"><b>Доходность портфеля</b><span>с 07.04.2026</span><span class="sp"></span>' +
+        '<span class="num neg">−13,6%</span><span class="num">IMOEX −4,2%</span><span class="chev">' + CHEV + '</span></div>' +
+      '<div class="w-floor"><b>Снимки капитала</b><span>10 снимков · автозапись каждый день</span><span class="sp"></span>' +
+        '<span class="num neg">−5 785 ₽ за сегодня</span><span class="chev">' + CHEV + '</span></div>' +
+    '</div>';
+  document.getElementById('m1').innerHTML = '<div class="wid">' + strip() +
+    '<div class="w-mix"><span class="w-mixlbl"><b>Акции</b> 71%</span>' +
+      '<div class="w-mixbar"><i style="width:71%;background:var(--stk)"></i><i style="width:29%;background:var(--bnd)"></i></div>' +
+      '<span class="w-mixlbl"><b>Облигации</b> 29%</span></div>' +
+    t + floors + '</div>';
+})();
+
+/* ---------------- В2 «Штурманская» ---------------- */
+(function(){
+  /* рядом со сводкой «Средняя» и «Доходность» из таблицы уходят — колонок шесть */
+  var t = '<table class="w-tbl"><tr><th>Бумага</th><th>Кол-во</th><th>Сейчас</th>' +
+      '<th>Стоимость</th><th class="shl">Доля</th><th>Доход</th></tr>';
+  ROWS.forEach(function(r){
+    t += '<tr><td>' + asCell(r) + '</td><td>' + r.qty + '</td><td>' + r.cur + ' ₽</td>' +
+      '<td><b>' + r.val + ' ₽</b></td><td class="shl">' + shareCell(r) + '</td>' +
+      '<td class="' + (r.pos ? 'pos' : 'neg') + '">' + r.pnl + ' ₽ · ' + r.pnlP + '</td></tr>';
+  });
+  t += '<tr class="w-tot"><td>Итого · 4 бумаги</td><td></td><td></td>' +
+       '<td class="num">94 240 ₽</td><td class="shl num">100%</td><td class="neg num">−6 101 ₽ · −6,1%</td></tr>';
+  t += '</table>';
+  var side =
+    '<div class="w2-side">' +
+      '<div class="w2-hero"><i>Капитал</i><b class="num">94 240 ₽</b><span class="neg num">▼ 5 785 ₽ · 5,8% за сегодня</span></div>' +
+      '<div class="w2-mini"><i>Сводка</i>' +
+        '<div class="w2-row"><span>Вложено</span><b class="num">100 341 ₽</b></div>' +
+        '<div class="w2-row"><span>Доход</span><b class="neg num">−6 101 ₽</b></div>' +
+        '<div class="w2-row"><span>Доходность</span><b class="neg num">−13,6% год.</b></div>' +
+        '<div class="w2-row"><span>Акции / Облигации</span><b class="num">71 / 29</b></div>' +
+      '</div>' +
+      '<div class="w2-mini"><i>Движение дня</i>' +
+        '<div class="w2-row"><span>LKOH</span><b class="neg num">−4 890 ₽</b></div>' +
+        '<div class="w2-row"><span>SBER</span><b class="neg num">−720 ₽</b></div>' +
+        '<div class="w2-row"><span>ОФЗ 26238</span><b class="neg num">−175 ₽</b></div>' +
+      '</div>' +
+      '<div class="w2-mini"><i>Ближайшая выплата</i>' +
+        '<div class="w2-row"><span>ОФЗ 26238 · купон</span><b class="num">17,85 ₽ · 24.09</b></div>' +
+      '</div>' +
+      '<span class="w-btn" style="justify-content:center">' + PULSE + 'Снимки капитала</span>' +
+    '</div>';
+  document.getElementById('m2').innerHTML = '<div class="wid">' +
+    '<div class="w-strip"><span class="w-name"><em></em>Основной</span><span class="sp"></span>' +
+      '<span class="w-btn dark">Ребалансировать</span></div>' +
+    '<div class="w2"><div class="w2-main">' + t + '</div>' + side + '</div></div>';
+})();
+
+/* ---------------- В3 «Этажи» с разворотом строки ---------------- */
+(function(){
+  var t = '<table class="w-tbl">' + headRow(false);
+  ROWS.forEach(function(r, i){
+    var exp = r.tk === 'LKOH';
+    t += '<tr' + (exp ? ' class="w-exp"' : '') + '>' + rowTds(r, false) + '</tr>';
+    if (exp) {
+      t += '<tr class="w-exp-in"><td colspan="9"><div class="w-exp-box">' +
+        '<div class="w-exp-col"><i>Позиция</i><b>3 шт · 2 лота</b><span>куплено 07.05.2026</span></div>' +
+        '<div class="w-exp-col"><i>Средняя / сейчас</i><b class="num">7 000,00 ₽ → 4 577,00 ₽</b><span class="neg num">−2 423,00 ₽ на бумагу</span></div>' +
+        '<div class="w-exp-col"><i>Вклад в доход</i><b class="neg num">−7 269 ₽ из −6 101 ₽</b><span>худшая позиция портфеля</span></div>' +
+        '<div class="w-exp-col"><i>Сделки</i><b class="num">07.05 · 2 шт · 7 100 ₽</b><b class="num">12.05 · 1 шт · 6 800 ₽</b></div>' +
+        '<div class="w-exp-col" style="justify-content:center;gap:8px">' +
+          '<span class="w-btn">Терминал</span><span class="w-btn">Продать</span></div>' +
+      '</div></td></tr>';
+    }
+  });
+  t += '</table>';
+  document.getElementById('m3').innerHTML = '<div class="wid">' + strip() + t + '</div>';
+})();
+</script>
+</body>
+</html>

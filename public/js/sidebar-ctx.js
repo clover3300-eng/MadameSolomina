@@ -25,8 +25,12 @@
             return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
         });
     }
+    // Размер и штрих задаём ещё и АТРИБУТАМИ: до применения CSS (первый кадр,
+    // FOUC) безатрибутный SVG рендерится дефолтными 300×150 с чёрной заливкой —
+    // в превью это выглядело гигантским чёрным глазом. CSS атрибуты перебивает.
+    var SVG_ATTRS = ' width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
     function svg(d) {
-        return '<svg viewBox="0 0 24 24" aria-hidden="true">' + d + '</svg>';
+        return '<svg viewBox="0 0 24 24"' + SVG_ATTRS + ' aria-hidden="true">' + d + '</svg>';
     }
     // Иконки второго уровня. Ставятся ТОЛЬКО там, где смысл однозначен: пункт
     // без своей иконки честнее случайной — .sbc-it переживает её отсутствие.
@@ -64,12 +68,12 @@
         'market-stocks':  '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
         'market-bonds':   '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>'
     };
-    var X_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    var X_SVG = '<svg viewBox="0 0 24 24"' + SVG_ATTRS + ' aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
     // Глаз портфеля — всплывает по наведению на строку, слева от крестика. После
     // 2026-07-29 скрытие в проекте ОДНО и только у портфеля (виджеты удаляются
     // корзиной), и колонка — второе его место рядом с меню «Видимость» в шапке.
-    var EYE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1.6 12S5.3 5.5 12 5.5 22.4 12 22.4 12 18.7 18.5 12 18.5 1.6 12 1.6 12z"/><circle cx="12" cy="12" r="3"/></svg>';
-    var EYEOFF_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.9 5.8A9.6 9.6 0 0 1 12 5.5c6.7 0 10.4 6.5 10.4 6.5a18 18 0 0 1-3.3 4.2M6.2 7.8A18 18 0 0 0 1.6 12S5.3 18.5 12 18.5c1.9 0 3.5-.5 4.9-1.2"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><line x1="3" y1="3" x2="21" y2="21"/></svg>';
+    var EYE_SVG = '<svg viewBox="0 0 24 24"' + SVG_ATTRS + ' aria-hidden="true"><path d="M1.6 12S5.3 5.5 12 5.5 22.4 12 22.4 12 18.7 18.5 12 18.5 1.6 12 1.6 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+    var EYEOFF_SVG = '<svg viewBox="0 0 24 24"' + SVG_ATTRS + ' aria-hidden="true"><path d="M9.9 5.8A9.6 9.6 0 0 1 12 5.5c6.7 0 10.4 6.5 10.4 6.5a18 18 0 0 1-3.3 4.2M6.2 7.8A18 18 0 0 0 1.6 12S5.3 18.5 12 18.5c1.9 0 3.5-.5 4.9-1.2"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><line x1="3" y1="3" x2="21" y2="21"/></svg>';
 
     // ---------- модели ----------
     // «Расчёт» / «Рынок»: зеркало собственных .sb-sub — единственный источник
@@ -572,7 +576,7 @@
             ' href="' + esc(n.getAttribute('href') || '#') + '"' +
             (oc ? ' onclick="' + esc(oc) + '"' : '') +
             ' title="' + esc(tx) + '">' +
-            (ic ? '<svg viewBox="0 0 24 24" aria-hidden="true">' + ic.innerHTML + '</svg>' : '') +
+            (ic ? '<svg viewBox="0 0 24 24"' + SVG_ATTRS + ' aria-hidden="true">' + ic.innerHTML + '</svg>' : '') +
             '<span class="sb-label">' + esc(tx) + '</span></a>';
     }
     // Строка подвкладки «Портфелей». Клик идёт через общий onClick по data-act —
@@ -658,10 +662,10 @@
             ' data-act="flatmore" data-key="" aria-expanded="' + (flatMoreOpen ? 'true' : 'false') + '"' +
             ' title="' + esc(flatMoreOpen ? 'Свернуть'
                 : ('Ещё ' + hidden.length + ' ' + plural(hidden.length, 'раздел', 'раздела', 'разделов'))) + '">' +
-            '<svg class="sb-mdots" viewBox="0 0 24 24" aria-hidden="true">' + IC.dots + '</svg>' +
+            '<svg class="sb-mdots" viewBox="0 0 24 24"' + SVG_ATTRS + ' aria-hidden="true">' + IC.dots + '</svg>' +
             '<span class="sb-label">' + (flatMoreOpen ? 'Свернуть' : 'Ещё') + '</span>' +
             (flatMoreOpen ? '' : '<span class="sb-cnt">' + hidden.length + '</span>') +
-            '<svg class="sb-mch" viewBox="0 0 24 24" aria-hidden="true">' + IC.chev + '</svg>' +
+            '<svg class="sb-mch" viewBox="0 0 24 24"' + SVG_ATTRS + ' aria-hidden="true">' + IC.chev + '</svg>' +
             '</button>';
         if (flatMoreOpen) {
             h += '<div class="sb-morebox">';

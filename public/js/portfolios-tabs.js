@@ -1075,27 +1075,191 @@
         }
         return out;
     }
+    // Секция = две колонки: слева ПОЛНЫЙ архив снимков (хранится до 400 дней на
+    // портфель — обрезает recordSnapshots), справа календарь: отметки дней со
+    // снимками, ручная запись задним числом (стоимость из истории MOEX,
+    // PF.chartRaw), удаление лишнего и частота автозаписи (день/неделя/месяц).
+    // Состояние календаря — сессия: PF.pfptSnapCal[pid] = { y, m, sel }.
+    PF.pfptSnapCal = PF.pfptSnapCal || {};
+    var PFSC_MONTHS = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
+        'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+    // глифы кнопки-тумблера: пульс (дневная линия стоимости) и шеврон-стрелка
+    var PFSC_PULSE_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>';
+    var NOTE_CHEVR_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 5 16 12 9 19"/></svg>';
+    function pfxScState(pid) {
+        if (!PF.pfptSnapCal[pid]) {
+            var n = new Date();
+            PF.pfptSnapCal[pid] = { y: n.getFullYear(), m: n.getMonth(), sel: null };
+        }
+        return PF.pfptSnapCal[pid];
+    }
+    function pfxScIso(y, m, d) { return y + '-' + PF.pad2(m + 1) + '-' + PF.pad2(d); }
+    // стоимость бумаг портфеля на прошлую дату — из той же истории MOEX, что
+    // питает график карточки (chartRaw[pid].series, поле c; свободных денег в
+    // серии нет — снимок задним числом честно пишем без них)
+    function pfxScHistVal(pid, iso) {
+        var raw = PF.chartRaw[pid];
+        if (!raw || !raw.series) return null;
+        for (var i = 0; i < raw.series.length; i++) if (raw.series[i].d === iso) return raw.series[i].c;
+        return null;
+    }
+    function pfxScCalHtml(p, st) {
+        var m = (PF.snaps || {})[p.id] || {};
+        var today = PF.todayStr();
+        var first = new Date(st.y, st.m, 1);
+        var lead = (first.getDay() + 6) % 7;                       // понедельник — первый
+        var dim = new Date(st.y, st.m + 1, 0).getDate();
+        var cells = '';
+        for (var b = 0; b < lead; b++) cells += '<span class="pfsc-b"></span>';
+        for (var d = 1; d <= dim; d++) {
+            var iso = pfxScIso(st.y, st.m, d);
+            var cls = 'pfsc-d';
+            if (m[iso] != null) cls += ' has';
+            if (iso === today) cls += ' today';
+            if (iso === st.sel) cls += ' sel';
+            var future = iso > today;
+            cells += future
+                ? '<span class="pfsc-d off">' + d + '</span>'
+                : '<button type="button" class="' + cls + '" onclick="pfxScPick(\'' + jsArg(p.id) + '\',\'' + iso + '\')"' +
+                  (m[iso] != null ? ' title="Снимок: ' + attr(fmtRub(m[iso])) + '"' : '') + '>' + d + '</button>';
+        }
+        var atNow = (function () { var n = new Date(); return st.y === n.getFullYear() && st.m === n.getMonth(); })();
+        return '<div class="pfsc-cal">' +
+            '<div class="pfsc-head">' +
+                '<button type="button" class="pfsc-nav" onclick="pfxScNav(\'' + jsArg(p.id) + '\',-1)" aria-label="Прошлый месяц">' + PF.CHEV_SVG + '</button>' +
+                '<b>' + PFSC_MONTHS[st.m] + ' ' + st.y + '</b>' +
+                '<button type="button" class="pfsc-nav r" onclick="pfxScNav(\'' + jsArg(p.id) + '\',1)" aria-label="Следующий месяц"' + (atNow ? ' disabled' : '') + '>' + PF.CHEV_SVG + '</button>' +
+            '</div>' +
+            '<div class="pfsc-wd"><span>пн</span><span>вт</span><span>ср</span><span>чт</span><span>пт</span><span>сб</span><span>вс</span></div>' +
+            '<div class="pfsc-grid">' + cells + '</div>' +
+        '</div>';
+    }
+    // панель выбранного дня: снимок есть — значение и «Удалить», снимка нет —
+    // «Записать» со стоимостью из истории (или живой для сегодня); в выходной
+    // без торгов честно объясняем, почему записать нечего
+    function pfxScDayHtml(p, st) {
+        if (!st.sel) return '<div class="pfsc-day quiet">Выберите день в календаре: снимок можно записать задним числом или удалить лишний.</div>';
+        var m = (PF.snaps || {})[p.id] || {};
+        var today = PF.todayStr();
+        var lbl = ruDate(st.sel);
+        if (m[st.sel] != null) {
+            var ks = Object.keys(m).sort(), prev = null;
+            for (var i = 0; i < ks.length; i++) if (ks[i] < st.sel) prev = ks[i];
+            var dch = prev != null ? m[st.sel] - m[prev] : null;
+            return '<div class="pfsc-day">' +
+                '<div class="pfsc-day-l"><i>' + lbl + '</i><b>' + fmtRub(m[st.sel]) + '</b>' +
+                    (dch != null ? '<span class="pfsn-c ' + (dch >= 0 ? 'pos' : 'neg') + '">' + (dch >= 0 ? '+' : '−') + fmtRub(Math.abs(dch)) + '</span>' : '') +
+                '</div>' +
+                '<button type="button" class="pfsc-act danger" onclick="pfxScDelete(\'' + jsArg(p.id) + '\')">Удалить снимок</button>' +
+            '</div>';
+        }
+        var val = st.sel === today
+            ? (PF.quotesTs ? calcPf(p).value : null)
+            : pfxScHistVal(p.id, st.sel);
+        if (!(val > 0)) {
+            var why = st.sel === today ? 'Дождитесь живых котировок — записать пока нечего.'
+                : 'В этот день торгов не было или история MOEX ещё не загрузилась.';
+            return '<div class="pfsc-day quiet"><i>' + lbl + '</i> · ' + why + '</div>';
+        }
+        return '<div class="pfsc-day">' +
+            '<div class="pfsc-day-l"><i>' + lbl + '</i><b>' + fmtRub(val) + '</b><span class="pfsc-day-src">' + (st.sel === today ? 'по живым котировкам' : 'из истории MOEX') + '</span></div>' +
+            '<button type="button" class="pfsc-act" onclick="pfxScWrite(\'' + jsArg(p.id) + '\')">Записать снимок</button>' +
+        '</div>';
+    }
+    function pfxScFreqHtml() {
+        var f = PF.snapFreq ? PF.snapFreq() : 'day';
+        function b(v, t) {
+            return '<button type="button" class="pfsc-fb' + (f === v ? ' on' : '') + '" onclick="pfxScFreq(\'' + v + '\')">' + t + '</button>';
+        }
+        return '<div class="pfsc-freq"><i>Автозапись</i><div class="pfsc-fseg">' +
+            b('day', 'Каждый день') + b('week', 'Раз в неделю') + b('month', 'Раз в месяц') +
+        '</div></div>';
+    }
     function pfxPtSnapsHtml(p, c) {
         var s = pfxPtSnapSeries(p, c);
-        var body;
+        var stored = Object.keys((PF.snaps || {})[p.id] || {}).length;
+        var st = pfxScState(p.id);
+        var list;
         if (s.length < 2) {
-            body = '<div class="pfal-empty">Снимки записываются раз в день при живых котировках — таблица появится со второго дня.</div>';
+            list = '<div class="pfal-empty">Снимков ещё нет: они пишутся автоматически при живых котировках, а первый можно записать прямо сейчас — выберите день в календаре справа.</div>';
         } else {
-            // последние 90 строк: быстрый взгляд, а не архив (полная история — у
-            // виджета «Снимки капитала»); строки — его же язык .pfsn-row
-            var tail = s.slice(-91), rows = '';
-            for (var i = tail.length - 1; i >= 1; i--) {
-                var d = tail[i].v - tail[i - 1].v;
-                rows += '<div class="pfsn-row"><span class="pfsn-d">' + ruDate(tail[i].d) + '</span>' +
-                    '<span class="pfsn-v">' + fmtRub(tail[i].v) + '</span>' +
+            // ВЕСЬ архив (до 400 дней), новые сверху; между месяцами — тихий
+            // разделитель, чтобы длинный список листался по ориентирам
+            var rows = '', lastMon = '';
+            for (var i = s.length - 1; i >= 1; i--) {
+                var mon = s[i].d.slice(0, 7);
+                if (mon !== lastMon) {
+                    rows += '<div class="pfsn-mon">' + PFSC_MONTHS[+mon.slice(5) - 1] + ' ' + mon.slice(0, 4) + '</div>';
+                    lastMon = mon;
+                }
+                var d = s[i].v - s[i - 1].v;
+                rows += '<div class="pfsn-row"><span class="pfsn-d">' + ruDate(s[i].d) + '</span>' +
+                    '<span class="pfsn-v">' + fmtRub(s[i].v) + '</span>' +
                     '<span class="pfsn-c ' + (d >= 0 ? 'pos' : 'neg') + '">' + (d >= 0 ? '+' : '−') + fmtRub(Math.abs(d)) + '</span></div>';
             }
-            body = '<div class="pfsn-list">' + rows + '</div>';
+            list = '<div class="pfsn-list">' + rows + '</div>';
         }
         return '<div class="pfpt-snaps" id="pfptSnaps-' + p.id + '">' +
-            '<div class="pfpt-chart-h"><span class="pfpt-chart-t">Снимки капитала<i>дневные значения стоимости портфеля</i></span></div>' +
-            body + '</div>';
+            '<div class="pfpt-chart-h"><span class="pfpt-chart-t">Снимки капитала' +
+                '<i>' + (stored ? stored + ' ' + PF.plural(stored, 'снимок', 'снимка', 'снимков') + ' · ' : '') + 'хранится до 400 дней</i></span></div>' +
+            '<div class="pfsc-wrap">' +
+                '<div class="pfsc-listcol">' + list + '</div>' +
+                '<aside class="pfsc-side">' + pfxScCalHtml(p, st) + pfxScDayHtml(p, st) + pfxScFreqHtml() + '</aside>' +
+            '</div>' +
+        '</div>';
     }
+    // точечная перерисовка секции на месте — без полного ре-рендера дашборда
+    function pfxPtSnapsRepaint(pid) {
+        var p = findPf(pid); if (!p) return;
+        var sec = dq('pfptSnaps-' + pid);
+        if (sec) sec.outerHTML = pfxPtSnapsHtml(p, calcPf(p));
+        if (PF.pfdRepackSoon) PF.pfdRepackSoon();
+    }
+    window.pfxScNav = function (pid, dir) {
+        var st = pfxScState(pid);
+        var d = new Date(st.y, st.m + dir, 1), n = new Date();
+        if (d > n) return;
+        st.y = d.getFullYear(); st.m = d.getMonth();
+        pfxPtSnapsRepaint(pid);
+    };
+    window.pfxScPick = function (pid, iso) {
+        var st = pfxScState(pid);
+        st.sel = st.sel === iso ? null : iso;   // повторный клик снимает выбор
+        pfxPtSnapsRepaint(pid);
+    };
+    window.pfxScFreq = function (v) {
+        if (PF.snapSetFreq) PF.snapSetFreq(v);
+        // частота общая на все портфели — обновляем каждую открытую секцию
+        document.querySelectorAll('#pfWrap .pfpt-snaps').forEach(function (sec) {
+            var pid = (sec.id || '').replace('pfptSnaps-', '');
+            if (pid) pfxPtSnapsRepaint(pid);
+        });
+    };
+    window.pfxScWrite = function (pid) {
+        var p = findPf(pid), st = pfxScState(pid);
+        if (!p || !st.sel) return;
+        var today = PF.todayStr();
+        var val = st.sel === today ? (PF.quotesTs ? calcPf(p).value : null) : pfxScHistVal(pid, st.sel);
+        if (!(val > 0)) { toast('Нет данных для снимка на эту дату', true); return; }
+        if (PF.snapWrite(pid, st.sel, val)) {
+            toast('Снимок за ' + ruDate(st.sel) + ' записан: ' + fmtRub(val));
+            pfxPtSnapsRepaint(pid);
+        }
+    };
+    window.pfxScDelete = function (pid) {
+        var p = findPf(pid), st = pfxScState(pid);
+        if (!p || !st.sel) return;
+        var m = (PF.snaps || {})[pid] || {};
+        var old = m[st.sel], iso = st.sel;
+        if (old == null) return;
+        if (PF.snapDelete(pid, iso)) {
+            pfxPtSnapsRepaint(pid);
+            toast('Снимок за ' + ruDate(iso) + ' удалён', false, {
+                label: 'Вернуть',
+                fn: function () { PF.snapWrite(pid, iso, old); pfxPtSnapsRepaint(pid); }
+            });
+        }
+    };
     // раскрытие/сворачивание — прямым DOM (вставка/удаление секции), без полного
     // ре-рендера: полный сбрасывал бы прокрутку страницы и мигал графиком
     window.pfxPtSnapsToggle = function (pid) {
@@ -1180,10 +1344,12 @@
                     // кнопки виджета — у ПЕРВОЙ карточки блока (блок один, кнопки одни) и
                     // слева от действий портфеля, а не поверх них
                     (i === 0 ? pfdInChromeHtml('pdetail') : '') +
-                    // «Снимки капитала» — тумблер в языке кнопки бенчмарка (.pfpt-benchbtn):
-                    // оба про «показать ещё один слой данных» в этой же карточке
-                    '<button class="pfpt-benchbtn pfpt-snapsbtn' + (PF.pfptSnapsOpen[p.id] ? ' on' : '') + '" onclick="pfxPtSnapsToggle(\'' + p.id + '\')" ' +
-                        'title="Дневные снимки стоимости этого портфеля — раскрываются прямо в карточке">Снимки капитала</button>' +
+                    // «Снимки капитала» — тумблер-пилюля: пульс-глиф + подпись +
+                    // шеврон, который разворачивается вместе с секцией; в .on
+                    // кнопка тонируется акцентом портфеля (--pf-accent карточки)
+                    '<button class="pfpt-snapsbtn' + (PF.pfptSnapsOpen[p.id] ? ' on' : '') + '" onclick="pfxPtSnapsToggle(\'' + p.id + '\')" ' +
+                        'title="Дневные снимки стоимости этого портфеля — раскрываются прямо в карточке">' +
+                        PFSC_PULSE_SVG + '<span>Снимки капитала</span><i class="pfpt-sn-ch">' + NOTE_CHEVR_SVG + '</i></button>' +
                     '<button class="pfc-rebal pfpt-rebal" onclick="pfExpand(\'' + p.id + '\')">' + PF.REBAL_SVG + 'Ребалансировать</button>' +
                     '<button class="pfc-act" onclick="pfxPortSettings(\'' + p.id + '\')" title="Настройки портфеля" aria-label="Настройки портфеля">' + GEAR + '</button>' +
                 '</div>' +

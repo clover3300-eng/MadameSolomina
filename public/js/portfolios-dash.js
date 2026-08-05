@@ -302,6 +302,9 @@
             cfg.order.push(tab); cfg.col[tab] = 1; cfg.span[tab] = 5; cfg.hidden[tab] = 0;
             cfg.allocPf = tab.slice(3);
             cfg.pdPf = tab.slice(3);   // «Составы» из пикера тоже сразу про этот портфель
+            // «Составы портфелей» — ЧАСТЬ СИДА (просьба 2026-08-05): полная
+            // таблица бумаг этого портфеля во всю ширину, высота по содержимому
+            cfg.order.push('pdetail'); cfg.col.pdetail = 1; cfg.span.pdetail = 12; cfg.hidden.pdetail = 0;
             return cfg;
         }
         // НОВЫЙ экран «Торговли»: та же раскладка, что у первого (график | стакан |
@@ -338,6 +341,17 @@
             // пользователя (виджеты, заметки, другой span) конфиг от миграции уводит
             if (pfxIsPfTab(tab) && pfTabsStore[tab] && c.order.length === 1 && c.order[0] === tab &&
                 +c.span[tab] === 12 && !c.notes.length) c.span[tab] = 5;
+            // мягкая миграция 2026-08-05: НЕТРОНУТЫЙ сид вкладки-портфеля (одна
+            // карточка, ничего не добавлено и не удалено) получает «Составы» во всю
+            // ширину — как у свежего сида выше. Явный выбор пользователя миграцию
+            // отменяет: удалённый корзиной pdetail (hidden=1), «Очистить подвкладку»
+            // (cleared) или любая своя раскладка остаются как есть
+            if (pfxIsPfTab(tab) && pfTabsStore[tab] && !c.cleared && !c.notes.length &&
+                c.order.length === 1 && c.order[0] === tab &&
+                !Object.prototype.hasOwnProperty.call(c.hidden, 'pdetail')) {
+                c.order.push('pdetail'); c.col.pdetail = 1; c.span.pdetail = 12; c.hidden.pdetail = 0;
+                if (!c.pdPf || c.pdPf === 'all') c.pdPf = tab.slice(3);
+            }
             // та же мягкая миграция для «Торговли»: НЕТРОНУТЫЙ старый сид (ровно
             // три карточки терминала) получает график во всю ширину. Любая правка
             // раскладки — свои слоты, другой порядок, заметки — миграцию отменяет:

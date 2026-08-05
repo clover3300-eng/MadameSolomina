@@ -94,22 +94,57 @@
     // прошлых дней. Локальный кэш устройства — в облако не зеркалится.
     var snaps = (function () { try { var o = JSON.parse(localStorage.getItem(SNAP_KEY)); if (o && typeof o === 'object') return o; } catch (e) {} return {}; })();
     var snapSavedAt = 0;
+    // Частота АВТОзаписи снимков (2026-08-05, календарь в «Составах»): 'day' |
+    // 'week' | 'month'. Интервал считаем от последнего снимка, а не по дню недели:
+    // терминал открывают нерегулярно, и «только по понедельникам» терял бы недели.
+    var SNAP_FREQ_KEY = 'pf_snap_freq_v1';
+    function snapFreq() {
+        try { var v = localStorage.getItem(SNAP_FREQ_KEY); return (v === 'week' || v === 'month') ? v : 'day'; }
+        catch (e) { return 'day'; }
+    }
+    function snapSetFreq(v) { try { localStorage.setItem(SNAP_FREQ_KEY, v === 'week' || v === 'month' ? v : 'day'); } catch (e) {} }
+    function snapSave() { try { localStorage.setItem(SNAP_KEY, JSON.stringify(snaps)); } catch (e) {} }
+    // Ручная запись/удаление снимка на дату — из календаря секции «Снимки
+    // капитала». Возвращают true при изменении; обрезка архива та же, что в авто.
+    function snapWrite(pid, dateStr, val) {
+        if (!findPf(pid) || !dateStr || !(val > 0)) return false;
+        var m = snaps[pid] || (snaps[pid] = {});
+        m[dateStr] = Math.round(val);
+        var ks = Object.keys(m).sort();
+        while (ks.length > 400) { delete m[ks.shift()]; }
+        snapSave();
+        return true;
+    }
+    function snapDelete(pid, dateStr) {
+        var m = snaps[pid];
+        if (!m || m[dateStr] == null) return false;
+        delete m[dateStr];
+        snapSave();
+        return true;
+    }
     function recordSnapshots() {
         if (!PF.quotesTs) return;   // без живых цен снимок был бы ценами покупки
         if (Date.now() - snapSavedAt < 5 * 60000) return;
         snapSavedAt = Date.now();
-        var today = todayStr(), changed = false;
+        var today = todayStr(), changed = false, freq = snapFreq();
+        var gate = freq === 'week' ? 7 : freq === 'month' ? 30 : 0;
         PF.store.items.forEach(function (p) {
             var v = calcPf(p).value;
             if (!(v > 0)) return;
             var m = snaps[p.id] || (snaps[p.id] = {});
+            // недельный/месячный режим: свежий снимок уже есть — новый день не пишем
+            // (сегодняшний, раз записанный, продолжает обновляться в течение дня)
+            if (gate && m[today] == null) {
+                var ks0 = Object.keys(m).sort(), last = ks0[ks0.length - 1];
+                if (last && (new Date(today) - new Date(last)) / 86400000 < gate) return;
+            }
             if (m[today] != null && Math.abs(m[today] - v) < 0.5) return;
             m[today] = Math.round(v); changed = true;
             var ks = Object.keys(m).sort();
             while (ks.length > 400) { delete m[ks.shift()]; }
         });
         Object.keys(snaps).forEach(function (pid) { if (!findPf(pid)) { delete snaps[pid]; changed = true; } });
-        if (changed) try { localStorage.setItem(SNAP_KEY, JSON.stringify(snaps)); } catch (e) {}
+        if (changed) snapSave();
     }
     // Изменение стоимости за сегодня: текущая стоимость − последний снимок прошлых дней.
     // ЗАПАСНОЙ ПУТЬ — из котировок (мокап overview3, метка 6 экрана 01). Снимок
@@ -1410,6 +1445,7 @@
     PF.saveStore = saveStore; PF.makePortfolio = makePortfolio; PF.findPf = findPf; PF.findHold = findHold; PF.visibleItems = visibleItems;
     PF.colorVal = colorVal; PF.ensureLots = ensureLots; PF.aggHolding = aggHolding; PF.calcHold = calcHold; PF.calcPf = calcPf;
     PF.dayDelta = dayDelta; PF.dayDeltaSrc = dayDeltaSrc; PF.topMover = topMover; PF.recordSnapshots = recordSnapshots; PF.snaps = snaps;
+    PF.snapFreq = snapFreq; PF.snapSetFreq = snapSetFreq; PF.snapWrite = snapWrite; PF.snapDelete = snapDelete;
     PF.pfAllBoughtToday = pfAllBoughtToday; PF.quoteMissing = quoteMissing;
     // — котировки —
     PF.quotes = quotes; PF.ensureQuotes = ensureQuotes; PF.liveBond = liveBond; PF.bondFace = bondFace; PF.bondQuotes = bondQuotes;

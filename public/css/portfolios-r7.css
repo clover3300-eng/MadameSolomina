@@ -645,15 +645,165 @@ body.dark-mode .pfpt-benchbtn.on { background: #64748b; color: #fff; }
    правило .pfcv-chart исчезло вместе с оверлеем карточки, поэтому задаём здесь. */
 .pfpt-chart .pfcv-chart { position: relative; display: flex; height: 220px; margin-top: 8px; }
 
-/* — «Снимки капитала» раскрываются прямо в карточке «Составов» (кнопка-тумблер
-   в .pfpt-acts, секция под шапкой). Кнопка — язык .pfpt-benchbtn, но без его
-   margin-left:auto: в ряду действий отступы раздаёт сам флекс .pfpt-acts.
-   Строки — язык виджета «Снимки капитала» (.pfsn-*), потолок списка ниже
-   виджетного: секция — быстрый взгляд, а не архив на всю карточку. — */
-.pfpt-snapsbtn { margin-left: 0; }
+/* — «Снимки капитала» в карточке «Составов»: кнопка-тумблер в .pfpt-acts,
+   секция под шапкой = архив слева + календарь/частота справа. Строки списка —
+   язык виджета «Снимки капитала» (.pfsn-*); акцент всюду один — --pf-accent
+   карточки, и только ТИНТОМ (заливка акцентом дала бы белый текст на светлом
+   жёлтом/мятном акценте — контраст непредсказуем). — */
+.pfpt-snapsbtn {
+    display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0; cursor: pointer;
+    border: 1px solid rgba(15, 23, 42, 0.12); background: #fff; color: #64748b;
+    border-radius: 999px; padding: 8px 12px 8px 13px;
+    font-family: 'Inter', sans-serif; font-weight: 700; font-size: 11.5px;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.pfpt-snapsbtn > svg { width: 13px; height: 13px; color: var(--pf-accent, #475569); }
+.pfpt-snapsbtn .pfpt-sn-ch {
+    display: grid; place-items: center; width: 17px; height: 17px; border-radius: 999px;
+    background: rgba(15, 23, 42, 0.07); font-style: normal;
+    transition: transform 0.16s ease, background 0.15s;
+}
+.pfpt-snapsbtn .pfpt-sn-ch svg { width: 9px; height: 9px; }
+.pfpt-snapsbtn:hover { color: #0f172a; border-color: rgba(15, 23, 42, 0.24); }
+.pfpt-snapsbtn.on {
+    color: #0f172a;
+    border-color: color-mix(in srgb, var(--pf-accent, #475569) 55%, transparent);
+    background: color-mix(in srgb, var(--pf-accent, #475569) 13%, #fff);
+}
+.pfpt-snapsbtn.on .pfpt-sn-ch { transform: rotate(90deg); background: color-mix(in srgb, var(--pf-accent, #475569) 22%, transparent); }
+body.dark-mode .pfpt-snapsbtn { border-color: rgba(255, 255, 255, 0.12); background: rgba(255, 255, 255, 0.04); color: #9fb0c4; }
+body.dark-mode .pfpt-snapsbtn:hover { color: #f4f8fd; border-color: rgba(255, 255, 255, 0.26); }
+body.dark-mode .pfpt-snapsbtn .pfpt-sn-ch { background: rgba(255, 255, 255, 0.09); }
+body.dark-mode .pfpt-snapsbtn.on {
+    color: #f4f8fd;
+    background: color-mix(in srgb, var(--pf-accent, #64748b) 24%, transparent);
+    border-color: color-mix(in srgb, var(--pf-accent, #64748b) 45%, transparent);
+}
+
 .pfpt-snaps { margin: 4px 0 16px; padding-top: 14px; border-top: 1px solid rgba(15, 23, 42, 0.07); }
 body.dark-mode .pfpt-snaps { border-top-color: rgba(255, 255, 255, 0.08); }
-.pfpt-snaps .pfsn-list { max-height: 300px; }
+.pfsc-wrap { display: flex; align-items: flex-start; gap: 26px; flex-wrap: wrap; margin-top: 6px; }
+.pfsc-listcol { flex: 1 1 320px; min-width: 260px; }
+.pfsc-listcol .pfsn-list { margin-top: 0; max-height: 356px; }
+/* тихий разделитель месяцев в длинном архиве */
+.pfsn-mon {
+    padding: 12px 2px 3px; font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800;
+    letter-spacing: 0.08em; text-transform: uppercase; color: #a5b1c2;
+}
+.pfsn-list .pfsn-mon:first-child { padding-top: 2px; }
+body.dark-mode .pfsn-mon { color: #64748b; }
+
+/* — календарь — */
+.pfsc-side { flex: 0 0 250px; display: flex; flex-direction: column; gap: 12px; }
+.pfsc-cal {
+    border: 1px solid rgba(15, 23, 42, 0.08); border-radius: 16px;
+    padding: 12px 12px 10px; background: rgba(248, 250, 252, 0.65);
+}
+body.dark-mode .pfsc-cal { border-color: rgba(255, 255, 255, 0.09); background: rgba(255, 255, 255, 0.03); }
+.pfsc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.pfsc-head b { font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 800; color: #0f172a; }
+body.dark-mode .pfsc-head b { color: #f4f8fd; }
+.pfsc-nav {
+    width: 26px; height: 26px; display: grid; place-items: center; border: 0;
+    background: transparent; border-radius: 8px; color: #8494a7; cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+}
+.pfsc-nav:hover { background: rgba(15, 23, 42, 0.06); color: #0f172a; }
+body.dark-mode .pfsc-nav:hover { background: rgba(255, 255, 255, 0.08); color: #f4f8fd; }
+.pfsc-nav[disabled] { opacity: 0.35; cursor: default; pointer-events: none; }
+/* PF.CHEV_SVG смотрит вниз — поворачиваем во «влево/вправо» */
+.pfsc-nav svg { width: 14px; height: 14px; transform: rotate(90deg); }
+.pfsc-nav.r svg { transform: rotate(-90deg); }
+.pfsc-wd { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 2px; }
+.pfsc-wd span {
+    text-align: center; padding: 2px 0 5px; font-family: 'Inter', sans-serif; font-size: 9.5px;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #a5b1c2;
+}
+.pfsc-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.pfsc-d {
+    position: relative; height: 28px; display: grid; place-items: center; border: 0;
+    background: transparent; border-radius: 9px; cursor: pointer;
+    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11px; font-weight: 600;
+    color: #334155; transition: background 0.12s, color 0.12s, box-shadow 0.12s;
+}
+body.dark-mode .pfsc-d { color: #cbd6e4; }
+.pfsc-d:hover { background: rgba(15, 23, 42, 0.07); }
+body.dark-mode .pfsc-d:hover { background: rgba(255, 255, 255, 0.08); }
+.pfsc-d.off { color: #c3ccd8; cursor: default; }
+body.dark-mode .pfsc-d.off { color: rgba(148, 163, 184, 0.4); }
+/* день со снимком — точка в цвет портфеля (сам факт, не величина) */
+.pfsc-d.has::after {
+    content: ''; position: absolute; left: 50%; bottom: 3px; width: 4px; height: 4px;
+    margin-left: -2px; border-radius: 999px; background: var(--pf-accent, #475569);
+}
+.pfsc-d.today { box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.28); }
+body.dark-mode .pfsc-d.today { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.32); }
+.pfsc-d.sel {
+    background: color-mix(in srgb, var(--pf-accent, #475569) 18%, transparent);
+    box-shadow: inset 0 0 0 1.5px var(--pf-accent, #475569);
+    color: #0f172a;
+}
+body.dark-mode .pfsc-d.sel { color: #f4f8fd; }
+
+/* — панель выбранного дня — */
+.pfsc-day {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    border: 1px solid rgba(15, 23, 42, 0.08); border-radius: 14px; padding: 10px 12px;
+}
+body.dark-mode .pfsc-day { border-color: rgba(255, 255, 255, 0.09); }
+.pfsc-day.quiet {
+    display: block; border-style: dashed; font-family: 'Inter', sans-serif; font-size: 11.5px;
+    font-weight: 600; color: #8494a7; line-height: 1.45;
+}
+.pfsc-day.quiet i { font-style: normal; color: #64748b; }
+.pfsc-day-l { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pfsc-day-l i {
+    font-family: 'Inter', sans-serif; font-style: normal; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em; color: #8494a7;
+}
+.pfsc-day-l b {
+    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 14px; font-weight: 700;
+    color: #0f172a; font-variant-numeric: tabular-nums;
+}
+body.dark-mode .pfsc-day-l b { color: #f4f8fd; }
+.pfsc-day-l .pfsn-c { width: auto; text-align: left; }
+.pfsc-day-src { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; color: #a5b1c2; }
+.pfsc-act {
+    flex: none; border: 1px solid rgba(15, 23, 42, 0.14); background: #fff; color: #0f172a;
+    border-radius: 999px; padding: 7px 12px; font-family: 'Inter', sans-serif;
+    font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap;
+    transition: background 0.13s, color 0.13s, border-color 0.13s;
+}
+.pfsc-act:hover { background: #0f172a; color: #fff; border-color: transparent; }
+.pfsc-act:active { transform: translateY(1px); }
+.pfsc-act.danger { color: #c2410c; border-color: rgba(194, 65, 12, 0.35); }
+.pfsc-act.danger:hover { background: #c2410c; color: #fff; border-color: transparent; }
+body.dark-mode .pfsc-act { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.14); color: #e8eef7; }
+body.dark-mode .pfsc-act:hover { background: #e8eef7; color: #0f172a; }
+body.dark-mode .pfsc-act.danger { color: #fb923c; border-color: rgba(251, 146, 60, 0.35); }
+body.dark-mode .pfsc-act.danger:hover { background: #c2410c; color: #fff; }
+
+/* — частота автозаписи — */
+.pfsc-freq { display: flex; flex-direction: column; gap: 6px; }
+.pfsc-freq > i {
+    font-family: 'Inter', sans-serif; font-style: normal; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.07em; color: #8494a7;
+}
+.pfsc-fseg {
+    display: flex; gap: 4px; padding: 3px; border-radius: 999px;
+    border: 1px solid rgba(15, 23, 42, 0.09); background: rgba(248, 250, 252, 0.7);
+}
+body.dark-mode .pfsc-fseg { border-color: rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.04); }
+.pfsc-fb {
+    flex: 1; border: 0; background: transparent; border-radius: 999px; padding: 6px 4px;
+    font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 700; color: #64748b;
+    cursor: pointer; white-space: nowrap; transition: background 0.13s, color 0.13s;
+}
+.pfsc-fb:hover { color: #0f172a; }
+.pfsc-fb.on { background: #0f172a; color: #fff; }
+body.dark-mode .pfsc-fb { color: #9fb0c4; }
+body.dark-mode .pfsc-fb:hover { color: #f4f8fd; }
+body.dark-mode .pfsc-fb.on { background: #e8eef7; color: #0f172a; }
 
 /* таблица состава */
 .pfpt-tablewrap { overflow-x: auto; scrollbar-width: thin; }
