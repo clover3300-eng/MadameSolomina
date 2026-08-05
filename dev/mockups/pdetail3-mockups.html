@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<title>Составы портфелей · «Штурманская», чистовик — без спарклайнов, доля и доходность по уму</title>
+<title>Составы портфелей · «Штурманская», чистовик v3 — дублей нет, цвет только у состояния, пять состояний</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -49,6 +49,12 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .scroller{overflow-x:auto;padding:4px 0 44px;margin-bottom:-32px}
 @media (max-width:1000px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} }
 
+/* блок состояния: подзаголовок + экран */
+.stx{margin-top:26px}
+.stx-h{display:flex;align-items:baseline;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.stx-h b{font-family:var(--fU);font-size:14px;font-weight:800}
+.stx-h span{font-size:12.5px;color:var(--doc-mut);line-height:1.5}
+
 .map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
 .map th{text-align:left;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);padding:10px 14px;border-bottom:1px solid var(--doc-line)}
 .map td{padding:9px 14px;border-bottom:1px solid var(--doc-line);color:var(--doc-quote);line-height:1.5;vertical-align:top}
@@ -60,7 +66,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
    ====================================================================== */
 .scr{--ink:#101828; --mut:#5c6a7d; --dim:#8d9aad; --hair:rgba(16,24,40,.09);
      --acc:#3b82f6; --grn:#12a35c; --grn-ink:#0e7a45; --red:#d8452b; --red-ink:#b23b24;
-     --stk:#D97757; --bnd:#7B9BBF;
+     --amb:#b8770a; --stk:#D97757; --bnd:#7B9BBF;
      --gl-work:rgba(255,255,255,.62); --gl-edge:rgba(255,255,255,.78);
      position:relative;color:var(--ink);border-radius:16px;overflow:hidden;
      box-shadow:0 2px 4px rgba(15,23,42,.05),0 34px 70px -34px rgba(24,38,60,.4);
@@ -84,6 +90,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .w-name{font-family:var(--fU);font-size:16px;font-weight:800;letter-spacing:-.01em}
 .w-name em{font-style:normal;display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--acc);margin-right:8px}
 .w-meta{font-size:11px;font-weight:600;color:var(--dim)}
+.w-meta.stale{color:var(--amb);font-weight:700}
 .w-strip .sp{flex:1}
 .w-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(16,24,40,.14);border-radius:999px;
        background:rgba(255,255,255,.7);padding:6px 11px;font-size:11px;font-weight:700;color:var(--mut);white-space:nowrap}
@@ -100,7 +107,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .w2-card{border:1px solid var(--hair);border-radius:16px;padding:12px 14px;background:rgba(255,255,255,.5)}
 .w2-card > i{font-style:normal;display:block;font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
 
-/* ---- таблица: без спарклайнов; «Доля» и «Доходность» по уму ---- */
+/* ---- таблица ---- */
 .w-tbl{width:100%;border-collapse:collapse}
 .w-tbl th{text-align:right;font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
           color:var(--dim);padding:8px 11px;border-bottom:1px solid var(--hair);white-space:nowrap}
@@ -110,21 +117,23 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
           font-size:13px;font-weight:600;color:#33415c;white-space:nowrap;vertical-align:middle}
 .w-tbl td:first-child{text-align:left;padding-left:2px}
 .w-tbl tr:last-child td{border-bottom:0}
+/* группа: имя слева, СУММА ГРУППЫ — в колонке «Стоимость», по общей вертикали */
 .w-grp td{padding:13px 11px 5px 2px;border-bottom:0;text-align:left;font-family:var(--fU);
           font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
 .w-grp td b{color:var(--ink)}
+.w-grp td.gsum{text-align:right;padding:13px 11px 5px;font-family:var(--fN);font-size:11.5px;
+               font-weight:700;color:var(--mut);letter-spacing:0;text-transform:none}
 .w-as{display:flex;align-items:center;gap:9px;font-family:var(--fU)}
 .w-as i{flex:none;width:30px;height:30px;border-radius:9px;background:rgba(16,24,40,.06);display:grid;place-items:center;
         font-style:normal;font-family:var(--fN);font-size:9px;font-weight:800;color:var(--mut)}
 .w-as b{font-size:13px;font-weight:800;white-space:nowrap}
 .w-as span{font-size:11px;font-weight:600;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
-/* ДОЛЯ: число и полоска — ОДИН элемент, правоприжатый, под одним заголовком.
-   Полоска ровно под числом и той же ширины (фикс 52px), а не «где-то сбоку». */
+/* доля: число и полоска — один правоприжатый элемент одной ширины */
 .w-shr{display:inline-flex;flex-direction:column;align-items:flex-end;gap:4px;vertical-align:middle}
 .w-shr b{font-family:var(--fN);font-size:13px;font-weight:700;color:#33415c;line-height:1}
 .w-shr u{width:52px;height:4px;border-radius:999px;background:rgba(16,24,40,.1);text-decoration:none;overflow:hidden;display:block}
 .w-shr u i{display:block;height:100%;border-radius:999px;float:right}
-/* ДОХОДНОСТЬ: чип-акцент — тинт + стрелка, читается и без цвета */
+/* доходность: ЕДИНСТВЕННЫЙ цветовой акцент строки */
 .w-chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:4px 9px;
         font-family:var(--fN);font-size:11.5px;font-weight:700;line-height:1}
 .w-chip.pos{background:rgba(18,163,92,.12);color:var(--grn-ink)}
@@ -132,31 +141,22 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .w-tot td{border-top:1.5px solid rgba(16,24,40,.16);border-bottom:0;padding-top:12px;font-weight:700;color:var(--ink)}
 .w-tot td:first-child{font-family:var(--fU);font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--mut)}
 
-/* stacked-бар классов над таблицей */
-.w-mix{display:flex;align-items:center;gap:12px;margin:0 2px 12px}
-.w-mixbar{flex:1;display:flex;height:7px;border-radius:999px;overflow:hidden}
-.w-mixbar i{display:block;height:100%}
-.w-mixlbl{font-size:11px;font-weight:700;color:var(--mut);white-space:nowrap}
-.w-mixlbl b{color:var(--ink)}
-
-/* капитал-герой */
+/* капитал-герой: кривая НЕЙТРАЛЬНАЯ (форма, не приговор) */
 .w2-hero{position:relative;overflow:hidden}
 .w2-hero b{font-family:var(--fN);font-size:22px;font-weight:700;display:block;letter-spacing:-.01em}
-.w2-chip{display:inline-flex;align-items:center;gap:5px;margin-top:5px;border-radius:999px;padding:3px 9px;
+.w2-inv{display:block;margin-top:3px;font-size:10.5px;font-weight:600;color:var(--mut)}
+.w2-chip{display:inline-flex;align-items:center;gap:5px;margin-top:6px;border-radius:999px;padding:3px 9px;
          font-family:var(--fN);font-size:10.5px;font-weight:700}
 .w2-chip.neg{background:rgba(216,69,43,.1);color:var(--red-ink)}
 .w2-chip.pos{background:rgba(18,163,92,.1);color:var(--grn-ink)}
 .w2-herosvg{display:block;width:100%;height:34px;margin-top:8px}
-.w2-herosvg polyline{fill:none;stroke:var(--red);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
-.w2-herosvg path{fill:rgba(216,69,43,.08);stroke:none}
+.w2-herosvg polyline{fill:none;stroke:rgba(16,24,40,.5);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.w2-herosvg path{fill:rgba(16,24,40,.05);stroke:none}
 .w2-hero .w2-ts{position:absolute;top:12px;right:14px;font-family:var(--fN);font-size:9px;font-weight:600;color:var(--dim)}
+.w2-nochart{margin-top:8px;padding:8px 10px;border:1px dashed rgba(16,24,40,.14);border-radius:10px;
+            font-size:10.5px;font-weight:600;color:var(--dim);line-height:1.45}
 
-/* сводка */
-.w2-row{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;font-weight:600;color:var(--mut);padding:6px 1px;border-bottom:1px solid var(--hair)}
-.w2-row:last-child{border-bottom:0;padding-bottom:1px}
-.w2-row b{font-family:var(--fN);font-size:12.5px;color:var(--ink)}
-
-/* движение дня: лидер — выделенной строкой, БЕЗ полосок-треков */
+/* движение дня */
 .w2-mvlead{border-left:2.5px solid var(--red);border-radius:0 10px 10px 0;background:rgba(216,69,43,.06);
            padding:8px 10px;margin:0 0 6px}
 .w2-mvlead .t{display:flex;justify-content:space-between;align-items:baseline}
@@ -167,8 +167,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .w2-mvrow b{color:var(--ink);font-weight:700}
 .w2-mvrow i{font-style:normal;font-family:var(--fN);font-size:11.5px;font-weight:600;color:var(--mut)}
 
-/* выплата: тот же типографический скелет, что у «Капитала» и «Снимков»,
-   никакой декорации: подпись, крупная сумма, что это, линия, когда */
+/* выплата: типографический скелет, как у «Капитала» */
 .w2-pay2 b{font-family:var(--fN);font-size:18px;font-weight:700;color:var(--ink);display:block;letter-spacing:-.01em}
 .w2-pay2 .what{display:block;margin-top:2px;font-size:10.5px;font-weight:600;color:var(--mut)}
 .w2-pay2 .hr{height:1px;background:var(--hair);margin:9px 0 8px}
@@ -180,6 +179,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .w2-snap-row{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;font-weight:600;color:var(--mut)}
 .w2-snap-row b{font-family:var(--fN);font-size:12.5px;font-weight:700;color:var(--ink)}
 .w2-snap-row .num{font-size:11px}
+.w2-snap .empty{font-size:10.5px;font-weight:600;color:var(--dim);line-height:1.45}
 .w2-open{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid rgba(16,24,40,.12);
          border-radius:11px;padding:8px 11px;font-size:11px;font-weight:700;color:var(--mut);background:rgba(255,255,255,.6)}
 .w2-open > svg{flex:none;width:13px;height:13px;color:var(--acc)}
@@ -194,25 +194,43 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .w-band .bv{font-family:var(--fN);font-size:13px;font-weight:700;color:var(--ink);display:block}
 .w-band .bs{display:block;margin-top:2px;font-size:10px;font-weight:600;color:var(--mut)}
 .w-band .w2-pay2 b{font-size:14px}
+
+/* ---- состояния ---- */
+/* скелетоны формы контента (в реализации — лёгкий шиммер, тут статично) */
+.sk{display:inline-block;background:rgba(16,24,40,.09);border-radius:6px;vertical-align:middle}
+.sk.b{background:rgba(16,24,40,.13)}
+/* пустой состав */
+.w-empty{border:1.5px dashed rgba(16,24,40,.16);border-radius:16px;padding:30px 20px;text-align:center}
+.w-empty b{display:block;font-size:13.5px;font-weight:800;color:var(--ink)}
+.w-empty span{display:block;margin-top:5px;font-size:11.5px;font-weight:600;color:var(--mut);line-height:1.5}
+.w-empty .w-btn{margin-top:12px;display:inline-flex}
+/* деградация: биржа недоступна — данные ОСТАЮТСЯ, плашка сверху */
+.w-alert{display:flex;align-items:center;gap:10px;margin:0 0 12px;border:1px solid rgba(184,119,10,.32);
+         background:rgba(184,119,10,.08);border-radius:12px;padding:8px 12px;
+         font-size:11px;font-weight:700;color:var(--amb)}
+.w-alert span{font-weight:600;color:#8a6320}
+.w-alert .re{margin-left:auto;border:1px solid rgba(184,119,10,.4);border-radius:999px;background:rgba(255,255,255,.6);
+             padding:4px 11px;font-size:10.5px;font-weight:700;color:var(--amb);white-space:nowrap}
 </style>
 </head>
 <body>
 <div class="page">
 
 <header class="doc-h">
-  <div class="doc-kicker">Мокапы · Портфели · «Составы портфелей» · «Штурманская», чистовик</div>
-  <h1>Чистовик «Штурманской»: строки без графики, доход и доходность разведены</h1>
-  <p>Правки по замечаниям: спарклайны из строк убраны совсем; «Доля» стала одним элементом
-     (число, под ним полоска той же ширины, всё под одним правоприжатым заголовком); «Доход»
-     везде только в рублях, а «Доходность» — отдельная колонка-чип с процентом ГОДОВЫХ (это
-     разные числа, дублей «₽ и тут же %» больше нигде нет); «Ближайшая выплата» собрана тем же
-     типографическим скелетом, что «Капитал» и «Снимки»: сумма крупно, что это, линия, когда.</p>
+  <div class="doc-kicker">Мокапы · Портфели · «Составы портфелей» · «Штурманская», чистовик v3</div>
+  <h1>Чистовик v3: дублей нет, цвет только у состояния, и все пять состояний</h1>
+  <p>Правки дизайн-ревью: «Сводка» снесена (вложено переехало в герой капитала, всё остальное
+     дублировало итог таблицы); кривая капитала нейтральная, красное осталось только у убытка;
+     в строке таблицы одна акцентная система — рубли нейтральные, цвет несут чипы годовых;
+     mix-бар удалён (группы и доли уже говорят это); суммы групп встали в колонку «Стоимость»;
+     данные согласованы (доли складываются в 100%, снимок «вчера» сходится с дневной дельтой).
+     Ниже — все пять состояний виджета.</p>
   <div class="verdict">
-    <p><b>Два принципа чистовика.</b> Первый: в строках таблицы — только цифры и типографика;
-       единственная графика виджета — кривая капитала в герое колонки. Второй: одно понятие — одно
-       место. «Доход» — рубли, «Доходность» — процент годовых, и ни в одной ячейке, строке сводки
-       или итоге они больше не склеены в «−6 101 ₽ · −6,1%». Все плитки колонки собраны одним
-       скелетом: подпись, крупное число, тихие строки.</p>
+    <p><b>Три принципа чистовика.</b> Один факт — одно место: капитал, доход и доходность
+       больше нигде не повторяются. Цвет — только состоянию: единственные цветные элементы
+       виджета — чипы доходности, чип дня и плашка лидера движения. Ломаться — локально:
+       ошибка биржи не заменяет данные, пустой блок объясняет, как наполниться, а отсутствие
+       облигаций просто убирает плитку выплаты, не ломая остального.</p>
   </div>
 </header>
 
@@ -221,21 +239,21 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <div class="mk-h"><span class="mk-n">01</span><h2>Полный вид, span 12</h2>
     <span class="mk-tag">к реализации</span></div>
   <p class="mk-sub">Колонки таблицы: Бумага, Кол-во, Сейчас, Стоимость, Доля, Доход (₽),
-     Доходность (годовых). Единственная графика виджета — кривая капитала в герое колонки.</p>
-  <div class="scroller"><div class="scr pad" id="m1"><div class="wid"><div class="w-strip"><span class="w-name"><em></em>Основной</span><span class="w-meta">4 бумаги · котировки 14:32</span><span class="sp"></span><span class="w-btn dark">Ребалансировать</span><span class="w-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="17" r="2.5"/></svg></span></div><div class="w2"><div class="w2-main"><div class="w-mix"><span class="w-mixlbl"><b>Акции</b> 71%</span><div class="w-mixbar"><i style="width:71%;background:var(--stk)"></i><i style="width:29%;background:var(--bnd)"></i></div><span class="w-mixlbl"><b>Облигации</b> 29%</span></div><table class="w-tbl"><tr><th>Бумага</th><th>Кол-во</th><th>Сейчас</th><th>Стоимость</th><th>Доля</th><th>Доход</th><th>Доходность<span class="thq">годовых</span></th></tr><tr class="w-grp"><td colspan="7"><b>Акции</b> · 71% · 67 092 ₽</td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>SBER</b><span>Сбербанк</span></div></td><td>100</td><td>286,38 ₽</td><td><b>28 638 ₽</b></td><td><span class="w-shr"><b>41%</b><u><i style="width:41%;background:var(--stk)"></i></u></span></td><td class="pos">+638 ₽</td><td><span class="w-chip pos">▲ 7,1%</span></td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>YDEX</b><span>Яндекс</span></div></td><td>6</td><td>4 120,50 ₽</td><td><b>24 723 ₽</b></td><td><span class="w-shr"><b>35%</b><u><i style="width:35%;background:var(--stk)"></i></u></span></td><td class="pos">+1 383 ₽</td><td><span class="w-chip pos">▲ 18,3%</span></td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>LKOH</b><span>Лукойл</span></div></td><td>3</td><td>4 577,00 ₽</td><td><b>13 731 ₽</b></td><td><span class="w-shr"><b>20%</b><u><i style="width:20%;background:var(--stk)"></i></u></span></td><td class="neg">−7 269 ₽</td><td><span class="w-chip neg">▼ 76,2%</span></td></tr><tr class="w-grp"><td colspan="7"><b>Облигации</b> · 29% · 27 148 ₽</td></tr><tr><td><div class="w-as"><i>ОФЗ</i><b>SU26238</b><span>ОФЗ 26238</span></div></td><td>50</td><td>542,95 ₽</td><td><b>27 148 ₽</b></td><td><span class="w-shr"><b>39%</b><u><i style="width:39%;background:var(--bnd)"></i></u></span></td><td class="neg">−853 ₽</td><td><span class="w-chip neg">▼ 4,7%</span></td></tr><tr class="w-tot"><td>Итого · 4 бумаги</td><td></td><td></td><td class="num">94 240 ₽</td><td></td><td class="neg num">−6 101 ₽</td><td><span class="w-chip neg">▼ 13,6%</span></td></tr></table></div><div class="w2-side"><div class="w2-card w2-hero"><i>Капитал</i><span class="w2-ts">30 дней</span><b class="num">94 240 ₽</b><span class="w2-chip neg">▼ 5 785 ₽ · 5,8% за сегодня</span><svg class="w2-herosvg" viewBox="0 0 216 34" preserveAspectRatio="none"><path d="M0,10 L0,10 L8,11 L16,9 L24,12 L32,10 L40,14 L48,13 L56,17 L64,15 L72,19 L80,18 L88,22 L96,20 L104,24 L112,23 L120,26 L128,25 L136,27 L144,26 L152,28 L160,27 L168,29 L176,28 L184,30 L192,29 L200,31 L208,30 L216,31 L216,34 L0,34 Z"/><polyline points="0,10 8,11 16,9 24,12 32,10 40,14 48,13 56,17 64,15 72,19 80,18 88,22 96,20 104,24 112,23 120,26 128,25 136,27 144,26 152,28 160,27 168,29 176,28 184,30 192,29 200,31 208,30 216,31"/></svg></div><div class="w2-card"><i>Сводка</i><div class="w2-row"><span>Вложено</span><b class="num">100 341 ₽</b></div><div class="w2-row"><span>Доход</span><b class="neg num">−6 101 ₽</b></div><div class="w2-row"><span>Доходность</span><b class="neg num">−13,6% год.</b></div></div><div class="w2-card"><i>Движение дня</i><div class="w2-mvlead"><div class="t"><b>LKOH</b><i class="num">−4 890 ₽</i></div><div class="s">85% дневного изменения: −2,1% при доле 20%</div></div><div class="w2-mvrow"><b>SBER</b><i class="num">−720 ₽</i></div><div class="w2-mvrow"><b>ОФЗ 26238</b><i class="num">−175 ₽</i></div></div><div class="w2-card w2-pay2"><i>Ближайшая выплата</i><b class="num">892 ₽</b><span class="what">купон ОФЗ 26238 · 50 шт</span><div class="hr"></div><div class="when"><span>24 сентября</span><i>через 50 дней</i></div></div><div class="w2-card w2-snap"><i>Снимки капитала</i><div class="w2-snap-row"><span>Последний · вчера</span><b class="num">48 137 ₽</b></div><div class="w2-snap-row"><span>Автозапись</span><span class="num">каждый день</span></div><div class="w2-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="flex:1">Календарь снимков</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="9 5 16 12 9 19"/></svg></span></div></div></div></div></div></div></div>
+     Доходность (годовых). Единственная графика виджета — нейтральная кривая капитала в герое.</p>
+  <div class="scroller"><div class="scr pad" id="m1"><div class="wid"><div class="w-strip"><span class="w-name"><em></em>Основной</span><span class="w-meta">4 бумаги · котировки 14:32</span><span class="sp"></span><span class="w-btn dark">Ребалансировать</span><span class="w-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="17" r="2.5"/></svg></span></div><div class="w2"><div class="w2-main"><table class="w-tbl"><tr><th>Бумага</th><th>Кол-во</th><th>Сейчас</th><th>Стоимость</th><th>Доля</th><th>Доход</th><th>Доходность<span class="thq">годовых</span></th></tr><tr class="w-grp"><td colspan="3"><b>Акции</b> · 71%</td><td class="gsum">67 092 ₽</td><td></td><td></td><td></td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>SBER</b><span>Сбербанк</span></div></td><td>100</td><td>286,38 ₽</td><td><b>28 638 ₽</b></td><td><span class="w-shr"><b>30%</b><u><i style="width:30%;background:var(--stk)"></i></u></span></td><td>+638 ₽</td><td><span class="w-chip pos">▲ 7,1%</span></td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>YDEX</b><span>Яндекс</span></div></td><td>6</td><td>4 120,50 ₽</td><td><b>24 723 ₽</b></td><td><span class="w-shr"><b>26%</b><u><i style="width:26%;background:var(--stk)"></i></u></span></td><td>+1 383 ₽</td><td><span class="w-chip pos">▲ 18,3%</span></td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>LKOH</b><span>Лукойл</span></div></td><td>3</td><td>4 577,00 ₽</td><td><b>13 731 ₽</b></td><td><span class="w-shr"><b>15%</b><u><i style="width:15%;background:var(--stk)"></i></u></span></td><td>−7 269 ₽</td><td><span class="w-chip neg">▼ 76,2%</span></td></tr><tr class="w-grp"><td colspan="3"><b>Облигации</b> · 29%</td><td class="gsum">27 148 ₽</td><td></td><td></td><td></td></tr><tr><td><div class="w-as"><i>ОФЗ</i><b>SU26238</b><span>ОФЗ 26238</span></div></td><td>50</td><td>542,95 ₽</td><td><b>27 148 ₽</b></td><td><span class="w-shr"><b>29%</b><u><i style="width:29%;background:var(--bnd)"></i></u></span></td><td>−853 ₽</td><td><span class="w-chip neg">▼ 4,7%</span></td></tr><tr class="w-tot"><td>Итого · 4 бумаги</td><td></td><td></td><td class="num">94 240 ₽</td><td></td><td class="num">−6 101 ₽</td><td><span class="w-chip neg">▼ 13,6%</span></td></tr></table></div><div class="w2-side"><div class="w2-card w2-hero"><i>Капитал</i><span class="w2-ts">30 дней</span><b class="num">94 240 ₽</b><span class="w2-inv">вложено 100 341 ₽</span><span class="w2-chip neg">▼ 5 785 ₽ · 5,8% за сегодня</span><svg class="w2-herosvg" viewBox="0 0 216 34" preserveAspectRatio="none"><path d="M0,10 L0,10 L8,11 L16,9 L24,12 L32,10 L40,14 L48,13 L56,17 L64,15 L72,19 L80,18 L88,22 L96,20 L104,24 L112,23 L120,26 L128,25 L136,27 L144,26 L152,28 L160,27 L168,29 L176,28 L184,30 L192,29 L200,31 L208,30 L216,31 L216,34 L0,34 Z"/><polyline points="0,10 8,11 16,9 24,12 32,10 40,14 48,13 56,17 64,15 72,19 80,18 88,22 96,20 104,24 112,23 120,26 128,25 136,27 144,26 152,28 160,27 168,29 176,28 184,30 192,29 200,31 208,30 216,31"/></svg></div><div class="w2-card"><i>Движение дня</i><div class="w2-mvlead"><div class="t"><b>LKOH</b><i class="num">−4 890 ₽</i></div><div class="s">85% дневного изменения: −2,1% при доле 15%</div></div><div class="w2-mvrow"><b>SBER</b><i class="num">−720 ₽</i></div><div class="w2-mvrow"><b>ОФЗ 26238</b><i class="num">−175 ₽</i></div></div><div class="w2-card w2-pay2"><i>Ближайшая выплата</i><b class="num">892 ₽</b><span class="what">купон ОФЗ 26238 · 50 шт</span><div class="hr"></div><div class="when"><span>24 сентября</span><i>через 50 дней</i></div></div><div class="w2-card w2-snap"><i>Снимки капитала</i><div class="w2-snap-row"><span>Последний · вчера</span><b class="num">100 025 ₽</b></div><div class="w2-snap-row"><span>Автозапись</span><span class="num">каждый день</span></div><div class="w2-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="flex:1">Календарь снимков</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="9 5 16 12 9 19"/></svg></span></div></div></div></div></div></div></div>
   <div class="notes">
-    <div class="note"><i>1</i>Спарклайнов в строках нет. Движение отвечает чипом доходности и
-      блоком «Движение дня» — по одному месту на каждый вопрос.</div>
-    <div class="note"><i>2</i>«Доля»: число и полоска — один правоприжатый столбик под одним
-      заголовком; полоска ровно под числом, той же ширины 52px.</div>
-    <div class="note"><i>3</i>«Доход» — только рубли; «Доходность» — чип с процентом ГОДОВЫХ
-      (подзаголовок в шапке колонки об этом говорит). Разные числа, разные колонки, ноль дублей.</div>
-    <div class="note"><i>4</i>«Ближайшая выплата» — скелет как у «Капитала»: 892 ₽ крупно,
-      «купон ОФЗ 26238 · 50 шт», волосяная линия, строка «24 сентября / через 50 дней».</div>
-    <div class="note"><i>5</i>«Движение дня» без прогресс-баров: лидер — выделенная строка с
-      подписью «85% дневного изменения», остальные — тихие строки.</div>
-    <div class="note"><i>6</i>Итог сходится с колонкой: −6 101 ₽ дохода и чип −13,6% годовых —
-      ровно те же числа, что в «Сводке».</div>
+    <div class="note"><i>1</i>«Сводки» больше нет: вложено — тихой строкой в герое капитала,
+      доход и доходность живут только в таблице и её итоге.</div>
+    <div class="note"><i>2</i>Кривая капитала нейтральная: её работа — форма месяца, направление
+      уже сказал чип. Красное в колонке — только чип дня и плашка LKOH.</div>
+    <div class="note"><i>3</i>Одна акцентная система на строку: рубли дохода нейтральные
+      (знак в числе), цвет несут только чипы «Доходность, годовых».</div>
+    <div class="note"><i>4</i>Суммы групп стоят в колонке «Стоимость»: 67 092 + 27 148 = 94 240
+      складывается по одной вертикали до итога.</div>
+    <div class="note"><i>5</i>Mix-бара нет: «Акции 71% / Облигации 29%» уже сказано группами,
+      классовый цвет остался в полосках долей.</div>
+    <div class="note"><i>6</i>Данные согласованы: доли 30+26+15+29 = 100%, снимок «вчера»
+      100 025 ₽ минус дневные −5 785 ₽ дают ровно 94 240 ₽.</div>
   </div>
 </section>
 
@@ -243,33 +261,75 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 <section class="mk">
   <div class="mk-h"><span class="mk-n">02</span><h2>Узкий блок — лента плиток</h2>
     <span class="mk-tag mute">поведение</span></div>
-  <p class="mk-sub">Тот же чистовик в узкой ширине: колонка складывается в ленту из четырёх плиток
-     (порог контейнерный), таблица теряет «Сейчас», но сохраняет долю-столбик и чип доходности.</p>
-  <div class="scroller"><div class="scr pad" id="m2"><div class="wid narrow"><div class="w-strip"><span class="w-name"><em></em>Основной</span><span class="w-meta">4 бумаги · котировки 14:32</span><span class="sp"></span><span class="w-btn dark">Ребалансировать</span><span class="w-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="17" r="2.5"/></svg></span></div><div class="w-band"><div class="w2-card w2-hero"><i>Капитал</i><b class="num">94 240 ₽</b><span class="bs neg num">▼ 5 785 ₽ · 5,8%</span></div><div class="w2-card"><i>Движение дня</i><span class="bv neg num">−4 890 ₽ · LKOH</span><span class="bs">85% дневного минуса</span></div><div class="w2-card w2-pay2"><i>Выплата</i><b class="num">892 ₽</b><span class="what">24 сентября · через 50 дней</span></div><div class="w2-card"><i>Снимки</i><span class="bv num">48 137 ₽ · вчера</span><span class="bs">календарь по клику</span></div></div><table class="w-tbl"><tr><th>Бумага</th><th>Кол-во</th><th>Стоимость</th><th>Доля</th><th>Доходность<span class="thq">годовых</span></th></tr><tr><td><div class="w-as"><i>АКЦ</i><b>SBER</b><span>Сбербанк</span></div></td><td>100</td><td><b>28 638 ₽</b></td><td><span class="w-shr"><b>41%</b><u><i style="width:41%;background:var(--stk)"></i></u></span></td><td><span class="w-chip pos">▲ 7,1%</span></td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>YDEX</b><span>Яндекс</span></div></td><td>6</td><td><b>24 723 ₽</b></td><td><span class="w-shr"><b>35%</b><u><i style="width:35%;background:var(--stk)"></i></u></span></td><td><span class="w-chip pos">▲ 18,3%</span></td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>LKOH</b><span>Лукойл</span></div></td><td>3</td><td><b>13 731 ₽</b></td><td><span class="w-shr"><b>20%</b><u><i style="width:20%;background:var(--stk)"></i></u></span></td><td><span class="w-chip neg">▼ 76,2%</span></td></tr><tr><td><div class="w-as"><i>ОФЗ</i><b>SU26238</b><span>ОФЗ 26238</span></div></td><td>50</td><td><b>27 148 ₽</b></td><td><span class="w-shr"><b>39%</b><u><i style="width:39%;background:var(--bnd)"></i></u></span></td><td><span class="w-chip neg">▼ 4,7%</span></td></tr><tr class="w-tot"><td>Итого · 4 бумаги</td><td></td><td class="num">94 240 ₽</td><td></td><td><span class="w-chip neg">▼ 13,6%</span></td></tr></table></div></div></div>
-  <div class="notes">
-    <div class="note"><i>1</i>Плитка выплаты сохраняет листок даты и в компактном виде.</div>
-    <div class="note"><i>2</i>Чипы доходности остаются: это главный акцент строк в любой ширине.</div>
-    <div class="note"><i>3</i>В самой узкой ширине лента становится 2×2.</div>
-  </div>
+  <p class="mk-sub">Колонка складывается в ленту из четырёх плиток (порог контейнерный), таблица
+     теряет «Сейчас» и «Доход», но сохраняет долю-столбик и чип доходности. В самой узкой ширине
+     лента становится 2×2.</p>
+  <div class="scroller"><div class="scr pad" id="m2"><div class="wid narrow"><div class="w-strip"><span class="w-name"><em></em>Основной</span><span class="w-meta">4 бумаги · котировки 14:32</span><span class="sp"></span><span class="w-btn dark">Ребалансировать</span><span class="w-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="17" r="2.5"/></svg></span></div><div class="w-band"><div class="w2-card w2-hero"><i>Капитал</i><b class="num">94 240 ₽</b><span class="bs neg num">▼ 5 785 ₽ · 5,8%</span></div><div class="w2-card"><i>Движение дня</i><span class="bv num">−4 890 ₽ · LKOH</span><span class="bs">85% дневного минуса</span></div><div class="w2-card w2-pay2"><i>Выплата</i><b class="num">892 ₽</b><span class="what">24.09 · через 50 дней</span></div><div class="w2-card"><i>Снимки</i><span class="bv num">100 025 ₽ · вчера</span><span class="bs">календарь по клику</span></div></div><table class="w-tbl"><tr><th>Бумага</th><th>Кол-во</th><th>Стоимость</th><th>Доля</th><th>Доходность<span class="thq">годовых</span></th></tr><tr><td><div class="w-as"><i>АКЦ</i><b>SBER</b><span>Сбербанк</span></div></td><td>100</td><td><b>28 638 ₽</b></td><td><span class="w-shr"><b>30%</b><u><i style="width:30%;background:var(--stk)"></i></u></span></td><td><span class="w-chip pos">▲ 7,1%</span></td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>YDEX</b><span>Яндекс</span></div></td><td>6</td><td><b>24 723 ₽</b></td><td><span class="w-shr"><b>26%</b><u><i style="width:26%;background:var(--stk)"></i></u></span></td><td><span class="w-chip pos">▲ 18,3%</span></td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>LKOH</b><span>Лукойл</span></div></td><td>3</td><td><b>13 731 ₽</b></td><td><span class="w-shr"><b>15%</b><u><i style="width:15%;background:var(--stk)"></i></u></span></td><td><span class="w-chip neg">▼ 76,2%</span></td></tr><tr><td><div class="w-as"><i>ОФЗ</i><b>SU26238</b><span>ОФЗ 26238</span></div></td><td>50</td><td><b>27 148 ₽</b></td><td><span class="w-shr"><b>29%</b><u><i style="width:29%;background:var(--bnd)"></i></u></span></td><td><span class="w-chip neg">▼ 4,7%</span></td></tr><tr class="w-tot"><td>Итого · 4 бумаги</td><td></td><td class="num">94 240 ₽</td><td></td><td><span class="w-chip neg">▼ 13,6%</span></td></tr></table></div></div></div>
 </section>
 
 <!-- ================================ 03 ================================ -->
 <section class="mk">
-  <div class="mk-h"><span class="mk-n">03</span><h2>Замечание → решение</h2></div>
+  <div class="mk-h"><span class="mk-n">03</span><h2>Пять состояний</h2>
+    <span class="mk-tag">к реализации</span></div>
+  <p class="mk-sub">Каждый вид с данными обязан уметь пять состояний. Правило виджета: данные
+     никогда не заменяются ошибкой, пустота объясняет, как наполниться, а частичный сбой ломает
+     только свой угол.</p>
+
+  <div class="stx"><div class="stx-h"><b>1 · Загрузка</b>
+    <span>скелетоны повторяют форму контента, спиннера нет; в реализации — лёгкий шиммер</span></div>
+    <div class="scroller"><div class="scr pad" id="s1"><div class="wid narrow"><div class="w-strip"><span class="w-name"><em style="background:rgba(16,24,40,.2)"></em><span class="sk b" style="width:86px;height:13px"></span></span><span class="sk" style="width:130px;height:9px"></span><span class="sp"></span><span class="sk b" style="width:118px;height:26px;border-radius:999px"></span></div><div class="w-band"><div class="w2-card"><span class="sk" style="width:52px;height:8px"></span><br><span class="sk b" style="width:84px;height:15px;margin-top:7px"></span><br><span class="sk" style="width:64px;height:8px;margin-top:6px"></span></div><div class="w2-card"><span class="sk" style="width:52px;height:8px"></span><br><span class="sk b" style="width:84px;height:15px;margin-top:7px"></span><br><span class="sk" style="width:64px;height:8px;margin-top:6px"></span></div><div class="w2-card"><span class="sk" style="width:52px;height:8px"></span><br><span class="sk b" style="width:84px;height:15px;margin-top:7px"></span><br><span class="sk" style="width:64px;height:8px;margin-top:6px"></span></div><div class="w2-card"><span class="sk" style="width:52px;height:8px"></span><br><span class="sk b" style="width:84px;height:15px;margin-top:7px"></span><br><span class="sk" style="width:64px;height:8px;margin-top:6px"></span></div></div><table class="w-tbl"><tr><th>Бумага</th><th>Кол-во</th><th>Стоимость</th><th>Доля</th><th>Доходность<span class="thq">годовых</span></th></tr><tr><td><span class="sk b" style="width:30px;height:30px;border-radius:9px"></span><span class="sk b" style="width:56px;height:12px;margin-left:9px"></span><span class="sk" style="width:70px;height:10px;margin-left:8px"></span></td><td><span class="sk" style="width:28px;height:11px"></span></td><td><span class="sk" style="width:64px;height:11px"></span></td><td><span class="sk" style="width:38px;height:11px"></span></td><td><span class="sk b" style="width:52px;height:18px;border-radius:999px"></span></td></tr><tr><td><span class="sk b" style="width:30px;height:30px;border-radius:9px"></span><span class="sk b" style="width:56px;height:12px;margin-left:9px"></span><span class="sk" style="width:70px;height:10px;margin-left:8px"></span></td><td><span class="sk" style="width:28px;height:11px"></span></td><td><span class="sk" style="width:64px;height:11px"></span></td><td><span class="sk" style="width:38px;height:11px"></span></td><td><span class="sk b" style="width:52px;height:18px;border-radius:999px"></span></td></tr><tr><td><span class="sk b" style="width:30px;height:30px;border-radius:9px"></span><span class="sk b" style="width:56px;height:12px;margin-left:9px"></span><span class="sk" style="width:70px;height:10px;margin-left:8px"></span></td><td><span class="sk" style="width:28px;height:11px"></span></td><td><span class="sk" style="width:64px;height:11px"></span></td><td><span class="sk" style="width:38px;height:11px"></span></td><td><span class="sk b" style="width:52px;height:18px;border-radius:999px"></span></td></tr><tr><td><span class="sk b" style="width:30px;height:30px;border-radius:9px"></span><span class="sk b" style="width:56px;height:12px;margin-left:9px"></span><span class="sk" style="width:70px;height:10px;margin-left:8px"></span></td><td><span class="sk" style="width:28px;height:11px"></span></td><td><span class="sk" style="width:64px;height:11px"></span></td><td><span class="sk" style="width:38px;height:11px"></span></td><td><span class="sk b" style="width:52px;height:18px;border-radius:999px"></span></td></tr></table></div></div></div></div>
+
+  <div class="stx"><div class="stx-h"><b>2 · Пусто, первый запуск</b>
+    <span>состав пуст: объяснение и одно действие; плитки честно показывают прочерки, а не нули</span></div>
+    <div class="scroller"><div class="scr pad" id="s2"><div class="wid narrow"><div class="w-strip"><span class="w-name"><em></em>Основной</span><span class="w-meta">0 бумаг</span><span class="sp"></span><span class="w-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="17" r="2.5"/></svg></span></div><div class="w-band"><div class="w2-card"><i>Капитал</i><span class="bv num" style="color:var(--dim)">—</span><span class="bs">после первой покупки</span></div><div class="w2-card"><i>Движение дня</i><span class="bv num" style="color:var(--dim)">—</span><span class="bs">появится с котировками</span></div><div class="w2-card"><i>Выплата</i><span class="bv num" style="color:var(--dim)">—</span><span class="bs">не ожидается</span></div><div class="w2-card"><i>Снимки</i><span class="bv num" style="color:var(--dim)">—</span><span class="bs">после первого дня</span></div></div><div class="w-empty"><b>Состав пуст</b><span>Добавьте бумаги в настройках портфеля — таблица, доли и доходность соберутся сами.</span><span class="w-btn dark">Добавить активы</span></div></div></div></div></div>
+
+  <div class="stx"><div class="stx-h"><b>3 · Биржа недоступна</b>
+    <span>данные остаются на экране: янтарная плашка называет причину, момент цен и даёт «Повторить»</span></div>
+    <div class="scroller"><div class="scr pad" id="s3"><div class="wid narrow"><div class="w-strip"><span class="w-name"><em></em>Основной</span><span class="w-meta">4 бумаги · цены на 14:32</span><span class="sp"></span><span class="w-btn dark">Ребалансировать</span><span class="w-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="17" r="2.5"/></svg></span></div><div class="w-alert">Биржа недоступна<span>· показаны цены на 14:32</span><span class="re">Повторить</span></div><div class="w-band"><div class="w2-card w2-hero"><i>Капитал</i><b class="num">94 240 ₽</b><span class="bs neg num">▼ 5 785 ₽ · 5,8%</span></div><div class="w2-card"><i>Движение дня</i><span class="bv num">−4 890 ₽ · LKOH</span><span class="bs">85% дневного минуса</span></div><div class="w2-card w2-pay2"><i>Выплата</i><b class="num">892 ₽</b><span class="what">24.09 · через 50 дней</span></div><div class="w2-card"><i>Снимки</i><span class="bv num">100 025 ₽ · вчера</span><span class="bs">календарь по клику</span></div></div><table class="w-tbl"><tr><th>Бумага</th><th>Кол-во</th><th>Стоимость</th><th>Доля</th><th>Доходность<span class="thq">годовых</span></th></tr><tr><td><div class="w-as"><i>АКЦ</i><b>SBER</b><span>Сбербанк</span></div></td><td>100</td><td><b>28 638 ₽</b></td><td><span class="w-shr"><b>30%</b><u><i style="width:30%;background:var(--stk)"></i></u></span></td><td><span class="w-chip pos">▲ 7,1%</span></td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>YDEX</b><span>Яндекс</span></div></td><td>6</td><td><b>24 723 ₽</b></td><td><span class="w-shr"><b>26%</b><u><i style="width:26%;background:var(--stk)"></i></u></span></td><td><span class="w-chip pos">▲ 18,3%</span></td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>LKOH</b><span>Лукойл</span></div></td><td>3</td><td><b>13 731 ₽</b></td><td><span class="w-shr"><b>15%</b><u><i style="width:15%;background:var(--stk)"></i></u></span></td><td><span class="w-chip neg">▼ 76,2%</span></td></tr><tr><td><div class="w-as"><i>ОФЗ</i><b>SU26238</b><span>ОФЗ 26238</span></div></td><td>50</td><td><b>27 148 ₽</b></td><td><span class="w-shr"><b>29%</b><u><i style="width:29%;background:var(--bnd)"></i></u></span></td><td><span class="w-chip neg">▼ 4,7%</span></td></tr><tr class="w-tot"><td>Итого · 4 бумаги</td><td></td><td class="num">94 240 ₽</td><td></td><td><span class="w-chip neg">▼ 13,6%</span></td></tr></table></div></div></div></div>
+
+  <div class="stx"><div class="stx-h"><b>4 · Котировки устарели</b>
+    <span>тихая деградация: метка времени в шапке становится янтарной, числа не трогаем</span></div>
+    <div class="scroller"><div class="scr pad" id="s4"><div class="wid narrow"><div class="w-strip"><span class="w-name"><em></em>Основной</span><span class="w-meta stale">котировки устарели · 09:41</span><span class="sp"></span><span class="w-btn dark">Ребалансировать</span><span class="w-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="17" r="2.5"/></svg></span></div><div class="w-band"><div class="w2-card w2-hero"><i>Капитал</i><b class="num">94 240 ₽</b><span class="bs neg num">▼ 5 785 ₽ · 5,8%</span></div><div class="w2-card"><i>Движение дня</i><span class="bv num">−4 890 ₽ · LKOH</span><span class="bs">85% дневного минуса</span></div><div class="w2-card w2-pay2"><i>Выплата</i><b class="num">892 ₽</b><span class="what">24.09 · через 50 дней</span></div><div class="w2-card"><i>Снимки</i><span class="bv num">100 025 ₽ · вчера</span><span class="bs">календарь по клику</span></div></div><table class="w-tbl"><tr><th>Бумага</th><th>Кол-во</th><th>Стоимость</th><th>Доля</th><th>Доходность<span class="thq">годовых</span></th></tr><tr><td><div class="w-as"><i>АКЦ</i><b>SBER</b><span>Сбербанк</span></div></td><td>100</td><td><b>28 638 ₽</b></td><td><span class="w-shr"><b>30%</b><u><i style="width:30%;background:var(--stk)"></i></u></span></td><td><span class="w-chip pos">▲ 7,1%</span></td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>YDEX</b><span>Яндекс</span></div></td><td>6</td><td><b>24 723 ₽</b></td><td><span class="w-shr"><b>26%</b><u><i style="width:26%;background:var(--stk)"></i></u></span></td><td><span class="w-chip pos">▲ 18,3%</span></td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>LKOH</b><span>Лукойл</span></div></td><td>3</td><td><b>13 731 ₽</b></td><td><span class="w-shr"><b>15%</b><u><i style="width:15%;background:var(--stk)"></i></u></span></td><td><span class="w-chip neg">▼ 76,2%</span></td></tr><tr><td><div class="w-as"><i>ОФЗ</i><b>SU26238</b><span>ОФЗ 26238</span></div></td><td>50</td><td><b>27 148 ₽</b></td><td><span class="w-shr"><b>29%</b><u><i style="width:29%;background:var(--bnd)"></i></u></span></td><td><span class="w-chip neg">▼ 4,7%</span></td></tr><tr class="w-tot"><td>Итого · 4 бумаги</td><td></td><td class="num">94 240 ₽</td><td></td><td><span class="w-chip neg">▼ 13,6%</span></td></tr></table></div></div></div></div>
+
+  <div class="stx"><div class="stx-h"><b>5 · Частичные данные</b>
+    <span>акционный портфель без истории: плитки выплаты нет вовсе, кривая и снимки объясняют, когда появятся, остальное живёт</span></div>
+    <div class="scroller"><div class="scr pad" id="s5"><div class="wid"><div class="w-strip"><span class="w-name"><em></em>Основной</span><span class="w-meta">3 бумаги · котировки 14:32</span><span class="sp"></span><span class="w-btn dark">Ребалансировать</span><span class="w-gear"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="17" r="2.5"/></svg></span></div><div class="w2"><div class="w2-main"><table class="w-tbl"><tr><th>Бумага</th><th>Кол-во</th><th>Сейчас</th><th>Стоимость</th><th>Доля</th><th>Доход</th><th>Доходность<span class="thq">годовых</span></th></tr><tr class="w-grp"><td colspan="3"><b>Акции</b> · 100%</td><td class="gsum">67 092 ₽</td><td></td><td></td><td></td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>SBER</b><span>Сбербанк</span></div></td><td>100</td><td>286,38 ₽</td><td><b>28 638 ₽</b></td><td><span class="w-shr"><b>43%</b><u><i style="width:43%;background:var(--stk)"></i></u></span></td><td>+638 ₽</td><td><span class="w-chip pos">▲ 7,1%</span></td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>YDEX</b><span>Яндекс</span></div></td><td>6</td><td>4 120,50 ₽</td><td><b>24 723 ₽</b></td><td><span class="w-shr"><b>37%</b><u><i style="width:37%;background:var(--stk)"></i></u></span></td><td>+1 383 ₽</td><td><span class="w-chip pos">▲ 18,3%</span></td></tr><tr><td><div class="w-as"><i>АКЦ</i><b>LKOH</b><span>Лукойл</span></div></td><td>3</td><td>4 577,00 ₽</td><td><b>13 731 ₽</b></td><td><span class="w-shr"><b>20%</b><u><i style="width:20%;background:var(--stk)"></i></u></span></td><td>−7 269 ₽</td><td><span class="w-chip neg">▼ 76,2%</span></td></tr><tr class="w-tot"><td>Итого · 3 бумаги</td><td></td><td></td><td class="num">67 092 ₽</td><td></td><td class="num">−5 248 ₽</td><td><span class="w-chip neg">▼ 16,9%</span></td></tr></table></div><div class="w2-side"><div class="w2-card w2-hero"><i>Капитал</i><b class="num">67 092 ₽</b><span class="w2-inv">вложено 72 340 ₽</span><span class="w2-chip neg">▼ 5 610 ₽ · 7,7% за сегодня</span><div class="w2-nochart">Кривая появится со второго дня наблюдений</div></div><div class="w2-card"><i>Движение дня</i><div class="w2-mvlead"><div class="t"><b>LKOH</b><i class="num">−4 890 ₽</i></div><div class="s">87% дневного изменения: −2,1% при доле 20%</div></div><div class="w2-mvrow"><b>SBER</b><i class="num">−720 ₽</i></div></div><div class="w2-card w2-snap"><i>Снимки капитала</i><div class="empty">Снимков ещё нет: первый запишется при живых котировках. Календарь уже работает — можно записать задним числом.</div><div class="w2-open"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span style="flex:1">Календарь снимков</span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="9 5 16 12 9 19"/></svg></span></div></div></div></div></div></div></div></div>
+
+  <div class="notes">
+    <div class="note"><i>1</i>Ошибка биржи — деградация, а не катастрофа: последние известные
+      цены полезнее пустого экрана, момент цен назван честно.</div>
+    <div class="note"><i>2</i>Порог скелетона — ~300 мс: младше ничего не показываем, чтобы не
+      мигать на быстрой сети.</div>
+    <div class="note"><i>3</i>Частичность локальна: каждый блок сам говорит, чего ему не хватает,
+      и не тянет за собой соседей.</div>
+  </div>
+</section>
+
+<!-- ================================ 04 ================================ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">04</span><h2>Замечание → решение</h2></div>
   <table class="map">
     <tr><th>Замечание</th><th>Решение в чистовике</th></tr>
     <tr><td>Мини-графики в строках устарели</td>
-        <td class="ok">Колонка «30 дней» удалена. Графика одна на виджет: кривая капитала в герое.</td></tr>
+        <td class="ok">Колонка «30 дней» удалена. Графика одна на виджет: нейтральная кривая капитала в герое.</td></tr>
     <tr><td>«Доля»: заголовок над процентами, полоска сбоку как что-то отдельное</td>
         <td class="ok">Число и полоска собраны в один правоприжатый элемент одной ширины под одним заголовком.</td></tr>
     <tr><td>Проценты доходности не акцентированы</td>
-        <td class="ok">Своя колонка «Доходность, годовых»: чип с тинтом и стрелкой; в итоге — чип по портфелю (−13,6% год.).</td></tr>
+        <td class="ok">Своя колонка «Доходность, годовых»: чип с тинтом и стрелкой — единственный цветовой акцент строки.</td></tr>
     <tr><td>В «Доходе» и доход, и доходность</td>
-        <td class="ok">Разведены везде: «Доход» — только ₽ (таблица, сводка, итог), процент живёт только в чипах «Доходности». Записей вида «−6 101 ₽ · −6,1%» больше нет.</td></tr>
+        <td class="ok">Разведены везде: «Доход» — только ₽, процент годовых — только в чипах. Склеек «₽ · %» нет.</td></tr>
     <tr><td>«Ближайшая выплата» оформлена неаккуратно</td>
-        <td class="ok">Никакой декорации: тот же скелет, что у «Капитала» и «Снимков» — сумма крупно, «купон ОФЗ 26238 · 50 шт», линия, «24 сентября / через 50 дней».</td></tr>
-    <tr><td>Карточка в целом не проработана</td>
-        <td class="ok">Один принцип на весь виджет: в строках только цифры; акценты весом и тинтом; каждый заголовок ровно над своим значением; «Движение дня» без прогресс-баров.</td></tr>
+        <td class="ok">Скелет как у «Капитала»: сумма крупно, «купон ОФЗ 26238 · 50 шт», линия, «24 сентября / через 50 дней».</td></tr>
+    <tr><td>Ревью: «Сводка» дублирует итог</td>
+        <td class="ok">Снесена; «вложено» — тихая строка в герое капитала. Один факт — одно место.</td></tr>
+    <tr><td>Ревью: колонка кричит красным</td>
+        <td class="ok">Кривая капитала нейтральная; рубли дохода нейтральные; красное — только чип дня, плашка лидера и чипы убытка.</td></tr>
+    <tr><td>Ревью: «Акции/Облигации» сказано трижды</td>
+        <td class="ok">Mix-бар удалён; проценты классов — в группах, классовый цвет — в полосках долей.</td></tr>
+    <tr><td>Ревью: суммы групп висят в воздухе</td>
+        <td class="ok">Сумма группы стоит в колонке «Стоимость», вертикаль складывается до итога.</td></tr>
+    <tr><td>Ревью: данные мока противоречат друг другу</td>
+        <td class="ok">Доли пересчитаны (30+26+15+29 = 100), снимок «вчера» = 100 025 ₽ сходится с «▼ 5 785 ₽ за сегодня».</td></tr>
   </table>
 </section>
 
