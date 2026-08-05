@@ -401,6 +401,17 @@
         if (status === 405 || status === 501) return 'Прокси брокера недоступен в этом окружении — на боевом сайте всё заработает';
         return brokerMsg || ('Ошибка запроса к брокеру (' + status + ')');
     }
+    // Куда стучаться. По умолчанию — свой Cloudflare Worker (/api/broker/tinkoff/*),
+    // но он физически не может дойти до брокера: сертификат invest-public-api выдан
+    // Минцифры РФ, и Cloudflare этому корню не доверяет — исходящий запрос падает
+    // с 526. Поэтому если задан window.BROKER_PROXY_URL (Яндекс-функция в
+    // российском контуре, worker/yandex-broker-proxy/index.js), идём через неё.
+    // Пустой URL = прежний путь: ничего не ломается, брокер просто недоступен.
+    function brokerEndpoint(method) {
+        var base = String(window.BROKER_PROXY_URL || '').trim();
+        if (!base) return '/api/broker/tinkoff/' + method;
+        return base.replace(/[?#].*$/, '').replace(/\/+$/, '') + '?method=' + encodeURIComponent(method);
+    }
     function rawCall(method, body, token, scope, sandbox) {
         var headers = {
             'Content-Type': 'application/json',
@@ -408,8 +419,9 @@
             'X-Broker-Scope': scope === 'trade' ? 'trade' : 'read'
         };
         if (sandbox) headers['X-Broker-Sandbox'] = '1';
-        return fetch('/api/broker/tinkoff/' + method, {
-            method: 'POST', headers: headers, body: JSON.stringify(body || {})
+        return fetch(brokerEndpoint(method), {
+            // токен едет заголовком, куки прокси не нужны — и не отправляем их
+            method: 'POST', headers: headers, body: JSON.stringify(body || {}), credentials: 'omit'
         }).then(function (res) {
             return res.text().then(function (text) {
                 var data = null;
@@ -430,8 +442,11 @@
                 return data || {};
             });
         }, function () {
-            // сеть/оффлайн/нет воркера (локальное превью без прокси)
-            var err = new Error('Прокси брокера недоступен — проверьте соединение');
+            // сеть/оффлайн/нет прокси (локальное превью), а также CORS-отказ
+            // Яндекс-функции: браузер в таком случае не отдаёт нам ни статус, ни тело
+            var err = new Error(String(window.BROKER_PROXY_URL || '').trim()
+                ? 'Прокси брокера не ответил. Проверьте, что функция опубликована и её адрес разрешает наш домен'
+                : 'Прокси брокера недоступен — проверьте соединение');
             err.status = 0;
             throw err;
         });
