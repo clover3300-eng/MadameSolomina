@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Главная · раунд 3 — чистовик В2 «Бережный»: боевая карта, белая карточка, индиго</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+       --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+       --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding:44px 0 90px;-webkit-font-smoothing:antialiased}
+.page{width:1480px;max-width:100%;margin:0 auto;padding:0 20px}
+
+/* ---------------- документ ---------------- */
+.doc-h{margin-bottom:34px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-acc);margin-bottom:9px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
+.doc-h p{margin-top:12px;font-size:15px;line-height:1.6;color:var(--doc-mut);max-width:900px}
+.verdict{margin-top:20px;display:flex;gap:14px;align-items:flex-start;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid var(--doc-acc);border-radius:14px;padding:16px 20px;max-width:980px}
+.verdict p{margin:0;font-size:14.5px;line-height:1.62;color:var(--doc-quote)}
+.verdict p+p{margin-top:10px}
+.verdict b{font-weight:700;color:var(--doc-ink)}
+
+.mk{margin-top:52px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.62;max-width:980px;margin-bottom:18px}
+.notes{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 26px;max-width:1360px}
+.note{display:flex;gap:9px;font-size:13px;line-height:1.5;color:var(--doc-quote)}
+.note i{flex:none;width:18px;height:18px;border-radius:50%;background:var(--doc-ink);color:var(--doc-bg);font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.scroller{overflow-x:auto;padding:4px 0 44px;margin-bottom:-32px}
+@media (max-width:1000px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} }
+
+.map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th{text-align:left;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);padding:10px 14px;border-bottom:1px solid var(--doc-line)}
+.map td{padding:9px 14px;border-bottom:1px solid var(--doc-line);color:var(--doc-quote);line-height:1.5;vertical-align:top}
+.map tr:last-child td{border-bottom:0}
+.map code{font-family:var(--fN);font-size:11.5px;background:color-mix(in srgb,var(--doc-mut) 12%,transparent);border-radius:6px;padding:1px 6px;white-space:nowrap}
+
+/* ======================================================================
+   ОБЛОЖКА В2. Карта — боевой squarified из home-register.js 1в1
+   (radius 6, зазор 4px, тикер снизу-слева на крупных). Раскладка —
+   боевой .hg-cover: колонна 500px, gap 56, CTA и пульс в один ряд.
+   ====================================================================== */
+.cv{position:relative;width:1440px;height:880px;border-radius:16px;overflow:hidden;flex:none;
+    font-family:var(--fU);
+    box-shadow:0 2px 4px rgba(15,23,42,.05),0 34px 70px -34px rgba(24,38,60,.4);
+    border:1px solid rgba(15,23,42,.09)}
+.num{font-family:var(--fN);font-variant-numeric:tabular-nums}
+
+.cv--dark{
+  --ink:#E9EDF6; --mut:#9AA2B5; --dim:#68718A;
+  --hair:rgba(233,237,246,.10);
+  --plate:#232836;
+  --sel:#8E9BFF;
+  --glass:rgba(17,22,33,.55); --glass-edge:rgba(255,255,255,.11);
+  color:var(--ink);
+  background:
+    radial-gradient(760px 520px at 6% 8%, rgba(31,58,68,.85) 0%, rgba(31,58,68,0) 60%),
+    radial-gradient(820px 560px at 78% 4%, rgba(43,44,80,.8) 0%, rgba(43,44,80,0) 62%),
+    radial-gradient(940px 620px at 96% 88%, rgba(26,52,66,.7) 0%, rgba(26,52,66,0) 66%),
+    linear-gradient(160deg,#0D141B 0%,#111520 50%,#0C141A 100%);
+}
+.cv--light{
+  --ink:#101828; --mut:#5C6A7D; --dim:#8D9AAD;
+  --hair:rgba(16,24,40,.10);
+  --plate:#FFFFFF;
+  --sel:#4453EF;
+  --glass:rgba(255,255,255,.62); --glass-edge:rgba(255,255,255,.8);
+  color:var(--ink);
+  background:
+    radial-gradient(760px 520px at 6% 8%, rgba(196,226,224,.7) 0%, rgba(196,226,224,0) 60%),
+    radial-gradient(820px 560px at 84% 4%, rgba(214,214,240,.66) 0%, rgba(214,214,240,0) 62%),
+    linear-gradient(160deg,#E7EDEF 0%,#EAECF2 50%,#E7EDEF 100%);
+}
+
+/* — карта: боевой .hg-tile (radius 6, подпись снизу, зазор даёт js ±2px) — */
+.cv-tiles{position:absolute;inset:-6px;z-index:1}
+.tl{position:absolute;border-radius:6px;overflow:hidden;display:flex;align-items:flex-end;
+    padding:7px 9px;font-family:var(--fN);font-size:10.5px;font-weight:500;letter-spacing:.04em}
+.cv-scrim{position:absolute;inset:0;z-index:2}
+.cv--dark .cv-scrim{background:
+  linear-gradient(90deg, rgba(13,19,26,.82) 0%, rgba(13,19,26,.5) 30%, rgba(13,19,26,.14) 55%, rgba(13,19,26,.26) 100%),
+  radial-gradient(720px 460px at 88% 96%, rgba(13,19,26,.66) 0%, rgba(13,19,26,0) 70%),
+  linear-gradient(180deg, rgba(13,19,26,.36) 0%, rgba(13,19,26,0) 22%, rgba(13,19,26,0) 72%, rgba(13,19,26,.42) 100%)}
+.cv--light .cv-scrim{background:
+  radial-gradient(58% 52% at 100% 100%, rgba(255,255,255,.68), transparent 72%),
+  linear-gradient(180deg, rgba(255,255,255,.55) 0%, rgba(255,255,255,0) 26%),
+  linear-gradient(90deg, rgba(255,255,255,.88) 0%, rgba(255,255,255,.6) 52%, rgba(255,255,255,.34) 100%)}
+
+/* — вшитая рейка 80px — */
+.cv-rail{position:absolute;left:0;top:0;bottom:0;width:80px;z-index:5;display:flex;flex-direction:column;align-items:center;padding:20px 0 18px}
+.rl-mark{width:42px;height:42px;border-radius:13px;background:#fff;color:#161B27;display:grid;place-items:center;
+         font-family:var(--fT);font-size:22px;font-weight:700;box-shadow:0 10px 24px -12px rgba(0,0,0,.5)}
+.cv--light .rl-mark{background:#161B27;color:#fff}
+.rl-items{margin-top:26px;display:flex;flex-direction:column;gap:6px}
+.rl-it{width:40px;height:38px;border-radius:12px;display:grid;place-items:center;color:var(--mut)}
+.rl-it svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.rl-it.on{background:var(--plate);color:var(--ink);box-shadow:0 8px 18px -10px rgba(10,14,22,.5)}
+.cv--light .rl-it.on{box-shadow:0 8px 18px -12px rgba(24,38,60,.35)}
+.rl-foot{margin-top:auto}
+.rl-ava{width:34px;height:34px;border-radius:50%;border:1px solid var(--hair);background:rgba(255,255,255,.05);
+        display:grid;place-items:center;color:var(--mut)}
+.cv--light .rl-ava{background:rgba(16,24,40,.05)}
+.rl-ava svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
+
+/* — тихая шапка — */
+.cv-top{position:absolute;top:20px;right:26px;z-index:5;display:flex;align-items:center;gap:10px}
+.tp-pill{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 15px;border-radius:999px;
+         background:var(--glass);border:1px solid var(--glass-edge);backdrop-filter:blur(10px);
+         color:var(--mut);font-size:12.5px;font-weight:600}
+.tp-pill svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round}
+.tp-pill .kbd{font-family:var(--fN);font-size:10px;border:1px solid var(--hair);border-radius:5px;padding:1px 5px;color:var(--dim)}
+.tp-rnd{width:36px;height:36px;border-radius:50%;background:var(--glass);border:1px solid var(--glass-edge);
+        backdrop-filter:blur(10px);display:grid;place-items:center;color:var(--mut)}
+.tp-rnd svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+
+/* — сетка обложки: боевой .hg-cover + поправка на вшитую рейку слева — */
+.cv-grid{position:relative;z-index:4;height:100%;display:grid;grid-template-columns:minmax(0,1fr) 500px;
+         gap:56px;align-items:center;padding:8px 108px 30px 136px}
+.cv-main{min-width:0}
+.cv-brand{display:flex;align-items:baseline;gap:14px;margin-bottom:26px}
+.cv-brand-name{font-size:19px;letter-spacing:.01em}
+.cv-brand-name .w3{font-weight:300}
+.cv-brand-name .w8{font-weight:800}
+.cv-brand-sub{font-size:10.5px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--dim)}
+.cv-title{font-family:var(--fT);font-weight:400;font-size:58px;line-height:1.08;letter-spacing:-.012em;color:var(--ink)}
+.cv-lead{margin-top:20px;font-size:16.5px;line-height:1.62;color:var(--mut);max-width:33em}
+.cv-ctas{margin-top:32px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.cv-cta{display:inline-flex;align-items:center;gap:10px;height:52px;padding:0 30px;border-radius:999px;
+        background:linear-gradient(180deg,#5B67F2,#4453EF);color:#fff;font-size:15.5px;font-weight:700;
+        box-shadow:0 18px 38px -14px rgba(68,83,239,.55);white-space:nowrap}
+.cv-cta svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.cv-mkt{display:inline-flex;align-items:center;gap:12px;height:46px;padding:0 19px;border-radius:999px;
+        background:var(--glass);border:1px solid var(--glass-edge);backdrop-filter:blur(10px);
+        font-family:var(--fN);font-size:12.5px;font-weight:600;color:var(--mut);white-space:nowrap}
+.cv-mkt b{font-weight:700;color:var(--ink)}
+.cv-mkt .up{color:#5FC492}
+.cv--light .cv-mkt .up{color:#0E7A45}
+.cv-mkt .sep{width:1px;height:16px;background:var(--hair)}
+.cv-mkt .go{color:var(--dim);font-family:var(--fU);font-weight:600}
+
+/* ======================================================================
+   БЕЛАЯ КАРТОЧКА (одинаковая в обеих темах — принцип июля сохранён).
+   Свои чернильные токены, от темы обложки не зависит.
+   ====================================================================== */
+.au{--aink:#101828; --amut:#5C6A7D; --adim:#8D9AAD; --ahair:rgba(16,24,40,.1);
+    background:#fff;border:1px solid rgba(20,27,45,.09);border-radius:24px;
+    padding:30px 32px 24px;display:flex;flex-direction:column;color:var(--aink);
+    box-shadow:0 30px 70px -30px rgba(8,12,20,.5)}
+.cv--light .au{box-shadow:0 30px 70px -34px rgba(24,38,60,.4)}
+.au-tabs{display:flex;background:#EEF1F6;border:1px solid rgba(16,24,40,.07);border-radius:999px;padding:3px;gap:2px}
+.au-tab{flex:1;height:38px;border-radius:999px;display:grid;place-items:center;font-size:13.5px;font-weight:700;color:var(--amut)}
+.au-tab.on{background:#fff;color:var(--aink);box-shadow:0 6px 16px -8px rgba(24,38,60,.3)}
+.au-title{margin-top:24px;font-family:var(--fT);font-weight:400;font-size:30px;letter-spacing:-.01em}
+.au-sub{margin-top:7px;font-size:13px;color:var(--amut)}
+.au-form{margin-top:20px;display:flex;flex-direction:column;gap:14px}
+.au-lb{font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--adim);margin-bottom:6px;display:block}
+.au-inp{position:relative;display:flex;align-items:center;height:48px;border-radius:13px;
+        background:#F4F6FA;border:1px solid rgba(16,24,40,.08);padding:0 44px 0 16px}
+.au-inp i{font-style:normal;font-family:var(--fN);font-size:13px;color:var(--adim);word-spacing:-3px}
+.au-inp i.filled{color:var(--aink);font-weight:600}
+.au-inp svg{position:absolute;right:15px;width:16px;height:16px;fill:none;stroke:var(--adim);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+/* состояния поля */
+.au-inp.focus{background:#fff;border-color:#4453EF;box-shadow:0 0 0 3px rgba(68,83,239,.16)}
+.au-lb.focus{color:#4453EF}
+.au-inp.err{border-color:#D8452B;background:rgba(216,69,43,.045)}
+.au-msg{font-size:12.5px;font-weight:600;color:#C43A20;margin-top:-4px}
+.au-btn{margin-top:6px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:10px;
+        background:linear-gradient(180deg,#5B67F2,#4453EF);color:#fff;font-size:15px;font-weight:700;
+        box-shadow:0 16px 34px -14px rgba(68,83,239,.6)}
+.au-btn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.au-btn.done{background:linear-gradient(180deg,#27B274,#1F9D63);box-shadow:0 16px 34px -14px rgba(31,157,99,.55)}
+.au-ok{font-size:12.5px;color:var(--amut);text-align:center;margin-top:-2px}
+.au-div{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--adim);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.12em}
+.au-div::before,.au-div::after{content:"";flex:1;height:1px;background:var(--ahair)}
+.au-tg{height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;gap:10px;
+       background:#F4F6FA;border:1px solid rgba(16,24,40,.09);font-size:14px;font-weight:700;color:var(--aink)}
+.au-tg svg{width:17px;height:17px}
+.au-foot{margin-top:16px;text-align:center;font-size:12.5px;color:var(--amut)}
+.au-foot b{color:#4453EF;font-weight:700}
+.au-policy{margin-top:10px;text-align:center;font-size:11px;color:var(--adim);line-height:1.5}
+.au-sec{margin-top:10px;display:flex;align-items:center;justify-content:center;gap:7px;
+        font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--adim)}
+.au-sec svg{width:11px;height:11px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* — «вы вошли» в белой карточке — */
+.au-ava{width:52px;height:52px;border-radius:50%;background:linear-gradient(180deg,#5B67F2,#4453EF);
+        color:#fff;display:grid;place-items:center;font-family:var(--fT);font-size:23px}
+.au-mail{margin-top:16px;display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 14px;border-radius:999px;
+         background:#F4F6FA;border:1px solid rgba(16,24,40,.08);font-family:var(--fN);font-size:12px;color:var(--amut);align-self:flex-start}
+.au-mail em{font-style:normal;width:7px;height:7px;border-radius:50%;background:#12A35C}
+.au-quiet{height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:9px;
+          background:#F4F6FA;border:1px solid rgba(16,24,40,.09);font-size:14px;font-weight:700;color:var(--aink)}
+.au-rows{margin-top:22px;display:flex;flex-direction:column}
+.au-row{display:flex;align-items:center;justify-content:space-between;padding:12px 2px;border-top:1px solid var(--ahair);font-size:13px;color:var(--amut)}
+.au-row:first-child{border-top:0}
+.au-row b{font-family:var(--fN);font-size:12.5px;font-weight:700;color:var(--aink)}
+.au-row b.up{color:#0E7A45}
+
+/* — экран состояний: три карточки на витражной полосе — */
+.stage{display:flex;gap:28px;align-items:flex-start;width:max-content;padding:36px 40px;border-radius:16px;
+       border:1px solid rgba(15,23,42,.09);
+       box-shadow:0 2px 4px rgba(15,23,42,.05),0 34px 70px -34px rgba(24,38,60,.4);
+       background:
+         radial-gradient(760px 520px at 6% 8%, rgba(31,58,68,.85) 0%, rgba(31,58,68,0) 60%),
+         radial-gradient(820px 560px at 78% 4%, rgba(43,44,80,.8) 0%, rgba(43,44,80,0) 62%),
+         linear-gradient(160deg,#0D141B 0%,#111520 50%,#0C141A 100%)}
+.stage .au{width:434px;flex:none}
+.st-cap{margin-top:14px;text-align:center;font-size:12.5px;font-weight:600;color:#9AA2B5}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="doc-h">
+    <div class="doc-kicker">Главная · раунд 3 · чистовик В2</div>
+    <h1>«Бережный» дочищен: карта и раскладка — боевые, язык — новый</h1>
+    <p>По замечаниям к раунду 2: за основу берётся В2 «Бережный», а раскладка карточек фона возвращается
+       ровно как на живой странице. Ниже чистовик: обложка гостя, состояния формы, «вы вошли» и светлая тема.</p>
+    <div class="verdict">
+      <p><b>Что возвращено 1в1 боевому.</b> Карта — родной squarified-алгоритм из home-register.js: 46 плиток
+         впритык с зазором 4px, скругление 6, тикер моно снизу-слева только на крупных (шире 64 и выше 40px),
+         хвост индекса растворяется от площади (порог 0,8% экрана), oklch-формулы цвета не тронуты. Раскладка
+         обложки — родной .hg-cover: колонна 500px, зазор 56, кнопка и пульс рынка в один ряд.</p>
+      <p><b>Что остаётся из В2.</b> Белая непрозрачная карточка, одинаковая в обеих темах (решение июля).
+         Вшитая рейка вместо плавающей пилюли, тихая шапка (бренд один раз), витражный фон под картой,
+         индиго-кнопки и табы-карточки, серифное «Создайте аккаунт», строка рынка расширена до USD.</p>
+      <p><b>Что добавлено в чистовике.</b> Состояния формы (фокус · ошибка · письмо отправлено) в языке
+         индиго-фокуса; строка согласия с условиями (боевая .hr-policy); заполненное поле читается чернилами.</p>
+    </div>
+  </header>
+
+  <!-- ================= 01 ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">01</span><h2>Чистовик — гость, тёмная тема</h2><span class="mk-tag">Основной</span></div>
+    <p class="mk-sub">Карта дышит как на живой странице: крупные бумаги слева и в центре, мелочь сбивается в правом
+       нижнем углу и растворяется. Витражный фон виден в зазорах и там, где хвост погас. Белая карточка — глава
+       правой половины, индиго — единственный цвет действия.</p>
+    <div class="scroller"><div id="mk01"><div class="cv cv--dark"><div class="cv-tiles"><div class="tl" style="left:2.0px;top:2.0px;width:329.7px;height:485.2px;background:oklch(0.332 0.046 158);color:oklch(0.75 0.08 158);opacity:1.00">SBER</div><div class="tl" style="left:2.0px;top:491.2px;width:329.7px;height:398.8px;background:oklch(0.319 0.039 158);color:oklch(0.75 0.08 158);opacity:1.00">LKOH</div><div class="tl" style="left:335.7px;top:2.0px;width:273.2px;height:398.7px;background:oklch(0.376 0.068 158);color:oklch(0.75 0.08 158);opacity:1.00">GAZP</div><div class="tl" style="left:335.7px;top:404.7px;width:273.2px;height:251.5px;background:oklch(0.343 0.052 158);color:oklch(0.75 0.08 158);opacity:1.00">TATN</div><div class="tl" style="left:335.7px;top:660.2px;width:273.2px;height:229.8px;background:oklch(0.374 0.067 158);color:oklch(0.75 0.08 158);opacity:1.00">NVTK</div><div class="tl" style="left:612.9px;top:2.0px;width:233.6px;height:248.6px;background:oklch(0.377 0.069 158);color:oklch(0.75 0.08 158);opacity:1.00">YDEX</div><div class="tl" style="left:850.5px;top:2.0px;width:205.1px;height:248.6px;background:oklch(0.398 0.079 158);color:oklch(0.75 0.08 158);opacity:1.00">GMKN</div><div class="tl" style="left:1059.6px;top:2.0px;width:200.3px;height:248.6px;background:oklch(0.392 0.076 158);color:oklch(0.75 0.08 158);opacity:1.00">ROSN</div><div class="tl" style="left:1263.9px;top:2.0px;width:186.1px;height:248.6px;background:oklch(0.420 0.090 158);color:oklch(0.75 0.08 158);opacity:1.00">PLZL</div><div class="tl" style="left:612.9px;top:254.6px;width:176.2px;height:222.4px;background:oklch(0.420 0.090 158);color:oklch(0.75 0.08 158);opacity:1.00">SNGS</div><div class="tl" style="left:612.9px;top:481.1px;width:176.2px;height:215.8px;background:oklch(0.368 0.064 158);color:oklch(0.75 0.08 158);opacity:1.00">T</div><div class="tl" style="left:612.9px;top:700.9px;width:176.2px;height:189.1px;background:oklch(0.309 0.034 158);color:oklch(0.75 0.08 158);opacity:1.00">X5</div><div class="tl" style="left:793.2px;top:254.6px;width:165.0px;height:187.8px;background:oklch(0.320 0.040 44);color:oklch(0.76 0.08 44);opacity:1.00">VTBR</div><div class="tl" style="left:793.2px;top:446.4px;width:165.0px;height:159.4px;background:oklch(0.330 0.045 158);color:oklch(0.75 0.08 158);opacity:1.00">MOEX</div><div class="tl" style="left:793.2px;top:609.8px;width:165.0px;height:145.2px;background:oklch(0.299 0.030 44);color:oklch(0.76 0.08 44);opacity:1.00">MTSS</div><div class="tl" style="left:793.2px;top:759.0px;width:165.0px;height:131.0px;background:oklch(0.420 0.090 158);color:oklch(0.75 0.08 158);opacity:1.00">ALRS</div><div class="tl" style="left:962.1px;top:254.6px;width:177.5px;height:121.7px;background:oklch(0.322 0.041 158);color:oklch(0.75 0.08 158);opacity:1.00">CHMF</div><div class="tl" style="left:1143.6px;top:254.6px;width:158.4px;height:121.7px;background:oklch(0.306 0.033 158);color:oklch(0.75 0.08 158);opacity:1.00">NLMK</div><div class="tl" style="left:1306.0px;top:254.6px;width:144.0px;height:121.7px;background:oklch(0.308 0.034 44);color:oklch(0.76 0.08 44);opacity:1.00">MAGN</div><div class="tl" style="left:962.1px;top:380.3px;width:127.8px;height:132.7px;background:oklch(0.294 0.027 158);color:oklch(0.75 0.08 158);opacity:1.00">PHOR</div><div class="tl" style="left:1093.9px;top:380.3px;width:123.4px;height:132.7px;background:oklch(0.294 0.027 44);color:oklch(0.76 0.08 44);opacity:1.00">OZON</div><div class="tl" style="left:1221.2px;top:380.3px;width:114.6px;height:132.7px;background:oklch(0.420 0.090 158);color:oklch(0.75 0.08 158);opacity:1.00">POSI</div><div class="tl" style="left:1339.8px;top:380.3px;width:110.2px;height:132.7px;background:oklch(0.289 0.025 44);color:oklch(0.76 0.08 44);opacity:1.00">MGNT</div><div class="tl" style="left:962.1px;top:517.0px;width:105.8px;height:132.6px;background:oklch(0.420 0.090 158);color:oklch(0.75 0.08 158);opacity:1.00">HEAD</div><div class="tl" style="left:962.1px;top:653.6px;width:105.8px;height:121.7px;background:oklch(0.313 0.036 158);color:oklch(0.75 0.08 158);opacity:1.00">RUAL</div><div class="tl" style="left:962.1px;top:779.2px;width:105.8px;height:110.8px;background:oklch(0.345 0.053 158);color:oklch(0.75 0.08 158);opacity:1.00">AFKS</div><div class="tl" style="left:1072.0px;top:517.0px;width:112.2px;height:104.5px;background:oklch(0.352 0.056 158);color:oklch(0.75 0.08 158);opacity:1.00">TRNFP</div><div class="tl" style="left:1072.0px;top:625.4px;width:112.2px;height:94.1px;background:oklch(0.420 0.090 158);color:oklch(0.75 0.08 158);opacity:1.00">CBOM</div><div class="tl" style="left:1072.0px;top:723.6px;width:112.2px;height:83.8px;background:oklch(0.328 0.044 44);color:oklch(0.76 0.08 44);opacity:0.93">FLOT</div><div class="tl" style="left:1072.0px;top:811.4px;width:112.2px;height:78.6px;background:oklch(0.288 0.024 44);color:oklch(0.76 0.08 44);opacity:0.89">SGZH</div><div class="tl" style="left:1188.2px;top:517.0px;width:88.7px;height:93.1px;background:oklch(0.296 0.028 158);color:oklch(0.75 0.08 158);opacity:0.85">ENPG</div><div class="tl" style="left:1280.9px;top:517.0px;width:82.5px;height:93.1px;background:oklch(0.284 0.022 158);color:oklch(0.75 0.08 158);opacity:0.81">UPRO</div><div class="tl" style="left:1367.5px;top:517.0px;width:82.5px;height:93.1px;background:oklch(0.311 0.036 158);color:oklch(0.75 0.08 158);opacity:0.81">AGRO</div><div class="tl" style="left:1188.2px;top:614.0px;width:86.9px;height:81.8px;background:oklch(0.27 0.012 250);color:oklch(0.62 0.02 250);opacity:0.77">HYDR</div><div class="tl" style="left:1279.1px;top:614.0px;width:86.9px;height:81.8px;background:oklch(0.299 0.029 158);color:oklch(0.75 0.08 158);opacity:0.77">IRAO</div><div class="tl" style="left:1370.1px;top:614.0px;width:79.9px;height:81.8px;background:oklch(0.386 0.073 158);color:oklch(0.75 0.08 158);opacity:0.73">SNGSP</div><div class="tl" style="left:1188.2px;top:699.8px;width:67.1px;height:97.3px;background:oklch(0.333 0.047 158);color:oklch(0.75 0.08 158);opacity:0.73">TATNP</div><div class="tl" style="left:1188.2px;top:801.1px;width:67.1px;height:88.9px;background:oklch(0.351 0.055 158);color:oklch(0.75 0.08 158);opacity:0.69">BSPB</div><div class="tl" style="left:1259.3px;top:699.8px;width:85.6px;height:63.0px;background:oklch(0.309 0.034 158);color:oklch(0.75 0.08 158);opacity:0.65">LENT</div><div class="tl" style="left:1259.3px;top:766.8px;width:85.6px;height:63.0px;background:oklch(0.296 0.028 44);color:oklch(0.76 0.08 44);opacity:0.65">RTKM</div><div class="tl" style="left:1259.3px;top:833.7px;width:85.6px;height:56.3px;background:oklch(0.317 0.038 158);color:oklch(0.75 0.08 158);opacity:0.61">SVCB</div><div class="tl" style="left:1348.9px;top:699.8px;width:48.5px;height:87.4px;background:oklch(0.297 0.029 158);color:oklch(0.75 0.08 158);opacity:0.57"></div><div class="tl" style="left:1401.5px;top:699.8px;width:48.5px;height:87.4px;background:oklch(0.332 0.046 158);color:oklch(0.75 0.08 158);opacity:0.57"></div><div class="tl" style="left:1348.9px;top:791.2px;width:71.9px;height:51.4px;background:oklch(0.291 0.025 158);color:oklch(0.75 0.08 158);opacity:0.54">RAGR</div><div class="tl" style="left:1348.9px;top:846.6px;width:71.9px;height:43.4px;background:oklch(0.298 0.029 44);color:oklch(0.76 0.08 44);opacity:0.50">VSMO</div><div class="tl" style="left:1424.8px;top:791.2px;width:25.2px;height:98.8px;background:oklch(0.287 0.024 158);color:oklch(0.75 0.08 158);opacity:0.45"></div></div><div class="cv-scrim"></div><div class="cv-rail"><div class="rl-mark">M</div><div class="rl-items"><div class="rl-it on"><svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/></svg></div><div class="rl-it"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div><div class="rl-it"><svg viewBox="0 0 24 24"><path d="M3 12h4l2.5-6 4 12L16 12h5"/></svg></div><div class="rl-it"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6"/><path d="M9 12h.01M12 12h.01M15 12h.01M9 16h.01M12 16h.01M15 16h.01"/></svg></div><div class="rl-it"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-9V3Z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15V3.5Z"/></svg></div><div class="rl-it"><svg viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2Z"/><path d="M4 19a2 2 0 0 0 2 2h14"/></svg></div></div><div class="rl-foot"><div class="rl-ava"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div></div></div><div class="cv-top"><span class="tp-pill"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg> Поиск <span class="kbd">⌘K</span></span><span class="tp-rnd"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></span><span class="tp-rnd"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span></div><div class="cv-grid"><div class="cv-main"><div class="cv-brand"><span class="cv-brand-name"><span class="w3">Madame </span><span class="w8">Solomi'na</span></span><span class="cv-brand-sub">Wealth Management</span></div><h1 class="cv-title">Добро пожаловать!<br>Спокойный доход<br>с&nbsp;Московской биржи</h1><p class="cv-lead">Рады видеть вас. За этим текстом — живая карта рынка прямо сейчас, а внутри — расчёт портфеля из ОФЗ и акций и план ребаланса в одном спокойном интерфейсе.</p><div class="cv-ctas"><span class="cv-cta">Начать расчёт<svg viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span><span class="cv-mkt"><span>IMOEX <b>2 301,65</b> <b class="up">+1,43%</b></span><span class="sep"></span><span>USD <b>78,42</b></span><span class="go">Рынок ›</span></span></div></div><aside class="au"><div class="au-tabs"><span class="au-tab on">Регистрация</span><span class="au-tab">Вход</span></div><h2 class="au-title">Создайте аккаунт</h2><p class="au-sub">Личный кабинет инвестора Madame Solomi'na</p><div class="au-form"><div><span class="au-lb">Имя</span><span class="au-inp"><i>Как к вам обращаться</i><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span></div><div><span class="au-lb">Email</span><span class="au-inp"><i>you@example.com</i><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></span></div><div><span class="au-lb">Пароль</span><span class="au-inp"><i>Минимум 6 символов</i><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span></div><span class="au-btn">Создать аккаунт<svg viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span></div><div class="au-div">или</div><span class="au-tg"><svg viewBox="0 0 24 24" fill="#2AABEE"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0Zm5.9 8.2-2 9.3c-.1.7-.5.8-1.1.5l-3-2.2-1.5 1.4c-.2.2-.3.3-.6.3l.2-3.1 5.6-5c.2-.2-.1-.3-.4-.1l-6.9 4.3-3-.9c-.6-.2-.7-.6.2-.9l11.6-4.5c.5-.2 1 .1.9.9Z"/></svg> Войти через Telegram</span><p class="au-foot">Уже есть аккаунт? <b>Войти</b></p><p class="au-policy">Продолжая, вы принимаете условия сервиса</p><p class="au-sec"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Secure Access</p></aside></div></div></div></div>
+    <div class="notes">
+      <div class="note"><i>1</i><span>Плитки — боевой рендер: squarified Брулса, зазор 4px, radius 6, подпись снизу-слева. Меняется только подложка под ними — «Витраж» вместо серого градиента.</span></div>
+      <div class="note"><i>2</i><span>Кнопка «Начать расчёт» и пульс рынка — в один ряд, как сейчас; в пилюле добавлен доллар, «Ключевая» не влезла в ряд и не потащена силой.</span></div>
+      <div class="note"><i>3</i><span>Карточка 500px на прежнем месте (правый паддинг 108). Внутри — новые табы, индиго-кнопка, серифный заголовок, строка согласия и Secure Access.</span></div>
+      <div class="note"><i>4</i><span>Рейка вшитая: марка-плитка, «Главная» активна карточкой, внизу аватар гостя. Плавающей белой пилюли больше нет.</span></div>
+      <div class="note"><i>5</i><span>Шапка тихая: стеклянный «Поиск ⌘K», тема и профиль кружками. Бренд написан один раз — в манифесте.</span></div>
+      <div class="note"><i>6</i><span>Тёмных оверрайдов карточки в CSS по-прежнему нет — она белая в обеих темах, дарк-правило белой кнопки .hc-cta-dark удаляется.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 02 ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">02</span><h2>Состояния формы</h2><span class="mk-tag mute">Состояние</span></div>
+    <p class="mk-sub">Три момента жизни карточки. Фокус — индиго-кольцо и подпись поля в цвет: язык фокуса общий
+       с новым акцентом проекта. Ошибка — красная кромка поля и строка под ним (боевой #homeRegError). Успех —
+       кнопка зеленеет, как боевая .hr-submit.is-done, и называет следующее действие словами.</p>
+    <div class="scroller"><div id="mk02"><div class="stage"><div><div class="st-cap" style="margin:0 0 14px">Фокус в поле Email</div><aside class="au"><div class="au-tabs"><span class="au-tab on">Регистрация</span><span class="au-tab">Вход</span></div><h2 class="au-title">Создайте аккаунт</h2><p class="au-sub">Личный кабинет инвестора Madame Solomi'na</p><div class="au-form"><div><span class="au-lb">Имя</span><span class="au-inp"><i class="filled">Денис</i><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span></div><div><span class="au-lb focus">Email</span><span class="au-inp focus"><i class="filled">clover3300@gm</i><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></span></div><div><span class="au-lb">Пароль</span><span class="au-inp"><i>Минимум 6 символов</i><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span></div><span class="au-btn">Создать аккаунт<svg viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span></div><div class="au-div">или</div><span class="au-tg"><svg viewBox="0 0 24 24" fill="#2AABEE"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0Zm5.9 8.2-2 9.3c-.1.7-.5.8-1.1.5l-3-2.2-1.5 1.4c-.2.2-.3.3-.6.3l.2-3.1 5.6-5c.2-.2-.1-.3-.4-.1l-6.9 4.3-3-.9c-.6-.2-.7-.6.2-.9l11.6-4.5c.5-.2 1 .1.9.9Z"/></svg> Войти через Telegram</span><p class="au-foot">Уже есть аккаунт? <b>Войти</b></p><p class="au-policy">Продолжая, вы принимаете условия сервиса</p><p class="au-sec"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Secure Access</p></aside></div><div><div class="st-cap" style="margin:0 0 14px">Ошибка пароля</div><aside class="au"><div class="au-tabs"><span class="au-tab on">Регистрация</span><span class="au-tab">Вход</span></div><h2 class="au-title">Создайте аккаунт</h2><p class="au-sub">Личный кабинет инвестора Madame Solomi'na</p><div class="au-form"><div><span class="au-lb">Имя</span><span class="au-inp"><i class="filled">Денис</i><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span></div><div><span class="au-lb">Email</span><span class="au-inp"><i class="filled">clover3300@gmail.com</i><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></span></div><div><span class="au-lb">Пароль</span><span class="au-inp err"><i class="filled">•••</i><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span></div><p class="au-msg">Пароль короче 6 символов</p><span class="au-btn">Создать аккаунт<svg viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span></div><div class="au-div">или</div><span class="au-tg"><svg viewBox="0 0 24 24" fill="#2AABEE"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0Zm5.9 8.2-2 9.3c-.1.7-.5.8-1.1.5l-3-2.2-1.5 1.4c-.2.2-.3.3-.6.3l.2-3.1 5.6-5c.2-.2-.1-.3-.4-.1l-6.9 4.3-3-.9c-.6-.2-.7-.6.2-.9l11.6-4.5c.5-.2 1 .1.9.9Z"/></svg> Войти через Telegram</span><p class="au-foot">Уже есть аккаунт? <b>Войти</b></p><p class="au-policy">Продолжая, вы принимаете условия сервиса</p><p class="au-sec"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Secure Access</p></aside></div><div><div class="st-cap" style="margin:0 0 14px">Письмо отправлено</div><aside class="au"><div class="au-tabs"><span class="au-tab on">Регистрация</span><span class="au-tab">Вход</span></div><h2 class="au-title">Создайте аккаунт</h2><p class="au-sub">Личный кабинет инвестора Madame Solomi'na</p><div class="au-form"><div><span class="au-lb">Имя</span><span class="au-inp"><i class="filled">Денис</i><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span></div><div><span class="au-lb">Email</span><span class="au-inp"><i class="filled">clover3300@gmail.com</i><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></span></div><div><span class="au-lb">Пароль</span><span class="au-inp"><i class="filled">••••••••</i><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span></div><span class="au-btn done">Проверьте почту<svg viewBox="0 0 24 24"><path d="m4 12.5 5.5 5.5L20 6.5"/></svg></span><p class="au-ok">Письмо со ссылкой для входа отправлено</p></div><div class="au-div">или</div><span class="au-tg"><svg viewBox="0 0 24 24" fill="#2AABEE"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0Zm5.9 8.2-2 9.3c-.1.7-.5.8-1.1.5l-3-2.2-1.5 1.4c-.2.2-.3.3-.6.3l.2-3.1 5.6-5c.2-.2-.1-.3-.4-.1l-6.9 4.3-3-.9c-.6-.2-.7-.6.2-.9l11.6-4.5c.5-.2 1 .1.9.9Z"/></svg> Войти через Telegram</span><p class="au-foot">Уже есть аккаунт? <b>Войти</b></p><p class="au-policy">Продолжая, вы принимаете условия сервиса</p><p class="au-sec"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Secure Access</p></aside></div></div></div></div>
+    <div class="notes">
+      <div class="note"><i>1</i><span>Заполненное поле читается чернильным моно — плейсхолдер и значение больше не сливаются.</span></div>
+      <div class="note"><i>2</i><span>Ошибка не красит всю карточку: только поле и строка под ним, кнопка остаётся индиго.</span></div>
+      <div class="note"><i>3</i><span>Все три состояния — та же карточка без перестроений: ничего не прыгает, меняются только цвета кромок.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 03 ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">03</span><h2>«Вы вошли», тёмная тема</h2><span class="mk-tag mute">Состояние</span></div>
+    <p class="mk-sub">Манифест живой: «С возвращением» и ребаланс-кнопка слева. Карточка остаётся белой и здесь:
+       аватар, почта с точкой синхронизации, три строки на волосках из PF.store — капитал, день, ближайшая
+       выплата. Цифры демонстрационные; при «Скрывать суммы» строки маскируются как везде.</p>
+    <div class="scroller"><div id="mk03"><div class="cv cv--dark"><div class="cv-tiles"><div class="tl" style="left:2.0px;top:2.0px;width:329.7px;height:485.2px;background:oklch(0.332 0.046 158);color:oklch(0.75 0.08 158);opacity:1.00">SBER</div><div class="tl" style="left:2.0px;top:491.2px;width:329.7px;height:398.8px;background:oklch(0.319 0.039 158);color:oklch(0.75 0.08 158);opacity:1.00">LKOH</div><div class="tl" style="left:335.7px;top:2.0px;width:273.2px;height:398.7px;background:oklch(0.376 0.068 158);color:oklch(0.75 0.08 158);opacity:1.00">GAZP</div><div class="tl" style="left:335.7px;top:404.7px;width:273.2px;height:251.5px;background:oklch(0.343 0.052 158);color:oklch(0.75 0.08 158);opacity:1.00">TATN</div><div class="tl" style="left:335.7px;top:660.2px;width:273.2px;height:229.8px;background:oklch(0.374 0.067 158);color:oklch(0.75 0.08 158);opacity:1.00">NVTK</div><div class="tl" style="left:612.9px;top:2.0px;width:233.6px;height:248.6px;background:oklch(0.377 0.069 158);color:oklch(0.75 0.08 158);opacity:1.00">YDEX</div><div class="tl" style="left:850.5px;top:2.0px;width:205.1px;height:248.6px;background:oklch(0.398 0.079 158);color:oklch(0.75 0.08 158);opacity:1.00">GMKN</div><div class="tl" style="left:1059.6px;top:2.0px;width:200.3px;height:248.6px;background:oklch(0.392 0.076 158);color:oklch(0.75 0.08 158);opacity:1.00">ROSN</div><div class="tl" style="left:1263.9px;top:2.0px;width:186.1px;height:248.6px;background:oklch(0.420 0.090 158);color:oklch(0.75 0.08 158);opacity:1.00">PLZL</div><div class="tl" style="left:612.9px;top:254.6px;width:176.2px;height:222.4px;background:oklch(0.420 0.090 158);color:oklch(0.75 0.08 158);opacity:1.00">SNGS</div><div class="tl" style="left:612.9px;top:481.1px;width:176.2px;height:215.8px;background:oklch(0.368 0.064 158);color:oklch(0.75 0.08 158);opacity:1.00">T</div><div class="tl" style="left:612.9px;top:700.9px;width:176.2px;height:189.1px;background:oklch(0.309 0.034 158);color:oklch(0.75 0.08 158);opacity:1.00">X5</div><div class="tl" style="left:793.2px;top:254.6px;width:165.0px;height:187.8px;background:oklch(0.320 0.040 44);color:oklch(0.76 0.08 44);opacity:1.00">VTBR</div><div class="tl" style="left:793.2px;top:446.4px;width:165.0px;height:159.4px;background:oklch(0.330 0.045 158);color:oklch(0.75 0.08 158);opacity:1.00">MOEX</div><div class="tl" style="left:793.2px;top:609.8px;width:165.0px;height:145.2px;background:oklch(0.299 0.030 44);color:oklch(0.76 0.08 44);opacity:1.00">MTSS</div><div class="tl" style="left:793.2px;top:759.0px;width:165.0px;height:131.0px;background:oklch(0.420 0.090 158);color:oklch(0.75 0.08 158);opacity:1.00">ALRS</div><div class="tl" style="left:962.1px;top:254.6px;width:177.5px;height:121.7px;background:oklch(0.322 0.041 158);color:oklch(0.75 0.08 158);opacity:1.00">CHMF</div><div class="tl" style="left:1143.6px;top:254.6px;width:158.4px;height:121.7px;background:oklch(0.306 0.033 158);color:oklch(0.75 0.08 158);opacity:1.00">NLMK</div><div class="tl" style="left:1306.0px;top:254.6px;width:144.0px;height:121.7px;background:oklch(0.308 0.034 44);color:oklch(0.76 0.08 44);opacity:1.00">MAGN</div><div class="tl" style="left:962.1px;top:380.3px;width:127.8px;height:132.7px;background:oklch(0.294 0.027 158);color:oklch(0.75 0.08 158);opacity:1.00">PHOR</div><div class="tl" style="left:1093.9px;top:380.3px;width:123.4px;height:132.7px;background:oklch(0.294 0.027 44);color:oklch(0.76 0.08 44);opacity:1.00">OZON</div><div class="tl" style="left:1221.2px;top:380.3px;width:114.6px;height:132.7px;background:oklch(0.420 0.090 158);color:oklch(0.75 0.08 158);opacity:1.00">POSI</div><div class="tl" style="left:1339.8px;top:380.3px;width:110.2px;height:132.7px;background:oklch(0.289 0.025 44);color:oklch(0.76 0.08 44);opacity:1.00">MGNT</div><div class="tl" style="left:962.1px;top:517.0px;width:105.8px;height:132.6px;background:oklch(0.420 0.090 158);color:oklch(0.75 0.08 158);opacity:1.00">HEAD</div><div class="tl" style="left:962.1px;top:653.6px;width:105.8px;height:121.7px;background:oklch(0.313 0.036 158);color:oklch(0.75 0.08 158);opacity:1.00">RUAL</div><div class="tl" style="left:962.1px;top:779.2px;width:105.8px;height:110.8px;background:oklch(0.345 0.053 158);color:oklch(0.75 0.08 158);opacity:1.00">AFKS</div><div class="tl" style="left:1072.0px;top:517.0px;width:112.2px;height:104.5px;background:oklch(0.352 0.056 158);color:oklch(0.75 0.08 158);opacity:1.00">TRNFP</div><div class="tl" style="left:1072.0px;top:625.4px;width:112.2px;height:94.1px;background:oklch(0.420 0.090 158);color:oklch(0.75 0.08 158);opacity:1.00">CBOM</div><div class="tl" style="left:1072.0px;top:723.6px;width:112.2px;height:83.8px;background:oklch(0.328 0.044 44);color:oklch(0.76 0.08 44);opacity:0.93">FLOT</div><div class="tl" style="left:1072.0px;top:811.4px;width:112.2px;height:78.6px;background:oklch(0.288 0.024 44);color:oklch(0.76 0.08 44);opacity:0.89">SGZH</div><div class="tl" style="left:1188.2px;top:517.0px;width:88.7px;height:93.1px;background:oklch(0.296 0.028 158);color:oklch(0.75 0.08 158);opacity:0.85">ENPG</div><div class="tl" style="left:1280.9px;top:517.0px;width:82.5px;height:93.1px;background:oklch(0.284 0.022 158);color:oklch(0.75 0.08 158);opacity:0.81">UPRO</div><div class="tl" style="left:1367.5px;top:517.0px;width:82.5px;height:93.1px;background:oklch(0.311 0.036 158);color:oklch(0.75 0.08 158);opacity:0.81">AGRO</div><div class="tl" style="left:1188.2px;top:614.0px;width:86.9px;height:81.8px;background:oklch(0.27 0.012 250);color:oklch(0.62 0.02 250);opacity:0.77">HYDR</div><div class="tl" style="left:1279.1px;top:614.0px;width:86.9px;height:81.8px;background:oklch(0.299 0.029 158);color:oklch(0.75 0.08 158);opacity:0.77">IRAO</div><div class="tl" style="left:1370.1px;top:614.0px;width:79.9px;height:81.8px;background:oklch(0.386 0.073 158);color:oklch(0.75 0.08 158);opacity:0.73">SNGSP</div><div class="tl" style="left:1188.2px;top:699.8px;width:67.1px;height:97.3px;background:oklch(0.333 0.047 158);color:oklch(0.75 0.08 158);opacity:0.73">TATNP</div><div class="tl" style="left:1188.2px;top:801.1px;width:67.1px;height:88.9px;background:oklch(0.351 0.055 158);color:oklch(0.75 0.08 158);opacity:0.69">BSPB</div><div class="tl" style="left:1259.3px;top:699.8px;width:85.6px;height:63.0px;background:oklch(0.309 0.034 158);color:oklch(0.75 0.08 158);opacity:0.65">LENT</div><div class="tl" style="left:1259.3px;top:766.8px;width:85.6px;height:63.0px;background:oklch(0.296 0.028 44);color:oklch(0.76 0.08 44);opacity:0.65">RTKM</div><div class="tl" style="left:1259.3px;top:833.7px;width:85.6px;height:56.3px;background:oklch(0.317 0.038 158);color:oklch(0.75 0.08 158);opacity:0.61">SVCB</div><div class="tl" style="left:1348.9px;top:699.8px;width:48.5px;height:87.4px;background:oklch(0.297 0.029 158);color:oklch(0.75 0.08 158);opacity:0.57"></div><div class="tl" style="left:1401.5px;top:699.8px;width:48.5px;height:87.4px;background:oklch(0.332 0.046 158);color:oklch(0.75 0.08 158);opacity:0.57"></div><div class="tl" style="left:1348.9px;top:791.2px;width:71.9px;height:51.4px;background:oklch(0.291 0.025 158);color:oklch(0.75 0.08 158);opacity:0.54">RAGR</div><div class="tl" style="left:1348.9px;top:846.6px;width:71.9px;height:43.4px;background:oklch(0.298 0.029 44);color:oklch(0.76 0.08 44);opacity:0.50">VSMO</div><div class="tl" style="left:1424.8px;top:791.2px;width:25.2px;height:98.8px;background:oklch(0.287 0.024 158);color:oklch(0.75 0.08 158);opacity:0.45"></div></div><div class="cv-scrim"></div><div class="cv-rail"><div class="rl-mark">M</div><div class="rl-items"><div class="rl-it on"><svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/></svg></div><div class="rl-it"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div><div class="rl-it"><svg viewBox="0 0 24 24"><path d="M3 12h4l2.5-6 4 12L16 12h5"/></svg></div><div class="rl-it"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6"/><path d="M9 12h.01M12 12h.01M15 12h.01M9 16h.01M12 16h.01M15 16h.01"/></svg></div><div class="rl-it"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-9V3Z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15V3.5Z"/></svg></div><div class="rl-it"><svg viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2Z"/><path d="M4 19a2 2 0 0 0 2 2h14"/></svg></div></div><div class="rl-foot"><div class="rl-ava"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div></div></div><div class="cv-top"><span class="tp-pill"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg> Поиск <span class="kbd">⌘K</span></span><span class="tp-rnd"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></span><span class="tp-rnd"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span></div><div class="cv-grid"><div class="cv-main"><div class="cv-brand"><span class="cv-brand-name"><span class="w3">Madame </span><span class="w8">Solomi'na</span></span><span class="cv-brand-sub">Wealth Management</span></div><h1 class="cv-title">С возвращением,<br>Денис! Рынок<br>не стоял на месте</h1><p class="cv-lead">За этим текстом — живая карта рынка. Портфели дождались вас: загляните в кабинет или сверьте доли — ребаланс займёт пару минут.</p><div class="cv-ctas"><span class="cv-cta">Сделать ребалансировку<svg viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span><span class="cv-mkt"><span>IMOEX <b>2 301,65</b> <b class="up">+1,43%</b></span><span class="sep"></span><span>USD <b>78,42</b></span><span class="go">Рынок ›</span></span></div></div><aside class="au"><div class="au-ava">Д</div><h2 class="au-title" style="margin-top:18px">Рады видеть вас</h2><span class="au-mail"><em></em>clover3300@gmail.com</span><div class="au-rows"><div class="au-row"><span>Капитал</span><b>18 180 623 ₽</b></div><div class="au-row"><span>За день</span><b class="up">+129 444 ₽ · +0,71%</b></div><div class="au-row"><span>Ближайшая выплата</span><b>2 сент · ОФЗ 26248</b></div></div><div class="au-form" style="margin-top:10px"><span class="au-btn">В кабинет<svg viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span><span class="au-quiet">Новый расчёт</span></div><p class="au-sec" style="margin-top:18px"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Secure Access</p></aside></div></div></div></div>
+  </section>
+
+  <!-- ================= 04 ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">04</span><h2>Гость, светлая тема</h2><span class="mk-tag mute">Состояние</span></div>
+    <p class="mk-sub">Светлый «Витраж», боевые светлые oklch-плитки и боевая светлая вуаль .hg-scrim. Карточка —
+       та же белая, ни один её токен не меняется. Марка рейки инвертируется в чернильную.</p>
+    <div class="scroller"><div id="mk04"><div class="cv cv--light"><div class="cv-tiles"><div class="tl" style="left:2.0px;top:2.0px;width:329.7px;height:485.2px;background:oklch(0.928 0.033 158);color:oklch(0.45 0.09 158);opacity:1.00">SBER</div><div class="tl" style="left:2.0px;top:491.2px;width:329.7px;height:398.8px;background:oklch(0.937 0.027 158);color:oklch(0.45 0.09 158);opacity:1.00">LKOH</div><div class="tl" style="left:335.7px;top:2.0px;width:273.2px;height:398.7px;background:oklch(0.896 0.050 158);color:oklch(0.45 0.09 158);opacity:1.00">GAZP</div><div class="tl" style="left:335.7px;top:404.7px;width:273.2px;height:251.5px;background:oklch(0.920 0.037 158);color:oklch(0.45 0.09 158);opacity:1.00">TATN</div><div class="tl" style="left:335.7px;top:660.2px;width:273.2px;height:229.8px;background:oklch(0.898 0.049 158);color:oklch(0.45 0.09 158);opacity:1.00">NVTK</div><div class="tl" style="left:612.9px;top:2.0px;width:233.6px;height:248.6px;background:oklch(0.896 0.050 158);color:oklch(0.45 0.09 158);opacity:1.00">YDEX</div><div class="tl" style="left:850.5px;top:2.0px;width:205.1px;height:248.6px;background:oklch(0.881 0.058 158);color:oklch(0.45 0.09 158);opacity:1.00">GMKN</div><div class="tl" style="left:1059.6px;top:2.0px;width:200.3px;height:248.6px;background:oklch(0.885 0.056 158);color:oklch(0.45 0.09 158);opacity:1.00">ROSN</div><div class="tl" style="left:1263.9px;top:2.0px;width:186.1px;height:248.6px;background:oklch(0.865 0.067 158);color:oklch(0.45 0.09 158);opacity:1.00">PLZL</div><div class="tl" style="left:612.9px;top:254.6px;width:176.2px;height:222.4px;background:oklch(0.865 0.067 158);color:oklch(0.45 0.09 158);opacity:1.00">SNGS</div><div class="tl" style="left:612.9px;top:481.1px;width:176.2px;height:215.8px;background:oklch(0.902 0.046 158);color:oklch(0.45 0.09 158);opacity:1.00">T</div><div class="tl" style="left:612.9px;top:700.9px;width:176.2px;height:189.1px;background:oklch(0.944 0.023 158);color:oklch(0.45 0.09 158);opacity:1.00">X5</div><div class="tl" style="left:793.2px;top:254.6px;width:165.0px;height:187.8px;background:oklch(0.937 0.028 44);color:oklch(0.47 0.09 44);opacity:1.00">VTBR</div><div class="tl" style="left:793.2px;top:446.4px;width:165.0px;height:159.4px;background:oklch(0.929 0.032 158);color:oklch(0.45 0.09 158);opacity:1.00">MOEX</div><div class="tl" style="left:793.2px;top:609.8px;width:165.0px;height:145.2px;background:oklch(0.951 0.020 44);color:oklch(0.47 0.09 44);opacity:1.00">MTSS</div><div class="tl" style="left:793.2px;top:759.0px;width:165.0px;height:131.0px;background:oklch(0.865 0.067 158);color:oklch(0.45 0.09 158);opacity:1.00">ALRS</div><div class="tl" style="left:962.1px;top:254.6px;width:177.5px;height:121.7px;background:oklch(0.935 0.029 158);color:oklch(0.45 0.09 158);opacity:1.00">CHMF</div><div class="tl" style="left:1143.6px;top:254.6px;width:158.4px;height:121.7px;background:oklch(0.947 0.022 158);color:oklch(0.45 0.09 158);opacity:1.00">NLMK</div><div class="tl" style="left:1306.0px;top:254.6px;width:144.0px;height:121.7px;background:oklch(0.945 0.023 44);color:oklch(0.47 0.09 44);opacity:1.00">MAGN</div><div class="tl" style="left:962.1px;top:380.3px;width:127.8px;height:132.7px;background:oklch(0.955 0.018 158);color:oklch(0.45 0.09 158);opacity:1.00">PHOR</div><div class="tl" style="left:1093.9px;top:380.3px;width:123.4px;height:132.7px;background:oklch(0.955 0.018 44);color:oklch(0.47 0.09 44);opacity:1.00">OZON</div><div class="tl" style="left:1221.2px;top:380.3px;width:114.6px;height:132.7px;background:oklch(0.865 0.067 158);color:oklch(0.45 0.09 158);opacity:1.00">POSI</div><div class="tl" style="left:1339.8px;top:380.3px;width:110.2px;height:132.7px;background:oklch(0.958 0.016 44);color:oklch(0.47 0.09 44);opacity:1.00">MGNT</div><div class="tl" style="left:962.1px;top:517.0px;width:105.8px;height:132.6px;background:oklch(0.865 0.067 158);color:oklch(0.45 0.09 158);opacity:1.00">HEAD</div><div class="tl" style="left:962.1px;top:653.6px;width:105.8px;height:121.7px;background:oklch(0.942 0.025 158);color:oklch(0.45 0.09 158);opacity:1.00">RUAL</div><div class="tl" style="left:962.1px;top:779.2px;width:105.8px;height:110.8px;background:oklch(0.918 0.038 158);color:oklch(0.45 0.09 158);opacity:1.00">AFKS</div><div class="tl" style="left:1072.0px;top:517.0px;width:112.2px;height:104.5px;background:oklch(0.914 0.040 158);color:oklch(0.45 0.09 158);opacity:1.00">TRNFP</div><div class="tl" style="left:1072.0px;top:625.4px;width:112.2px;height:94.1px;background:oklch(0.865 0.067 158);color:oklch(0.45 0.09 158);opacity:1.00">CBOM</div><div class="tl" style="left:1072.0px;top:723.6px;width:112.2px;height:83.8px;background:oklch(0.931 0.031 44);color:oklch(0.47 0.09 44);opacity:0.93">FLOT</div><div class="tl" style="left:1072.0px;top:811.4px;width:112.2px;height:78.6px;background:oklch(0.959 0.015 44);color:oklch(0.47 0.09 44);opacity:0.89">SGZH</div><div class="tl" style="left:1188.2px;top:517.0px;width:88.7px;height:93.1px;background:oklch(0.953 0.018 158);color:oklch(0.45 0.09 158);opacity:0.85">ENPG</div><div class="tl" style="left:1280.9px;top:517.0px;width:82.5px;height:93.1px;background:oklch(0.962 0.014 158);color:oklch(0.45 0.09 158);opacity:0.81">UPRO</div><div class="tl" style="left:1367.5px;top:517.0px;width:82.5px;height:93.1px;background:oklch(0.943 0.024 158);color:oklch(0.45 0.09 158);opacity:0.81">AGRO</div><div class="tl" style="left:1188.2px;top:614.0px;width:86.9px;height:81.8px;background:oklch(0.958 0.006 250);color:oklch(0.55 0.02 250);opacity:0.77">HYDR</div><div class="tl" style="left:1279.1px;top:614.0px;width:86.9px;height:81.8px;background:oklch(0.952 0.019 158);color:oklch(0.45 0.09 158);opacity:0.77">IRAO</div><div class="tl" style="left:1370.1px;top:614.0px;width:79.9px;height:81.8px;background:oklch(0.889 0.054 158);color:oklch(0.45 0.09 158);opacity:0.73">SNGSP</div><div class="tl" style="left:1188.2px;top:699.8px;width:67.1px;height:97.3px;background:oklch(0.927 0.033 158);color:oklch(0.45 0.09 158);opacity:0.73">TATNP</div><div class="tl" style="left:1188.2px;top:801.1px;width:67.1px;height:88.9px;background:oklch(0.914 0.040 158);color:oklch(0.45 0.09 158);opacity:0.69">BSPB</div><div class="tl" style="left:1259.3px;top:699.8px;width:85.6px;height:63.0px;background:oklch(0.944 0.023 158);color:oklch(0.45 0.09 158);opacity:0.65">LENT</div><div class="tl" style="left:1259.3px;top:766.8px;width:85.6px;height:63.0px;background:oklch(0.954 0.018 44);color:oklch(0.47 0.09 44);opacity:0.65">RTKM</div><div class="tl" style="left:1259.3px;top:833.7px;width:85.6px;height:56.3px;background:oklch(0.939 0.026 158);color:oklch(0.45 0.09 158);opacity:0.61">SVCB</div><div class="tl" style="left:1348.9px;top:699.8px;width:48.5px;height:87.4px;background:oklch(0.953 0.019 158);color:oklch(0.45 0.09 158);opacity:0.57"></div><div class="tl" style="left:1401.5px;top:699.8px;width:48.5px;height:87.4px;background:oklch(0.928 0.032 158);color:oklch(0.45 0.09 158);opacity:0.57"></div><div class="tl" style="left:1348.9px;top:791.2px;width:71.9px;height:51.4px;background:oklch(0.957 0.016 158);color:oklch(0.45 0.09 158);opacity:0.54">RAGR</div><div class="tl" style="left:1348.9px;top:846.6px;width:71.9px;height:43.4px;background:oklch(0.952 0.019 44);color:oklch(0.47 0.09 44);opacity:0.50">VSMO</div><div class="tl" style="left:1424.8px;top:791.2px;width:25.2px;height:98.8px;background:oklch(0.960 0.015 158);color:oklch(0.45 0.09 158);opacity:0.45"></div></div><div class="cv-scrim"></div><div class="cv-rail"><div class="rl-mark">M</div><div class="rl-items"><div class="rl-it on"><svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/></svg></div><div class="rl-it"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></div><div class="rl-it"><svg viewBox="0 0 24 24"><path d="M3 12h4l2.5-6 4 12L16 12h5"/></svg></div><div class="rl-it"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6"/><path d="M9 12h.01M12 12h.01M15 12h.01M9 16h.01M12 16h.01M15 16h.01"/></svg></div><div class="rl-it"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9h-9V3Z"/><path d="M15 3.5A9 9 0 0 1 20.5 9H15V3.5Z"/></svg></div><div class="rl-it"><svg viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2Z"/><path d="M4 19a2 2 0 0 0 2 2h14"/></svg></div></div><div class="rl-foot"><div class="rl-ava"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div></div></div><div class="cv-top"><span class="tp-pill"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg> Поиск <span class="kbd">⌘K</span></span><span class="tp-rnd"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg></span><span class="tp-rnd"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span></div><div class="cv-grid"><div class="cv-main"><div class="cv-brand"><span class="cv-brand-name"><span class="w3">Madame </span><span class="w8">Solomi'na</span></span><span class="cv-brand-sub">Wealth Management</span></div><h1 class="cv-title">Добро пожаловать!<br>Спокойный доход<br>с&nbsp;Московской биржи</h1><p class="cv-lead">Рады видеть вас. За этим текстом — живая карта рынка прямо сейчас, а внутри — расчёт портфеля из ОФЗ и акций и план ребаланса в одном спокойном интерфейсе.</p><div class="cv-ctas"><span class="cv-cta">Начать расчёт<svg viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span><span class="cv-mkt"><span>IMOEX <b>2 301,65</b> <b class="up">+1,43%</b></span><span class="sep"></span><span>USD <b>78,42</b></span><span class="go">Рынок ›</span></span></div></div><aside class="au"><div class="au-tabs"><span class="au-tab on">Регистрация</span><span class="au-tab">Вход</span></div><h2 class="au-title">Создайте аккаунт</h2><p class="au-sub">Личный кабинет инвестора Madame Solomi'na</p><div class="au-form"><div><span class="au-lb">Имя</span><span class="au-inp"><i>Как к вам обращаться</i><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span></div><div><span class="au-lb">Email</span><span class="au-inp"><i>you@example.com</i><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></span></div><div><span class="au-lb">Пароль</span><span class="au-inp"><i>Минимум 6 символов</i><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span></div><span class="au-btn">Создать аккаунт<svg viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span></div><div class="au-div">или</div><span class="au-tg"><svg viewBox="0 0 24 24" fill="#2AABEE"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0Zm5.9 8.2-2 9.3c-.1.7-.5.8-1.1.5l-3-2.2-1.5 1.4c-.2.2-.3.3-.6.3l.2-3.1 5.6-5c.2-.2-.1-.3-.4-.1l-6.9 4.3-3-.9c-.6-.2-.7-.6.2-.9l11.6-4.5c.5-.2 1 .1.9.9Z"/></svg> Войти через Telegram</span><p class="au-foot">Уже есть аккаунт? <b>Войти</b></p><p class="au-policy">Продолжая, вы принимаете условия сервиса</p><p class="au-sec"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Secure Access</p></aside></div></div></div></div>
+  </section>
+
+  <!-- ================= карта кода ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">05</span><h2>Что где живёт в коде</h2></div>
+    <table class="map">
+      <tr><th>Часть мокапа</th><th>Файл</th><th>Правка</th></tr>
+      <tr><td>Карта (плитки)</td><td><code>home-register.js</code></td><td>Не меняется вовсе: squarified, зазоры, растворение хвоста — всё уже боевое.</td></tr>
+      <tr><td>Фон под картой</td><td><code>home-register.css</code></td><td>Градиент #hgHeatWrap → «Витраж» (тёмный и светлый наборы из site-bg.css).</td></tr>
+      <tr><td>Кнопки и табы</td><td><code>home-register.css</code></td><td>.hc-cta-dark/.hr-submit → градиент #5B67F2→#4453EF; .hs-tab.active → белая карточка с тенью; дарк-оверрайд .hc-cta-dark удалить.</td></tr>
+      <tr><td>Фокус и состояния</td><td><code>home-register.css</code></td><td>.hr-input:focus → кромка #4453EF + кольцо rgba(68,83,239,.16); .hr-submit.is-done уже есть.</td></tr>
+      <tr><td>Строка рынка</td><td><code>home-register.js</code></td><td>К пульсу IMOEX добавить USD/RUB (тот же прокси window.moexUrl); клик — вкладка «Рынок».</td></tr>
+      <tr><td>Рейка на Главной</td><td><code>site-layout.css</code></td><td>Снять белую карточку #sbPanel в дарке Главной — рейка вшитая, как на рабочих вкладках.</td></tr>
+      <tr><td>Карточка кабинета</td><td><code>home-register.js</code></td><td>#hgAuthed дорисовывает три строки из PF.store; суммы под маску .sum-mask.</td></tr>
+      <tr><td>Версии</td><td><code>index.html</code></td><td>Бамп ?v у home-register.css/js и site-layout.css.</td></tr>
+    </table>
+  </section>
+
+</div>
+
+</body>
+</html>
