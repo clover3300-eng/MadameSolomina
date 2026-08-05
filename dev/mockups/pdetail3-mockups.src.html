@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Составы портфелей · «Штурманская», чистовик — без спарклайнов, доля и доходность по уму</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+       --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+       --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding:44px 0 90px;-webkit-font-smoothing:antialiased}
+.page{width:1440px;max-width:100%;margin:0 auto;padding:0 20px}
+
+/* ---------------- документ ---------------- */
+.doc-h{margin-bottom:34px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-acc);margin-bottom:9px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
+.doc-h p{margin-top:12px;font-size:15px;line-height:1.6;color:var(--doc-mut);max-width:880px}
+.verdict{margin-top:20px;display:flex;gap:14px;align-items:flex-start;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid var(--doc-acc);border-radius:14px;padding:16px 20px;max-width:960px}
+.verdict p{margin:0;font-size:14.5px;line-height:1.62;color:var(--doc-quote)}
+.verdict p+p{margin-top:10px}
+.verdict b{font-weight:700;color:var(--doc-ink)}
+
+.mk{margin-top:52px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.62;max-width:960px;margin-bottom:18px}
+.notes{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 26px}
+.note{display:flex;gap:9px;font-size:13px;line-height:1.5;color:var(--doc-quote)}
+.note i{flex:none;width:18px;height:18px;border-radius:50%;background:var(--doc-ink);color:var(--doc-bg);font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.scroller{overflow-x:auto;padding:4px 0 44px;margin-bottom:-32px}
+@media (max-width:1000px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} }
+
+.map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th{text-align:left;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);padding:10px 14px;border-bottom:1px solid var(--doc-line)}
+.map td{padding:9px 14px;border-bottom:1px solid var(--doc-line);color:var(--doc-quote);line-height:1.5;vertical-align:top}
+.map tr:last-child td{border-bottom:0}
+.map .ok{color:#16a34a;font-weight:700}
+
+/* ======================================================================
+   ЭКРАН — виджет на стекле «Авроры» (фон и глубины — как в portfolios-r7.css)
+   ====================================================================== */
+.scr{--ink:#101828; --mut:#5c6a7d; --dim:#8d9aad; --hair:rgba(16,24,40,.09);
+     --acc:#3b82f6; --grn:#12a35c; --grn-ink:#0e7a45; --red:#d8452b; --red-ink:#b23b24;
+     --stk:#D97757; --bnd:#7B9BBF;
+     --gl-work:rgba(255,255,255,.62); --gl-edge:rgba(255,255,255,.78);
+     position:relative;color:var(--ink);border-radius:16px;overflow:hidden;
+     box-shadow:0 2px 4px rgba(15,23,42,.05),0 34px 70px -34px rgba(24,38,60,.4);
+     border:1px solid rgba(15,23,42,.09);width:max-content;
+     background:
+       radial-gradient(760px 520px at 6% 8%, rgba(196,226,224,.88) 0%, rgba(196,226,224,0) 60%),
+       radial-gradient(820px 560px at 78% 4%, rgba(214,214,240,.82) 0%, rgba(214,214,240,0) 62%),
+       radial-gradient(940px 620px at 96% 88%, rgba(206,228,235,.7) 0%, rgba(206,228,235,0) 66%),
+       linear-gradient(160deg,#E3ECEF 0%,#E7EAF2 50%,#E4EBEE 100%)}
+.scr.pad{padding:30px 34px}
+
+/* карточка виджета */
+.wid{width:1100px;background:var(--gl-work);border:1px solid var(--gl-edge);border-radius:24px;
+     padding:20px 24px 22px;backdrop-filter:blur(8px)}
+.wid.narrow{width:720px}
+.num{font-family:var(--fN);font-variant-numeric:tabular-nums}
+.pos{color:var(--grn-ink)} .neg{color:var(--red-ink)}
+
+/* строка-шапка */
+.w-strip{display:flex;align-items:center;gap:14px;flex-wrap:nowrap;padding:2px 2px 14px;white-space:nowrap}
+.w-name{font-family:var(--fU);font-size:16px;font-weight:800;letter-spacing:-.01em}
+.w-name em{font-style:normal;display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--acc);margin-right:8px}
+.w-meta{font-size:11px;font-weight:600;color:var(--dim)}
+.w-strip .sp{flex:1}
+.w-btn{display:inline-flex;align-items:center;gap:7px;border:1px solid rgba(16,24,40,.14);border-radius:999px;
+       background:rgba(255,255,255,.7);padding:6px 11px;font-size:11px;font-weight:700;color:var(--mut);white-space:nowrap}
+.w-btn.dark{background:#101828;color:#fff;border-color:transparent}
+.w-btn svg{width:12px;height:12px}
+.w-gear{width:30px;height:30px;border-radius:10px;border:1px solid rgba(16,24,40,.12);background:rgba(255,255,255,.7);
+        display:grid;place-items:center;color:var(--mut)}
+.w-gear svg{width:14px;height:14px}
+
+/* две колонки */
+.w2{display:flex;gap:22px;align-items:flex-start}
+.w2-main{flex:1;min-width:0}
+.w2-side{flex:0 0 244px;display:flex;flex-direction:column;gap:10px}
+.w2-card{border:1px solid var(--hair);border-radius:16px;padding:12px 14px;background:rgba(255,255,255,.5)}
+.w2-card > i{font-style:normal;display:block;font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+
+/* ---- таблица: без спарклайнов; «Доля» и «Доходность» по уму ---- */
+.w-tbl{width:100%;border-collapse:collapse}
+.w-tbl th{text-align:right;font-size:9.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+          color:var(--dim);padding:8px 11px;border-bottom:1px solid var(--hair);white-space:nowrap}
+.w-tbl th:first-child{text-align:left;padding-left:2px;width:100%}
+.w-tbl td{padding:10px 11px;border-bottom:1px solid var(--hair);text-align:right;font-family:var(--fN);
+          font-size:13px;font-weight:600;color:#33415c;white-space:nowrap;vertical-align:middle}
+.w-tbl td:first-child{text-align:left;padding-left:2px}
+.w-tbl tr:last-child td{border-bottom:0}
+.w-grp td{padding:13px 11px 5px 2px;border-bottom:0;text-align:left;font-family:var(--fU);
+          font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--dim)}
+.w-grp td b{color:var(--ink)}
+.w-as{display:flex;align-items:center;gap:9px;font-family:var(--fU)}
+.w-as i{flex:none;width:30px;height:30px;border-radius:9px;background:rgba(16,24,40,.06);display:grid;place-items:center;
+        font-style:normal;font-family:var(--fN);font-size:9px;font-weight:800;color:var(--mut)}
+.w-as b{font-size:13px;font-weight:800;white-space:nowrap}
+.w-as span{font-size:11px;font-weight:600;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+/* ДОЛЯ: число и полоска — ОДИН элемент, правоприжатый, под одним заголовком.
+   Полоска ровно под числом и той же ширины (фикс 52px), а не «где-то сбоку». */
+.w-shr{display:inline-flex;flex-direction:column;align-items:flex-end;gap:4px;vertical-align:middle}
+.w-shr b{font-family:var(--fN);font-size:13px;font-weight:700;color:#33415c;line-height:1}
+.w-shr u{width:52px;height:4px;border-radius:999px;background:rgba(16,24,40,.1);text-decoration:none;overflow:hidden;display:block}
+.w-shr u i{display:block;height:100%;border-radius:999px;float:right}
+/* ДОХОДНОСТЬ: чип-акцент — тинт + стрелка, читается и без цвета */
+.w-chip{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:4px 9px;
+        font-family:var(--fN);font-size:11.5px;font-weight:700;line-height:1}
+.w-chip.pos{background:rgba(18,163,92,.12);color:var(--grn-ink)}
+.w-chip.neg{background:rgba(216,69,43,.11);color:var(--red-ink)}
+.w-tot td{border-top:1.5px solid rgba(16,24,40,.16);border-bottom:0;padding-top:12px;font-weight:700;color:var(--ink)}
+.w-tot td:first-child{font-family:var(--fU);font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--mut)}
+
+/* stacked-бар классов над таблицей */
+.w-mix{display:flex;align-items:center;gap:12px;margin:0 2px 12px}
+.w-mixbar{flex:1;display:flex;height:7px;border-radius:999px;overflow:hidden}
+.w-mixbar i{display:block;height:100%}
+.w-mixlbl{font-size:11px;font-weight:700;color:var(--mut);white-space:nowrap}
+.w-mixlbl b{color:var(--ink)}
+
+/* капитал-герой */
+.w2-hero{position:relative;overflow:hidden}
+.w2-hero b{font-family:var(--fN);font-size:22px;font-weight:700;display:block;letter-spacing:-.01em}
+.w2-chip{display:inline-flex;align-items:center;gap:5px;margin-top:5px;border-radius:999px;padding:3px 9px;
+         font-family:var(--fN);font-size:10.5px;font-weight:700}
+.w2-chip.neg{background:rgba(216,69,43,.1);color:var(--red-ink)}
+.w2-chip.pos{background:rgba(18,163,92,.1);color:var(--grn-ink)}
+.w2-herosvg{display:block;width:100%;height:34px;margin-top:8px}
+.w2-herosvg polyline{fill:none;stroke:var(--red);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.w2-herosvg path{fill:rgba(216,69,43,.08);stroke:none}
+.w2-hero .w2-ts{position:absolute;top:12px;right:14px;font-family:var(--fN);font-size:9px;font-weight:600;color:var(--dim)}
+
+/* сводка */
+.w2-row{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;font-weight:600;color:var(--mut);padding:6px 1px;border-bottom:1px solid var(--hair)}
+.w2-row:last-child{border-bottom:0;padding-bottom:1px}
+.w2-row b{font-family:var(--fN);font-size:12.5px;color:var(--ink)}
+
+/* движение дня: лидер — выделенной строкой, БЕЗ полосок-треков */
+.w2-mvlead{border-left:2.5px solid var(--red);border-radius:0 10px 10px 0;background:rgba(216,69,43,.06);
+           padding:8px 10px;margin:0 0 6px}
+.w2-mvlead .t{display:flex;justify-content:space-between;align-items:baseline}
+.w2-mvlead .t b{font-size:12.5px;font-weight:800}
+.w2-mvlead .t i{font-style:normal;font-family:var(--fN);font-size:12.5px;font-weight:700;color:var(--red-ink)}
+.w2-mvlead .s{margin-top:3px;font-size:10.5px;font-weight:600;color:var(--mut)}
+.w2-mvrow{display:flex;justify-content:space-between;align-items:baseline;padding:5px 1px;font-size:12px;font-weight:700}
+.w2-mvrow b{color:var(--ink);font-weight:700}
+.w2-mvrow i{font-style:normal;font-family:var(--fN);font-size:11.5px;font-weight:600;color:var(--mut)}
+
+/* выплата: листок даты + сумма, без наезжающих чипов */
+.w2-payv{display:flex;align-items:center;gap:12px}
+.w2-date{flex:none;width:46px;border-radius:12px;overflow:hidden;border:1px solid var(--hair);text-align:center;background:rgba(255,255,255,.75)}
+.w2-date b{display:block;font-family:var(--fN);font-size:17px;font-weight:700;padding:5px 0 3px}
+.w2-date span{display:block;font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:#101828;padding:3px 0}
+.w2-payi{display:flex;flex-direction:column;gap:2px;min-width:0}
+.w2-payi b{font-family:var(--fN);font-size:15px;font-weight:700;color:var(--ink)}
+.w2-payi span{font-size:10.5px;font-weight:600;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.w2-payi .q{color:var(--dim)}
+
+/* снимки */
+.w2-snap{display:flex;flex-direction:column;gap:8px}
+.w2-snap-row{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;font-weight:600;color:var(--mut)}
+.w2-snap-row b{font-family:var(--fN);font-size:12.5px;font-weight:700;color:var(--ink)}
+.w2-snap-row .num{font-size:11px}
+.w2-open{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid rgba(16,24,40,.12);
+         border-radius:11px;padding:8px 11px;font-size:11px;font-weight:700;color:var(--mut);background:rgba(255,255,255,.6)}
+.w2-open > svg{flex:none;width:13px;height:13px;color:var(--acc)}
+.w2-open .chev{width:15px;height:15px;border-radius:999px;background:rgba(16,24,40,.07);display:grid;place-items:center}
+.w2-open .chev svg{width:8px;height:8px}
+
+/* узкий блок: лента плиток */
+.w-band{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 14px}
+.w-band .w2-card{padding:10px 12px}
+.w-band .w2-hero b{font-size:16px}
+.w-band .w2-card > i{margin-bottom:3px}
+.w-band .bv{font-family:var(--fN);font-size:13px;font-weight:700;color:var(--ink);display:block}
+.w-band .bs{display:block;margin-top:2px;font-size:10px;font-weight:600;color:var(--mut)}
+.w-band .w2-payv{gap:8px}
+.w-band .w2-date{width:38px}
+.w-band .w2-date b{font-size:14px;padding:4px 0 2px}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="doc-h">
+  <div class="doc-kicker">Мокапы · Портфели · «Составы портфелей» · «Штурманская», чистовик</div>
+  <h1>Чистовик «Штурманской»: строки без графики, доля и доходность по уму</h1>
+  <p>Правки по замечаниям: спарклайны из строк убраны совсем; «Доля» стала одним элементом
+     (число, под ним полоска той же ширины, всё под одним правоприжатым заголовком); доходность
+     получила собственную колонку-чип с тинтом и стрелкой; «Ближайшая выплата» пересобрана в
+     плитку с календарным листком; из «Движения дня» убраны полоски-треки, лидер дня выделен строкой.</p>
+  <div class="verdict">
+    <p><b>Принцип чистовика: в строках таблицы — только цифры и типографика.</b> Всё «живое»
+       (кривая капитала) живёт в одном месте, в герое колонки. Акценты делаются весом, тинтом и
+       выравниванием, а не мини-виджетами в каждой строке. Каждый заголовок стоит ровно над своим
+       значением, у каждой колонки один способ выравнивания.</p>
+  </div>
+</header>
+
+<!-- ================================ 01 ================================ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">01</span><h2>Полный вид, span 12</h2>
+    <span class="mk-tag">к реализации</span></div>
+  <p class="mk-sub">Колонки таблицы: Бумага · Кол-во · Сейчас · Стоимость · Доля · Доход · Доходность.
+     Единственная графика виджета — кривая капитала в герое колонки.</p>
+  <div class="scroller"><div class="scr pad" id="m1"></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i>Спарклайнов в строках нет. Движение отвечает чипом доходности и
+      блоком «Движение дня» — по одному месту на каждый вопрос.</div>
+    <div class="note"><i>2</i>«Доля»: число и полоска — один правоприжатый столбик под одним
+      заголовком; полоска ровно под числом, той же ширины 52px.</div>
+    <div class="note"><i>3</i>Доходность — отдельная колонка-чип: тинт фона + стрелка + процент.
+      Худшая и лучшая позиции видны с расстояния, и не только цветом.</div>
+    <div class="note"><i>4</i>«Ближайшая выплата»: листок даты «24 СЕН», сумма на пакет крупно,
+      «через 50 дней» тихой строкой. Ничего не переносится и не наезжает.</div>
+    <div class="note"><i>5</i>«Движение дня» без прогресс-баров: лидер — выделенная строка с
+      подписью «85% дневного изменения», остальные — тихие строки.</div>
+    <div class="note"><i>6</i>Итог сходится с капиталом-героем; чип в итоге — суммарная
+      доходность портфеля.</div>
+  </div>
+</section>
+
+<!-- ================================ 02 ================================ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">02</span><h2>Узкий блок — лента плиток</h2>
+    <span class="mk-tag mute">поведение</span></div>
+  <p class="mk-sub">Тот же чистовик в узкой ширине: колонка складывается в ленту из четырёх плиток
+     (порог контейнерный), таблица теряет «Сейчас», но сохраняет долю-столбик и чип доходности.</p>
+  <div class="scroller"><div class="scr pad" id="m2"></div></div>
+  <div class="notes">
+    <div class="note"><i>1</i>Плитка выплаты сохраняет листок даты и в компактном виде.</div>
+    <div class="note"><i>2</i>Чипы доходности остаются: это главный акцент строк в любой ширине.</div>
+    <div class="note"><i>3</i>В самой узкой ширине лента становится 2×2.</div>
+  </div>
+</section>
+
+<!-- ================================ 03 ================================ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">03</span><h2>Замечание → решение</h2></div>
+  <table class="map">
+    <tr><th>Замечание</th><th>Решение в чистовике</th></tr>
+    <tr><td>Мини-графики в строках устарели</td>
+        <td class="ok">Колонка «30 дней» удалена. Графика одна на виджет: кривая капитала в герое.</td></tr>
+    <tr><td>«Доля»: заголовок над процентами, полоска сбоку как что-то отдельное</td>
+        <td class="ok">Число и полоска собраны в один правоприжатый элемент одной ширины под одним заголовком.</td></tr>
+    <tr><td>Проценты доходности не акцентированы</td>
+        <td class="ok">Своя колонка «Доходность»: чип с тинтом, стрелкой и процентом; в итоговой строке — чип по портфелю.</td></tr>
+    <tr><td>«Ближайшая выплата» оформлена неаккуратно</td>
+        <td class="ok">Плитка с календарным листком даты, суммой на пакет и тихой строкой «через 50 дней».</td></tr>
+    <tr><td>Карточка в целом не проработана</td>
+        <td class="ok">Один принцип на весь виджет: в строках только цифры; акценты весом и тинтом; каждый заголовок ровно над своим значением; «Движение дня» без прогресс-баров.</td></tr>
+  </table>
+</section>
+
+</div>
+<script>
+/* ---------- данные (те же бумаги) ---------- */
+var ROWS = [
+  { tk:'SBER', nm:'Сбербанк', type:'stock', qty:'100', cur:'286,38', val:'28 638', share:41, pnl:'+638', pnlP:'+2,3%', pos:true },
+  { tk:'YDEX', nm:'Яндекс', type:'stock', qty:'6', cur:'4 120,50', val:'24 723', share:35, pnl:'+1 383', pnlP:'+5,9%', pos:true },
+  { tk:'LKOH', nm:'Лукойл', type:'stock', qty:'3', cur:'4 577,00', val:'13 731', share:20, pnl:'−7 269', pnlP:'−34,6%', pos:false },
+  { tk:'SU26238', nm:'ОФЗ 26238', type:'bond', qty:'50', cur:'542,95', val:'27 148', share:39, pnl:'−853', pnlP:'−2,6%', pos:false }
+];
+var CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><polyline points="9 5 16 12 9 19"/></svg>';
+var PULSE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>';
+var GEAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="8" cy="7" r="2.5"/><circle cx="16" cy="17" r="2.5"/></svg>';
+
+function shr(r){
+  var col = r.type === 'bond' ? 'var(--bnd)' : 'var(--stk)';
+  return '<span class="w-shr"><b>' + r.share + '%</b><u><i style="width:' + r.share + '%;background:' + col + '"></i></u></span>';
+}
+function chip(r){
+  return '<span class="w-chip ' + (r.pos ? 'pos' : 'neg') + '">' + (r.pos ? '▲' : '▼') + ' ' + r.pnlP.replace('+','').replace('−','') + '</span>';
+}
+function asCell(r){
+  return '<div class="w-as"><i>' + (r.type === 'bond' ? 'ОФЗ' : 'АКЦ') + '</i><b>' + r.tk + '</b><span>' + r.nm + '</span></div>';
+}
+function stripHead(){
+  return '<div class="w-strip"><span class="w-name"><em></em>Основной</span>' +
+    '<span class="w-meta">4 бумаги · котировки 14:32</span><span class="sp"></span>' +
+    '<span class="w-btn dark">Ребалансировать</span>' +
+    '<span class="w-gear">' + GEAR + '</span></div>';
+}
+function mixBar(){
+  return '<div class="w-mix"><span class="w-mixlbl"><b>Акции</b> 71%</span>' +
+    '<div class="w-mixbar"><i style="width:71%;background:var(--stk)"></i><i style="width:29%;background:var(--bnd)"></i></div>' +
+    '<span class="w-mixlbl"><b>Облигации</b> 29%</span></div>';
+}
+var CAP_PTS = '0,10 8,11 16,9 24,12 32,10 40,14 48,13 56,17 64,15 72,19 80,18 88,22 96,20 104,24 112,23 120,26 128,25 136,27 144,26 152,28 160,27 168,29 176,28 184,30 192,29 200,31 208,30 216,31';
+
+/* ---------------- 01 полный вид ---------------- */
+(function(){
+  function tds(r, withCur){
+    return '<td>' + asCell(r) + '</td><td>' + r.qty + '</td>' +
+      (withCur ? '<td>' + r.cur + ' ₽</td>' : '') +
+      '<td><b>' + r.val + ' ₽</b></td><td>' + shr(r) + '</td>' +
+      '<td class="' + (r.pos ? 'pos' : 'neg') + '">' + r.pnl + ' ₽</td>' +
+      '<td>' + chip(r) + '</td>';
+  }
+  var stocks = ROWS.filter(function(r){ return r.type === 'stock'; });
+  var bonds  = ROWS.filter(function(r){ return r.type === 'bond'; });
+  var t = '<table class="w-tbl"><tr><th>Бумага</th><th>Кол-во</th><th>Сейчас</th>' +
+      '<th>Стоимость</th><th>Доля</th><th>Доход</th><th>Доходность</th></tr>';
+  t += '<tr class="w-grp"><td colspan="7"><b>Акции</b> · 71% · 67 092 ₽</td></tr>';
+  stocks.forEach(function(r){ t += '<tr>' + tds(r, true) + '</tr>'; });
+  t += '<tr class="w-grp"><td colspan="7"><b>Облигации</b> · 29% · 27 148 ₽</td></tr>';
+  bonds.forEach(function(r){ t += '<tr>' + tds(r, true) + '</tr>'; });
+  t += '<tr class="w-tot"><td>Итого · 4 бумаги</td><td></td><td></td>' +
+       '<td class="num">94 240 ₽</td><td></td><td class="neg num">−6 101 ₽</td>' +
+       '<td><span class="w-chip neg">▼ 6,1%</span></td></tr>';
+  t += '</table>';
+  var side =
+    '<div class="w2-side">' +
+      '<div class="w2-card w2-hero"><i>Капитал</i><span class="w2-ts">30 дней</span>' +
+        '<b class="num">94 240 ₽</b>' +
+        '<span class="w2-chip neg">▼ 5 785 ₽ · 5,8% за сегодня</span>' +
+        '<svg class="w2-herosvg" viewBox="0 0 216 34" preserveAspectRatio="none">' +
+          '<path d="M0,10 L' + CAP_PTS.split(' ').join(' L') + ' L216,34 L0,34 Z"/>' +
+          '<polyline points="' + CAP_PTS + '"/></svg>' +
+      '</div>' +
+      '<div class="w2-card"><i>Сводка</i>' +
+        '<div class="w2-row"><span>Вложено</span><b class="num">100 341 ₽</b></div>' +
+        '<div class="w2-row"><span>Доход</span><b class="neg num">−6 101 ₽ · −6,1%</b></div>' +
+        '<div class="w2-row"><span>Доходность</span><b class="neg num">−13,6% год.</b></div>' +
+      '</div>' +
+      '<div class="w2-card"><i>Движение дня</i>' +
+        '<div class="w2-mvlead"><div class="t"><b>LKOH</b><i class="num">−4 890 ₽</i></div>' +
+          '<div class="s">85% дневного изменения: −2,1% при доле 20%</div></div>' +
+        '<div class="w2-mvrow"><b>SBER</b><i class="num">−720 ₽</i></div>' +
+        '<div class="w2-mvrow"><b>ОФЗ 26238</b><i class="num">−175 ₽</i></div>' +
+      '</div>' +
+      '<div class="w2-card"><i>Ближайшая выплата</i>' +
+        '<div class="w2-payv">' +
+          '<div class="w2-date"><b>24</b><span>сен</span></div>' +
+          '<div class="w2-payi"><b>892 ₽</b><span>ОФЗ 26238 · купон на 50 шт</span><span class="q">через 50 дней</span></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="w2-card w2-snap"><i>Снимки капитала</i>' +
+        '<div class="w2-snap-row"><span>Последний · вчера</span><b class="num">48 137 ₽</b></div>' +
+        '<div class="w2-snap-row"><span>Автозапись</span><span class="num">каждый день</span></div>' +
+        '<div class="w2-open">' + PULSE + '<span style="flex:1">Календарь снимков</span><span class="chev">' + CHEV + '</span></div>' +
+      '</div>' +
+    '</div>';
+  document.getElementById('m1').innerHTML = '<div class="wid">' + stripHead() +
+    '<div class="w2"><div class="w2-main">' + mixBar() + t + '</div>' + side + '</div></div>';
+})();
+
+/* ---------------- 02 узкий блок ---------------- */
+(function(){
+  var band =
+    '<div class="w-band">' +
+      '<div class="w2-card w2-hero"><i>Капитал</i><b class="num">94 240 ₽</b>' +
+        '<span class="bs neg num">▼ 5 785 ₽ · 5,8%</span></div>' +
+      '<div class="w2-card"><i>Движение дня</i><span class="bv neg num">−4 890 ₽ · LKOH</span>' +
+        '<span class="bs">85% дневного минуса</span></div>' +
+      '<div class="w2-card"><i>Выплата</i>' +
+        '<div class="w2-payv"><div class="w2-date"><b>24</b><span>сен</span></div>' +
+        '<div class="w2-payi"><b class="num" style="font-size:13px">892 ₽</b><span class="q">через 50 дней</span></div></div></div>' +
+      '<div class="w2-card"><i>Снимки</i><span class="bv num">48 137 ₽ · вчера</span>' +
+        '<span class="bs">календарь по клику</span></div>' +
+    '</div>';
+  var t = '<table class="w-tbl"><tr><th>Бумага</th><th>Кол-во</th><th>Стоимость</th><th>Доля</th><th>Доходность</th></tr>';
+  ROWS.forEach(function(r){
+    t += '<tr><td>' + asCell(r) + '</td><td>' + r.qty + '</td>' +
+      '<td><b>' + r.val + ' ₽</b></td><td>' + shr(r) + '</td>' +
+      '<td>' + chip(r) + '</td></tr>';
+  });
+  t += '<tr class="w-tot"><td>Итого · 4 бумаги</td><td></td>' +
+       '<td class="num">94 240 ₽</td><td></td><td><span class="w-chip neg">▼ 6,1%</span></td></tr>';
+  t += '</table>';
+  document.getElementById('m2').innerHTML = '<div class="wid narrow">' + stripHead() + band + t + '</div>';
+})();
+</script>
+</body>
+</html>
