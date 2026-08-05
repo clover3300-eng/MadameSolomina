@@ -999,13 +999,16 @@ td.pfpt-num.neg { color: #c2410c; }
    заголовком (замечание чистовика v3: полоска сбоку читалась отдельным украшением).
    Классовый цвет полоски: акции #D97757, облигации #7B9BBF — как всюду в проекте. */
 .pfpt-table th.pfz-shrc, td.pfz-shrc { text-align: right; }
-.pfz-shr { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 4px; vertical-align: middle; }
+/* Блок доли ФИКСИРОВАННОЙ ширины 40px — ровно под «100%», и полоска ровно под
+   числом. Полоска в 52px была шире и числа, и заголовка «Доля»: правые края
+   совпадали, но левый выпирал на 45px, и колонка читалась съехавшей. */
+.pfz-shr { display: inline-flex; flex-direction: column; align-items: stretch; gap: 4px; width: 40px; vertical-align: middle; }
 .pfz-shr b {
     font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 13px; font-weight: 700;
-    color: #334155; line-height: 1; font-variant-numeric: tabular-nums;
+    color: #334155; line-height: 1; font-variant-numeric: tabular-nums; text-align: right;
 }
 body.dark-mode .pfz-shr b { color: #cbd6e4; }
-.pfz-shr u { width: 52px; height: 4px; border-radius: 999px; background: rgba(24, 38, 60, 0.1); text-decoration: none; overflow: hidden; display: block; }
+.pfz-shr u { width: 100%; height: 4px; border-radius: 999px; background: rgba(24, 38, 60, 0.1); text-decoration: none; overflow: hidden; display: block; }
 body.dark-mode .pfz-shr u { background: rgba(255, 255, 255, 0.1); }
 .pfz-shr u i { display: block; height: 100%; border-radius: 999px; float: right; }
 

@@ -349,9 +349,14 @@
                 }
             }
         });
-        // ---- открытые вкладки-портфели ----
+        // ---- ПОРТФЕЛИ ----
+        // Показываем ВСЕ портфели, а не только те, чьи вкладки открыты (просьба
+        // 2026-08-05): колонка — перечень того, что у пользователя есть, и искать
+        // свой портфель по вкладкам «а открыт ли он» неоткуда. Клик по строке
+        // открывает вкладку (pfxOpenPfTab заводит её при надобности), крестик
+        // остаётся только у ОТКРЫТЫХ — закрывать нечего, если вкладки нет.
         var curPid = pfxIsPfTab(eff) ? eff.slice(3) : null;
-        var ports = pfxOpenPfTabs.map(findPf).filter(Boolean).map(function (p) {
+        var ports = PF.store.items.map(function (p) {
             var c = calcPf(p);
             // ДОХОДНОСТЬ ЗА ВСЁ ВРЕМЯ ВМЕСТО СУММЫ (просьба 2026-08-04). Сумма
             // отвечала на «сколько здесь», но в перечне из четырёх строк это
@@ -370,12 +375,12 @@
                 // осталось единственным в проекте, и держать его только в меню «Видимость»
                 // в шапке — далеко от самого портфеля
                 hide: { act: 'pf-hide', key: p.id, off: !!p.hidden },
-                close: { act: 'pf-close', key: p.id }
+                close: pfxOpenPfTabs.indexOf(p.id) >= 0 ? { act: 'pf-close', key: p.id } : null
             };
         });
         ports.push({ act: 'pf-new', key: '', tx: 'Новый портфель', iconKey: 'plus', cls: 'gh' });
         var groups = [{ label: 'Разделы', items: secs }];
-        groups.push({ label: 'Открытые портфели', items: ports });
+        groups.push({ label: 'Портфели', items: ports });
         return {
             title: 'Портфели',
             cap: items.length ? fmtRub(total) : null,
