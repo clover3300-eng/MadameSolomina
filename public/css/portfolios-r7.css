@@ -645,6 +645,16 @@ body.dark-mode .pfpt-benchbtn.on { background: #64748b; color: #fff; }
    правило .pfcv-chart исчезло вместе с оверлеем карточки, поэтому задаём здесь. */
 .pfpt-chart .pfcv-chart { position: relative; display: flex; height: 220px; margin-top: 8px; }
 
+/* — «Снимки капитала» раскрываются прямо в карточке «Составов» (кнопка-тумблер
+   в .pfpt-acts, секция под шапкой). Кнопка — язык .pfpt-benchbtn, но без его
+   margin-left:auto: в ряду действий отступы раздаёт сам флекс .pfpt-acts.
+   Строки — язык виджета «Снимки капитала» (.pfsn-*), потолок списка ниже
+   виджетного: секция — быстрый взгляд, а не архив на всю карточку. — */
+.pfpt-snapsbtn { margin-left: 0; }
+.pfpt-snaps { margin: 4px 0 16px; padding-top: 14px; border-top: 1px solid rgba(15, 23, 42, 0.07); }
+body.dark-mode .pfpt-snaps { border-top-color: rgba(255, 255, 255, 0.08); }
+.pfpt-snaps .pfsn-list { max-height: 300px; }
+
 /* таблица состава */
 .pfpt-tablewrap { overflow-x: auto; scrollbar-width: thin; }
 .pfpt-table { width: 100%; border-collapse: collapse; min-width: 760px; }

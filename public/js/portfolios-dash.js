@@ -384,6 +384,7 @@
         PF.dashTab = t;
         PF.dashCfg = dashCfgFor(t);
         pfdUndoStack.length = 0;   // undo-стек не должен уносить снимок на чужую вкладку
+        pfl2OptMap = {};   // дефолты опций пикера зависят от вкладки (портфель «Составов»)
         try { window.pfdCfgClose(); } catch (e) {}
     }
     function pfxTabLabel(t) {
@@ -3404,6 +3405,15 @@
             if ((PF.dashCfg.hidden || {})['pf:' + p.id] !== 1) return;
             list.push({ id: 'pf:' + p.id, name: 'Портфель «' + p.name + '»', desc: 'Полная карточка портфеля: состав, мини-график и настройки', cats: ['assets'] });
         });
+        // вкладка-портфель: её «хозяин» может быть скрыт глазом (visibleItems его
+        // не отдаёт), но вкладка — единственное место, где он виден (R9.2), и
+        // убранную корзиной карточку нужно уметь вернуть и ему
+        if (pfxIsPfTab(PF.dashTab)) {
+            var ownP = findPf(PF.dashTab.slice(3));
+            if (ownP && ownP.hidden && (PF.dashCfg.hidden || {})[PF.dashTab] === 1) {
+                list.push({ id: PF.dashTab, name: 'Портфель «' + ownP.name + '»', desc: 'Полная карточка портфеля: состав, мини-график и настройки', cats: ['assets'] });
+            }
+        }
         return list;
     }
     var pfl2Cat = 'pop', pfl2Q = '', pfl2Sel = null;
@@ -3418,8 +3428,14 @@
     var pfl2SelIds = [];
     var pfl2OptMap = {};
     // тема по умолчанию — «стекло»: выбор расцветки из интерфейса убран (см. pfl2SetHtml
-    // и pfdCfgHtml), все виджеты добавляются и живут стеклянными
-    function pfl2DefOpts() { return { size: 'm', theme: 'glass', view: 'line', period: '30', pf: 'all' }; }
+    // и pfdCfgHtml), все виджеты добавляются и живут стеклянными.
+    // Портфель «Составов» по умолчанию — хозяин вкладки-портфеля (просьба 2026-08-05):
+    // дефолт 'all' перетирал посев pdPf из pfxTabSeed при добавлении из пикера,
+    // и виджет на вкладке одного портфеля раскрывал таблицы всех
+    function pfl2DefOpts() {
+        return { size: 'm', theme: 'glass', view: 'line', period: '30',
+            pf: pfxIsPfTab(PF.dashTab) ? PF.dashTab.slice(3) : 'all' };
+    }
     function pfl2OptsOf(id) {
         if (!id) return pfl2DefOpts();
         if (!pfl2OptMap[id]) pfl2OptMap[id] = pfl2DefOpts();

@@ -444,6 +444,12 @@
                 '<div class="pfc-acts">' +
                     '<button class="pfc-act pfc-act--sec" onclick="pfCopyComposition(\'' + p.id + '\',event)" aria-label="Скопировать состав" title="Скопировать состав портфеля">' + PF.COPY_SVG + '</button>' +
                     '<button class="pfc-act pfc-act--sec' + (p.hidden ? ' on' : '') + '" onclick="pfToggleHidden(\'' + p.id + '\',event)" aria-label="' + (p.hidden ? 'Показать на «Обзоре»' : 'Убрать карточку с «Обзора»') + '" title="' + (p.hidden ? 'Вернуть карточку на «Обзор»' : 'Убрать карточку с «Обзора» — портфель останется в сводках, его вкладка не закроется') + '">' + PF.EYEOFF_SVG + '</button>' +
+                    // на подвкладках (в т.ч. на СВОЕЙ вкладке-портфеле) карточка — обычный
+                    // виджет сетки: её можно убрать корзиной, как любой блок. На «Обзоре»
+                    // корзины нет — там путь один, глаз («скрыть портфель» = p.hidden)
+                    (PF.dashTab !== 'overview'
+                        ? '<button class="pfc-act pfc-act--sec" onclick="pfdHideBlock(\'pf:' + p.id + '\')" aria-label="Убрать карточку с этой вкладки" title="Убрать карточку с этой вкладки — вернуть её можно кнопкой «Виджет» в шапке">' + PF.NOTE_TRASH_SVG + '</button>'
+                        : '') +
                     '<button class="pfc-act' + (menuOn ? ' on' : '') + '" onclick="pfToggleMenu(\'' + p.id + '\')" aria-label="Настройки" title="Настройки">' + PF.GEAR_SVG + '</button>' +
                 '</div>' +
             '</div>' +

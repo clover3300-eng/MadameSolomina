@@ -12,7 +12,7 @@
     // импорт ядра (уже загружено):
     var attr = PF.attr, calcPf = PF.calcPf, clamp = PF.clamp, colorVal = PF.colorVal, dayDelta = PF.dayDelta, dq = PF.dq;
     var esc = PF.esc, findPf = PF.findPf, fmtPct = PF.fmtPct, fmtPrice = PF.fmtPrice, fmtQty = PF.fmtQty, fmtRub = PF.fmtRub;
-    var jsArg = PF.jsArg, pfQuotesWarming = PF.pfQuotesWarming, skelHtml = PF.skelHtml, toast = PF.toast, visibleItems = PF.visibleItems;
+    var jsArg = PF.jsArg, pfQuotesWarming = PF.pfQuotesWarming, ruDate = PF.ruDate, skelHtml = PF.skelHtml, toast = PF.toast, visibleItems = PF.visibleItems;
     // импорт конструктора (portfolios-dash.js, уже загружен):
     var DASH_KEY = PF.DASH_KEY, DASH_TABS_KEY = PF.DASH_TABS_KEY, PFD_PLUS_SVG = PF.PFD_PLUS_SVG, dashCfgFor = PF.dashCfgFor, pfTabCfgs = PF.pfTabCfgs;
     var pfTabsStore = PF.pfTabsStore, pfdInChromeHtml = PF.pfdInChromeHtml, pfdScrollToBlock = PF.pfdScrollToBlock, pfdStandardCfg = PF.pfdStandardCfg, pfxEffTab = PF.pfxEffTab, pfxIsPfTab = PF.pfxIsPfTab;
@@ -1057,6 +1057,63 @@
         fly.addEventListener('transitionend', finish);
         setTimeout(finish, 950);        // страховка, если transitionend не стрельнёт
     };
+    // ---- «Снимки капитала» ПРЯМО В КАРТОЧКЕ «Составов» (просьба 2026-08-05) ----
+    // Кнопка в ряду действий раскрывает под шапкой дневные снимки стоимости ЭТОГО
+    // портфеля — не суммарные, как у одноимённого виджета: карточка про один
+    // портфель, и снимки в ней про него же. Открытые карточки — в PF.pfptSnapsOpen
+    // (сессия, как chartOpen), рендер читает его при полных перерисовках.
+    PF.pfptSnapsOpen = PF.pfptSnapsOpen || {};
+    // серия по ОДНОМУ портфелю: pf_snapshots_v1[pid] + живая точка сегодня —
+    // та же механика, что у суммарной pfdCapSeries в portfolios-widgets.js
+    function pfxPtSnapSeries(p, c) {
+        var m = (PF.snaps || {})[p.id] || {};
+        var out = Object.keys(m).sort().map(function (d) { return { d: d, v: m[d] }; });
+        if (PF.quotesTs && c && c.value > 0) {
+            var t = PF.todayStr();
+            if (out.length && out[out.length - 1].d === t) out[out.length - 1].v = c.value;
+            else out.push({ d: t, v: c.value });
+        }
+        return out;
+    }
+    function pfxPtSnapsHtml(p, c) {
+        var s = pfxPtSnapSeries(p, c);
+        var body;
+        if (s.length < 2) {
+            body = '<div class="pfal-empty">Снимки записываются раз в день при живых котировках — таблица появится со второго дня.</div>';
+        } else {
+            // последние 90 строк: быстрый взгляд, а не архив (полная история — у
+            // виджета «Снимки капитала»); строки — его же язык .pfsn-row
+            var tail = s.slice(-91), rows = '';
+            for (var i = tail.length - 1; i >= 1; i--) {
+                var d = tail[i].v - tail[i - 1].v;
+                rows += '<div class="pfsn-row"><span class="pfsn-d">' + ruDate(tail[i].d) + '</span>' +
+                    '<span class="pfsn-v">' + fmtRub(tail[i].v) + '</span>' +
+                    '<span class="pfsn-c ' + (d >= 0 ? 'pos' : 'neg') + '">' + (d >= 0 ? '+' : '−') + fmtRub(Math.abs(d)) + '</span></div>';
+            }
+            body = '<div class="pfsn-list">' + rows + '</div>';
+        }
+        return '<div class="pfpt-snaps" id="pfptSnaps-' + p.id + '">' +
+            '<div class="pfpt-chart-h"><span class="pfpt-chart-t">Снимки капитала<i>дневные значения стоимости портфеля</i></span></div>' +
+            body + '</div>';
+    }
+    // раскрытие/сворачивание — прямым DOM (вставка/удаление секции), без полного
+    // ре-рендера: полный сбрасывал бы прокрутку страницы и мигал графиком
+    window.pfxPtSnapsToggle = function (pid) {
+        var p = findPf(pid); if (!p) return;
+        var open = !PF.pfptSnapsOpen[pid];
+        PF.pfptSnapsOpen[pid] = open;
+        var card = document.querySelector('#pfWrap .pfpt-card[data-pid="' + pid + '"]');
+        if (!card) return;
+        var btn = card.querySelector('.pfpt-snapsbtn');
+        if (btn) btn.classList.toggle('on', open);
+        var sec = dq('pfptSnaps-' + pid);
+        if (!open) { if (sec) sec.remove(); }
+        else if (!sec) {
+            var head = card.querySelector('.pfpt-head');
+            if (head) head.insertAdjacentHTML('afterend', pfxPtSnapsHtml(p, calcPf(p)));
+        }
+        if (PF.pfdRepackSoon) PF.pfdRepackSoon();   // высота блока сменилась — перепаковать masonry
+    };
     function pfxTabPortsHtml() {
         var vis = visibleItems();
         // область виджета (2026-07-30): «Составы» умеют показывать ОДИН портфель —
@@ -1066,6 +1123,13 @@
         var pdScope = PF.dashCfg.pdPf || 'all';
         if (pdScope !== 'all') {
             var one = vis.filter(function (p) { return p.id === pdScope; });
+            // вкладка-портфель СКРЫТОГО портфеля: visibleItems его не отдаёт, но
+            // вкладка — единственное место, где он виден (R9.2); без этого спасения
+            // «Составы» здесь молча откатывались на «все портфели»
+            if (!one.length && pfxIsPfTab(PF.dashTab) && PF.dashTab.slice(3) === pdScope) {
+                var ownP = findPf(pdScope);
+                if (ownP) one = [ownP];
+            }
             if (one.length) vis = one;
         }
         // Пустое состояние — в обёртке со своими кнопками: pdetail в PFD_OWN_CHROME,
@@ -1116,6 +1180,10 @@
                     // кнопки виджета — у ПЕРВОЙ карточки блока (блок один, кнопки одни) и
                     // слева от действий портфеля, а не поверх них
                     (i === 0 ? pfdInChromeHtml('pdetail') : '') +
+                    // «Снимки капитала» — тумблер в языке кнопки бенчмарка (.pfpt-benchbtn):
+                    // оба про «показать ещё один слой данных» в этой же карточке
+                    '<button class="pfpt-benchbtn pfpt-snapsbtn' + (PF.pfptSnapsOpen[p.id] ? ' on' : '') + '" onclick="pfxPtSnapsToggle(\'' + p.id + '\')" ' +
+                        'title="Дневные снимки стоимости этого портфеля — раскрываются прямо в карточке">Снимки капитала</button>' +
                     '<button class="pfc-rebal pfpt-rebal" onclick="pfExpand(\'' + p.id + '\')">' + PF.REBAL_SVG + 'Ребалансировать</button>' +
                     '<button class="pfc-act" onclick="pfxPortSettings(\'' + p.id + '\')" title="Настройки портфеля" aria-label="Настройки портфеля">' + GEAR + '</button>' +
                 '</div>' +
@@ -1148,7 +1216,10 @@
                     '<th class="pfpt-num">Стоимость</th><th class="pfpt-share">Доля</th><th class="pfpt-num">Доход</th><th class="pfpt-num">Доходность</th>' +
                   '</tr></thead><tbody>' + c.hs.map(function (x) { return pfxPortHoldRowHtml(x, c); }).join('') + '</tbody></table></div>'
                 : '<div class="pfal-empty">Состав пуст — добавьте активы в настройках портфеля ⚙.</div>';
-            return '<div class="dash2-card pf-card2 pfpt-card" style="--pf-accent:' + ac + '">' + head + chartBlock + table + '</div>';
+            // data-pid — адрес карточки для pfxPtSnapsToggle; открытая секция снимков
+            // переживает полные ре-рендеры (состояние в PF.pfptSnapsOpen)
+            var snapsBlock = PF.pfptSnapsOpen[p.id] ? pfxPtSnapsHtml(p, c) : '';
+            return '<div class="dash2-card pf-card2 pfpt-card" data-pid="' + esc(p.id) + '" style="--pf-accent:' + ac + '">' + head + snapsBlock + chartBlock + table + '</div>';
         }).join('') + '</div>';
     }
     // Кривые подвкладки «Портфель» дорисовываются после полного рендера — как
