@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Главная · «Диптих», раунд 5 — правая створка на плитках: «Окно», «Витраж», «Глубина»</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+       --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+       --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding:44px 0 90px;-webkit-font-smoothing:antialiased}
+.page{width:1480px;max-width:100%;margin:0 auto;padding:0 20px}
+
+/* ---------------- документ ---------------- */
+.doc-h{margin-bottom:34px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-acc);margin-bottom:9px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
+.doc-h p{margin-top:12px;font-size:15px;line-height:1.6;color:var(--doc-mut);max-width:900px}
+.verdict{margin-top:20px;display:flex;gap:14px;align-items:flex-start;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid var(--doc-acc);border-radius:14px;padding:16px 20px;max-width:980px}
+.verdict p{margin:0;font-size:14.5px;line-height:1.62;color:var(--doc-quote)}
+.verdict p+p{margin-top:10px}
+.verdict b{font-weight:700;color:var(--doc-ink)}
+
+.mk{margin-top:52px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.62;max-width:980px;margin-bottom:18px}
+.notes{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 26px;max-width:1360px}
+.note{display:flex;gap:9px;font-size:13px;line-height:1.5;color:var(--doc-quote)}
+.note i{flex:none;width:18px;height:18px;border-radius:50%;background:var(--doc-ink);color:var(--doc-bg);font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.scroller{overflow-x:auto;padding:4px 0 44px;margin-bottom:-32px}
+@media (max-width:1000px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} }
+
+.map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th{text-align:left;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);padding:10px 14px;border-bottom:1px solid var(--doc-line)}
+.map td{padding:9px 14px;border-bottom:1px solid var(--doc-line);color:var(--doc-quote);line-height:1.5;vertical-align:top}
+.map tr:last-child td{border-bottom:0}
+.map code{font-family:var(--fN);font-size:11.5px;background:color-mix(in srgb,var(--doc-mut) 12%,transparent);border-radius:6px;padding:1px 6px;white-space:nowrap}
+
+/* ======================================================================
+   ДИПТИХ. Левая створка — бумага (одна во всех вариантах),
+   правая — три решения на боевых плитках.
+   ====================================================================== */
+.cv{position:relative;width:1440px;height:880px;border-radius:16px;overflow:hidden;flex:none;
+    font-family:var(--fU);display:grid;grid-template-columns:1fr 1fr;
+    box-shadow:0 2px 4px rgba(15,23,42,.05),0 34px 70px -34px rgba(24,38,60,.4);
+    border:1px solid rgba(15,23,42,.09)}
+.num{font-family:var(--fN);font-variant-numeric:tabular-nums}
+
+/* ---------------- левая створка ---------------- */
+.lf{position:relative;padding:52px 64px 40px;display:flex;flex-direction:column;color:#101828;background:
+  radial-gradient(700px 480px at -10% 6%, rgba(196,226,224,.42) 0%, rgba(196,226,224,0) 60%),
+  radial-gradient(620px 460px at 110% 96%, rgba(214,214,240,.4) 0%, rgba(214,214,240,0) 62%),
+  linear-gradient(175deg,#F7F9FA 0%,#F2F4F8 100%)}
+.lf-top{display:flex;align-items:center;gap:13px}
+.lf-mark{width:40px;height:40px;border-radius:12px;background:#161B27;color:#fff;display:grid;place-items:center;
+         font-family:var(--fT);font-size:21px;font-weight:700}
+.lf-name{font-size:17px}
+.lf-name .w3{font-weight:300}
+.lf-name .w8{font-weight:800}
+.lf-top .sp{flex:1}
+.lf-login{font-size:13.5px;font-weight:700;color:#33415C}
+.lf-mid{margin:auto 0;padding:36px 0}
+.lf-title{font-family:var(--fT);font-weight:400;font-size:60px;line-height:1.08;letter-spacing:-.012em}
+.lf-lead{margin-top:22px;font-size:16.5px;line-height:1.62;color:#5C6A7D;max-width:29em}
+.lf-row{margin-top:36px;display:flex;gap:10px;max-width:520px}
+.lf-mail{flex:1;display:flex;align-items:center;height:56px;border-radius:999px;background:#fff;
+         border:1px solid rgba(16,24,40,.12);padding:0 24px;font-family:var(--fN);font-size:13.5px;color:#8D9AAD;
+         box-shadow:0 10px 26px -18px rgba(24,38,60,.35)}
+.lf-btn{display:inline-flex;align-items:center;gap:10px;height:56px;padding:0 30px;border-radius:999px;
+        background:linear-gradient(180deg,#5B67F2,#4453EF);color:#fff;font-size:15.5px;font-weight:700;
+        box-shadow:0 18px 38px -14px rgba(68,83,239,.5);white-space:nowrap}
+.lf-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.lf-tg{margin-top:16px;font-size:13px;color:#5C6A7D}
+.lf-tg b{color:#4453EF;font-weight:700}
+.lf-foot{font-size:12px;color:#8D9AAD}
+/* вид «вы вошли»: тот же скелет, другая начинка */
+.lf-hi{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+.lf-ava{width:46px;height:46px;border-radius:50%;background:linear-gradient(180deg,#5B67F2,#4453EF);color:#fff;
+        display:grid;place-items:center;font-family:var(--fT);font-size:20px}
+.lf-cap{font-family:var(--fN);font-size:13px;color:#5C6A7D}
+.lf-cap b{color:#101828;font-weight:700}
+.lf-cap .up{color:#0E7A45;font-weight:700}
+.lf-two{margin-top:34px;display:flex;gap:10px}
+.lf-quiet{display:inline-flex;align-items:center;height:56px;padding:0 26px;border-radius:999px;
+          border:1px solid rgba(16,24,40,.14);background:rgba(255,255,255,.6);font-size:15px;font-weight:700;color:#33415C}
+
+/* ---------------- правая створка: общее ---------------- */
+.rt{position:relative;overflow:hidden;color:#E9EDF6;background:
+  radial-gradient(700px 480px at 30% 0%, rgba(43,44,80,.8) 0%, rgba(43,44,80,0) 62%),
+  radial-gradient(760px 560px at 100% 100%, rgba(26,52,66,.75) 0%, rgba(26,52,66,0) 66%),
+  linear-gradient(160deg,#0D141B 0%,#111520 55%,#0C141A 100%)}
+.rt.light{color:#101828;background:
+  radial-gradient(700px 480px at 30% 0%, rgba(214,214,240,.6) 0%, rgba(214,214,240,0) 62%),
+  radial-gradient(760px 560px at 100% 100%, rgba(196,226,224,.55) 0%, rgba(196,226,224,0) 66%),
+  linear-gradient(160deg,#E7EDEF 0%,#EAECF2 55%,#E7EDEF 100%)}
+.rt-box{position:absolute;inset:0}
+.tl{position:absolute;display:flex;align-items:flex-end;padding:7px 9px;overflow:hidden;
+    font-family:var(--fN);font-size:10.5px;font-weight:500;letter-spacing:.04em;border-radius:6px}
+/* крупные стеклоблоки варианта «Витраж» */
+.tlb{position:absolute;border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden}
+.tlb b{font-family:var(--fN);font-size:15px;font-weight:700;letter-spacing:.03em}
+.tlb span{font-family:var(--fN);font-size:12.5px;font-weight:600;margin-top:3px;opacity:.85}
+/* подписи створки */
+.rt-cap{position:absolute;left:40px;bottom:26px;right:40px;display:flex;align-items:baseline;gap:16px;
+        font-family:var(--fN);font-size:12px;font-weight:600;color:#9AA2B5;z-index:3}
+.rt.light .rt-cap{color:#5C6A7D}
+.rt-cap b{color:#E9EDF6;font-weight:700}
+.rt.light .rt-cap b{color:#101828}
+.rt-cap .up{color:#5FC492}
+.rt.light .rt-cap .up{color:#0E7A45}
+.rt-cap .sp{flex:1}
+.rt-cap .quiet{font-family:var(--fU);font-weight:600;color:#68718A}
+.rt.light .rt-cap .quiet{color:#8D9AAD}
+/* вуаль под подписью */
+.rt-veil{position:absolute;left:0;right:0;bottom:0;height:170px;z-index:2;
+         background:linear-gradient(180deg, rgba(12,18,25,0) 0%, rgba(12,18,25,.82) 62%, rgba(12,18,25,.92) 100%)}
+.rt.light .rt-veil{background:linear-gradient(180deg, rgba(233,238,242,0) 0%, rgba(233,238,242,.86) 62%, rgba(233,238,242,.95) 100%)}
+
+/* стеклянная полоса пульса (вариант «Глубина») */
+.pulse{position:absolute;left:36px;right:36px;bottom:34px;z-index:4;border-radius:20px;padding:18px 22px;
+       background:rgba(17,22,33,.58);border:1px solid rgba(255,255,255,.11);backdrop-filter:blur(18px);
+       box-shadow:0 26px 60px -30px rgba(0,0,0,.7)}
+.rt.light .pulse{background:rgba(255,255,255,.66);border-color:rgba(255,255,255,.8);
+       box-shadow:0 26px 60px -34px rgba(24,38,60,.4)}
+.pulse-top{display:flex;align-items:baseline;gap:12px}
+.pulse-nm{font-family:var(--fT);font-size:17px}
+.pulse-v{margin-left:auto;font-family:var(--fN);font-size:20px;font-weight:700}
+.pulse-d{font-family:var(--fN);font-size:13px;font-weight:700;color:#5FC492}
+.rt.light .pulse-d{color:#0E7A45}
+.pulse-rows{margin-top:12px;display:flex;gap:26px}
+.pulse-c{flex:1}
+.pulse-lb{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#68718A;margin-bottom:7px}
+.rt.light .pulse-lb{color:#8D9AAD}
+.pulse-r{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--fN);font-size:12px;
+         font-weight:600;color:#9AA2B5;padding:3px 0}
+.rt.light .pulse-r{color:#5C6A7D}
+.pulse-r b{color:#E9EDF6;font-weight:700}
+.rt.light .pulse-r b{color:#101828}
+.pulse-r .up{color:#5FC492} .pulse-r .dn{color:#E0796A}
+.rt.light .pulse-r .up{color:#0E7A45} .rt.light .pulse-r .dn{color:#B23B24}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="doc-h">
+    <div class="doc-kicker">Главная · «Диптих» · раунд 5</div>
+    <h1>Правая створка возвращается к плиткам: три решения</h1>
+    <p>Направление утверждено, но правая половина переделана целиком: вместо миниатюры кабинета туда
+       въезжает живая карта рынка. Ниже три способа отдать ей створку и экран состояний.</p>
+    <div class="verdict">
+      <p><b>Почему миниатюра кабинета не сработала.</b> Она обещала то, чего у гостя ещё нет: чужой капитал
+         в 18 миллионов на обложке читается как реклама, а не как продукт. Плитки честнее: это рынок
+         прямо сейчас, он одинаков для всех, и он уже боевой код.</p>
+      <p><b>Что общего у трёх вариантов.</b> Левая створка одна и та же: марка, вход для своих строкой
+         сверху, серифный заголовок, лид и вход в одну строку. Правая всегда живая, всегда тёмная
+         по умолчанию, всегда с одной моно-подписью внизу. Отличается только масштаб плиток и то,
+         сколько смысла лежит поверх них.</p>
+      <p><b>Рекомендация: Б2 «Витраж».</b> Крупные стеклоблоки дают тот самый воздух, ради которого затевался
+         раунд, и остаются честной картой (подписано, что это топ-14 весов). Б1 возвращает прежний шум
+         в половинном размере, Б3 красив, но полоса пульса снова закрывает треть створки.</p>
+    </div>
+  </header>
+
+  <!-- ================= Б1 ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">Б1</span><h2>«Окно» — полная карта во всю створку</h2><span class="mk-tag mute">Максимум рынка</span></div>
+    <p class="mk-sub">Правая половина отдана боевой карте целиком: все 46 бумаг индекса, родной squarified,
+       зазор 4px, хвост растворяется. Внизу вуаль и одна моно-строка индекса. Максимально близко к нынешней
+       Главной, но карта больше не лезет под текст и не спорит с формой.</p>
+    <div class="scroller"><div id="mk1"></div></div>
+    <div class="notes">
+      <div class="note"><i>1</i><span>Рендер плиток не меняется вовсе: тот же код, другой контейнер (створка 720px вместо всего экрана).</span></div>
+      <div class="note"><i>2</i><span>Плюс: рынок показан полностью, без выборки. Минус: в узкой створке мелочь дробится сильнее, чем на широком экране.</span></div>
+      <div class="note"><i>3</i><span>Строка внизу берёт те же данные, что пилюля IMOEX сегодня: индекс, процент дня и время среза.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= Б2 ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">Б2</span><h2>«Витраж» — крупные стеклоблоки</h2><span class="mk-tag">Рекомендую</span></div>
+    <p class="mk-sub">Та же карта, но в створке живут только 12 крупнейших бумаг: скругление 16, зазор 14, заливка полупрозрачная,
+       тикер и процент читаются с расстояния. Мозаика превращается из обоев в витраж, между блоками виден
+       фон, и створка наконец дышит.</p>
+    <div class="scroller"><div id="mk2"></div></div>
+    <div class="notes">
+      <div class="note"><i>1</i><span>Тот же squarified, только на срезе топ-12 весов, заливка стеклянная (фон просвечивает), типографика крупная; подпись внизу честно называет срез.</span></div>
+      <div class="note"><i>2</i><span>Цвет плитки остаётся мерой движения: чем сильнее день, тем плотнее мята или клэй. Формулы oklch боевые.</span></div>
+      <div class="note"><i>3</i><span>Крупные блоки переживают сужение окна: на 1280px створка сжимается, но плитки остаются читаемыми, а не превращаются в крошку.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= Б3 ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">Б3</span><h2>«Глубина» — карта и стеклянная полоса пульса</h2><span class="mk-tag mute">Больше данных</span></div>
+    <p class="mk-sub">Карта средней плотности (24 бумаги) на всю створку, а поверх её нижней части лежит
+       стеклянная полоса: индекс крупно и две короткие колонки лидеров дня. Тот самый язык стекла, что
+       на рабочих вкладках, но ровно один слой поверх карты.</p>
+    <div class="scroller"><div id="mk3"></div></div>
+    <div class="notes">
+      <div class="note"><i>1</i><span>Полоса кормится теми же данными ISS: изменение индекса и лидеры роста и падения по вкладу за день.</span></div>
+      <div class="note"><i>2</i><span>Стекло blur 18 и кромка rgba(255,255,255,.11) — те же значения, что у карточек «Обзора».</span></div>
+      <div class="note"><i>3</i><span>Риск: полоса съедает нижнюю треть карты. Если её оставлять, плиткам нужен запас 220px снизу.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= состояния ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">Б4</span><h2>Состояния рекомендованного «Витража»</h2><span class="mk-tag mute">Состояние</span></div>
+    <p class="mk-sub">Слева — «вы вошли»: вместо формы приветствие, строка капитала и два действия. Ниже светлая
+       тема: правая створка светлеет вместе со всей страницей, плитки берут светлые oklch, стекло становится
+       белым. Диптих остаётся диптихом в обеих темах.</p>
+    <div class="scroller"><div id="mk4"></div></div>
+    <div class="scroller" style="margin-top:-20px"><div id="mk5"></div></div>
+    <div class="notes">
+      <div class="note"><i>1</i><span>Вошедшему левая створка показывает капитал и день одной моно-строкой; суммы уважают режим «Скрывать суммы».</span></div>
+      <div class="note"><i>2</i><span>Кнопки вошедшего: индиго «В кабинет» и тихий «Новый расчёт». На экране по-прежнему одна акцентная кнопка.</span></div>
+      <div class="note"><i>3</i><span>В светлой теме плитки уходят в пастель, подпись становится чернильной; композиция и размеры не меняются.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= карта кода ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">05</span><h2>Что где живёт в коде</h2></div>
+    <table class="map">
+      <tr><th>Часть мокапа</th><th>Файл</th><th>Правка</th></tr>
+      <tr><td>Раскладка диптиха</td><td><code>home-register.css</code></td><td>.hg-cover: вместо грида 1fr/500px две равные створки; правая получает свой фон и отрицательные отступы вкладки.</td></tr>
+      <tr><td>Карта в створке</td><td><code>home-register.js</code></td><td>drawInto уже рисует в любой контейнер: цель меняется с полноэкранного #hgHeatBg на створку. Для «Витража» добавить срез топ-14 и класс крупных плиток.</td></tr>
+      <tr><td>Фикс-слой карты</td><td><code>index.html</code></td><td>#hgHeatWrap перестаёт быть fixed на весь экран: он уезжает внутрь створки, ловушка с transform вкладки исчезает вместе с fixed.</td></tr>
+      <tr><td>Форма</td><td><code>home-register.js</code></td><td>Все id сохраняются, но на обложке видно одно поле email; остальные поля показываются после нажатия «Начать» (тот же homeRegForm).</td></tr>
+      <tr><td>Строка пульса</td><td><code>home-register.js</code></td><td>Индекс и время среза уже приходят; для Б3 добавить лидеров дня из тех же marketdata.</td></tr>
+      <tr><td>Светлая тема</td><td><code>home-register.css</code></td><td>Правая створка и плитки получают светлый набор; тёмных оверрайдов формы по-прежнему нет.</td></tr>
+      <tr><td>Версии</td><td><code>index.html</code></td><td>Бамп ?v у home-register.css/js.</td></tr>
+    </table>
+  </section>
+
+</div>
+
+<script>
+/* ============================================================
+   Боевой squarified (Bruls) из home-register.js, 1в1.
+   ============================================================ */
+var STOCKS = [
+  ['SBER',13.6, 1.12], ['LKOH',11.2, 0.83], ['GAZP',9.3,  2.06], ['TATN',5.9,  1.35],
+  ['NVTK',5.4,  2.02], ['YDEX',5.0,  2.08], ['GMKN',4.4,  2.52], ['ROSN',4.3,  2.39],
+  ['PLZL',4.0,  4.97], ['SNGS',3.4,  4.07], ['T',3.3,     1.88], ['X5',2.9,    0.62],
+  ['VTBR',2.7, -0.85], ['MOEX',2.3,  1.08], ['MTSS',2.1, -0.41], ['ALRS',1.9,  3.58],
+  ['CHMF',1.9,  0.9 ], ['NLMK',1.7,  0.55], ['MAGN',1.55,-0.6 ], ['PHOR',1.5,  0.3 ],
+  ['OZON',1.45,-0.3 ], ['POSI',1.35, 3.89], ['MGNT',1.3, -0.2 ], ['HEAD',1.25, 3.26],
+  ['RUAL',1.15, 0.7 ], ['AFKS',1.05, 1.4 ], ['TRNFP',1.05,1.54], ['CBOM',0.95, 3.48],
+  ['FLOT',0.85,-1.1 ], ['SGZH',0.8, -0.2 ], ['ENPG',0.75, 0.4 ], ['UPRO',0.7,  0.1 ],
+  ['AGRO',0.7,  0.8 ], ['HYDR',0.65, 0.02], ['IRAO',0.65, 0.5 ], ['SNGSP',0.6, 3.1 ],
+  ['TATNP',0.6, 1.5 ], ['BSPB',0.55, 2.1 ], ['LENT',0.5,  0.9 ], ['RTKM',0.5, -0.5 ],
+  ['SVCB',0.45, 1.2 ], ['MDMG',0.4,  0.6 ], ['CNRU',0.4,  1.8 ], ['RAGR',0.35, 0.4 ],
+  ['VSMO',0.3, -0.7 ], ['KMAZ',0.25, 0.3 ]
+];
+var CAP = 3;
+
+function worst(row, side){
+  var max=-Infinity,min=Infinity,sum=0,i;
+  for(i=0;i<row.length;i++){var a=row[i].area;sum+=a;if(a>max)max=a;if(a<min)min=a;}
+  if(sum===0)return Infinity;
+  var s2=sum*sum,side2=side*side;
+  return Math.max((side2*max)/s2, s2/(side2*min));
+}
+function layoutRow(row, free, out){
+  var rowArea=0,i,seg;
+  for(i=0;i<row.length;i++)rowArea+=row[i].area;
+  if(free.w<=free.h){
+    var rh=rowArea/free.w,x=free.x;
+    for(i=0;i<row.length;i++){seg=row[i].area/rh;out.push({tk:row[i].tk,x:x,y:free.y,w:seg,h:rh});x+=seg;}
+    return {x:free.x,y:free.y+rh,w:free.w,h:free.h-rh};
+  }
+  var rw=rowArea/free.h,y=free.y;
+  for(i=0;i<row.length;i++){seg=row[i].area/rw;out.push({tk:row[i].tk,x:free.x,y:y,w:rw,h:seg});y+=seg;}
+  return {x:free.x+rw,y:free.y,w:free.w-rw,h:free.h};
+}
+function squarify(items, rect){
+  var out=[],total=0,i;
+  for(i=0;i<items.length;i++)total+=items[i].value;
+  var scale=(rect.w*rect.h)/total;
+  var scaled=items.map(function(n){return {tk:n.tk,area:n.value*scale};}).sort(function(a,b){return b.area-a.area;});
+  var free={x:rect.x,y:rect.y,w:rect.w,h:rect.h},row=[],idx=0;
+  while(idx<scaled.length){
+    var side=Math.min(free.w,free.h),item=scaled[idx];
+    if(row.length===0||worst(row.concat(item),side)<=worst(row,side)){row.push(item);idx++;}
+    else{free=layoutRow(row,free,out);row=[];}
+  }
+  if(row.length)layoutRow(row,free,out);
+  return out;
+}
+
+/* цвет плитки: боевые формулы oklch обеих тем */
+function tileColor(c, k, theme){
+  var flat=Math.abs(c)<=0.02, dn=c<-0.02, hue=dn?44:158;
+  if (theme==='dark'){
+    if (flat) return {bg:'oklch(0.27 0.012 250)', fg:'oklch(0.62 0.02 250)'};
+    return {bg:'oklch('+(0.28+k*0.14).toFixed(3)+' '+(0.02+k*0.07).toFixed(3)+' '+hue+')',
+            fg:'oklch('+(dn?'0.76 0.08 44':'0.75 0.08 158')+')'};
+  }
+  if (flat) return {bg:'oklch(0.958 0.006 250)', fg:'oklch(0.55 0.02 250)'};
+  return {bg:'oklch('+(0.965-k*0.10).toFixed(3)+' '+(0.012+k*0.055).toFixed(3)+' '+hue+')',
+          fg:'oklch('+(dn?'0.47 0.09 44':'0.45 0.09 158')+')'};
+}
+
+/* мелкие плитки: боевой вид (radius 6, зазор 4, растворение хвоста) */
+function tilesFine(count, w, h, theme, reserveBottom){
+  var list=STOCKS.slice(0,count), chg={};
+  list.forEach(function(s){ chg[s[0]]=s[2]; });
+  var H = h - (reserveBottom||0);
+  var rects=squarify(list.map(function(s){return {tk:s[0],value:s[1]};}),{x:0,y:0,w:w,h:H});
+  var FULL=w*H*0.008, html='';
+  rects.forEach(function(t){
+    var c=chg[t.tk], k0=Math.min(1,Math.abs(c)/CAP);
+    var x=t.x+2,y=t.y+2,tw=Math.max(0,t.w-4),th=Math.max(0,t.h-4);
+    var a=Math.min(1,(tw*th)/FULL), k=k0*(0.35+0.65*a);
+    var col=tileColor(c,k,theme);
+    var label=(tw>64&&th>40)?t.tk:'';
+    html+='<div class="tl" style="left:'+x.toFixed(1)+'px;top:'+y.toFixed(1)+'px;width:'+tw.toFixed(1)+
+      'px;height:'+th.toFixed(1)+'px;background:'+col.bg+';color:'+col.fg+';opacity:'+(0.28+0.72*a).toFixed(2)+'">'+label+'</div>';
+  });
+  return html;
+}
+
+/* крупные стеклоблоки: заливка ПОЛУПРОЗРАЧНАЯ, чтобы витражный фон просвечивал
+   между блоками и внутри них; цвет по-прежнему мера движения */
+function tilesBlocks(count, w, h, theme){
+  var list=STOCKS.slice(0,count), chg={};
+  list.forEach(function(s){ chg[s[0]]=s[2]; });
+  var rects=squarify(list.map(function(s){return {tk:s[0],value:s[1]};}),{x:0,y:0,w:w,h:h});
+  var html='';
+  rects.forEach(function(t){
+    var c=chg[t.tk], k=Math.min(1,Math.abs(c)/CAP);
+    var flat=Math.abs(c)<=0.02, dn=c<-0.02, hue=dn?44:158;
+    var bg, fg, edge;
+    if (theme==='dark'){
+      bg = flat ? 'oklch(0.42 0.012 250 / 0.20)'
+                : 'oklch('+(0.5+k*0.14).toFixed(3)+' '+(0.05+k*0.09).toFixed(3)+' '+hue+' / '+(0.2+k*0.24).toFixed(2)+')';
+      fg = flat ? 'oklch(0.78 0.02 250)' : 'oklch('+(dn?'0.84 0.1 44':'0.86 0.11 158')+')';
+      edge = 'rgba(255,255,255,.1)';
+    } else {
+      bg = flat ? 'oklch(0.86 0.008 250 / 0.42)'
+                : 'oklch('+(0.85-k*0.06).toFixed(3)+' '+(0.05+k*0.07).toFixed(3)+' '+hue+' / '+(0.4+k*0.3).toFixed(2)+')';
+      fg = flat ? 'oklch(0.45 0.02 250)' : 'oklch('+(dn?'0.42 0.11 44':'0.38 0.1 158')+')';
+      edge = 'rgba(255,255,255,.6)';
+    }
+    var x=t.x+7,y=t.y+7,tw=Math.max(0,t.w-14),th=Math.max(0,t.h-14);
+    var sign=c>0?'+':(c<0?'−':'');
+    var pct=sign+Math.abs(c).toFixed(2).replace('.',',')+'%';
+    html+='<div class="tlb" style="left:'+x.toFixed(1)+'px;top:'+y.toFixed(1)+'px;width:'+tw.toFixed(1)+
+      'px;height:'+th.toFixed(1)+'px;background:'+bg+';color:'+fg+';border:1px solid '+edge+'">'
+      + '<b>'+t.tk+'</b><span>'+pct+'</span></div>';
+  });
+  return html;
+}
+
+var ARROW='<svg viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg>';
+
+/* ---------------- левая створка ---------------- */
+function leftHtml(authed){
+  if (authed){
+    return '<div class="lf">'
+      + '<div class="lf-top"><span class="lf-mark">M</span>'
+      +   '<span class="lf-name"><span class="w3">Madame </span><span class="w8">Solomi\'na</span></span>'
+      +   '<span class="sp"></span><span class="lf-login">Выйти</span></div>'
+      + '<div class="lf-mid">'
+      +   '<div class="lf-hi"><span class="lf-ava">Д</span>'
+      +     '<span class="lf-cap">clover3300@gmail.com</span></div>'
+      +   '<h1 class="lf-title">С возвращением, Денис</h1>'
+      +   '<p class="lf-lead">Рынок не стоял на месте: доли разъехались на 33 процентных пункта от цели. Сверка займёт пару минут.</p>'
+      +   '<p class="lf-cap" style="margin-top:22px">Капитал <b>18 180 623 ₽</b> · за день <span class="up">+129 444 ₽</span></p>'
+      +   '<div class="lf-two"><span class="lf-btn">Сделать ребалансировку'+ARROW+'</span>'
+      +     '<span class="lf-quiet">В кабинет</span></div>'
+      + '</div>'
+      + '<p class="lf-foot">Данные Московской биржи</p>'
+      + '</div>';
+  }
+  return '<div class="lf">'
+    + '<div class="lf-top"><span class="lf-mark">M</span>'
+    +   '<span class="lf-name"><span class="w3">Madame </span><span class="w8">Solomi\'na</span></span>'
+    +   '<span class="sp"></span><span class="lf-login">Войти</span></div>'
+    + '<div class="lf-mid">'
+    +   '<h1 class="lf-title">Терминал спокойного инвестора</h1>'
+    +   '<p class="lf-lead">Портфель из ОФЗ и акций, план ребаланса и выплаты по расписанию. Справа рынок прямо сейчас.</p>'
+    +   '<div class="lf-row"><span class="lf-mail">you@example.com</span>'
+    +     '<span class="lf-btn">Начать'+ARROW+'</span></div>'
+    +   '<p class="lf-tg">Быстрее <b>войти через Telegram</b></p>'
+    + '</div>'
+    + '<p class="lf-foot">Данные Московской биржи</p>'
+    + '</div>';
+}
+
+/* ---------------- правая створка ---------------- */
+function capHtml(text, theme){
+  return '<div class="rt-cap"><span>IMOEX <b>2 301,65</b> <b class="up">+1,43%</b></span>'
+    + '<span class="sp"></span><span class="quiet">'+text+'</span></div>';
+}
+function pulseHtml(){
+  return '<div class="pulse">'
+    + '<div class="pulse-top"><span class="pulse-nm">Индекс Мосбиржи</span>'
+    +   '<span class="pulse-v">2 301,65</span><span class="pulse-d">+1,43%</span></div>'
+    + '<div class="pulse-rows">'
+    +   '<div class="pulse-c"><div class="pulse-lb">Ведут вверх</div>'
+    +     '<div class="pulse-r"><span>PLZL</span><b class="up">+4,97%</b></div>'
+    +     '<div class="pulse-r"><span>SNGS</span><b class="up">+4,07%</b></div>'
+    +     '<div class="pulse-r"><span>POSI</span><b class="up">+3,89%</b></div></div>'
+    +   '<div class="pulse-c"><div class="pulse-lb">Тянут вниз</div>'
+    +     '<div class="pulse-r"><span>FLOT</span><b class="dn">−1,10%</b></div>'
+    +     '<div class="pulse-r"><span>VTBR</span><b class="dn">−0,85%</b></div>'
+    +     '<div class="pulse-r"><span>MAGN</span><b class="dn">−0,60%</b></div></div>'
+    + '</div></div>';
+}
+
+var W=720, H=880;
+
+function diptych(kind, opts){
+  opts = opts || {};
+  var theme = opts.theme || 'dark';
+  var right;
+  if (kind==='fine'){
+    right = '<div class="rt-box">'+tilesFine(46, W, H, theme, 0)+'</div>'
+          + '<div class="rt-veil"></div>' + capHtml('46 бумаг индекса · срез 19:25', theme);
+  } else if (kind==='blocks'){
+    right = '<div class="rt-box">'+tilesBlocks(12, W, H-96, theme)+'</div>'
+          + capHtml('топ-12 весов индекса · срез 19:25', theme);
+  } else {
+    right = '<div class="rt-box">'+tilesFine(24, W, H, theme, 200)+'</div>'
+          + pulseHtml();
+  }
+  return '<div class="cv">' + leftHtml(!!opts.authed)
+    + '<div class="rt'+(theme==='light'?' light':'')+'">' + right + '</div>'
+    + '</div>';
+}
+
+document.getElementById('mk1').innerHTML = diptych('fine');
+document.getElementById('mk2').innerHTML = diptych('blocks');
+document.getElementById('mk3').innerHTML = diptych('deep');
+document.getElementById('mk4').innerHTML = diptych('blocks', {authed:true});
+document.getElementById('mk5').innerHTML = diptych('blocks', {theme:'light'});
+</script>
+</body>
+</html>
