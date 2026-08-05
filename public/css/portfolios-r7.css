@@ -1040,16 +1040,27 @@ body.dark-mode .pfz-tbl .pfpt-tr:hover td { background: rgba(255, 255, 255, 0.03
 .pfz-tbl th:last-child, .pfz-tbl .pfpt-tr td:last-child, .pfz-tbl .pfz-tot td:last-child { padding-right: 0; }
 .pfz-tbl .pfpt-as span { max-width: 150px; }
 
-/* группа — метка раздела и единственный признак класса у строки (значков у
-   тикеров нет): держим её во ВСЕХ ширинах, суммы и доли ушли в кольцо */
-.pfz-grp td {
-    padding: 15px 0 6px; border-bottom: 0; text-align: left;
-    font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800;
-    letter-spacing: 0.09em; text-transform: uppercase; color: #8494a7;
+/* ШАПКА КЛАССА = шапка колонок: первая ячейка называет класс («Акции» /
+   «Облигации») вместо общей «Бумаги», остальные — обычные заголовки колонок.
+   У облигаций в своей шапке появляется «НКД»; у акций эта ячейка пустая, но
+   колонка остаётся — вертикаль чисел общая на всю таблицу. */
+.pfz-tbl .pfz-hd th {
+    padding: 18px 11px 7px; border-bottom: 1px solid var(--pf-hair, rgba(15, 23, 42, 0.08));
+    text-align: right; white-space: nowrap;
+    font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 800;
+    letter-spacing: 0.08em; text-transform: uppercase; color: #a5b1c2;
 }
-.pfz-grp td b { color: #0f172a; font-weight: 800; }
-body.dark-mode .pfz-grp td b { color: #f4f8fd; }
-.pfz-tbl tbody tr:first-child.pfz-grp td { padding-top: 8px; }
+body.dark-mode .pfz-tbl .pfz-hd th { border-bottom-color: rgba(255, 255, 255, 0.08); color: #64748b; }
+.pfz-tbl .pfz-hd th:first-child {
+    text-align: left; padding-left: 0; font-size: 11px; letter-spacing: 0.06em; color: #0f172a;
+}
+body.dark-mode .pfz-tbl .pfz-hd th:first-child { color: #f4f8fd; }
+.pfz-tbl .pfz-hd th:last-child { padding-right: 0; }
+.pfz-tbl tbody tr:first-child.pfz-hd th { padding-top: 2px; }
+
+/* колонка НКД — только у облигаций; у акций ячейки пустые */
+.pfz-tbl .pfz-nkd { color: #64748b; font-size: 12px; }
+body.dark-mode .pfz-tbl .pfz-nkd { color: #9fb0c4; }
 .pfz-tot td {
     border-top: 1.5px solid rgba(24, 38, 60, 0.16); border-bottom: 0 !important; padding-top: 12px;
 }

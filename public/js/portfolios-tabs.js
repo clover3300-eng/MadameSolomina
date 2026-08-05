@@ -1220,11 +1220,16 @@
     };
     window.pfxScFreq = function (v) {
         if (PF.snapSetFreq) PF.snapSetFreq(v);
-        // частота общая на все портфели — обновляем каждую открытую секцию
+        // частота общая на все портфели — обновляем каждую открытую секцию И строку
+        // «Автозапись» в плитках колонки: без этого сегмент переключался, а плитка
+        // над ним продолжала говорить «каждый день» — выбор выглядел непринятым
+        var tx = PFZ_FREQ_TX[v] || 'каждый день';
+        document.querySelectorAll('#pfWrap [data-snapfreq]').forEach(function (b) { b.textContent = tx; });
         document.querySelectorAll('#pfWrap .pfpt-snaps').forEach(function (sec) {
             var pid = (sec.id || '').replace('pfptSnaps-', '');
             if (pid) pfxPtSnapsRepaint(pid);
         });
+        if (PF.recordSnapshots) PF.recordSnapshots(true);   // новая частота вступает в силу сразу, минуя троттл
     };
     window.pfxScWrite = function (pid) {
         var p = findPf(pid), st = pfxScState(pid);
@@ -1364,6 +1369,15 @@
             '<span>' + esc(PF.assetDisplayName(h)) + '</span></span>' +
             (pos ? '<span class="pfz-aspos' + (hc && hc.live ? ' live' : '') + '">' + pos + '</span>' : '') + '</div>';
     }
+    // НКД одной облигации (ACCRUEDINT с MOEX, обновляется каждый день — сторож
+    // bondNkdDayGuard в ядре); в подсказке — накопленное по всей позиции
+    function pfzNkdCell(h, hc) {
+        var v = PF.curNkdOf ? PF.curNkdOf(h.ticker) : null;
+        if (v == null) return '<td class="pfpt-num pfz-nkd">…</td>';
+        var tot = v * (hc.qty || 0);
+        return '<td class="pfpt-num pfz-nkd" title="' + attr('Накоплено по позиции: ' + fmtRub(tot)) + '">' +
+            fmtPrice(v) + '</td>';
+    }
     function pfzRowHtml(x, c) {
         var h = x.h, hc = x.c, isB = h.type === 'bond';
         var share = (c.value > 0 && hc.value > 0) ? hc.value / c.value * 100 : 0;
@@ -1371,6 +1385,7 @@
         var has = hc.invested > 0 && !noQ;
         return '<tr class="pfpt-tr"' + (isB ? '' : ' role="button" onclick="pfOpenTicker(\'' + jsArg(h.ticker) + '\')"') + '>' +
             '<td>' + pfzAsCell(h, hc) + '</td>' +
+            (isB ? pfzNkdCell(h, hc) : '<td class="pfz-nkd"></td>') +
             '<td class="pfpt-num pfpt-val">' + fmtRub(hc.value) + '</td>' +
             '<td class="pfz-shrc">' + pfzShare(share, isB) + '</td>' +
             // рубли дохода НЕЙТРАЛЬНЫЕ (знак в числе) — цвет несёт только чип годовых
@@ -1383,29 +1398,31 @@
         c.hs.forEach(function (x) {
             if (x.h.type === 'bond') bonds.push(x); else stocks.push(x);
         });
-        // Подзаголовок группы — ЧИСТАЯ метка раздела: доли и суммы классов целиком
-        // отданы кольцу «Распределение» в колонке (один факт — одно место). Метка
-        // же теперь и единственный признак класса у строки — значков у тикеров нет,
-        // поэтому в узкой ширине группы НЕ прячем.
-        function grp(name) {
-            return '<tr class="pfz-grp"><td colspan="5"><b>' + name + '</b></td></tr>';
+        // ОБЩЕЙ ШАПКИ «Бумага» БОЛЬШЕ НЕТ (просьба 2026-08-05): у каждого класса
+        // своя строка заголовков, и первая ячейка называет сам класс — «Акции» /
+        // «Облигации». Так подзаголовок раздела и шапка колонок стали одной
+        // строкой вместо двух, а у облигаций появилось место под свою колонку НКД
+        // (у акций её ячейки пустые — вертикаль чисел остаётся общей на всю таблицу).
+        function head(name, withNkd) {
+            return '<tr class="pfz-hd"><th>' + name + '</th>' +
+                '<th class="pfpt-num pfz-nkd"' + (withNkd ? ' title="Накопленный купонный доход на одну бумагу, обновляется каждый день"' : '') + '>' +
+                    (withNkd ? 'НКД' : '') + '</th>' +
+                '<th class="pfpt-num">Стоимость</th><th class="pfpt-num">Доля</th>' +
+                '<th class="pfpt-num pfz-wc">Доход</th>' +
+                // «Годовых» одним словом: единица измерения чипов —
+                // «▲ 28,5%» читается «28,5% годовых»
+                '<th class="pfpt-num" title="Доходность в процентах годовых">Годовых</th></tr>';
         }
         var rows = '';
-        if (stocks.length) { rows += grp('Акции'); rows += stocks.map(function (x) { return pfzRowHtml(x, c); }).join(''); }
-        if (bonds.length) { rows += grp('Облигации'); rows += bonds.map(function (x) { return pfzRowHtml(x, c); }).join(''); }
+        if (stocks.length) { rows += head('Акции', false); rows += stocks.map(function (x) { return pfzRowHtml(x, c); }).join(''); }
+        if (bonds.length) { rows += head('Облигации', true); rows += bonds.map(function (x) { return pfzRowHtml(x, c); }).join(''); }
         var n = c.hs.length, has = c.invested > 0;
         rows += '<tr class="pfz-tot"><td>Итого · ' + n + ' ' + PF.plural(n, 'бумага', 'бумаги', 'бумаг') + '</td>' +
+            '<td class="pfz-nkd"></td>' +
             '<td class="pfpt-num pfpt-val">' + fmtRub(c.value) + '</td><td></td>' +
             '<td class="pfpt-num pfz-wc">' + (has ? (c.pnl >= 0 ? '+' : '−') + fmtRub(Math.abs(c.pnl)) : '—') + '</td>' +
             '<td class="pfz-chipc">' + (has ? pfzChip(c.annual) : '<span class="pfz-nochip">—</span>') + '</td></tr>';
-        return '<div class="pfpt-tablewrap"><table class="pfpt-table pfz-tbl"><thead><tr>' +
-            '<th>Бумага</th>' +
-            '<th class="pfpt-num">Стоимость</th><th class="pfpt-num">Доля</th><th class="pfpt-num pfz-wc">Доход</th>' +
-            // «Годовых» одним словом: двухэтажный заголовок «Доходность/годовых»
-            // ломал ритм шапки, где все прочие колонки — одно слово. Здесь это
-            // ещё и единица измерения чипов: «▲ 28,5%» читается «28,5% годовых».
-            '<th class="pfpt-num" title="Доходность в процентах годовых">Годовых</th>' +
-        '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+        return '<div class="pfpt-tablewrap"><table class="pfpt-table pfz-tbl"><tbody>' + rows + '</tbody></table></div>';
     }
     // ---- плитки колонки (и их близнецы в узкой ленте) ----
     function pfzHeroCard(p, c, dd) {
@@ -1481,6 +1498,7 @@
             '<div class="pfz-when"><span>' + pfzRuDateLong(iso) + '</span><i>' + esc(PF.daysUntilText(ev.date)) + '</i></div></div>';
     }
     var PFZ_FREQ_TX = { day: 'каждый день', week: 'раз в неделю', month: 'раз в месяц' };
+    var PFZ_SNAP_FREQ_ATTR = ' data-snapfreq';
     function pfzSnapCard(p) {
         var last = pfzLastSnap(p);
         var today = PF.todayStr();
@@ -1490,10 +1508,10 @@
         var m = (PF.snaps || {})[p.id] || {};
         var body = last
             ? '<div class="pfz-srow"><span>Последний · ' + lbl + '</span><b data-money>' + fmtRub(last.v) + '</b></div>' +
-              '<div class="pfz-srow"><span>Автозапись</span><b class="q">' + (PFZ_FREQ_TX[PF.snapFreq ? PF.snapFreq() : 'day'] || 'каждый день') + '</b></div>'
+              '<div class="pfz-srow"><span>Автозапись</span><b class="q"' + PFZ_SNAP_FREQ_ATTR + '>' + (PFZ_FREQ_TX[PF.snapFreq ? PF.snapFreq() : 'day'] || 'каждый день') + '</b></div>'
             : m[today] != null
                 ? '<div class="pfz-srow"><span>Первый · сегодня</span><b data-money>' + fmtRub(m[today]) + '</b></div>' +
-                  '<div class="pfz-srow"><span>Автозапись</span><b class="q">' + (PFZ_FREQ_TX[PF.snapFreq ? PF.snapFreq() : 'day'] || 'каждый день') + '</b></div>'
+                  '<div class="pfz-srow"><span>Автозапись</span><b class="q"' + PFZ_SNAP_FREQ_ATTR + '>' + (PFZ_FREQ_TX[PF.snapFreq ? PF.snapFreq() : 'day'] || 'каждый день') + '</b></div>'
                 : '<div class="pfz-quiet">Снимков ещё нет: первый запишется при живых котировках. Календарь уже работает — можно записать задним числом.</div>';
         return '<div class="pfz-tile pfz-snap"><i>Снимки капитала</i>' + body +
             '<button type="button" class="pfz-snapo' + (PF.pfptSnapsOpen[p.id] ? ' on' : '') + '" onclick="pfxPtSnapsToggle(\'' + jsArg(p.id) + '\')">' +
@@ -1566,6 +1584,7 @@
         }
         function row() {
             return '<tr class="pfpt-tr"><td>' + skelHtml(170, 13) + '<br>' + skelHtml(96, 9) + '</td>' +
+                '<td class="pfz-nkd"></td>' +
                 '<td class="pfpt-num">' + skelHtml(64, 11) + '</td>' +
                 '<td class="pfz-shrc">' + skelHtml(52, 11) + '</td><td class="pfpt-num pfz-wc">' + skelHtml(56, 11) + '</td>' +
                 '<td class="pfz-chipc">' + skelHtml(52, 18) + '</td></tr>';
@@ -1574,10 +1593,11 @@
         for (var k = 0; k < n; k++) rows += row();
         return pfzStripHtml(p, c, i, c.hs.length + ' ' + PF.plural(c.hs.length, 'бумага', 'бумаги', 'бумаг') + ' · котировки загружаются…') +
             '<div class="pfz-band on">' + tile() + tile() + tile() + tile() + '</div>' +
-            '<div class="pfpt-tablewrap"><table class="pfpt-table pfz-tbl"><thead><tr>' +
-            '<th>Бумага</th><th class="pfpt-num">Стоимость</th><th class="pfpt-num">Доля</th>' +
+            '<div class="pfpt-tablewrap"><table class="pfpt-table pfz-tbl"><tbody>' +
+            '<tr class="pfz-hd"><th>Бумага</th><th class="pfz-nkd"></th>' +
+            '<th class="pfpt-num">Стоимость</th><th class="pfpt-num">Доля</th>' +
             '<th class="pfpt-num pfz-wc">Доход</th>' +
-            '<th class="pfpt-num" title="Доходность в процентах годовых">Годовых</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+            '<th class="pfpt-num">Годовых</th></tr>' + rows + '</tbody></table></div>';
     }
     // состояние «Пусто»: объяснение и ОДНО действие; плитки — прочерки, не нули
     function pfzEmptyHtml(p, i) {

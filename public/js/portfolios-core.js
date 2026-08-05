@@ -122,9 +122,13 @@
         snapSave();
         return true;
     }
-    function recordSnapshots() {
+    // force=true — ручное действие пользователя (сменил частоту автозаписи): пятиминутный
+    // троттл тут только мешал. Он существует, чтобы не переписывать снимок на каждом
+    // ре-рендере, но осознанный выбор обязан применяться сразу — иначе «поставил раз в
+    // день, а ничего не произошло» (жалоба 2026-08-05).
+    function recordSnapshots(force) {
         if (!PF.quotesTs) return;   // без живых цен снимок был бы ценами покупки
-        if (Date.now() - snapSavedAt < 5 * 60000) return;
+        if (!force && Date.now() - snapSavedAt < 5 * 60000) return;
         snapSavedAt = Date.now();
         var today = todayStr(), changed = false, freq = snapFreq();
         var gate = freq === 'week' ? 7 : freq === 'month' ? 30 : 0;
@@ -366,7 +370,25 @@
             return bondDataCache[full] || bondDataCache[isin] || null;
         } catch (e) { return null; }
     }
+    // НКД МЕНЯЕТСЯ КАЖДЫЙ ДЕНЬ (капает по календарным дням до купона), а кэши у нас
+    // сессионные: bondNkdNow живёт до перезагрузки, bondDataCache — до неё же. Вкладку
+    // держат открытой сутками, и вчерашний НКД тихо оставался на экране. Сторож ниже
+    // сбрасывает оба кэша при смене календарного дня — следующий ensureQuotes
+    // (он ходит по TTL котировок) перезапросит ACCRUEDINT с MOEX.
+    var bondNkdDay = todayStr();
+    function bondNkdDayGuard() {
+        var d = todayStr();
+        if (d === bondNkdDay) return;
+        bondNkdDay = d;
+        Object.keys(bondNkdNow).forEach(function (k) { delete bondNkdNow[k]; });
+        try {
+            if (typeof bondDataCache !== 'undefined' && bondDataCache) {
+                Object.keys(bondDataCache).forEach(function (k) { delete bondDataCache[k]; });
+            }
+        } catch (e) {}
+    }
     function ensureBondNkd(isins) {
+        bondNkdDayGuard();
         if (typeof fetchBondData !== 'function') return;
         isins.forEach(function (x) {
             if (!x || bondNkdNow[x] != null || bondNkdPending[x]) return;
@@ -395,6 +417,7 @@
         return { price: price, nkd: nkd, live: price > 0 };
     }
     function curNkdOf(isin) {
+        bondNkdDayGuard();
         if (bondNkdNow[isin] != null) return bondNkdNow[isin];
         var ce = bondCacheEntry(isin);
         if (ce && ce.nkd != null) return +ce.nkd;
@@ -1449,6 +1472,7 @@
     PF.pfAllBoughtToday = pfAllBoughtToday; PF.quoteMissing = quoteMissing;
     // — котировки —
     PF.quotes = quotes; PF.ensureQuotes = ensureQuotes; PF.liveBond = liveBond; PF.bondFace = bondFace; PF.bondQuotes = bondQuotes;
+    PF.curNkdOf = curNkdOf;   // колонка «НКД» в «Составах»
     PF.bondNkdNow = bondNkdNow; PF.pfQuotesWarming = pfQuotesWarming; PF.pfCardWarming = pfCardWarming; PF.skelHtml = skelHtml; PF.noQuoteCell = noQuoteCell;
     // — точечные обновления живых чисел (роадмап №6) —
     PF.liveBegin = liveBegin; PF.liveEnd = liveEnd; PF.liveSet = liveSet;
