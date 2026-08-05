@@ -89,7 +89,7 @@ function cors(origin) {
     return {
         'Access-Control-Allow-Origin': origin,
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-Broker-Scope, X-Broker-Sandbox',
+        'Access-Control-Allow-Headers': 'X-Broker-Token, Content-Type, X-Broker-Scope, X-Broker-Sandbox',
         'Access-Control-Max-Age': '600',
         'Vary': 'Origin'
     };
@@ -108,7 +108,7 @@ module.exports.handler = async function (event) {
     const origin = hdr(headers, 'Origin');
     const allowed = ALLOWED_ORIGINS.indexOf(origin) >= 0;
 
-    // preflight: браузер шлёт его из-за Authorization и X-Broker-*
+    // preflight: браузер шлёт его из-за наших X-Broker-* заголовков
     if (event && event.httpMethod === 'OPTIONS') {
         if (!allowed) return { statusCode: 403, headers: { 'Cache-Control': 'no-store' }, body: '' };
         return { statusCode: 204, headers: Object.assign({ 'Cache-Control': 'no-store' }, cors(origin)), body: '' };
@@ -127,8 +127,12 @@ module.exports.handler = async function (event) {
     const sandbox = hdr(headers, 'X-Broker-Sandbox') === '1';
     if (def.sandboxOnly && !sandbox) return json({ error: 'sandbox_only' }, 403, origin);
 
-    // токены T-Invest начинаются с «t.» — отсекаем не-токен до отправки брокеру
-    const auth = hdr(headers, 'Authorization');
+    // ТОКЕН ЕДЕТ В X-Broker-Token, А НЕ В Authorization. Яндекс Облако считает
+    // заголовок Authorization своим (IAM-токен вызова функции) и на чужое значение
+    // отвечает собственным 403 «Forbidden: Not authorized», даже не запуская код —
+    // проверено на живой функции 2026-08-05. Фолбэк на Authorization оставлен для
+    // совместимости с маршрутом Cloudflare, где перехвата нет.
+    const auth = hdr(headers, 'X-Broker-Token') || hdr(headers, 'Authorization');
     if (!/^Bearer t\.[A-Za-z0-9_\-]{20,200}$/.test(auth)) return json({ error: 'bad_token_format' }, 401, origin);
 
     let bodyText = event.body || '{}';

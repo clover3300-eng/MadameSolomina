@@ -413,11 +413,18 @@
         return base.replace(/[?#].*$/, '').replace(/\/+$/, '') + '?method=' + encodeURIComponent(method);
     }
     function rawCall(method, body, token, scope, sandbox) {
+        var viaYandex = !!String(window.BROKER_PROXY_URL || '').trim();
         var headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token,
             'X-Broker-Scope': scope === 'trade' ? 'trade' : 'read'
         };
+        // ТОКЕН НЕ В Authorization, когда идём через Яндекс-функцию: облако считает
+        // этот заголовок своим (IAM-токен вызова) и отвечает собственным 403
+        // «Forbidden: Not authorized», даже не запуская наш код. Свой заголовок
+        // облако пропускает как есть. На маршруте Cloudflare перехвата нет —
+        // там оставляем привычный Authorization.
+        if (viaYandex) headers['X-Broker-Token'] = 'Bearer ' + token;
+        else headers['Authorization'] = 'Bearer ' + token;
         if (sandbox) headers['X-Broker-Sandbox'] = '1';
         return fetch(brokerEndpoint(method), {
             // токен едет заголовком, куки прокси не нужны — и не отправляем их

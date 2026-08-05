@@ -425,8 +425,11 @@ async function handleBrokerProxy(request, url) {
     }
 
     // токены T-Invest начинаются с «t.» — заодно отсекаем случайно
-    // вставленный не-токен до того, как он уедет к брокеру
-    var auth = request.headers.get('Authorization') || '';
+    // вставленный не-токен до того, как он уедет к брокеру.
+    // X-Broker-Token — тот же токен своим заголовком: так его шлёт клиент, когда
+    // ходит через Яндекс-функцию (там Authorization съедает само облако, считая
+    // его IAM-токеном вызова). Принимаем оба, чтобы маршруты были взаимозаменяемы.
+    var auth = request.headers.get('X-Broker-Token') || request.headers.get('Authorization') || '';
     if (!/^Bearer t\.[A-Za-z0-9_\-]{20,200}$/.test(auth)) {
         return brokerJson({ error: 'bad_token_format' }, 401);
     }
