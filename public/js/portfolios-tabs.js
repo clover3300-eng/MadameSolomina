@@ -1342,10 +1342,11 @@
         return '<span class="pfz-shr"><b>' + Math.round(share) + '%</b>' +
             '<u><i style="width:' + clamp(share, 2, 100).toFixed(0) + '%;background:' + (isBond ? '#7B9BBF' : '#D97757') + '"></i></u></span>';
     }
+    // Значка класса у тикера НЕТ (правка 2026-08-05): бумаги и так разложены по
+    // группам «Акции»/«Облигации», а полоска доли несёт классовый цвет — метка
+    // у каждой строки повторяла это в третий раз.
     function pfzAsCell(h) {
-        var isB = h.type === 'bond';
-        return '<div class="pfpt-as"><i class="' + (isB ? 'bond' : 'stock') + '">' + (isB ? 'обл' : 'акц') + '</i>' +
-            '<b>' + esc(h.ticker) + '</b><span>' + esc(PF.assetDisplayName(h)) + '</span></div>';
+        return '<div class="pfpt-as"><b>' + esc(h.ticker) + '</b><span>' + esc(PF.assetDisplayName(h)) + '</span></div>';
     }
     function pfzRowHtml(x, c) {
         var h = x.h, hc = x.c, isB = h.type === 'bond';
@@ -1364,21 +1365,20 @@
         '</tr>';
     }
     function pfzTableHtml(p, c) {
-        var stocks = [], bonds = [], sSum = 0, bSum = 0;
+        var stocks = [], bonds = [];
         c.hs.forEach(function (x) {
-            if (x.h.type === 'bond') { bonds.push(x); bSum += x.c.value; }
-            else { stocks.push(x); sSum += x.c.value; }
+            if (x.h.type === 'bond') bonds.push(x); else stocks.push(x);
         });
-        var bondP = Math.round(clamp(c.bondPct, 0, 100)), stockP = 100 - bondP;
-        // группа: имя слева, СУММА — в колонке «Стоимость» (вертикаль складывается
-        // до итога); в узком режиме группы скрыты целиком (@container)
-        function grp(name, pct, sum) {
-            return '<tr class="pfz-grp"><td colspan="2"><b>' + name + '</b> · ' + pct + '%</td>' +
-                '<td class="pfz-wc"></td><td class="pfz-gsum">' + fmtRub(sum) + '</td><td></td><td class="pfz-wc"></td><td></td></tr>';
+        // Подзаголовок группы — ЧИСТАЯ метка раздела: доли и суммы классов целиком
+        // отданы кольцу «Распределение» в колонке (один факт — одно место). Метка
+        // же теперь и единственный признак класса у строки — значков у тикеров нет,
+        // поэтому в узкой ширине группы НЕ прячем.
+        function grp(name) {
+            return '<tr class="pfz-grp"><td colspan="7"><b>' + name + '</b></td></tr>';
         }
         var rows = '';
-        if (stocks.length) { rows += grp('Акции', bonds.length ? stockP : 100, sSum); rows += stocks.map(function (x) { return pfzRowHtml(x, c); }).join(''); }
-        if (bonds.length) { rows += grp('Облигации', stocks.length ? bondP : 100, bSum); rows += bonds.map(function (x) { return pfzRowHtml(x, c); }).join(''); }
+        if (stocks.length) { rows += grp('Акции'); rows += stocks.map(function (x) { return pfzRowHtml(x, c); }).join(''); }
+        if (bonds.length) { rows += grp('Облигации'); rows += bonds.map(function (x) { return pfzRowHtml(x, c); }).join(''); }
         var n = c.hs.length, has = c.invested > 0;
         rows += '<tr class="pfz-tot"><td>Итого · ' + n + ' ' + PF.plural(n, 'бумага', 'бумаги', 'бумаг') + '</td>' +
             '<td></td><td class="pfz-wc"></td>' +
@@ -1388,7 +1388,10 @@
         return '<div class="pfpt-tablewrap"><table class="pfpt-table pfz-tbl"><thead><tr>' +
             '<th>Бумага</th><th class="pfpt-num">Кол-во</th><th class="pfpt-num pfz-wc">Сейчас</th>' +
             '<th class="pfpt-num">Стоимость</th><th class="pfpt-num">Доля</th><th class="pfpt-num pfz-wc">Доход</th>' +
-            '<th class="pfpt-num">Доходность<span class="pfz-thq">годовых</span></th>' +
+            // «Годовых» одним словом: двухэтажный заголовок «Доходность/годовых»
+            // ломал ритм шапки, где все прочие колонки — одно слово. Здесь это
+            // ещё и единица измерения чипов: «▲ 28,5%» читается «28,5% годовых».
+            '<th class="pfpt-num" title="Доходность в процентах годовых">Годовых</th>' +
         '</tr></thead><tbody>' + rows + '</tbody></table></div>';
     }
     // ---- плитки колонки (и их близнецы в узкой ленте) ----
@@ -1402,6 +1405,34 @@
             '<b data-money>' + fmtRub(c.value) + '</b>' +
             '<span class="pfz-inv">вложено <span data-money>' + fmtRub(c.invested) + '</span></span>' +
             chip + pfzHeroCurve(p, c) + '</div>';
+    }
+    // Кольцо распределения: ДВА сегмента, суммы классов рядом легендой. Сюда
+    // переехали суммы, что стояли в подзаголовках групп таблицы: у распределения
+    // теперь одно место в виджете, и колонка получает якорь-картинку.
+    function pfzAllocCard(p, c) {
+        var sSum = 0, bSum = 0;
+        c.hs.forEach(function (x) { if (x.h.type === 'bond') bSum += x.c.value; else sSum += x.c.value; });
+        var tot = sSum + bSum;
+        if (!(tot > 0)) return '';
+        var stockP = Math.round(clamp(sSum / tot * 100, 0, 100)), bondP = 100 - stockP;
+        var CIRC = 2 * Math.PI * 26, sLen = CIRC * (sSum / tot);
+        var ring = '<svg class="pfz-donut" viewBox="0 0 68 68" aria-hidden="true">' +
+            '<circle class="trk" cx="34" cy="34" r="26" fill="none" stroke-width="9"/>' +
+            (sSum > 0 ? '<circle cx="34" cy="34" r="26" fill="none" stroke="#D97757" stroke-width="9" transform="rotate(-90 34 34)" ' +
+                'stroke-dasharray="' + sLen.toFixed(1) + ' ' + (CIRC - sLen).toFixed(1) + '"/>' : '') +
+            (bSum > 0 ? '<circle cx="34" cy="34" r="26" fill="none" stroke="#7B9BBF" stroke-width="9" transform="rotate(-90 34 34)" ' +
+                'stroke-dasharray="' + (CIRC - sLen).toFixed(1) + ' ' + sLen.toFixed(1) + '" stroke-dashoffset="' + (-sLen).toFixed(1) + '"/>' : '') +
+        '</svg>';
+        function leg(col, name, pct, sum) {
+            return '<div class="pfz-leg"><span class="d" style="background:' + col + '"></span>' +
+                '<span class="t"><b>' + name + '</b><u data-money>' + fmtRub(sum) + '</u></span>' +
+                '<i>' + pct + '%</i></div>';
+        }
+        return '<div class="pfz-tile pfz-alloc"><i>Распределение</i>' +
+            '<div class="pfz-allocb">' + ring + '<div class="pfz-legs">' +
+                (sSum > 0 ? leg('#D97757', 'Акции', stockP, sSum) : '') +
+                (bSum > 0 ? leg('#7B9BBF', 'Облигации', bondP, bSum) : '') +
+            '</div></div></div>';
     }
     function pfzMoveCard(p, c) {
         var mv = pfzMoves(p, c);
@@ -1531,7 +1562,7 @@
             '<div class="pfpt-tablewrap"><table class="pfpt-table pfz-tbl"><thead><tr>' +
             '<th>Бумага</th><th class="pfpt-num">Кол-во</th><th class="pfpt-num pfz-wc">Сейчас</th>' +
             '<th class="pfpt-num">Стоимость</th><th class="pfpt-num">Доля</th><th class="pfpt-num pfz-wc">Доход</th>' +
-            '<th class="pfpt-num">Доходность<span class="pfz-thq">годовых</span></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+            '<th class="pfpt-num" title="Доходность в процентах годовых">Годовых</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
     }
     // состояние «Пусто»: объяснение и ОДНО действие; плитки — прочерки, не нули
     function pfzEmptyHtml(p, i) {
@@ -1594,7 +1625,7 @@
                 pfzStripHtml(p, c, i) + snapsBlock + alert +
                 '<div class="pfz-body">' +
                     '<div class="pfz-main">' + pfzBandHtml(p, c, dd) + pfzTableHtml(p, c) + '</div>' +
-                    '<aside class="pfz-side">' + pfzHeroCard(p, c, dd) + pfzMoveCard(p, c) + pfzPayCard(p) + pfzSnapCard(p) + '</aside>' +
+                    '<aside class="pfz-side">' + pfzHeroCard(p, c, dd) + pfzAllocCard(p, c) + pfzMoveCard(p, c) + pfzPayCard(p) + pfzSnapCard(p) + '</aside>' +
                 '</div>');
         }).join('') + '</div>';
     }

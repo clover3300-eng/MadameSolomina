@@ -613,17 +613,28 @@ body.dark-mode .pfz-meta.stale { color: #d79b2e; }
 .pfz-strip .pfc-act svg { width: 16px; height: 16px; }
 .pfpt-rebal { flex: 0 0 auto !important; padding: 10px 16px !important; }
 
-/* две колонки: реестр + плитки */
-.pfz-body { display: flex; align-items: flex-start; gap: 22px; }
+/* две колонки: реестр + приборная панель */
+.pfz-body { display: flex; align-items: flex-start; gap: 24px; }
 .pfz-main { flex: 1; min-width: 0; }
-.pfz-side { flex: 0 0 244px; display: flex; flex-direction: column; gap: 10px; }
-
-/* плитка колонки/ленты: подпись, крупное число, тихие строки — один скелет у всех */
-.pfz-tile {
-    border: 1px solid rgba(15, 23, 42, 0.08); border-radius: 16px; padding: 12px 14px;
-    background: rgba(248, 250, 252, 0.6); min-width: 0;
+/* Правка 2026-08-05 «колонка справа теряется»: четыре почти прозрачные плитки на
+   белой карточке читались случайной россыпью. Теперь это ОДНА панель с секциями
+   через волосяные линии — цельный прибор рядом с реестром, а не стопка карточек
+   (правило «карточки только там, где высота несёт иерархию»). */
+.pfz-side {
+    flex: 0 0 268px; display: flex; flex-direction: column;
+    border: 1px solid rgba(15, 23, 42, 0.1); border-radius: 18px; overflow: hidden;
+    background: rgba(255, 255, 255, 0.78);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 18px 40px -30px rgba(24, 38, 60, 0.5);
 }
-body.dark-mode .pfz-tile { border-color: rgba(255, 255, 255, 0.09); background: rgba(255, 255, 255, 0.03); }
+body.dark-mode .pfz-side {
+    border-color: rgba(255, 255, 255, 0.11); background: rgba(255, 255, 255, 0.045);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 18px 40px -30px rgba(0, 0, 0, 0.7);
+}
+
+/* секция панели (в ленте — самостоятельная плитка, стили ниже) */
+.pfz-tile { padding: 13px 16px; border-bottom: 1px solid rgba(15, 23, 42, 0.07); min-width: 0; }
+.pfz-side .pfz-tile:last-child { border-bottom: 0; }
+body.dark-mode .pfz-tile { border-bottom-color: rgba(255, 255, 255, 0.07); }
 .pfz-tile > i {
     font-style: normal; display: block; margin-bottom: 6px;
     font-family: 'Inter', sans-serif; font-size: 9.5px; font-weight: 800;
@@ -664,6 +675,28 @@ body.dark-mode .pfz-herosvg path { fill: rgba(232, 238, 247, 0.07); }
 }
 body.dark-mode .pfz-nochart { border-color: rgba(255, 255, 255, 0.14); color: #64748b; }
 .pfz-quiet { font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 600; color: #8494a7; line-height: 1.5; white-space: normal; }
+
+/* «Распределение»: кольцо и легенда с суммами классов (сюда переехали суммы из
+   подзаголовков групп таблицы). Толстое кольцо 9px — картинка-якорь колонки. */
+.pfz-allocb { display: flex; align-items: center; gap: 14px; }
+.pfz-donut { flex: none; width: 68px; height: 68px; }
+.pfz-donut .trk { stroke: rgba(24, 38, 60, 0.08); }
+body.dark-mode .pfz-donut .trk { stroke: rgba(255, 255, 255, 0.09); }
+.pfz-legs { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 9px; }
+.pfz-leg { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.pfz-leg .d { flex: none; width: 8px; height: 8px; border-radius: 3px; }
+.pfz-leg .t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.pfz-leg .t b { font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 700; color: #0f172a; }
+body.dark-mode .pfz-leg .t b { color: #e8eef7; }
+.pfz-leg .t u {
+    text-decoration: none; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 10.5px; font-weight: 600; color: #8494a7; font-variant-numeric: tabular-nums;
+}
+.pfz-leg i {
+    font-style: normal; flex: none; font-family: var(--font-num, 'JetBrains Mono', monospace);
+    font-size: 13px; font-weight: 700; color: #334155; font-variant-numeric: tabular-nums;
+}
+body.dark-mode .pfz-leg i { color: #cbd6e4; }
 
 /* «Движение дня»: лидер — плашка с левым кантом, БЕЗ полосок-прогрессов */
 .pfz-mvlead {
@@ -732,7 +765,12 @@ body.dark-mode .pfz-snapo.on { color: #f4f8fd; background: color-mix(in srgb, va
    скелетона/пустоты — им лента нужна в любой ширине) */
 .pfz-band { display: none; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 0 0 14px; }
 .pfz-band.on { display: grid; }
-.pfz-band .pfz-tile { padding: 10px 12px; }
+/* в ленте плитка снова самостоятельна: панели-обёртки здесь нет */
+.pfz-band .pfz-tile {
+    padding: 10px 12px; border: 1px solid rgba(15, 23, 42, 0.09); border-radius: 14px;
+    background: rgba(248, 250, 252, 0.7);
+}
+body.dark-mode .pfz-band .pfz-tile { border-color: rgba(255, 255, 255, 0.1); background: rgba(255, 255, 255, 0.04); }
 .pfz-band .pfz-tile > i { margin-bottom: 3px; }
 .pfz-band .pfz-tile > b { font-size: 15px; }
 .pfz-band .bv { display: block; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 13px; font-weight: 700; color: #0f172a; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; }
@@ -942,11 +980,6 @@ body.dark-mode .pfpt-tr[role="button"]:hover td { background: rgba(255, 255, 255
 .pfpt-as { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .pfpt-as b { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: #0f172a; white-space: nowrap; }
 body.dark-mode .pfpt-as b { color: #f4f8fd; }
-.pfpt-as i {
-    font-style: normal; font-size: 9px; font-weight: 700; text-transform: uppercase; color: #94a3b8;
-    background: rgba(24, 38, 60, 0.06); padding: 1px 5px; border-radius: 5px; flex-shrink: 0;
-}
-body.dark-mode .pfpt-as i { background: rgba(255, 255, 255, 0.08); }
 .pfpt-as span { min-width: 0; font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600; color: #8494a7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 td.pfpt-num, .pfpt-table td.pfpt-num { text-align: right; font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 13px; font-weight: 600; color: #334155; white-space: nowrap; }
 body.dark-mode td.pfpt-num { color: #cbd6e4; }
@@ -968,12 +1001,7 @@ body.dark-mode .pfz-shr b { color: #cbd6e4; }
 body.dark-mode .pfz-shr u { background: rgba(255, 255, 255, 0.1); }
 .pfz-shr u i { display: block; height: 100%; border-radius: 999px; float: right; }
 
-/* «Доходность, годовых» — чип, единственный цветовой акцент строки */
-.pfpt-table th .pfz-thq {
-    display: block; font-size: 8.5px; font-weight: 700; letter-spacing: 0.06em;
-    color: #a5b1c2; text-transform: lowercase; margin-top: 1px;
-}
-body.dark-mode .pfpt-table th .pfz-thq { color: #64748b; }
+/* «Годовых» — чип, единственный цветовой акцент строки */
 td.pfz-chipc { text-align: right; white-space: nowrap; }
 .pfz-chip {
     display: inline-flex; align-items: center; gap: 4px; border-radius: 999px; padding: 4px 9px;
@@ -993,20 +1021,16 @@ body.dark-mode .pfz-chip.neg { background: rgba(251, 146, 60, 0.14); color: #fb9
 .pfz-tbl th:last-child, .pfz-tbl .pfpt-tr td:last-child, .pfz-tbl .pfz-tot td:last-child { padding-right: 0; }
 .pfz-tbl .pfpt-as span { max-width: 150px; }
 
-/* группа: имя слева, сумма — в колонке «Стоимость»; итог с чипом по портфелю */
+/* группа — метка раздела и единственный признак класса у строки (значков у
+   тикеров нет): держим её во ВСЕХ ширинах, суммы и доли ушли в кольцо */
 .pfz-grp td {
-    padding: 13px 15px 5px 0; border-bottom: 0; text-align: left;
+    padding: 15px 0 6px; border-bottom: 0; text-align: left;
     font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800;
     letter-spacing: 0.09em; text-transform: uppercase; color: #8494a7;
 }
-.pfz-grp td b { color: #0f172a; }
+.pfz-grp td b { color: #0f172a; font-weight: 800; }
 body.dark-mode .pfz-grp td b { color: #f4f8fd; }
-.pfz-grp td.pfz-gsum {
-    text-align: right; padding-right: 15px;
-    font-family: var(--font-num, 'JetBrains Mono', monospace); font-size: 11.5px; font-weight: 700;
-    color: #64748b; letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums;
-}
-body.dark-mode .pfz-grp td.pfz-gsum { color: #9fb0c4; }
+.pfz-tbl tbody tr:first-child.pfz-grp td { padding-top: 8px; }
 .pfz-tot td {
     border-top: 1.5px solid rgba(24, 38, 60, 0.16); border-bottom: 0 !important; padding-top: 12px;
 }
@@ -1018,10 +1042,10 @@ body.dark-mode .pfz-tot td { border-top-color: rgba(255, 255, 255, 0.18); }
 
 /* контейнерный порог: узкий блок складывает колонку в ленту, таблица теряет
    «Сейчас», «Доход» и группы (мокап v3, экран 02); 2×2 — в самой узкой ширине */
-@container pfz (max-width: 1020px) {
+@container pfz (max-width: 1040px) {
     .pfz-side { display: none; }
     .pfz-band { display: grid; }
-    .pfz-tbl .pfz-wc, .pfz-tbl .pfz-grp { display: none; }
+    .pfz-tbl .pfz-wc { display: none; }
 }
 @container pfz (max-width: 559px) {
     .pfz-band { grid-template-columns: 1fr 1fr; }
