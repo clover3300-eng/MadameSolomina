@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Главная · «Монохром», раунд 9 — регистрация и вход: формы в створке, состояния, меню вошедшего</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+       --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+       --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding:44px 0 90px;-webkit-font-smoothing:antialiased}
+.page{width:1480px;max-width:100%;margin:0 auto;padding:0 20px}
+
+/* ---------------- документ ---------------- */
+.doc-h{margin-bottom:34px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-acc);margin-bottom:9px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
+.doc-h p{margin-top:12px;font-size:15px;line-height:1.6;color:var(--doc-mut);max-width:900px}
+.verdict{margin-top:20px;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid var(--doc-acc);border-radius:14px;padding:16px 20px;max-width:980px}
+.verdict p{margin:0;font-size:14.5px;line-height:1.62;color:var(--doc-quote)}
+.verdict p+p{margin-top:10px}
+.verdict b{font-weight:700;color:var(--doc-ink)}
+
+.mk{margin-top:52px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.62;max-width:980px;margin-bottom:18px}
+.notes{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 26px;max-width:1360px}
+.note{display:flex;gap:9px;font-size:13px;line-height:1.5;color:var(--doc-quote)}
+.note i{flex:none;width:18px;height:18px;border-radius:50%;background:var(--doc-ink);color:var(--doc-bg);font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.scroller{overflow-x:auto;padding:4px 0 44px;margin-bottom:-32px}
+@media (max-width:1000px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} }
+
+.map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th{text-align:left;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);padding:10px 14px;border-bottom:1px solid var(--doc-line)}
+.map td{padding:9px 14px;border-bottom:1px solid var(--doc-line);color:var(--doc-quote);line-height:1.5;vertical-align:top}
+.map tr:last-child td{border-bottom:0}
+
+/* ======================================================================
+   ЭКРАН: тот же диптих раунда 8; левая створка умеет манифест, форму
+   регистрации, форму входа. Темы .pg--light / .pg--dark.
+   ====================================================================== */
+.pg{position:relative;width:1440px;height:880px;flex:none;font-family:var(--fU);overflow:hidden;
+    border-radius:16px;border:1px solid rgba(15,23,42,.09);
+    box-shadow:0 2px 4px rgba(15,23,42,.05),0 34px 70px -34px rgba(24,38,60,.4)}
+.pg--light{color:#101828;background:
+  radial-gradient(760px 520px at -6% 4%, rgba(196,226,224,.4) 0%, rgba(196,226,224,0) 60%),
+  radial-gradient(880px 620px at 96% 88%, rgba(214,214,240,.5) 0%, rgba(214,214,240,0) 64%),
+  linear-gradient(168deg,#F7F9FA 0%,#F1F4F8 45%,#F5F7F9 100%)}
+.pg--dark{color:#E9EDF6;background:
+  radial-gradient(760px 520px at 6% 8%, rgba(31,58,68,.85) 0%, rgba(31,58,68,0) 60%),
+  radial-gradient(820px 560px at 78% 4%, rgba(43,44,80,.8) 0%, rgba(43,44,80,0) 62%),
+  radial-gradient(940px 620px at 96% 88%, rgba(26,52,66,.7) 0%, rgba(26,52,66,0) 66%),
+  linear-gradient(160deg,#0D141B 0%,#111520 50%,#0C141A 100%)}
+.num{font-family:var(--fN);font-variant-numeric:tabular-nums}
+
+/* ---------------- шапка ---------------- */
+.hd{height:84px;display:flex;align-items:center;gap:14px;padding:0 64px;position:relative;z-index:6}
+.hd::after{content:"";position:absolute;left:64px;right:64px;bottom:0;height:1px;background:rgba(16,24,40,.07)}
+.pg--dark .hd::after{background:rgba(233,237,246,.09)}
+.hd-mark{width:38px;height:38px;border-radius:11px;background:#161B27;color:#fff;display:grid;place-items:center;
+         font-family:var(--fT);font-size:20px;font-weight:700}
+.pg--dark .hd-mark{background:#fff;color:#161B27}
+.hd-name{font-size:16.5px;margin-right:auto}
+.hd-name .w3{font-weight:300}
+.hd-name .w8{font-weight:800}
+.hd-nav{display:flex;align-items:center;gap:30px;margin-right:34px}
+.hd-nav a{font-size:13.5px;font-weight:600;color:#5C6A7D;text-decoration:none}
+.pg--dark .hd-nav a{color:#9AA2B5}
+.hd-login{display:inline-flex;align-items:center;height:38px;padding:0 20px;border-radius:999px;
+          border:1px solid rgba(16,24,40,.14);background:rgba(255,255,255,.7);font-size:13.5px;font-weight:700;color:#33415C}
+.pg--dark .hd-login{border-color:rgba(233,237,246,.16);background:rgba(255,255,255,.06);color:#E9EDF6}
+.hd-login.on{border-color:#4453EF;color:#3542D8;box-shadow:0 0 0 3px rgba(68,83,239,.14)}
+.pg--dark .hd-login.on{color:#AEB7FF}
+.hd-ava{position:relative;width:38px;height:38px;border-radius:50%;background:linear-gradient(180deg,#5B67F2,#4453EF);
+        color:#fff;display:grid;place-items:center;font-family:var(--fT);font-size:17px}
+.hd-ava em{position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;background:#12A35C;
+           border:2px solid #F5F7F9;font-style:normal}
+.pg--dark .hd-ava em{border-color:#101520}
+
+/* ---------------- диптих ---------------- */
+.hero{display:grid;grid-template-columns:1fr 1fr;height:742px}
+.hl{padding:0 60px 0 64px;display:flex;flex-direction:column;justify-content:center}
+.hr{padding:0 64px 0 40px;display:flex;flex-direction:column}
+.hr-h{display:flex;align-items:baseline;gap:12px;margin-top:34px}
+.hr-nm{font-family:var(--fT);font-size:19px}
+.hr-h .sp{flex:1}
+.hr-idx{font-family:var(--fN);font-size:13px;font-weight:600;color:#5C6A7D}
+.pg--dark .hr-idx{color:#9AA2B5}
+.hr-idx b{color:#101828;font-weight:700}
+.pg--dark .hr-idx b{color:#E9EDF6}
+.hr-idx .up{color:#0E7A45;font-weight:700}
+.pg--dark .hr-idx .up{color:#5FC492}
+.hr-body{position:relative;flex:1;margin-top:20px}
+.btm{position:absolute;left:64px;right:64px;bottom:0;height:54px;display:flex;align-items:center;gap:16px;
+     font-size:12px;color:#8D9AAD;border-top:1px solid rgba(16,24,40,.07)}
+.pg--dark .btm{color:#68718A;border-top-color:rgba(233,237,246,.09)}
+.btm .sp{flex:1}
+.btm .num{font-size:11.5px}
+
+/* ---------------- формы в створке ---------------- */
+.fm{max-width:496px}
+.fm-back{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#8D9AAD;margin-bottom:26px}
+.pg--dark .fm-back{color:#68718A}
+.fm-back svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.fm-title{font-family:var(--fT);font-weight:400;font-size:44px;line-height:1.1;letter-spacing:-.012em}
+.fm-sub{margin-top:12px;font-size:14.5px;line-height:1.6;color:#5C6A7D}
+.pg--dark .fm-sub{color:#9AA2B5}
+.fm-fields{margin-top:30px;display:flex;flex-direction:column;gap:16px}
+.fm-lb{display:flex;align-items:baseline;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#8D9AAD;margin-bottom:7px}
+.pg--dark .fm-lb{color:#68718A}
+.fm-lb .sp{flex:1}
+.fm-lb a{font-size:11px;font-weight:700;letter-spacing:0;text-transform:none;color:#4453EF;text-decoration:none}
+.pg--dark .fm-lb a{color:#AEB7FF}
+.fm-inp{position:relative;display:flex;align-items:center;height:54px;border-radius:16px;background:#fff;
+        border:1px solid rgba(16,24,40,.12);padding:0 46px 0 20px;
+        box-shadow:0 12px 28px -24px rgba(24,38,60,.45)}
+.pg--dark .fm-inp{background:rgba(255,255,255,.06);border-color:rgba(233,237,246,.14);box-shadow:none}
+.fm-inp i{font-style:normal;font-family:var(--fN);font-size:13.5px;color:#8D9AAD;word-spacing:-3px}
+.pg--dark .fm-inp i{color:#68718A}
+.fm-inp i.filled{color:#101828;font-weight:600}
+.pg--dark .fm-inp i.filled{color:#E9EDF6}
+.fm-inp svg{position:absolute;right:17px;width:16px;height:16px;fill:none;stroke:#8D9AAD;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.pg--dark .fm-inp svg{stroke:#68718A}
+.fm-inp.focus{background:#fff;border-color:#4453EF;box-shadow:0 0 0 3px rgba(68,83,239,.16)}
+.pg--dark .fm-inp.focus{background:rgba(255,255,255,.09)}
+.fm-inp.err{border-color:#D8452B;background:rgba(216,69,43,.045)}
+.fm-msg{font-size:12.5px;font-weight:600;color:#C43A20;margin-top:-6px}
+.fm-btn{margin-top:8px;height:58px;border-radius:16px;display:flex;align-items:center;justify-content:center;gap:10px;
+        background:linear-gradient(180deg,#5B67F2,#4453EF);color:#fff;font-size:15.5px;font-weight:700;
+        box-shadow:0 18px 38px -16px rgba(68,83,239,.55)}
+.fm-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.fm-btn.done{background:linear-gradient(180deg,#27B274,#1F9D63);box-shadow:0 18px 38px -16px rgba(31,157,99,.5)}
+.fm-ok{margin-top:12px;font-size:13px;color:#5C6A7D;text-align:center}
+.pg--dark .fm-ok{color:#9AA2B5}
+.fm-or{display:flex;align-items:center;gap:14px;margin:18px 0;color:#9BA6B6;font-size:11px;font-weight:700;
+       letter-spacing:.14em;text-transform:uppercase}
+.fm-or::before,.fm-or::after{content:"";flex:1;height:1px;background:rgba(16,24,40,.09)}
+.pg--dark .fm-or{color:#68718A}
+.pg--dark .fm-or::before,.pg--dark .fm-or::after{background:rgba(233,237,246,.1)}
+.fm-tg{display:flex;align-items:center;justify-content:center;gap:10px;height:56px;border-radius:16px;background:#fff;
+       border:1px solid rgba(16,24,40,.12);font-size:14.5px;font-weight:700;color:#101828;
+       box-shadow:0 12px 28px -24px rgba(24,38,60,.45)}
+.pg--dark .fm-tg{background:rgba(255,255,255,.06);border-color:rgba(233,237,246,.14);color:#E9EDF6;box-shadow:none}
+.fm-tg svg{width:19px;height:19px}
+.fm-swap{margin-top:18px;font-size:13px;color:#5C6A7D;text-align:center}
+.pg--dark .fm-swap{color:#9AA2B5}
+.fm-swap b{color:#4453EF;font-weight:700}
+.pg--dark .fm-swap b{color:#AEB7FF}
+.fm-policy{margin-top:12px;font-size:11.5px;color:#9BA6B6;text-align:center}
+.pg--dark .fm-policy{color:#68718A}
+
+/* ---------------- плитки ---------------- */
+.tl{position:absolute;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;
+    border-radius:14px;padding:14px 16px}
+.tl .tk{font-family:var(--fN);font-size:14px;font-weight:700;letter-spacing:.03em}
+.tl .co{font-size:11px;font-weight:600;opacity:.72;margin-top:1px}
+.tl .pc{font-family:var(--fN);font-size:12.5px;font-weight:600;margin-top:5px}
+.tl.big .tk{font-size:16px}
+.tl.big .pc{font-size:14px}
+.tl.sm{padding:10px 12px;border-radius:10px}
+.tl.sm .tk{font-size:12px}
+.tl.sm .pc{font-size:10.5px;margin-top:2px}
+
+/* ---------------- меню вошедшего ---------------- */
+.pop{position:absolute;top:74px;right:64px;width:300px;z-index:7;border-radius:18px;background:#fff;
+     border:1px solid rgba(16,24,40,.09);box-shadow:0 30px 70px -30px rgba(24,38,60,.5);padding:8px}
+.pop-head{display:flex;align-items:center;gap:12px;padding:12px 12px 12px}
+.pop-ava{width:42px;height:42px;border-radius:50%;background:linear-gradient(180deg,#5B67F2,#4453EF);color:#fff;
+         display:grid;place-items:center;font-family:var(--fT);font-size:19px;flex:none}
+.pop-nm{font-size:14.5px;font-weight:700;color:#101828}
+.pop-ml{font-family:var(--fN);font-size:11px;color:#8D9AAD;margin-top:2px;display:flex;align-items:center;gap:6px}
+.pop-ml em{font-style:normal;width:6px;height:6px;border-radius:50%;background:#12A35C}
+.pop-hr{height:1px;background:rgba(16,24,40,.07);margin:4px 10px}
+.pop-it{display:flex;align-items:center;gap:11px;height:42px;padding:0 12px;border-radius:12px;
+        font-size:13.5px;font-weight:600;color:#33415C}
+.pop-it svg{width:16px;height:16px;fill:none;stroke:#8D9AAD;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.pop-it.on{background:#F1F3F9;color:#101828}
+.pop-it.quit{color:#B23B24}
+.pop-it.quit svg{stroke:#C86A57}
+
+/* фрагменты состояний */
+.frag{flex:none;border-radius:14px;border:1px solid rgba(15,23,42,.09);padding:34px 38px;width:560px;
+      background:linear-gradient(168deg,#F7F9FA,#F3F5F9);box-shadow:0 18px 42px -30px rgba(24,38,60,.4)}
+.frag .fm{max-width:none}
+.frag-lb{font-size:12.5px;font-weight:700;color:var(--doc-mut);margin-bottom:12px}
+.stage{display:flex;gap:24px;width:max-content}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="doc-h">
+    <div class="doc-kicker">Главная · «Монохром» · раунд 9</div>
+    <h1>Регистрация и вход: формы живут в створке, карта остаётся</h1>
+    <p>Никаких модальных окон: по «Начать» и по «Войти» левая створка перелистывается в форму, правая
+       створка с картой не двигается — атмосфера первого экрана сохраняется в каждом состоянии.
+       Ниже оба маршрута, состояния полей, меню вошедшего и тёмная пара.</p>
+    <div class="verdict">
+      <p><b>Маршруты.</b> Гость с обложки: ввёл почту, нажал «Начать» — почта переезжает в раскрывшуюся
+         форму регистрации, осталось имя и пароль. Гость со счётом: «Войти» в шапке — форма входа
+         с паролем и восстановлением. Вошедший: вместо «Войти» аватар с зелёной точкой синхронизации,
+         клик открывает меню кабинета. Переключение между формами — строкой под кнопкой, без табов.</p>
+      <p><b>Ничего не выдумано в логике:</b> это те же боевые id и ветки homeRegForm (имя показывается только
+         в регистрации, «Забыли пароль?» только во входе, зелёная кнопка «Проверьте почту» — боевой
+         is-done), пересобранные в язык раунда 8.</p>
+    </div>
+  </header>
+
+  <!-- ================= 01 ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">01</span><h2>Регистрация: после «Начать»</h2><span class="mk-tag">Маршрут</span></div>
+    <p class="mk-sub">Манифест уступает место форме: серифный заголовок сжимается до «Создайте аккаунт»,
+       почта уже заполнена с обложки, фокус сразу в имени. Сверху тихий «‹ Назад» к манифесту.
+       Карта справа не шелохнулась.</p>
+    <div class="scroller"><div id="mk1"></div></div>
+    <div class="notes">
+      <div class="note"><i>1</i><span>Почта с обложки переезжает заполненной чернильным моно — человек не вводит её дважды.</span></div>
+      <div class="note"><i>2</i><span>Фокус в поле «Имя» с индиго-кольцом — то же правило фокуса, что во всём проекте.</span></div>
+      <div class="note"><i>3</i><span>Согласие с условиями — тихой строкой под Telegram, как в раунде 7; «Уже есть аккаунт? Войти» переключает форму.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 02 ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">02</span><h2>Вход: по «Войти» из шапки</h2><span class="mk-tag">Маршрут</span></div>
+    <p class="mk-sub">Кнопка «Войти» в шапке подсвечена активным состоянием, форма короче: почта, пароль
+       с «Забыли пароль?» в строке подписи, кнопка и Telegram. Перелистывание створки то же.</p>
+    <div class="scroller"><div id="mk2"></div></div>
+    <div class="notes">
+      <div class="note"><i>1</i><span>«Забыли пароль?» стоит в строке подписи поля, а не под формой — виден в момент, когда вспоминаешь пароль.</span></div>
+      <div class="note"><i>2</i><span>Восстановление шлёт ссылку на почту — боевая ветка homeForgotPassword без изменений.</span></div>
+      <div class="note"><i>3</i><span>«Нет аккаунта? Создать» возвращает в регистрацию; обе формы — один homeRegForm с переключением веток, как в бою.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 03 ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">03</span><h2>Состояния полей</h2><span class="mk-tag mute">Состояние</span></div>
+    <p class="mk-sub">Три момента: фокус с индиго-кольцом, ошибка входа строкой под полем (краснеет только
+       поле, не форма), и «Проверьте почту» — зелёная кнопка боевого is-done со строкой, что делать дальше.</p>
+    <div class="scroller"><div class="stage" id="mk3"></div></div>
+  </section>
+
+  <!-- ================= 04 ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">04</span><h2>Вошедший: меню под аватаром</h2><span class="mk-tag mute">Состояние</span></div>
+    <p class="mk-sub">Клик по аватару открывает меню кабинета: имя и почта с точкой синхронизации, «В кабинет»,
+       «Новый расчёт», «Настройки», выход. Это язык поповеров рабочих вкладок, ничего нового.</p>
+    <div class="scroller"><div id="mk4"></div></div>
+    <div class="notes">
+      <div class="note"><i>1</i><span>Зелёная точка на аватаре и в меню — реальное состояние облачной синхронизации, как в боевом profile-menu.</span></div>
+      <div class="note"><i>2</i><span>«В кабинет» подсвечен как главный пункт; «Выйти» — единственный тёплый цвет меню.</span></div>
+      <div class="note"><i>3</i><span>Меню закрывается кликом мимо или Esc; тема остаётся в углу за #themeFab, в меню её нет.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 05 ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">05</span><h2>Тёмная пара: вход</h2><span class="mk-tag mute">Состояние</span></div>
+    <p class="mk-sub">Форма входа в тёмной теме: поля — тёмное стекло с волосяной кромкой, индиго-кнопка
+       та же, ссылки — светлый индиго тёмной темы. Карта как в раунде 8.</p>
+    <div class="scroller"><div id="mk5"></div></div>
+  </section>
+
+  <!-- ================= карта кода ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">06</span><h2>Что где живёт в коде</h2></div>
+    <table class="map">
+      <tr><th>Часть</th><th>Файл</th><th>Правка</th></tr>
+      <tr><td>Перелистывание створки</td><td>home-register.js, home-register.css</td><td>homeAuthMode('register'|'login') переключает вид левой створки; манифест и форма — два блока, смена с лёгким fade/slide 200мс под prefers-reduced-motion.</td></tr>
+      <tr><td>Форма</td><td>index.html</td><td>Все боевые id живы: homeRegForm, hsNameField (скрыт во входе), hsForgot (виден во входе), homeRegError, hsSubmit, homeTelegramLogin. Табы hsTabRegister/hsTabLogin заменяются строками-переключателями, id сохраняются на ссылках.</td></tr>
+      <tr><td>Почта с обложки</td><td>home-register.js</td><td>Значение поля обложки переносится в form.email при раскрытии, фокус — в имя (регистрация) или пароль (вход).</td></tr>
+      <tr><td>«Войти» в шапке</td><td>home-register.css</td><td>Состояние .on: индиго-кромка и кольцо, пока открыта форма входа.</td></tr>
+      <tr><td>Меню вошедшего</td><td>profile-menu.js</td><td>Аватар шапки — это боевой #profileHub в новой посадке; пункты те же, «Новый расчёт» → calc.</td></tr>
+      <tr><td>Recovery</td><td>home-register.js</td><td>Ссылка из письма открывает форму входа в режиме нового пароля — ветка hsOpenAuth('recovery') не меняется.</td></tr>
+      <tr><td>Версии</td><td>index.html</td><td>Бамп ?v у home-register.css/js.</td></tr>
+    </table>
+  </section>
+
+</div>
+
+<script>
+/* ============================================================
+   Каркас раунда 8: шапка, диптих, плитки. Левая створка — виды.
+   ============================================================ */
+var STOCKS = [
+  ['SBER','Сбербанк',13.6, 1.12], ['LKOH','Лукойл',11.2,-0.83], ['GAZP','Газпром',9.3, 2.06],
+  ['TATN','Татнефть',5.9, 1.35], ['NVTK','Новатэк',5.4,-1.14], ['YDEX','Яндекс',5.0, 2.08],
+  ['GMKN','Норникель',4.4, 2.52], ['ROSN','Роснефть',4.3,-1.24], ['PLZL','Полюс',4.0, 4.97],
+  ['SNGS','Сургутнефтегаз',3.4, 0.42], ['T','Т-Технологии',3.3, 1.88], ['X5','Икс 5',2.9,-0.62]
+];
+var CAP = 3;
+
+function worst(row, side){
+  var max=-Infinity,min=Infinity,sum=0,i;
+  for(i=0;i<row.length;i++){var a=row[i].area;sum+=a;if(a>max)max=a;if(a<min)min=a;}
+  if(sum===0)return Infinity;
+  var s2=sum*sum,side2=side*side;
+  return Math.max((side2*max)/s2, s2/(side2*min));
+}
+function layoutRow(row, free, out){
+  var rowArea=0,i,seg;
+  for(i=0;i<row.length;i++)rowArea+=row[i].area;
+  if(free.w<=free.h){
+    var rh=rowArea/free.w,x=free.x;
+    for(i=0;i<row.length;i++){seg=row[i].area/rh;out.push({tk:row[i].tk,x:x,y:free.y,w:seg,h:rh});x+=seg;}
+    return {x:free.x,y:free.y+rh,w:free.w,h:free.h-rh};
+  }
+  var rw=rowArea/free.h,y=free.y;
+  for(i=0;i<row.length;i++){seg=row[i].area/rw;out.push({tk:row[i].tk,x:free.x,y:y,w:rw,h:seg});y+=seg;}
+  return {x:free.x+rw,y:free.y,w:free.w-rw,h:free.h};
+}
+function squarify(items, rect){
+  var out=[],total=0,i;
+  for(i=0;i<items.length;i++)total+=items[i].value;
+  var scale=(rect.w*rect.h)/total;
+  var scaled=items.map(function(n){return {tk:n.tk,area:n.value*scale};}).sort(function(a,b){return b.area-a.area;});
+  var free={x:rect.x,y:rect.y,w:rect.w,h:rect.h},row=[],idx=0;
+  while(idx<scaled.length){
+    var side=Math.min(free.w,free.h),item=scaled[idx];
+    if(row.length===0||worst(row.concat(item),side)<=worst(row,side)){row.push(item);idx++;}
+    else{free=layoutRow(row,free,out);row=[];}
+  }
+  if(row.length)layoutRow(row,free,out);
+  return out;
+}
+function stockOf(tk){
+  for (var i=0;i<STOCKS.length;i++) if (STOCKS[i][0]===tk) return STOCKS[i];
+  return null;
+}
+function pctText(c){
+  var sign=c>0?'+':(c<0?'−':'');
+  return sign+Math.abs(c).toFixed(2).replace('.',',')+'%';
+}
+function tileStyle(c, k, dark){
+  var dn=c<-0.02, s, ink;
+  if (!dark){
+    if (dn){
+      s='background:rgba(255,255,255,.42);border:'+(1+Math.round(k*2))+'px solid rgba(68,83,239,'+(0.22+k*0.4).toFixed(2)+');';
+      ink='#4A5570';
+    } else {
+      s='background:oklch(0.62 0.16 274 / '+(0.1+k*0.34).toFixed(2)+');border:1px solid rgba(68,83,239,.16);'
+       +'box-shadow:inset 0 1px 0 rgba(255,255,255,.35);';
+      ink=k>0.55?'#1E2547':'#2B3357';
+    }
+  } else {
+    if (dn){
+      s='background:rgba(233,237,246,.04);border:'+(1+Math.round(k*2))+'px solid rgba(142,155,255,'+(0.28+k*0.42).toFixed(2)+');';
+      ink='#98A3C6';
+    } else {
+      s='background:oklch(0.52 0.17 274 / '+(0.2+k*0.4).toFixed(2)+');border:1px solid rgba(142,155,255,.2);'
+       +'box-shadow:inset 0 1px 0 rgba(255,255,255,.1);';
+      ink=k>0.55?'#EAEDFF':'#C9D0F4';
+    }
+  }
+  return {css:s, ink:ink};
+}
+function tilesMono(w, h, dark){
+  var g=7, html='';
+  squarify(STOCKS.map(function(s){return {tk:s[0],value:s[2]};}),{x:0,y:0,w:w,h:h})
+  .forEach(function(t){
+    var st=stockOf(t.tk), c=st[3], k=Math.min(1,Math.abs(c)/CAP);
+    var x=t.x+g,y=t.y+g,tw=Math.max(0,t.w-g*2),th=Math.max(0,t.h-g*2);
+    var style=tileStyle(c,k,dark);
+    var big=(tw>190&&th>150), sm=(tw<118||th<86);
+    var inner='<span class="tk">'+t.tk+'</span>'
+      + (big?'<span class="co">'+st[1]+'</span>':'')
+      + (sm?'':'<span class="pc">'+pctText(c)+'</span>');
+    html+='<div class="tl'+(big?' big':(sm?' sm':''))+'" style="left:'+x.toFixed(1)+'px;top:'+y.toFixed(1)+
+      'px;width:'+tw.toFixed(1)+'px;height:'+th.toFixed(1)+'px;color:'+style.ink+';'+style.css+'">'+inner+'</div>';
+  });
+  return html;
+}
+
+var ARROW='<svg viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg>';
+var BACK='<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>';
+var TG='<svg viewBox="0 0 24 24" fill="#2AABEE"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0Zm5.9 8.2-2 9.3c-.1.7-.5.8-1.1.5l-3-2.2-1.5 1.4c-.2.2-.3.3-.6.3l.2-3.1 5.6-5c.2-.2-.1-.3-.4-.1l-6.9 4.3-3-.9c-.6-.2-.7-.6.2-.9l11.6-4.5c.5-.2 1 .1.9.9Z"/></svg>';
+var IC = {
+  user:'<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  mail:'<svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>',
+  eye:'<svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>',
+  grid:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>',
+  calc:'<svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6"/><path d="M9 12h.01M12 12h.01M15 12h.01M9 16h.01M12 16h.01M15 16h.01"/></svg>',
+  gear:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.55 1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09a1.7 1.7 0 0 0 1.55-1 1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34h.01a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55h.01a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87v.01a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.55 1Z"/></svg>',
+  out:'<svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>'
+};
+
+function headHtml(mode){
+  /* mode: 'guest' | 'login-on' | 'authed' */
+  var right = mode==='authed'
+    ? '<span class="hd-ava">Д<em></em></span>'
+    : '<span class="hd-login'+(mode==='login-on'?' on':'')+'">Войти</span>';
+  return '<div class="hd">'
+    + '<span class="hd-mark">M</span>'
+    + '<span class="hd-name"><span class="w3">Madame </span><span class="w8">Solomi\'na</span></span>'
+    + '<span class="hd-nav"><a href="#">Рынок</a><a href="#">Расчёт</a><a href="#">Академия</a></span>'
+    + right
+    + '</div>';
+}
+
+function field(label, value, opts){
+  opts=opts||{};
+  var lb='<span class="fm-lb">'+label
+    + (opts.forgot?'<span class="sp"></span><a href="#">Забыли пароль?</a>':'')
+    + '</span>';
+  var cls='fm-inp'+(opts.focus?' focus':'')+(opts.err?' err':'');
+  var val=opts.placeholder?'<i>'+value+'</i>':'<i class="filled">'+value+'</i>';
+  return '<div>'+lb+'<span class="'+cls+'">'+val+(opts.icon||'')+'</span></div>'
+    + (opts.msg?'<p class="fm-msg">'+opts.msg+'</p>':'');
+}
+
+/* формы */
+function regFormHtml(o){
+  o=o||{};
+  return '<div class="fm">'
+    + '<span class="fm-back">'+BACK+' Назад</span>'
+    + '<h1 class="fm-title">Создайте аккаунт</h1>'
+    + '<p class="fm-sub">Личный кабинет инвестора Madame Solomi\'na</p>'
+    + '<div class="fm-fields">'
+    +   field('Имя','Как к вам обращаться',{placeholder:true,focus:true,icon:IC.user})
+    +   field('Email','clover3300@gmail.com',{icon:IC.mail})
+    +   field('Пароль','Минимум 6 символов',{placeholder:true,icon:IC.eye})
+    +   '<span class="fm-btn">Создать аккаунт'+ARROW+'</span>'
+    + '</div>'
+    + '<div class="fm-or">или</div>'
+    + '<span class="fm-tg">'+TG+' Войти через Telegram</span>'
+    + '<p class="fm-swap">Уже есть аккаунт? <b>Войти</b></p>'
+    + '<p class="fm-policy">Продолжая, вы принимаете условия сервиса</p>'
+    + '</div>';
+}
+function loginFormHtml(dark){
+  return '<div class="fm">'
+    + '<span class="fm-back">'+BACK+' Назад</span>'
+    + '<h1 class="fm-title">С возвращением</h1>'
+    + '<p class="fm-sub">Портфели и настройки ждут в кабинете</p>'
+    + '<div class="fm-fields">'
+    +   field('Email','clover3300@gmail.com',{icon:IC.mail})
+    +   field('Пароль','••••••••',{focus:true,forgot:true,icon:IC.eye})
+    +   '<span class="fm-btn">Войти'+ARROW+'</span>'
+    + '</div>'
+    + '<div class="fm-or">или</div>'
+    + '<span class="fm-tg">'+TG+' Войти через Telegram</span>'
+    + '<p class="fm-swap">Нет аккаунта? <b>Создать</b></p>'
+    + '</div>';
+}
+
+function screenHtml(opts){
+  opts=opts||{};
+  var dark=!!opts.dark;
+  var left = opts.left || '';
+  return '<div class="pg '+(dark?'pg--dark':'pg--light')+'">'
+    + headHtml(opts.head||'guest')
+    + '<div class="hero">'
+    +   '<div class="hl">'+left+'</div>'
+    +   '<div class="hr">'
+    +     '<div class="hr-h"><span class="hr-nm">Рынок сейчас</span><span class="sp"></span>'
+    +       '<span class="hr-idx">IMOEX <b>2 301,65</b> <span class="up">+1,43%</span></span></div>'
+    +     '<div class="hr-body">'+tilesMono(616, 588, dark)+'</div>'
+    +   '</div>'
+    + '</div>'
+    + '<div class="btm"><span>Данные Московской биржи</span><span class="sp"></span>'
+    +   '<span>залито растёт, контур падает</span>'
+    +   '<span class="num">топ-12 весов · срез 19:25</span></div>'
+    + (opts.pop||'')
+    + '</div>';
+}
+
+/* ---------------- сборка ---------------- */
+document.getElementById('mk1').innerHTML = screenHtml({left: regFormHtml()});
+document.getElementById('mk2').innerHTML = screenHtml({left: loginFormHtml(), head:'login-on'});
+
+/* 03: состояния полей — три фрагмента */
+(function(){
+  var focus='<div class="frag"><div class="frag-lb">Фокус</div><div class="fm"><div class="fm-fields">'
+    + field('Пароль','••••',{focus:true,forgot:true,icon:IC.eye})
+    + '</div></div></div>';
+  var err='<div class="frag"><div class="frag-lb">Ошибка входа</div><div class="fm"><div class="fm-fields">'
+    + field('Email','clover3300@gmail.com',{icon:IC.mail})
+    + field('Пароль','••••••',{err:true,icon:IC.eye,msg:'Неверная почта или пароль'})
+    + '<span class="fm-btn">Войти'+ARROW+'</span>'
+    + '</div></div></div>';
+  var done='<div class="frag"><div class="frag-lb">Письмо отправлено</div><div class="fm"><div class="fm-fields">'
+    + '<span class="fm-btn done">Проверьте почту</span>'
+    + '</div><p class="fm-ok">Ссылка для входа отправлена на clover3300@gmail.com</p></div></div>';
+  document.getElementById('mk3').innerHTML = focus+err+done;
+})();
+
+/* 04: вошедший + меню */
+(function(){
+  var manifest='<h1 style="font-family:var(--fT);font-weight:400;font-size:56px;line-height:1.1;letter-spacing:-.014em">'
+    + 'С возвращением,<br>Денис</h1>'
+    + '<p class="fm-sub" style="font-size:16.5px;margin-top:22px">Доли разъехались на 33 процентных пункта от цели. Сверка займёт пару минут.</p>';
+  var pop='<div class="pop">'
+    + '<div class="pop-head"><span class="pop-ava">Д</span>'
+    +   '<span><span class="pop-nm">Денис</span>'
+    +   '<span class="pop-ml"><em></em>clover3300@gmail.com</span></span></div>'
+    + '<div class="pop-hr"></div>'
+    + '<div class="pop-it on">'+IC.grid+' В кабинет</div>'
+    + '<div class="pop-it">'+IC.calc+' Новый расчёт</div>'
+    + '<div class="pop-it">'+IC.gear+' Настройки</div>'
+    + '<div class="pop-hr"></div>'
+    + '<div class="pop-it quit">'+IC.out+' Выйти</div>'
+    + '</div>';
+  document.getElementById('mk4').innerHTML = screenHtml({left:manifest, head:'authed', pop:pop});
+})();
+
+/* 05: тёмный вход */
+document.getElementById('mk5').innerHTML = screenHtml({left: loginFormHtml(true), head:'login-on', dark:true});
+</script>
+</body>
+</html>
