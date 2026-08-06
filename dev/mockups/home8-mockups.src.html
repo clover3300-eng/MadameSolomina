@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Главная · «Монохром», раунд 8 — первый экран без лендинга: чистовик, глубина карты, тёмная пара</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+       --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+       --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding:44px 0 90px;-webkit-font-smoothing:antialiased}
+.page{width:1480px;max-width:100%;margin:0 auto;padding:0 20px}
+
+/* ---------------- документ ---------------- */
+.doc-h{margin-bottom:34px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-acc);margin-bottom:9px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
+.doc-h p{margin-top:12px;font-size:15px;line-height:1.6;color:var(--doc-mut);max-width:900px}
+.verdict{margin-top:20px;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid var(--doc-acc);border-radius:14px;padding:16px 20px;max-width:980px}
+.verdict p{margin:0;font-size:14.5px;line-height:1.62;color:var(--doc-quote)}
+.verdict p+p{margin-top:10px}
+.verdict b{font-weight:700;color:var(--doc-ink)}
+
+.mk{margin-top:52px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.62;max-width:980px;margin-bottom:18px}
+.notes{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 26px;max-width:1360px}
+.note{display:flex;gap:9px;font-size:13px;line-height:1.5;color:var(--doc-quote)}
+.note i{flex:none;width:18px;height:18px;border-radius:50%;background:var(--doc-ink);color:var(--doc-bg);font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.scroller{overflow-x:auto;padding:4px 0 44px;margin-bottom:-32px}
+.pair{display:flex;gap:26px;align-items:flex-start;width:max-content}
+.pair-c{display:flex;flex-direction:column;gap:10px}
+.pair-lb{font-size:12.5px;font-weight:700;color:var(--doc-mut)}
+@media (max-width:1000px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} }
+
+.map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th{text-align:left;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);padding:10px 14px;border-bottom:1px solid var(--doc-line)}
+.map td{padding:9px 14px;border-bottom:1px solid var(--doc-line);color:var(--doc-quote);line-height:1.5;vertical-align:top}
+.map tr:last-child td{border-bottom:0}
+
+/* ======================================================================
+   ПЕРВЫЙ ЭКРАН. Одна бумага, две створки, единая нижняя строка.
+   Темы: .pg--light (дефолт мокапа) и .pg--dark (боевой тёмный «Витраж»).
+   ====================================================================== */
+.pg{position:relative;width:1440px;height:880px;flex:none;font-family:var(--fU);overflow:hidden;
+    border-radius:16px;border:1px solid rgba(15,23,42,.09);
+    box-shadow:0 2px 4px rgba(15,23,42,.05),0 34px 70px -34px rgba(24,38,60,.4)}
+.pg--light{color:#101828;background:
+  radial-gradient(760px 520px at -6% 4%, rgba(196,226,224,.4) 0%, rgba(196,226,224,0) 60%),
+  radial-gradient(880px 620px at 96% 88%, rgba(214,214,240,.5) 0%, rgba(214,214,240,0) 64%),
+  linear-gradient(168deg,#F7F9FA 0%,#F1F4F8 45%,#F5F7F9 100%)}
+.pg--dark{color:#E9EDF6;background:
+  radial-gradient(760px 520px at 6% 8%, rgba(31,58,68,.85) 0%, rgba(31,58,68,0) 60%),
+  radial-gradient(820px 560px at 78% 4%, rgba(43,44,80,.8) 0%, rgba(43,44,80,0) 62%),
+  radial-gradient(940px 620px at 96% 88%, rgba(26,52,66,.7) 0%, rgba(26,52,66,0) 66%),
+  linear-gradient(160deg,#0D141B 0%,#111520 50%,#0C141A 100%)}
+.num{font-family:var(--fN);font-variant-numeric:tabular-nums}
+
+/* ---------------- шапка: одна полоса, одна ось ---------------- */
+.hd{height:84px;display:flex;align-items:center;gap:14px;padding:0 64px;position:relative;z-index:3}
+.hd::after{content:"";position:absolute;left:64px;right:64px;bottom:0;height:1px;background:rgba(16,24,40,.07)}
+.pg--dark .hd::after{background:rgba(233,237,246,.09)}
+.hd-mark{width:38px;height:38px;border-radius:11px;background:#161B27;color:#fff;display:grid;place-items:center;
+         font-family:var(--fT);font-size:20px;font-weight:700}
+.pg--dark .hd-mark{background:#fff;color:#161B27}
+.hd-name{font-size:16.5px;margin-right:auto}
+.hd-name .w3{font-weight:300}
+.hd-name .w8{font-weight:800}
+.hd-nav{display:flex;align-items:center;gap:30px;margin-right:34px}
+.hd-nav a{font-size:13.5px;font-weight:600;color:#5C6A7D;text-decoration:none}
+.pg--dark .hd-nav a{color:#9AA2B5}
+.hd-login{display:inline-flex;align-items:center;height:38px;padding:0 20px;border-radius:999px;
+          border:1px solid rgba(16,24,40,.14);background:rgba(255,255,255,.7);font-size:13.5px;font-weight:700;color:#33415C}
+.pg--dark .hd-login{border-color:rgba(233,237,246,.16);background:rgba(255,255,255,.06);color:#E9EDF6}
+.hd-ava{width:38px;height:38px;border-radius:50%;background:linear-gradient(180deg,#5B67F2,#4453EF);color:#fff;
+        display:grid;place-items:center;font-family:var(--fT);font-size:17px}
+
+/* ---------------- диптих ---------------- */
+.hero{display:grid;grid-template-columns:1fr 1fr;height:742px}
+.hl{padding:0 60px 0 64px;display:flex;flex-direction:column;justify-content:center}
+.hl-title{font-family:var(--fT);font-weight:400;font-size:66px;line-height:1.1;letter-spacing:-.014em}
+.hl-title em{font-style:italic;letter-spacing:0}
+.hl-lead{margin-top:24px;font-size:16.5px;line-height:1.62;color:#5C6A7D;max-width:27em}
+.pg--dark .hl-lead{color:#9AA2B5}
+.enter{margin-top:40px;max-width:496px}
+.enter-row{display:flex;gap:10px}
+.enter-mail{flex:1;display:flex;align-items:center;height:58px;border-radius:16px;background:#fff;
+            border:1px solid rgba(16,24,40,.12);padding:0 22px;font-family:var(--fN);font-size:13.5px;color:#8D9AAD;
+            box-shadow:0 12px 28px -22px rgba(24,38,60,.45)}
+.pg--dark .enter-mail{background:rgba(255,255,255,.06);border-color:rgba(233,237,246,.14);color:#68718A;
+            box-shadow:none}
+.enter-btn{display:inline-flex;align-items:center;gap:10px;height:58px;padding:0 30px;border-radius:16px;
+           background:linear-gradient(180deg,#5B67F2,#4453EF);color:#fff;font-size:15.5px;font-weight:700;
+           box-shadow:0 18px 38px -16px rgba(68,83,239,.55);white-space:nowrap}
+.enter-btn svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.enter-or{display:flex;align-items:center;gap:14px;margin:18px 0;color:#9BA6B6;font-size:11px;font-weight:700;
+          letter-spacing:.14em;text-transform:uppercase}
+.enter-or::before,.enter-or::after{content:"";flex:1;height:1px;background:rgba(16,24,40,.09)}
+.pg--dark .enter-or{color:#68718A}
+.pg--dark .enter-or::before,.pg--dark .enter-or::after{background:rgba(233,237,246,.1)}
+.enter-tg{display:flex;align-items:center;justify-content:center;gap:10px;height:56px;border-radius:16px;background:#fff;
+          border:1px solid rgba(16,24,40,.12);font-size:14.5px;font-weight:700;color:#101828;
+          box-shadow:0 12px 28px -24px rgba(24,38,60,.45)}
+.pg--dark .enter-tg{background:rgba(255,255,255,.06);border-color:rgba(233,237,246,.14);color:#E9EDF6;box-shadow:none}
+.enter-tg svg{width:19px;height:19px}
+.enter-note{margin-top:16px;font-size:12px;color:#9BA6B6}
+.pg--dark .enter-note{color:#68718A}
+/* «вы вошли» слева */
+.hl-cap{margin-top:26px;font-family:var(--fN);font-size:13.5px;color:#5C6A7D}
+.pg--dark .hl-cap{color:#9AA2B5}
+.hl-cap b{color:#101828;font-weight:700}
+.pg--dark .hl-cap b{color:#E9EDF6}
+.hl-cap .up{color:#0E7A45;font-weight:700}
+.pg--dark .hl-cap .up{color:#5FC492}
+.hl-two{margin-top:34px;display:flex;gap:10px}
+.hl-quiet{display:inline-flex;align-items:center;height:58px;padding:0 26px;border-radius:16px;
+          border:1px solid rgba(16,24,40,.14);background:rgba(255,255,255,.6);font-size:15px;font-weight:700;color:#33415C}
+.pg--dark .hl-quiet{border-color:rgba(233,237,246,.16);background:rgba(255,255,255,.06);color:#E9EDF6}
+
+/* правая створка */
+.hr{padding:0 64px 0 40px;display:flex;flex-direction:column}
+.hr-h{display:flex;align-items:baseline;gap:12px;margin-top:34px}
+.hr-nm{font-family:var(--fT);font-size:19px}
+.hr-h .sp{flex:1}
+.hr-idx{font-family:var(--fN);font-size:13px;font-weight:600;color:#5C6A7D}
+.pg--dark .hr-idx{color:#9AA2B5}
+.hr-idx b{color:#101828;font-weight:700}
+.pg--dark .hr-idx b{color:#E9EDF6}
+.hr-idx .up{color:#0E7A45;font-weight:700}
+.pg--dark .hr-idx .up{color:#5FC492}
+.hr-body{position:relative;flex:1;margin-top:20px}
+
+/* единая нижняя строка через обе створки */
+.btm{position:absolute;left:64px;right:64px;bottom:0;height:54px;display:flex;align-items:center;gap:16px;
+     font-size:12px;color:#8D9AAD;border-top:1px solid rgba(16,24,40,.07)}
+.pg--dark .btm{color:#68718A;border-top-color:rgba(233,237,246,.09)}
+.btm .sp{flex:1}
+.btm .num{font-size:11.5px}
+
+/* ---------------- плитки «Монохрома», глубина 2.0 ---------------- */
+.tl{position:absolute;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;
+    border-radius:14px;padding:14px 16px}
+.tl .tk{font-family:var(--fN);font-size:14px;font-weight:700;letter-spacing:.03em}
+.tl .co{font-size:11px;font-weight:600;opacity:.72;margin-top:1px}
+.tl .pc{font-family:var(--fN);font-size:12.5px;font-weight:600;margin-top:5px}
+.tl.big .tk{font-size:16px}
+.tl.big .pc{font-size:14px}
+.tl.sm{padding:10px 12px;border-radius:10px}
+.tl.sm .tk{font-size:12px}
+.tl.sm .pc{font-size:10.5px;margin-top:2px}
+/* ховер-состояние (для разбора и как спека реализации) */
+.tl.hov{transform:translateY(-3px);box-shadow:0 16px 34px -18px rgba(68,83,239,.5)}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="doc-h">
+    <div class="doc-kicker">Главная · «Монохром» · раунд 8</div>
+    <h1>Один экран вместо лендинга: чистовик с глубиной</h1>
+    <p>Лендинг отменён, первый экран остаётся единственным и получает всё внимание. Ниже чистовик
+       и его состояния: «вы вошли» и тёмная тема, которой у «Монохрома» ещё не было.</p>
+    <div class="verdict">
+      <p><b>Что изменилось против раунда 7.</b> Навигация шапки больше не ведёт на секции лендинга,
+         которых нет: «Рынок», «Расчёт» и «Академия» открывают настоящие гостевые вкладки терминала.
+         Заголовок вырос до 66px и получил курсивный акцент на слове «спокойного» той же гарнитурой.
+         Нижние подписи обеих створок собраны в одну строку-подвал через всю страницу, на волоске,
+         как шапка. Карта получила глубину: у крупных плиток появилось имя компании и крупный процент,
+         у заливки лёгкий внутренний блик, самые мелкие плитки ужаты до тикера.</p>
+      <p><b>Движение для реализации</b> (мокап статичен): плитки входят стаггером по 30мс от крупной к мелкой
+         при загрузке, у плитки под курсором подъём на 3px с индиго-тенью, срез времени в подвале
+         обновляется без перерисовки карты. Всё гасится при prefers-reduced-motion.</p>
+    </div>
+  </header>
+
+  <!-- ================= 01 ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">01</span><h2>Чистовик, светлая тема</h2><span class="mk-tag">Основной</span></div>
+    <p class="mk-sub">Шапка ведёт в живые разделы. Слева слово и вход, справа карта с именами компаний
+       на крупных плитках. Внизу единая строка: источник данных, правило чтения карты и срез времени
+       стоят на одной линии через обе створки.</p>
+    <div class="scroller"><div id="mk1"></div></div>
+    <div class="notes">
+      <div class="note"><i>1</i><span>Пункты шапки — настоящие вкладки, доступные гостю: «Рынок», «Расчёт», «Академия». Никаких якорей в пустоту.</span></div>
+      <div class="note"><i>2</i><span>Курсив в заголовке — та же Georgia, не вторая гарнитура: акцент на характере терминала без смены голоса.</span></div>
+      <div class="note"><i>3</i><span>Крупные плитки несут тикер, имя компании и процент 14px; средние — тикер и процент; мелкие — только тикер. Три уровня глубины вместо одного.</span></div>
+      <div class="note"><i>4</i><span>Внутренний блик заливки (inset-тень сверху) делает индиго стеклянным, а не плоским — в тон стеклу рабочих вкладок.</span></div>
+      <div class="note"><i>5</i><span>Единая нижняя строка отвечает на три вопроса разом: откуда данные, как читать карту, насколько она свежая.</span></div>
+      <div class="note"><i>6</i><span>Блок входа не менялся с раунда 7 — он одобрен: поле и кнопка 58px, «или», Telegram второй кнопкой, одна тихая строка.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 02 ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">02</span><h2>Глубина плитки: три уровня и ховер</h2><span class="mk-tag mute">Разбор</span></div>
+    <p class="mk-sub">Слева уровни подписи по площади плитки, справа плитка под курсором: подъём на 3px,
+       индиго-тень, имя компании проявляется и у средних плиток. Клик ведёт в карточку бумаги
+       на «Рынке».</p>
+    <div class="scroller"><div class="pair">
+      <div class="pair-c"><span class="pair-lb">Три уровня подписи</span><div id="mk2a"></div></div>
+      <div class="pair-c"><span class="pair-lb">Плитка под курсором</span><div id="mk2b"></div></div>
+    </div></div>
+  </section>
+
+  <!-- ================= 03 ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">03</span><h2>«Вы вошли»</h2><span class="mk-tag mute">Состояние</span></div>
+    <p class="mk-sub">Шапка та же, только справа вместо «Войти» — аватар. Слева приветствие, строка капитала
+       и дня моно, индиго-кнопка ребаланса и тихий «В кабинет». Карта не меняется: рынок общий для всех.
+       Суммы уважают режим «Скрывать суммы».</p>
+    <div class="scroller"><div id="mk3"></div></div>
+  </section>
+
+  <!-- ================= 04 ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">04</span><h2>Тёмная тема</h2><span class="mk-tag">Новое</span></div>
+    <p class="mk-sub">Главная по умолчанию открывается тёмной — это её первое тёмное лицо в «Монохроме»:
+       боевой тёмный «Витраж» вместо бумаги, рост — индиго-стекло с светлым текстом, падение — контур
+       светлого индиго на прозрачном. Марка инвертируется, кнопки и правила не меняются.</p>
+    <div class="scroller"><div id="mk4"></div></div>
+    <div class="notes">
+      <div class="note"><i>1</i><span>Фон — родной тёмный «Витраж» из site-bg.css: мята и сирень видны в зазорах между плитками.</span></div>
+      <div class="note"><i>2</i><span>Контур падающих плиток — светлый индиго #8E9BFF, как акцент тёмной темы сайдбара; правило «залито растёт, контур падает» живёт без изменений.</span></div>
+      <div class="note"><i>3</i><span>Поля входа — тёмное стекло с волосяной кромкой; индиго-кнопка одна и та же в обеих темах.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= карта кода ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">05</span><h2>Что где живёт в коде</h2></div>
+    <table class="map">
+      <tr><th>Часть</th><th>Файл</th><th>Правка</th></tr>
+      <tr><td>Шапка обложки</td><td>index.html, home-register.css</td><td>Полоса .hg-head: марка, три ссылки switchTab('market'|'calc'|'academy'), «Войти»; для вошедшего — аватар из profile-menu.</td></tr>
+      <tr><td>Диптих</td><td>home-register.css</td><td>.hg-cover → грид 1fr/1fr, единая строка-подвал .hg-btm через обе створки; фикс-слой #hgHeatWrap уезжает в створку и перестаёт быть fixed.</td></tr>
+      <tr><td>Монохромные плитки</td><td>home-register.css + home-register.js</td><td>Шкала: рост — заливка индиго по силе с inset-бликом, падение — контур 1–3px; drawInto дополняется именем компании (SECNAME из ISS уже приходит в терминал) и порогами трёх уровней.</td></tr>
+      <tr><td>Стаггер и ховер</td><td>home-register.css</td><td>Анимация входа плиток transition-delay по индексу; :hover — translateY(-3px) и тень; всё под @media (prefers-reduced-motion: no-preference).</td></tr>
+      <tr><td>Клик по плитке</td><td>home-register.js</td><td>Плитка — кнопка: switchTab('market') + открытие карточки бумаги (той же, что на «Рынке»).</td></tr>
+      <tr><td>Форма</td><td>home-register.js</td><td>Все id живы; на обложке поле email и кнопка, остальные поля homeRegForm раскрываются после «Начать»; Telegram — существующий homeTelegramLogin.</td></tr>
+      <tr><td>Тёмная тема</td><td>home-register.css</td><td>Оверрайды .dark-mode для бумаги, плиток, полей и шапки; theme_home по умолчанию тёмная — экран 04 и есть дефолт.</td></tr>
+      <tr><td>Версии</td><td>index.html</td><td>Бамп ?v у home-register.css/js.</td></tr>
+    </table>
+  </section>
+
+</div>
+
+<script>
+/* ============================================================
+   Данные, боевой squarified, монохромные плитки с тремя уровнями
+   ============================================================ */
+var STOCKS = [
+  ['SBER','Сбербанк',13.6, 1.12], ['LKOH','Лукойл',11.2,-0.83], ['GAZP','Газпром',9.3, 2.06],
+  ['TATN','Татнефть',5.9, 1.35], ['NVTK','Новатэк',5.4,-1.14], ['YDEX','Яндекс',5.0, 2.08],
+  ['GMKN','Норникель',4.4, 2.52], ['ROSN','Роснефть',4.3,-1.24], ['PLZL','Полюс',4.0, 4.97],
+  ['SNGS','Сургутнефтегаз',3.4, 0.42], ['T','Т-Технологии',3.3, 1.88], ['X5','Икс 5',2.9,-0.62]
+];
+var CAP = 3;
+
+function worst(row, side){
+  var max=-Infinity,min=Infinity,sum=0,i;
+  for(i=0;i<row.length;i++){var a=row[i].area;sum+=a;if(a>max)max=a;if(a<min)min=a;}
+  if(sum===0)return Infinity;
+  var s2=sum*sum,side2=side*side;
+  return Math.max((side2*max)/s2, s2/(side2*min));
+}
+function layoutRow(row, free, out){
+  var rowArea=0,i,seg;
+  for(i=0;i<row.length;i++)rowArea+=row[i].area;
+  if(free.w<=free.h){
+    var rh=rowArea/free.w,x=free.x;
+    for(i=0;i<row.length;i++){seg=row[i].area/rh;out.push({tk:row[i].tk,x:x,y:free.y,w:seg,h:rh});x+=seg;}
+    return {x:free.x,y:free.y+rh,w:free.w,h:free.h-rh};
+  }
+  var rw=rowArea/free.h,y=free.y;
+  for(i=0;i<row.length;i++){seg=row[i].area/rw;out.push({tk:row[i].tk,x:free.x,y:y,w:rw,h:seg});y+=seg;}
+  return {x:free.x+rw,y:free.y,w:free.w-rw,h:free.h};
+}
+function squarify(items, rect){
+  var out=[],total=0,i;
+  for(i=0;i<items.length;i++)total+=items[i].value;
+  var scale=(rect.w*rect.h)/total;
+  var scaled=items.map(function(n){return {tk:n.tk,area:n.value*scale};}).sort(function(a,b){return b.area-a.area;});
+  var free={x:rect.x,y:rect.y,w:rect.w,h:rect.h},row=[],idx=0;
+  while(idx<scaled.length){
+    var side=Math.min(free.w,free.h),item=scaled[idx];
+    if(row.length===0||worst(row.concat(item),side)<=worst(row,side)){row.push(item);idx++;}
+    else{free=layoutRow(row,free,out);row=[];}
+  }
+  if(row.length)layoutRow(row,free,out);
+  return out;
+}
+function stockOf(tk){
+  for (var i=0;i<STOCKS.length;i++) if (STOCKS[i][0]===tk) return STOCKS[i];
+  return null;
+}
+function pctText(c){
+  var sign=c>0?'+':(c<0?'−':'');
+  return sign+Math.abs(c).toFixed(2).replace('.',',')+'%';
+}
+
+/* стиль плитки по теме. dark=false: бумага; true: тёмный витраж */
+function tileStyle(c, k, dark){
+  var dn=c<-0.02, s, ink;
+  if (!dark){
+    if (dn){
+      s='background:rgba(255,255,255,.42);border:'+(1+Math.round(k*2))+'px solid rgba(68,83,239,'+(0.22+k*0.4).toFixed(2)+');';
+      ink='#4A5570';
+    } else {
+      s='background:oklch(0.62 0.16 274 / '+(0.1+k*0.34).toFixed(2)+');border:1px solid rgba(68,83,239,.16);'
+       +'box-shadow:inset 0 1px 0 rgba(255,255,255,.35);';
+      ink=k>0.55?'#1E2547':'#2B3357';
+    }
+  } else {
+    if (dn){
+      s='background:rgba(233,237,246,.04);border:'+(1+Math.round(k*2))+'px solid rgba(142,155,255,'+(0.28+k*0.42).toFixed(2)+');';
+      ink='#98A3C6';
+    } else {
+      s='background:oklch(0.52 0.17 274 / '+(0.2+k*0.4).toFixed(2)+');border:1px solid rgba(142,155,255,.2);'
+       +'box-shadow:inset 0 1px 0 rgba(255,255,255,.1);';
+      ink=k>0.55?'#EAEDFF':'#C9D0F4';
+    }
+  }
+  return {css:s, ink:ink};
+}
+
+/* карта: три уровня подписи по площади */
+function tilesMono(w, h, dark){
+  var g=7, html='';
+  squarify(STOCKS.map(function(s){return {tk:s[0],value:s[2]};}),{x:0,y:0,w:w,h:h})
+  .forEach(function(t){
+    var st=stockOf(t.tk), c=st[3], k=Math.min(1,Math.abs(c)/CAP);
+    var x=t.x+g,y=t.y+g,tw=Math.max(0,t.w-g*2),th=Math.max(0,t.h-g*2);
+    var style=tileStyle(c,k,dark);
+    var big=(tw>190&&th>150), sm=(tw<118||th<86);
+    var inner='<span class="tk">'+t.tk+'</span>'
+      + (big?'<span class="co">'+st[1]+'</span>':'')
+      + (sm?'':'<span class="pc">'+pctText(c)+'</span>');
+    html+='<div class="tl'+(big?' big':(sm?' sm':''))+'" style="left:'+x.toFixed(1)+'px;top:'+y.toFixed(1)+
+      'px;width:'+tw.toFixed(1)+'px;height:'+th.toFixed(1)+'px;color:'+style.ink+';'+style.css+'">'+inner+'</div>';
+  });
+  return html;
+}
+
+var ARROW='<svg viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg>';
+var TG='<svg viewBox="0 0 24 24" fill="#2AABEE"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0Zm5.9 8.2-2 9.3c-.1.7-.5.8-1.1.5l-3-2.2-1.5 1.4c-.2.2-.3.3-.6.3l.2-3.1 5.6-5c.2-.2-.1-.3-.4-.1l-6.9 4.3-3-.9c-.6-.2-.7-.6.2-.9l11.6-4.5c.5-.2 1 .1.9.9Z"/></svg>';
+
+function headHtml(authed){
+  return '<div class="hd">'
+    + '<span class="hd-mark">M</span>'
+    + '<span class="hd-name"><span class="w3">Madame </span><span class="w8">Solomi\'na</span></span>'
+    + '<span class="hd-nav"><a href="#">Рынок</a><a href="#">Расчёт</a><a href="#">Академия</a></span>'
+    + (authed ? '<span class="hd-ava">Д</span>' : '<span class="hd-login">Войти</span>')
+    + '</div>';
+}
+function enterHtml(){
+  return '<div class="enter">'
+    + '<div class="enter-row"><span class="enter-mail">you@example.com</span>'
+    +   '<span class="enter-btn">Начать'+ARROW+'</span></div>'
+    + '<div class="enter-or">или</div>'
+    + '<span class="enter-tg">'+TG+' Войти через Telegram</span>'
+    + '<p class="enter-note">Без брокерского счёта и карты: сначала расчёт, потом решение.</p>'
+    + '</div>';
+}
+function leftHtml(authed){
+  if (authed){
+    return '<div class="hl">'
+      + '<h1 class="hl-title">С возвращением,<br>Денис</h1>'
+      + '<p class="hl-lead">Доли разъехались на 33 процентных пункта от цели. Сверка займёт пару минут.</p>'
+      + '<p class="hl-cap">Капитал <b>18 180 623 ₽</b> · за день <span class="up">+129 444 ₽</span></p>'
+      + '<div class="hl-two"><span class="enter-btn">Сделать ребалансировку'+ARROW+'</span>'
+      +   '<span class="hl-quiet">В кабинет</span></div>'
+      + '</div>';
+  }
+  return '<div class="hl">'
+    + '<h1 class="hl-title">Терминал<br><em>спокойного</em><br>инвестора</h1>'
+    + '<p class="hl-lead">Портфель из ОФЗ и акций под вашу цель, план ребаланса и выплаты по расписанию.</p>'
+    + enterHtml()
+    + '</div>';
+}
+function screenHtml(opts){
+  opts=opts||{};
+  var dark=!!opts.dark;
+  return '<div class="pg '+(dark?'pg--dark':'pg--light')+'">'
+    + headHtml(!!opts.authed)
+    + '<div class="hero">'
+    +   leftHtml(!!opts.authed)
+    +   '<div class="hr">'
+    +     '<div class="hr-h"><span class="hr-nm">Рынок сейчас</span><span class="sp"></span>'
+    +       '<span class="hr-idx">IMOEX <b>2 301,65</b> <span class="up">+1,43%</span></span></div>'
+    +     '<div class="hr-body">'+tilesMono(616, 588, dark)+'</div>'
+    +   '</div>'
+    + '</div>'
+    + '<div class="btm"><span>Данные Московской биржи</span><span class="sp"></span>'
+    +   '<span>залито растёт, контур падает</span>'
+    +   '<span class="num">топ-12 весов · срез 19:25</span></div>'
+    + '</div>';
+}
+
+/* ---------------- сборка ---------------- */
+document.getElementById('mk1').innerHTML = screenHtml({});
+document.getElementById('mk3').innerHTML = screenHtml({authed:true});
+document.getElementById('mk4').innerHTML = screenHtml({dark:true});
+
+/* разбор 02: уровни и ховер */
+(function(){
+  function demo(tk, w, h, extraCls, extraCss){
+    var st=stockOf(tk), c=st[3], k=Math.min(1,Math.abs(c)/CAP);
+    var style=tileStyle(c,k,false);
+    var big=(w>190&&h>150), sm=(w<118||h<86);
+    var inner='<span class="tk">'+tk+'</span>'
+      + (big||extraCls==='hov'?'<span class="co">'+st[1]+'</span>':'')
+      + (sm?'':'<span class="pc">'+pctText(c)+'</span>');
+    return '<div class="tl '+(big?'big':(sm?'sm':''))+(extraCls?' '+extraCls:'')+'" style="position:relative;left:0;top:0;width:'
+      +w+'px;height:'+h+'px;color:'+style.ink+';'+style.css+(extraCss||'')+'">'+inner+'</div>';
+  }
+  var frame='style="display:flex;gap:20px;align-items:flex-end;padding:30px 34px;border-radius:14px;'
+    +'border:1px solid rgba(15,23,42,.09);background:linear-gradient(168deg,#F7F9FA,#F3F5F9);'
+    +'box-shadow:0 18px 42px -30px rgba(24,38,60,.4)"';
+  document.getElementById('mk2a').innerHTML =
+    '<div '+frame+'>'+demo('GAZP',230,180)+demo('YDEX',160,130)+demo('X5',96,72)+'</div>';
+  document.getElementById('mk2b').innerHTML =
+    '<div '+frame+'>'+demo('YDEX',160,130)+demo('YDEX',160,130,'hov')+'</div>';
+})();
+</script>
+</body>
+</html>
