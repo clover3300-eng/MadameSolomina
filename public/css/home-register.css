@@ -1,15 +1,28 @@
 /* =========================================================
-   HOME — манифест и «стекло» ВО ВЕСЬ ЭКРАН (без карточки)
+   HOME — «ОБСЕРВАТОРИЯ»: рынок как планетная система
    =========================================================
-   Главная ВСЕГДА в тёмной теме: enforceHomeDarkTheme (webapp-tabs.js)
-   вешает body.dark-mode на tab-home, так что светлые стили ниже —
-   фактически мёртвые (оставлены на случай отката).
-   Фон — фикс-слой #hgHeatWrap в начале #appShell: живая тепловая
-   карта IMOEX (.hg-bg рисует js/home-register.js) + вуаль .hg-scrim,
-   виден только на Главной (body.tab-home). Контент вкладки — грид
-   .hg-cover: слева манифест .hg-main (serif + «Начать расчёт» +
-   живой пульс IMOEX), справа стеклянная колонна входа/регистрации
-   .hg-auth (форма hr-* из бывшей модалки, логика не менялась).
+   Мокап dev/mockups/home10-mockups.html, вариант А (раунд 10),
+   шапка и блок входа — из раундов 8–9 (home8/home9).
+
+   Экран: полоса-шапка .hg-head (марка · разделы · вход) → сцена
+   .hg-obs (центр = живой индекс #hgCoreVal, вокруг по трём
+   эллиптическим орбитам плывут 12 бумаг топ-весов, рисует
+   js/home-register.js) → док входа .hg-dock снизу → строка-подвал
+   .hg-btm. Форма регистрации/входа не модалка: она раскрывается
+   карточкой .hg-authcard поверх сцены, сцена при этом отходит
+   на второй план (класс .hg-formopen на .hg-cover).
+
+   Закон цвета тот же, что у монохромной карты раунда 6: РОСТ —
+   индиговая заливка по силе движения, ПАДЕНИЕ — контур без заливки.
+
+   Движение: только transform и offset-distance (GPU). Всё внутри
+   @media (prefers-reduced-motion: no-preference); без него и без
+   поддержки offset-path js расставляет узлы статически (см.
+   hgOrbitsDraw) — композиция сохраняется, движения нет.
+
+   Главная ВСЕГДА открывается тёмной (theme_home, см. core.js), но
+   светлый набор ниже живой: пользователь может выбрать светлую
+   тему для Главной в попапе выбора охвата.
    Загружается ПОСЛЕ site-layout.css и ПЕРЕД desktop-zoom.css. */
 
 /* ---- Один экран: панель заполняет контент-область без скролла ---- */
@@ -20,316 +33,620 @@
         flex-direction: column;
         box-sizing: border-box;
     }
-    /* Тёмная тема: рейка сайдбара — static грид-элемент, фикс-карта легла бы
-       поверх неё. Поднимаем как в светлой (см. #homeBg в site-layout.css). */
-    body.dark-mode.tab-home #sideBar { position: relative; z-index: 50; }
+
+    /* Полноэкранная сцена: у Главной СВОЯ шапка (.hg-head) с маркой,
+       разделами и входом, поэтому общая шапка сайта и рейка сайдбара
+       на ней прячутся — тот же гейт, что у «Торговли» (body:has(#pftBar))
+       и мастера ребаланса. Марка перестаёт дублироваться, сцена получает
+       всю ширину окна. Переключатель темы и профиль живут в .hg-head. */
+    body.tab-home #headerWrapper,
+    body.tab-home #sideBar { display: none !important; }
+    body.tab-home #appShell { grid-template-columns: 0 1fr !important; }
+    body.tab-home #contentArea { padding: 0 !important; }
 }
-/* Тёмная тема: контент над фикс-картой (z-index:1); в светлой это уже
-   делает правило body:not(.dark-mode) #contentArea в site-layout.css */
 body.dark-mode.tab-home #contentArea { z-index: 2; }
 
-/* ---- Фон на всю страницу: живая тепловая карта IMOEX ---- */
-/* fixed через top/right/bottom/left (не 100vw/100vh) — корректно под
-   body{zoom:0.9}. Поверх пейзажа #homeBg (оба z-index:1, этот позже в
-   DOM), под сайдбаром (50), шапкой (100) и контентом. */
-#hgHeatWrap {
-    display: none;
-    position: fixed;
-    top: 0; right: 0; bottom: 0; left: 0;
-    z-index: 1;
-    pointer-events: none;
-    overflow: hidden;
-    background: linear-gradient(180deg, #F1F6FB 0%, #F9FAFC 100%);
-    /* моноширинный стек для тикеров на плитках */
-    --hs-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
-}
-body.tab-home #hgHeatWrap { display: block; }
-
-.hg-bg { position: absolute; inset: 0; }
-.hg-tile {
-    position: absolute;
-    box-sizing: border-box;
-    border-radius: 6px;
-    overflow: hidden;
-    display: flex;
-    align-items: flex-end;
-    padding: 7px 9px;
-    font-family: var(--hs-mono);
-    font-size: 10.5px;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    transition: left 0.6s ease, top 0.6s ease, width 0.6s ease, height 0.6s ease, background 0.6s ease;
-    /* интенсивность 0..1 в --k, тон — как у большой карты (мята 158 / клэй 44);
-       --a 0..1 — фактор площади (js): мелкие плитки растворяются в фон */
-    opacity: calc(0.28 + 0.72 * var(--a, 1));
-}
-.hg-tile.up   { background: oklch(calc(0.965 - var(--k, 0) * 0.10) calc(0.012 + var(--k, 0) * 0.055) 158); color: oklch(0.45 0.09 158); }
-.hg-tile.dn   { background: oklch(calc(0.965 - var(--k, 0) * 0.10) calc(0.012 + var(--k, 0) * 0.055) 44);  color: oklch(0.47 0.09 44); }
-.hg-tile.flat { background: oklch(0.958 0.006 250); color: oklch(0.55 0.02 250); }
-
-/* Вуаль: плотнее слева (под манифестом), легче справа у стекла,
-   высветление сверху под прозрачной шапкой + пятно в правом нижнем
-   углу — там сбивается кластер мелких плиток, приглушаем */
-.hg-scrim {
-    position: absolute;
-    inset: 0;
-    background:
-        radial-gradient(58% 52% at 100% 100%, rgba(255, 255, 255, 0.68), transparent 72%),
-        linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 26%),
-        linear-gradient(90deg,
-            rgba(255, 255, 255, 0.88) 0%,
-            rgba(255, 255, 255, 0.60) 52%,
-            rgba(255, 255, 255, 0.34) 100%);
-}
-
-/* ---- Контент вкладки: грид на весь экран ---- */
-/* Размеры блоков рассчитаны под масштаб браузера 90% у пользователя
-   (поверх body{zoom:0.9}) — потому крупнее «обычных». Правый паддинг
-   больше левого: колонна формы сдвинута левее от края по фидбеку. */
+/* =========================================================
+   ПОЛОТНО ЭКРАНА
+   ========================================================= */
 .hg-cover {
     position: relative;
     flex: 1;
     min-height: 0;
     width: 100%;
     box-sizing: border-box;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 500px;
-    gap: 56px;
-    padding: 8px 108px 30px 72px;
-    --hs-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
-}
-
-/* ---- Левая часть: манифест ---- */
-.hg-main {
-    position: relative;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    min-width: 0;
-    padding-bottom: 4vh; /* оптический центр чуть выше геометрического */
+    overflow: hidden;
+
+    --hs-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
+
+    /* ---- тёмный набор (основной) ---- */
+    --hg-ink: #E9EDF6;
+    --hg-mut: #9AA2B5;
+    --hg-dim: #6F7891;
+    --hg-hair: rgba(233, 237, 246, 0.09);
+    --hg-glass: rgba(255, 255, 255, 0.06);
+    --hg-glass-edge: rgba(233, 237, 246, 0.14);
+    --hg-glass-strong: rgba(18, 23, 34, 0.86);
+    --hg-ring: rgba(142, 155, 255, 0.11);
+    --hg-accent: #8E9BFF;
+    --hg-mark-bg: #ffffff;
+    --hg-mark-ink: #161B27;
+    --hg-glow: rgba(120, 134, 255, 0.34);
+    --hg-scene:
+        radial-gradient(900px 620px at 50% 46%, rgba(68, 83, 239, 0.14) 0%, rgba(68, 83, 239, 0) 62%),
+        radial-gradient(760px 520px at 6% 8%, rgba(31, 58, 68, 0.70) 0%, rgba(31, 58, 68, 0) 60%),
+        radial-gradient(820px 560px at 94% 6%, rgba(43, 44, 80, 0.70) 0%, rgba(43, 44, 80, 0) 62%),
+        linear-gradient(160deg, #0A0F16 0%, #0D1119 50%, #090E15 100%);
+
+    color: var(--hg-ink);
+    background: var(--hg-scene);
 }
-.hg-brand {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-.hg-brand-name {
-    font-family: 'Inter', sans-serif;
-    font-size: 18px;
-    color: #2C364C;
-    letter-spacing: 0.01em;
-}
-.hg-brand-sub {
-    font-family: 'Inter', sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    color: #5a6a86;
-    text-transform: uppercase;
-    letter-spacing: 0.38em;
-}
-.hc-title {
-    margin: 24px 0 0;
-    font-family: Georgia, 'Times New Roman', serif;
-    font-size: clamp(44px, 4.6vw, 64px);
-    font-weight: 400;
-    line-height: 1.12;
-    color: #161B27;
-    letter-spacing: -0.01em;
-}
-.hc-lead {
-    margin: 20px 0 0;
-    max-width: 530px;
-    font-family: 'Inter', sans-serif;
-    font-size: 16px;
-    line-height: 1.7;
-    color: #4E586B;
+/* ---- светлый набор (если выбрана светлая тема Главной) ---- */
+body:not(.dark-mode) .hg-cover {
+    --hg-ink: #101828;
+    --hg-mut: #5C6A7D;
+    --hg-dim: #8D9AAD;
+    --hg-hair: rgba(16, 24, 40, 0.09);
+    --hg-glass: rgba(255, 255, 255, 0.72);
+    --hg-glass-edge: rgba(16, 24, 40, 0.12);
+    --hg-glass-strong: rgba(255, 255, 255, 0.96);
+    --hg-ring: rgba(68, 83, 239, 0.14);
+    --hg-accent: #4453EF;
+    --hg-mark-bg: #161B27;
+    --hg-mark-ink: #ffffff;
+    --hg-glow: rgba(68, 83, 239, 0.16);
+    --hg-scene:
+        radial-gradient(900px 620px at 50% 46%, rgba(68, 83, 239, 0.08) 0%, rgba(68, 83, 239, 0) 62%),
+        radial-gradient(760px 520px at -6% 4%, rgba(196, 226, 224, 0.42) 0%, rgba(196, 226, 224, 0) 60%),
+        radial-gradient(880px 620px at 96% 88%, rgba(214, 214, 240, 0.50) 0%, rgba(214, 214, 240, 0) 64%),
+        linear-gradient(168deg, #F7F9FA 0%, #F1F4F8 45%, #F5F7F9 100%);
 }
 
-/* ---- CTA + живой пульс IMOEX ---- */
-.hc-ctas {
+/* =========================================================
+   ШАПКА (одна полоса, одна базовая линия)
+   ========================================================= */
+.hg-head {
+    position: relative;
+    z-index: 6;
+    flex: 0 0 auto;
+    height: 84px;
     display: flex;
     align-items: center;
-    gap: 16px;
-    margin-top: 36px;
+    gap: 14px;
+    padding: 0 64px;
+}
+.hg-head::after {
+    content: "";
+    position: absolute;
+    left: 64px; right: 64px; bottom: 0;
+    height: 1px;
+    background: var(--hg-hair);
+}
+.hg-mark {
+    flex: 0 0 auto;
+    width: 38px; height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 11px;
+    background: var(--hg-mark-bg);
+    color: var(--hg-mark-ink);
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 20px;
+    font-weight: 700;
+}
+.hg-brandname {
+    margin-right: auto;
+    font-family: 'Inter', sans-serif;
+    font-size: 16.5px;
+    color: var(--hg-ink);
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+}
+.hg-nav {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    margin-right: 30px;
+}
+.hg-nav button {
+    padding: 10px 2px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--hg-mut);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+.hg-nav button:hover { color: var(--hg-ink); }
+.hg-headbtn {
+    display: inline-flex;
+    align-items: center;
+    height: 38px;
+    padding: 0 20px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--hg-ink);
+    background: var(--hg-glass);
+    border: 1px solid var(--hg-glass-edge);
+    border-radius: 999px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.hg-headbtn:hover { border-color: var(--hg-accent); }
+/* кружок темы: тот же рост, что «Войти» */
+.hg-iconbtn {
+    flex: 0 0 auto;
+    width: 38px; height: 38px;
+    display: grid;
+    place-items: center;
+    margin-right: 8px;
+    border-radius: 50%;
+    color: var(--hg-mut);
+    background: var(--hg-glass);
+    border: 1px solid var(--hg-glass-edge);
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+.hg-iconbtn:hover { color: var(--hg-ink); border-color: var(--hg-accent); }
+.hg-iconbtn svg {
+    width: 16px; height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+/* активное состояние, пока открыта форма входа */
+.hg-headbtn.is-on {
+    border-color: var(--hg-accent);
+    box-shadow: 0 0 0 3px rgba(68, 83, 239, 0.16);
+}
+/* аватар вошедшего вместо «Войти» */
+.hg-headava {
+    width: 38px; height: 38px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #5B67F2, #4453EF);
+    color: #fff;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 17px;
+    border: none;
+    cursor: pointer;
+}
+.hg-headava[hidden], .hg-headbtn[hidden] { display: none; }
+
+/* =========================================================
+   СЦЕНА: центр + орбиты
+   ========================================================= */
+.hg-stage {
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    transition: opacity 0.28s ease, transform 0.28s ease;
+}
+/* Форма открыта — система отходит на второй план, но остаётся видимой */
+.hg-cover.hg-formopen .hg-stage {
+    opacity: 0.24;
+    transform: scale(0.97);
+    pointer-events: none;
+}
+
+/* ---- манифест сверху по центру ---- */
+.hg-manifest {
+    flex: 0 0 auto;
+    padding: 28px 64px 0;
+    text-align: center;
+}
+.hc-title {
+    margin: 0;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: clamp(28px, 2.9vw, 42px);
+    font-weight: 400;
+    line-height: 1.14;
+    letter-spacing: -0.012em;
+    color: var(--hg-ink);
+}
+.hc-title em { font-style: italic; }
+.hc-lead {
+    margin: 10px auto 0;
+    max-width: 56ch;
+    font-family: 'Inter', sans-serif;
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--hg-mut);
+}
+
+/* ---- поле орбит ---- */
+.hg-obs {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    /* поля, чтобы узлы внешней орбиты не уезжали за кромку экрана */
+    margin: 6px 96px 0;
+}
+.hg-rings {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+.hg-rings ellipse {
+    fill: none;
+    stroke: var(--hg-ring);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+}
+
+/* ---- центр: живой индекс ---- */
+.hg-core {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    z-index: 4;
+    pointer-events: none;
+}
+.hg-core-lb {
+    font-family: var(--hs-mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    color: var(--hg-dim);
+}
+.hg-core-v {
+    margin-top: 2px;
+    font-family: var(--hs-mono);
+    font-size: clamp(52px, 6.4vw, 92px);
+    font-weight: 700;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    color: var(--hg-ink);
+    text-shadow: 0 0 46px var(--hg-glow);
+    font-variant-numeric: tabular-nums;
+}
+.hg-core-d {
+    margin-top: 4px;
+    font-family: var(--hs-mono);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--hg-accent);
+}
+.hg-core-d .hg-live-upd { color: var(--hg-dim); font-weight: 500; }
+.hg-core-d .hg-live-upd:not(:empty)::before { content: " · "; }
+
+/* ---- узел-бумага на орбите ---- */
+.hg-orb {
+    position: absolute;
+    left: 0; top: 0;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 13px;
+    border-radius: 999px;
+    white-space: nowrap;
+    cursor: pointer;
+    background: none;
+    border: 1px solid transparent;
+    offset-rotate: 0deg;
+    offset-distance: var(--od, 0%);
+    transition: filter 0.2s ease;
+}
+.hg-orb b {
+    font-family: var(--hs-mono);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+}
+.hg-orb span {
+    font-family: var(--hs-mono);
+    font-weight: 600;
+    opacity: 0.85;
+}
+/* Рост: индиговая заливка, плотность по силе (--k 0..1). */
+.hg-orb.up {
+    background: oklch(0.5 0.17 274 / calc(0.30 + var(--k, 0) * 0.45));
+    border-color: rgba(142, 155, 255, 0.28);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12),
+                0 6px 24px -10px rgba(68, 83, 239, 0.5);
+    color: #E4E8FF;
+}
+/* Падение: без заливки, контур тем плотнее, чем сильнее падение. */
+.hg-orb.dn {
+    background: rgba(233, 237, 246, 0.03);
+    border-color: rgba(142, 155, 255, calc(0.30 + var(--k, 0) * 0.40));
+    border-width: calc(1px + var(--k, 0) * 1.4px);
+    color: #9AA5CC;
+}
+body:not(.dark-mode) .hg-orb.up {
+    background: oklch(0.62 0.16 274 / calc(0.14 + var(--k, 0) * 0.34));
+    border-color: rgba(68, 83, 239, 0.18);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42);
+    color: #232B4E;
+}
+body:not(.dark-mode) .hg-orb.dn {
+    background: rgba(255, 255, 255, 0.5);
+    border-color: rgba(68, 83, 239, calc(0.24 + var(--k, 0) * 0.40));
+    color: #4A5570;
+}
+.hg-orb:hover { filter: brightness(1.18); }
+
+/* =========================================================
+   ДОК ВХОДА (низ сцены)
+   ========================================================= */
+.hg-dock {
+    position: relative;
+    z-index: 5;
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 0 64px 30px;
     flex-wrap: wrap;
 }
-.hc-cta {
+.hg-dock[hidden] { display: none; }
+
+.hg-quick {
+    display: flex;
+    align-items: center;
+    width: 300px;
+    max-width: 46vw;
+    height: 54px;
+    padding: 0 20px;
+    box-sizing: border-box;
+    font-family: var(--hs-mono);
+    font-size: 13px;
+    color: var(--hg-ink);
+    background: var(--hg-glass);
+    border: 1px solid var(--hg-glass-edge);
+    border-radius: 16px;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.hg-quick::placeholder { color: var(--hg-dim); word-spacing: -3px; }
+.hg-quick:focus {
+    border-color: var(--hg-accent);
+    box-shadow: 0 0 0 3px rgba(68, 83, 239, 0.16);
+}
+
+/* главная кнопка экрана — единственная залитая */
+.hg-cta {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 9px;
-    padding: 16px 32px;
+    height: 54px;
+    padding: 0 26px;
     font-family: 'Inter', sans-serif;
     font-size: 15px;
     font-weight: 700;
-    border-radius: 999px;
+    color: #fff;
+    background: linear-gradient(180deg, #5B67F2, #4453EF);
+    border: none;
+    border-radius: 16px;
     cursor: pointer;
+    box-shadow: 0 18px 44px -16px rgba(68, 83, 239, 0.6);
     transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
-.hc-cta:active { transform: scale(0.97); }
-.hc-cta-dark {
-    color: #fff;
-    background: linear-gradient(180deg, #1C222E 0%, #10151F 100%);
-    border: none;
-    box-shadow: 0 16px 32px -10px rgba(16, 21, 31, 0.50);
-}
-.hc-cta-dark:hover { box-shadow: 0 20px 40px -10px rgba(16, 21, 31, 0.58); }
-.hc-cta-dark svg {
-    width: 17px;
-    height: 17px;
+.hg-cta:hover { box-shadow: 0 22px 50px -16px rgba(68, 83, 239, 0.72); }
+.hg-cta:active { transform: scale(0.98); }
+.hg-cta svg {
+    width: 15px; height: 15px;
     fill: none;
-    stroke: #8FB3A0;
-    stroke-width: 2.2;
+    stroke: currentColor;
+    stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
 }
-.hg-live {
+/* тихая кнопка того же роста */
+.hg-quiet {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    padding: 13px 19px;
-    font-family: var(--hs-mono);
-    font-size: 12px;
-    font-weight: 500;
-    color: #4E586B;
-    background: rgba(255, 255, 255, 0.78);
-    border: 1px solid rgba(44, 54, 76, 0.12);
-    border-radius: 999px;
+    justify-content: center;
+    gap: 9px;
+    height: 54px;
+    padding: 0 22px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--hg-ink);
+    background: var(--hg-glass);
+    border: 1px solid var(--hg-glass-edge);
+    border-radius: 16px;
     cursor: pointer;
-    transition: border-color 0.2s ease, background 0.2s ease;
+    transition: border-color 0.2s ease, transform 0.15s ease;
 }
-.hg-live:hover { border-color: rgba(44, 54, 76, 0.28); background: #fff; }
-.hg-live-pct { font-variant-numeric: tabular-nums; font-weight: 700; }
-.hg-live-pct.pos { color: #1f9d63; }
-.hg-live-pct.neg { color: #d23b4e; }
-.hg-live-upd { color: #9AA3B2; }
-.hg-live-upd:not(:empty)::before { content: "· "; }
+.hg-quiet:hover { border-color: var(--hg-accent); }
+.hg-quiet:active { transform: scale(0.98); }
+.hg-quiet svg { width: 18px; height: 18px; }
+.hg-tg-icon { fill: #2AABEE; }
 
-/* ---- Правая колонна: сплошная белая карточка ---- */
-/* Не «парящее стекло», а плотная карточка того же языка, что плитки карты
-   на фоне: непрозрачный белый фон, тонкая рамка, малый радиус, лёгкая тень —
-   карточка «лежит» на поверхности, а не висит над ней (по фидбеку). */
-.hg-auth {
+/* строка капитала вошедшего */
+.hg-cap {
+    display: inline-flex;
+    align-items: center;
+    height: 54px;
+    padding: 0 22px;
+    font-family: var(--hs-mono);
+    font-size: 13px;
+    color: var(--hg-mut);
+    background: var(--hg-glass);
+    border: 1px solid var(--hg-hair);
+    border-radius: 16px;
+}
+.hg-cap b { color: var(--hg-ink); font-weight: 700; }
+/* display в правиле выше сильнее атрибута hidden — гасим явно */
+.hg-cap[hidden] { display: none; }
+
+/* =========================================================
+   ПОДВАЛ
+   ========================================================= */
+.hg-btm {
     position: relative;
-    align-self: center;
-    justify-self: end;
-    width: 100%;
-    max-height: 100%;
-    padding: 38px 38px 28px;
-    box-sizing: border-box;
+    z-index: 5;
+    flex: 0 0 auto;
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    height: 54px;
+    margin: 0 64px;
+    border-top: 1px solid var(--hg-hair);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--hg-dim);
+}
+.hg-btm .sp { flex: 1; }
+.hg-btm .num { font-family: var(--hs-mono); font-size: 11.5px; }
+
+/* =========================================================
+   КАРТОЧКА ФОРМЫ (регистрация / вход / новый пароль)
+   ========================================================= */
+.hg-authwrap {
+    position: absolute;
+    inset: 84px 0 0;
+    z-index: 20;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+.hg-cover.hg-formopen .hg-authwrap { display: flex; }
+.hg-authcard {
+    position: relative;
+    width: 100%;
+    max-width: 496px;
+    max-height: 100%;
     overflow-y: auto;
     scrollbar-width: none;
-    background: #ffffff;
-    border: 1px solid rgba(20, 27, 45, 0.09);
-    border-radius: 14px;
-    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 10px 26px -20px rgba(16, 24, 40, 0.22);
-    animation: hgAuthIn 0.45s ease-out both;
+    box-sizing: border-box;
+    padding: 30px 34px 26px;
+    background: var(--hg-glass-strong);
+    border: 1px solid var(--hg-glass-edge);
+    border-radius: 24px;
+    box-shadow: 0 40px 90px -40px rgba(0, 0, 0, 0.75);
+    -webkit-backdrop-filter: blur(22px);
+    backdrop-filter: blur(22px);
+    animation: hgFormIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-@keyframes hgAuthIn {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
+.hg-authcard::-webkit-scrollbar { display: none; }
+@keyframes hgFormIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.985); }
+    to   { opacity: 1; transform: none; }
 }
-.hg-auth::-webkit-scrollbar { display: none; }
-.hs-auth-inner {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    min-width: 0;
-    flex: 1;
+@media (prefers-reduced-motion: reduce) {
+    .hg-authcard { animation-duration: 0.01ms; }
 }
-
-/* ---- Переключатель Регистрация / Вход ---- */
-.hs-tabs {
-    display: flex;
-    gap: 4px;
-    padding: 4px;
+/* «‹ Назад» к манифесту */
+.hg-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     margin-bottom: 20px;
-    background: rgba(44, 54, 76, 0.07);
-    border-radius: 14px;
-}
-.hs-tab {
-    flex: 1;
-    padding: 12px;
+    padding: 8px 10px 8px 0;   /* хит-зона выше визуального размера */
     font-family: 'Inter', sans-serif;
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 600;
-    color: #5a6a86;
+    color: var(--hg-dim);
     background: none;
     border: none;
-    border-radius: 11px;
     cursor: pointer;
-    transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    transition: color 0.2s ease;
 }
-.hs-tab.active {
-    color: #fff;
-    font-weight: 700;
-    background: #161B27;
-    box-shadow: 0 10px 24px -8px rgba(20, 24, 31, 0.5);
+.hg-back:hover { color: var(--hg-ink); }
+.hg-back svg {
+    width: 14px; height: 14px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
-/* ---- Заголовок формы ---- */
 .hr-title {
+    margin: 0;
     font-family: Georgia, 'Times New Roman', serif;
-    font-size: 33px;
+    font-size: 34px;
     font-weight: 400;
-    line-height: 1.15;
-    color: #161B27;
-    margin: 0 0 8px;
+    line-height: 1.12;
+    letter-spacing: -0.012em;
+    color: var(--hg-ink);
 }
 .hr-sub {
+    margin: 10px 0 0;
     font-family: 'Inter', sans-serif;
     font-size: 14px;
-    line-height: 1.5;
-    color: #7d8aa0;
-    margin: 0 0 24px;
+    line-height: 1.55;
+    color: var(--hg-mut);
     overflow-wrap: anywhere;
 }
 
-/* ---- Поля формы ---- */
-.hr-form { display: flex; flex-direction: column; gap: 16px; }
-.hr-field { display: flex; flex-direction: column; gap: 6px; text-align: left; }
+/* ---- поля ---- */
+.hr-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 22px;
+}
+.hr-field { display: flex; flex-direction: column; gap: 7px; text-align: left; }
 .hr-field.hidden { display: none; }
 .hr-label {
-    font-family: var(--hs-mono, 'JetBrains Mono', Menlo, monospace);
-    font-size: 10.5px;
-    font-weight: 500;
-    color: #8A94A6;
+    display: flex;
+    align-items: baseline;
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 800;
+    color: var(--hg-mut);
     text-transform: uppercase;
-    letter-spacing: 0.24em;
-    padding-left: 2px;
+    letter-spacing: 0.14em;
 }
 .hr-inputwrap { position: relative; display: block; }
 .hr-input {
     width: 100%;
     box-sizing: border-box;
     padding: 16px 46px 16px 18px;
-    font-family: var(--hs-mono, 'JetBrains Mono', Menlo, monospace);
-    font-size: 15px;
-    color: #2C364C;
-    background: #fff;
-    border: 1.2px solid #DFE5EE;
-    border-radius: 14px;
+    font-family: var(--hs-mono);
+    font-size: 14px;
+    color: var(--hg-ink);
+    background: var(--hg-glass);
+    border: 1px solid var(--hg-glass-edge);
+    border-radius: 16px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
     outline: none;
 }
-/* у моспейса широкий пробел — стягиваем межсловные зазоры подсказки */
-.hr-input::placeholder { color: #A9B2C1; word-spacing: -3px; }
+.hr-input::placeholder { color: var(--hg-dim); word-spacing: -3px; }
 .hr-input:focus {
-    border-color: #161B27;
-    box-shadow: 0 0 0 4px rgba(22, 27, 39, 0.08);
+    border-color: var(--hg-accent);
+    box-shadow: 0 0 0 3px rgba(68, 83, 239, 0.16);
+}
+/* поле с ошибкой: краснеет само поле, форма остаётся спокойной */
+.hr-input.is-bad {
+    border-color: #D8452B;
+    box-shadow: 0 0 0 3px rgba(216, 69, 43, 0.14);
+}
+/* постоянная подсказка под полем (не исчезающий плейсхолдер) */
+.hr-help {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    color: var(--hg-dim);
 }
 .hr-ficon {
     position: absolute;
-    right: 16px;
-    top: 50%;
+    right: 16px; top: 50%;
     transform: translateY(-50%);
-    width: 18px;
-    height: 18px;
+    width: 17px; height: 17px;
     fill: none;
-    stroke: #B9C2D0;
+    stroke: var(--hg-dim);
     stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
@@ -337,48 +654,110 @@ body.tab-home #hgHeatWrap { display: block; }
 }
 .hr-eye {
     position: absolute;
-    right: 5px;
-    top: 50%;
+    right: 6px; top: 50%;
     transform: translateY(-50%);
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 34px; height: 34px;
     background: none;
     border: none;
-    border-radius: 9px;
+    border-radius: 10px;
     cursor: pointer;
-    color: #B9C2D0;
+    color: var(--hg-dim);
     transition: color 0.2s ease;
 }
-.hr-eye:hover { color: #5a6a86; }
+.hr-eye:hover { color: var(--hg-ink); }
 .hr-eye svg {
-    width: 17px;
-    height: 17px;
+    width: 17px; height: 17px;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
 }
-
-.hr-forgot { text-align: right; margin-top: -3px; }
+/* «Забыли пароль?» стоит в строке подписи поля.
+   Селектор с .hr-label намеренно: admin.css грузится ПОСЛЕ и задаёт
+   своим формам `.hr-forgot { margin: -4px 0 2px }` — короткий селектор
+   перебило бы шорткатом margin. */
+.hr-label .hr-forgot { margin: 0 0 0 auto; }
+.hr-forgot .hr-link {
+    font-family: 'Inter', sans-serif;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+}
 .hr-error {
     display: none;
     font-family: 'Inter', sans-serif;
     font-size: 12.5px;
+    font-weight: 600;
     line-height: 1.45;
-    color: #d23b4e;
-    text-align: center;
+    color: #E0796A;
     padding: 2px 0;
 }
 .hr-error.show { display: block; }
-.hr-error.ok { color: #1f9d63; }
+.hr-error.ok { color: #5FC492; }
 
-/* ---- Главная кнопка ---- */
+/* ---- главная кнопка формы ---- */
 .hr-submit {
-    margin-top: 8px;
+    margin-top: 6px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 18px;
+    font-family: 'Inter', sans-serif;
+    font-size: 15.5px;
+    font-weight: 700;
+    color: #fff;
+    background: linear-gradient(180deg, #5B67F2, #4453EF);
+    border: none;
+    border-radius: 16px;
+    cursor: pointer;
+    box-shadow: 0 18px 38px -16px rgba(68, 83, 239, 0.55);
+    transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+}
+.hr-submit:hover { box-shadow: 0 22px 46px -16px rgba(68, 83, 239, 0.68); }
+.hr-submit:active { transform: scale(0.98); }
+/* отправка: кнопка заблокирована, второй клик не создаст второй запрос */
+.hr-submit.is-busy { opacity: 0.72; cursor: progress; }
+.hr-submit:disabled { cursor: default; }
+.hr-submit.is-done {
+    background: linear-gradient(180deg, #27B274, #1F9D63);
+    box-shadow: 0 18px 38px -16px rgba(31, 157, 99, 0.5);
+}
+.hr-submit-arrow {
+    width: 16px; height: 16px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* ---- разделитель и Telegram ---- */
+.hr-divider {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 18px 0;
+    color: var(--hg-dim);
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+}
+.hr-divider::before, .hr-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--hg-hair);
+}
+.hr-tg {
     width: 100%;
     display: flex;
     align-items: center;
@@ -386,214 +765,124 @@ body.tab-home #hgHeatWrap { display: block; }
     gap: 10px;
     padding: 17px;
     font-family: 'Inter', sans-serif;
-    font-size: 15.5px;
+    font-size: 14.5px;
     font-weight: 700;
-    color: #fff;
-    background: linear-gradient(180deg, #1C222E 0%, #10151F 100%);
-    border: none;
-    border-radius: 15px;
+    color: var(--hg-ink);
+    background: var(--hg-glass);
+    border: 1px solid var(--hg-glass-edge);
+    border-radius: 16px;
     cursor: pointer;
-    box-shadow: 0 16px 32px -10px rgba(16, 21, 31, 0.50);
-    transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+    transition: border-color 0.2s ease, transform 0.15s ease;
 }
-.hr-submit:hover { box-shadow: 0 20px 40px -10px rgba(16, 21, 31, 0.58); }
-.hr-submit:active { transform: scale(0.98); }
-.hr-submit.is-done { background: #1f9d63; box-shadow: 0 14px 34px rgba(31, 157, 99, 0.32); }
-.hr-submit-arrow {
-    width: 17px;
-    height: 17px;
-    fill: none;
-    stroke: #8FB3A0;
-    stroke-width: 2.2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-
-/* ---- Разделитель «или» ---- */
-.hr-divider {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 16px 0 14px;
-    color: #8A94A6;
-    font-family: var(--hs-mono, 'JetBrains Mono', Menlo, monospace);
-    font-size: 10px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.3em;
-}
-.hr-divider::before,
-.hr-divider::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: #DFE5EE;
-}
-
-/* ---- Кнопка Telegram ---- */
-.hr-tg {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 16px;
-    font-family: 'Inter', sans-serif;
-    font-size: 15.5px;
-    font-weight: 700;
-    color: #2C364C;
-    background: #fff;
-    border: 1.2px solid #DFE5EE;
-    border-radius: 14px;
-    cursor: pointer;
-    box-shadow: 0 10px 24px -12px rgba(44, 54, 76, 0.18);
-    transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-}
-.hr-tg:hover {
-    border-color: #B9C2D0;
-    box-shadow: 0 14px 30px -12px rgba(44, 54, 76, 0.26);
-}
+.hr-tg:hover { border-color: var(--hg-accent); }
 .hr-tg:active { transform: scale(0.98); }
-.hr-tg-icon { width: 22px; height: 22px; fill: #2AABEE; }
+.hr-tg-icon { width: 19px; height: 19px; fill: #2AABEE; }
 
-/* ---- Подвал колонны ---- */
+/* ---- подвалы карточки ---- */
 .hr-foot {
-    margin: 14px 0 0;
+    margin: 18px 0 0;
     text-align: center;
     font-family: 'Inter', sans-serif;
-    font-size: 12.5px;
+    font-size: 13px;
     line-height: 1.5;
-    color: #7d8aa0;
+    color: var(--hg-mut);
     overflow-wrap: anywhere;
 }
-.hr-link { color: #3D8464; font-weight: 700; cursor: pointer; }
+.hr-link {
+    color: var(--hg-accent);
+    font-weight: 700;
+    cursor: pointer;
+    padding: 6px 2px;      /* хит-зона */
+}
 .hr-link:hover { text-decoration: underline; }
-
 .hr-policy {
-    margin: auto 0 0;
-    padding-top: 16px;
+    margin: 12px 0 0;
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 7px;
     text-align: center;
-    gap: 6px;
-    font-family: var(--hs-mono, 'JetBrains Mono', Menlo, monospace);
-    font-size: 10px;
-    font-weight: 500;
-    color: #8A94A6;
+    font-family: var(--hs-mono);
+    font-size: 9.5px;
+    font-weight: 700;
+    color: var(--hg-dim);
     text-transform: uppercase;
     letter-spacing: 0.18em;
 }
 .hr-policy svg {
     flex: 0 0 auto;
-    width: 12px; height: 12px;
-    stroke: currentColor; fill: none; stroke-width: 2;
+    width: 11px; height: 11px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.8;
 }
 
-/* ---- Вид «вы вошли» (вместо формы) ---- */
-.hg-authed {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    justify-content: center;
-    gap: 6px;
-    min-height: 300px;
-}
+/* Вид «вы вошли» внутри карточки (совместимость: id #hgAuthed жив,
+   но на новой Главной вошедшего встречает док, а не карточка) */
+.hg-authed { display: flex; flex-direction: column; gap: 6px; }
 .hg-authed[hidden] { display: none; }
 .hg-authed .hr-submit { margin-top: 14px; }
 .hg-authed-calc { margin-top: 8px; }
-.hg-authed .hr-policy { margin-top: auto; }
 
-/* =====================  ТЁМНАЯ ТЕМА  ===================== */
-.dark-mode #hgHeatWrap { background: linear-gradient(180deg, #0f172a 0%, #111a2e 100%); }
-.dark-mode .hg-tile.up   { background: oklch(calc(0.28 + var(--k, 0) * 0.14) calc(0.02 + var(--k, 0) * 0.07) 158); color: oklch(0.75 0.08 158); }
-.dark-mode .hg-tile.dn   { background: oklch(calc(0.28 + var(--k, 0) * 0.14) calc(0.02 + var(--k, 0) * 0.07) 44);  color: oklch(0.76 0.08 44); }
-.dark-mode .hg-tile.flat { background: oklch(0.27 0.012 250); color: oklch(0.62 0.02 250); }
-.dark-mode .hg-scrim {
-    background:
-        radial-gradient(58% 52% at 100% 100%, rgba(15, 23, 42, 0.68), transparent 72%),
-        linear-gradient(180deg, rgba(15, 23, 42, 0.55) 0%, rgba(15, 23, 42, 0) 26%),
-        linear-gradient(90deg,
-            rgba(19, 26, 41, 0.88) 0%,
-            rgba(19, 26, 41, 0.64) 52%,
-            rgba(19, 26, 41, 0.40) 100%);
-}
-.dark-mode .hg-brand-name { color: #F1F5F9; }
-.dark-mode .hg-brand-sub { color: #7c8db0; }
-.dark-mode .hc-title { color: #F1F5F9; }
-.dark-mode .hc-lead { color: #a9b6cc; }
-.dark-mode .hg-live {
-    color: #cbd5e1;
-    background: rgba(15, 23, 42, 0.66);
-    border-color: rgba(255, 255, 255, 0.14);
-}
-.dark-mode .hg-live:hover { background: rgba(15, 23, 42, 0.9); border-color: rgba(255, 255, 255, 0.26); }
-.dark-mode .hg-live-pct.pos { color: #4ade80; }
-.dark-mode .hg-live-pct.neg { color: #f87171; }
-.dark-mode .hg-live-upd { color: #64748b; }
-/* Тёмная тема: карточка формы — ТА ЖЕ, что в светлой (белая, тёмный текст),
-   по фидбеку «карточка должна быть такой же как в светлой». Поэтому
-   dark-оверрайдов формы (hg-auth, hr-, hs-) НЕТ — всё наследуется из
-   светлых правил. Меняем в дарке только кнопку CTA слева. */
-/* «Начать расчёт» на тёмной Главной — белая (в светлой была тёмная navy) */
-.dark-mode .hc-cta-dark {
-    color: #10151F;
-    background: #ffffff;
-    box-shadow: 0 16px 32px -12px rgba(0, 0, 0, 0.55);
-}
-.dark-mode .hc-cta-dark:hover { box-shadow: 0 20px 44px -12px rgba(0, 0, 0, 0.65); }
-.dark-mode .hc-cta-dark svg { stroke: #10151F; }
-
-/* ---- Мягкая смена вида «гость ↔ вошёл» ----
-   Вход и выход переписывают ВЕСЬ первый экран разом: заголовок манифеста,
-   лид, подпись кнопки и колонну справа (форма ↔ приветствие). Голая подмена
-   в updateAuthView делала это за один кадр — самый заметный рывок на сайте.
-   Гасим обе зоны, подменяем содержимое под ноль и проявляем обратно.
-   Класс вешает и снимает js/home-register.js, только на НАСТОЯЩЕЙ смене
-   состояния — при первой отрисовке страницы вид ставится молча. */
-.hg-main,
-#homeRegister {
-    transition: opacity .19s ease, transform .19s ease;
-}
-.hg-main.hg-swap,
-#homeRegister.hg-swap {
-    opacity: 0;
-    transform: translateY(6px);
-}
-@media (prefers-reduced-motion: reduce) {
-    .hg-main, #homeRegister { transition-duration: .01ms; }
-    .hg-main.hg-swap, #homeRegister.hg-swap { transform: none; }
+/* =========================================================
+   ДВИЖЕНИЕ (только при разрешённой анимации)
+   ========================================================= */
+@media (prefers-reduced-motion: no-preference) {
+    /* центр дышит: 1.4% за 6 секунд */
+    .hg-core { animation: hgBreath 6s ease-in-out infinite alternate; }
+    @keyframes hgBreath {
+        from { transform: translate(-50%, -50%) scale(1); }
+        to   { transform: translate(-50%, -50%) scale(1.014); }
+    }
+    /* узлы плывут по своим орбитам; период и направление задаёт js */
+    .hg-orb.hg-flying { animation: hgOrbit linear infinite; }
+    @keyframes hgOrbit {
+        from { offset-distance: var(--od, 0%); }
+        to   { offset-distance: calc(var(--od, 0%) + 100%); }
+    }
+    /* под курсором бумага замирает — можно прочитать спокойно */
+    .hg-orb:hover { animation-play-state: paused; }
 }
 
-/* =====================  УЗКИЕ ЭКРАНЫ  ===================== */
+/* =========================================================
+   УЗКИЕ ЭКРАНЫ
+   ========================================================= */
 @media (max-width: 1023px) {
     body.tab-home #contentArea {
         overflow-y: auto !important;
         overflow-x: hidden !important;
     }
-    .hg-cover {
-        grid-template-columns: 1fr;
-        gap: 24px;
-        padding: 20px 18px 30px;
+    .hg-head { height: 68px; padding: 0 18px; }
+    .hg-head::after { left: 18px; right: 18px; }
+    .hg-nav { display: none; }         /* разделы доступны из сайдбара */
+    .hg-manifest { padding: 26px 18px 0; }
+    /* Орбиты на телефоне не читаются: система схлопывается в центр —
+       остаётся живой индекс, заголовок и вход. */
+    .hg-obs { min-height: 210px; }
+    .hg-rings, .hg-orb { display: none; }
+    .hg-core { position: static; transform: none; padding: 30px 0 10px; }
+    .hg-core-v { font-size: 46px; }
+    .hg-dock {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 0 18px 24px;
     }
-    /* На телефоне карта-фон слишком пёстрая под текстом — вуаль почти глухая */
-    .hg-scrim {
-        background: linear-gradient(180deg,
-            rgba(255, 255, 255, 0.90) 0%,
-            rgba(255, 255, 255, 0.78) 100%);
+    .hg-quick, .hg-cta, .hg-quiet, .hg-cap {
+        width: 100%;
+        max-width: none;
+        justify-content: center;
     }
-    .dark-mode .hg-scrim {
-        background: linear-gradient(180deg,
-            rgba(19, 26, 41, 0.92) 0%,
-            rgba(19, 26, 41, 0.82) 100%);
+    .hg-btm {
+        height: auto;
+        margin: 0 18px;
+        padding: 14px 0 18px;
+        flex-wrap: wrap;
+        gap: 6px 14px;
     }
-    .hg-main { padding: 14px 6px 0; }
-    .hc-title { font-size: 32px; }
-    .hg-auth {
-        align-self: stretch;
-        justify-self: stretch;
-        max-height: none;
-        overflow-y: visible;
-        background: #ffffff;
+    .hg-btm .sp { display: none; }
+    .hg-authwrap { position: fixed; inset: 0; padding: 14px; }
+    .hg-authcard { max-height: 92vh; }
+    @media (prefers-reduced-motion: no-preference) {
+        .hg-core { animation: none; }
     }
 }

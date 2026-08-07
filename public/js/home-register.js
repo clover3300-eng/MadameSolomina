@@ -98,7 +98,7 @@
     }
 
     function authZones() {
-        return [document.querySelector('.hg-main'), el('homeRegister')].filter(Boolean);
+        return [document.querySelector('.hg-manifest'), el('hgDockGuest'), el('hgDockAuthed')].filter(Boolean);
     }
     function clearAuthSwap() {
         authZones().forEach(function (z) { z.classList.remove('hg-swap'); });
@@ -136,33 +136,87 @@
         if (!form || !done) return;
         form.style.display = showDone ? 'none' : '';
         done.hidden = !showDone;
+
+        var name = (window.supa && window.supa.profile && window.supa.profile.name) || '';
+        var email = (window.supa && window.supa.profile && window.supa.profile.email) ||
+                    (window.supa && window.supa.session && window.supa.session.user &&
+                     window.supa.session.user.email) || '';
         if (showDone) {
-            var email = (window.supa.profile && window.supa.profile.email) ||
-                        (window.supa.session && window.supa.session.user && window.supa.session.user.email) || '';
             var box = el('hgAuthedEmail');
             if (box) box.textContent = email ? ('Вы вошли как ' + email) : 'Вы вошли в аккаунт';
         }
-        // Манифест слева тоже живой: гостю — приглашение, вошедшему —
-        // «с возвращением» (по имени из профиля) и зов на ребалансировку.
+
+        // Док внизу сцены: гостю — почта и две кнопки, вошедшему — действия.
+        var dockGuest = el('hgDockGuest'), dockAuthed = el('hgDockAuthed');
+        if (dockGuest) dockGuest.hidden = showDone;
+        if (dockAuthed) dockAuthed.hidden = !showDone;
+        // Шапка: «Войти» ↔ аватар с первой буквой имени (или почты).
+        var loginBtn = el('hgLoginBtn'), ava = el('hgHeadAva');
+        if (loginBtn) loginBtn.hidden = showDone;
+        if (ava) {
+            ava.hidden = !showDone;
+            var letter = (name || email || '·').trim().charAt(0).toUpperCase();
+            ava.textContent = letter || '·';
+            ava.setAttribute('aria-label', name ? ('Кабинет: ' + name) : 'Личный кабинет');
+        }
+
+        // Манифест живой: гостю — приглашение, вошедшему «с возвращением» по имени.
         var title = el('hcTitle'), lead = el('hcLead'), cta = el('hcCtaLabel');
-        if (title && lead && cta) {
+        if (title && lead) {
             if (showDone) {
-                var name = (window.supa.profile && window.supa.profile.name) || '';
-                title.innerHTML = 'С возвращением' + (name ? ', ' + escHtml(name) : '') +
-                    '!<br>Рынок не стоял на месте';
-                lead.textContent = 'Пока вас не было, котировки успели сдвинуться. ' +
-                    'Загляните в портфель и проведите ребалансировку — несколько минут, ' +
-                    'и доли снова в равновесии.';
-                cta.textContent = 'Сделать ребалансировку';
+                title.innerHTML = 'С возвращением' + (name ? ', <em>' + escHtml(name) + '</em>' : '');
+                lead.textContent = 'Рынок не стоял на месте: загляните в портфель и сверьте доли — ' +
+                    'ребаланс займёт пару минут.';
+                if (cta) cta.textContent = 'Сделать ребалансировку';
             } else {
-                title.innerHTML = 'Добро пожаловать!<br>Спокойный доход<br>с Московской биржи';
-                lead.textContent = 'Рады видеть вас. За этим текстом — живая карта рынка ' +
-                    'прямо сейчас, а внутри — расчёт портфеля из ОФЗ и акций и план ' +
-                    'ребаланса в одном спокойном интерфейсе.';
-                cta.textContent = 'Начать расчёт';
+                title.innerHTML = 'Терминал <em>спокойного</em> инвестора';
+                lead.textContent = 'Портфель из ОФЗ и акций под вашу цель, план ребаланса ' +
+                    'и выплаты по расписанию.';
             }
         }
     }
+
+    // ---- Карточка формы поверх сцены ----
+    // Модалки по-прежнему нет: форма живёт в разметке Главной и просто
+    // раскрывается поверх орбит (сцена отходит на второй план классом
+    // .hg-formopen). Почта, введённая в док, переезжает в форму.
+    function formOpen() {
+        var cover = el('hgCover');
+        return !!(cover && cover.classList.contains('hg-formopen'));
+    }
+    window.hgOpenForm = function (mode) {
+        var cover = el('hgCover');
+        if (!cover) return;
+        if (mode) window.homeAuthMode(mode);
+        cover.classList.add('hg-formopen');
+        var btn = el('hgLoginBtn');
+        if (btn) btn.classList.toggle('is-on', mode === 'login');
+
+        var form = el('homeRegForm');
+        var quick = el('hgQuickMail');
+        if (form && quick && quick.value && !form.email.value) form.email.value = quick.value.trim();
+        haptic('medium');
+
+        // Фокус в первое пустое поле: имя (регистрация) или почта/пароль (вход)
+        setTimeout(function () {
+            if (!form) return;
+            var first = (mode === 'login')
+                ? (form.email.value ? form.password : form.email)
+                : (form.name && !form.name.value ? form.name : (form.email.value ? form.password : form.email));
+            try { first.focus({ preventScroll: true }); } catch (e) { try { first.focus(); } catch (e2) {} }
+        }, 60);
+    };
+    window.hgCloseForm = function () {
+        var cover = el('hgCover');
+        if (!cover) return;
+        cover.classList.remove('hg-formopen');
+        var btn = el('hgLoginBtn');
+        if (btn) btn.classList.remove('is-on');
+        clearNote();
+    };
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && formOpen()) window.hgCloseForm();
+    });
     // Кнопка манифеста: гостя ведёт в калькулятор, вошедшего — в Портфели
     // (там живёт ребалансировка).
     window.hcCtaGo = function () {
@@ -172,13 +226,10 @@
     // Совместимость со старым API модалки: «открыть» = переключить режим
     // и подвести взгляд к колонне (recovery-ссылка из письма зовёт именно это).
     window.hsOpenAuth = function (mode) {
-        if (mode) window.homeAuthMode(mode);
         updateAuthView();
-        var col = el('homeRegister');
-        if (col && col.scrollIntoView) col.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        haptic('medium');
+        window.hgOpenForm(mode || 'register');
     };
-    window.hsCloseAuth = function () { /* колонна всегда на месте */ };
+    window.hsCloseAuth = function () { window.hgCloseForm(); };
 
     // ---- Переключение «Регистрация / Вход / Новый пароль» ----
     window.homeAuthMode = function (mode) {
@@ -195,8 +246,16 @@
         if (tabReg) tabReg.classList.toggle('active', isReg);
         if (tabLogin) tabLogin.classList.toggle('active', mode === 'login');
 
+        // До входа мы не знаем, кто перед нами: приветствие по имени звучит
+        // ТОЛЬКО после входа (в манифесте сцены), форма называется честно.
         var title = el('hsAuthTitle');
-        if (title) title.textContent = isRec ? 'Новый пароль' : (isReg ? 'Создайте аккаунт' : 'С возвращением!');
+        if (title) title.textContent = isRec ? 'Новый пароль' : (isReg ? 'Создайте аккаунт' : 'Вход в кабинет');
+        var sub = el('hsAuthSub');
+        if (sub) {
+            sub.textContent = isRec ? 'Придумайте пароль, которым будете входить'
+                : (isReg ? 'Личный кабинет инвестора Madame Solomi\'na'
+                         : 'Портфели и настройки ждут внутри');
+        }
 
         var nameField = el('hsNameField');
         if (nameField) nameField.classList.toggle('hidden', !isReg);
@@ -232,6 +291,7 @@
         var form = el('homeRegForm');
         if (form && form.password) {
             form.password.setAttribute('autocomplete', mode === 'login' ? 'current-password' : 'new-password');
+            form.password.setAttribute('placeholder', mode === 'login' ? 'Ваш пароль' : 'Придумайте пароль');
             if (isRec) form.password.value = '';
         }
 
@@ -272,6 +332,9 @@
         haptic('success');
         toast(msg);
         var dest = landingTab(isNewUser);
+        // Остаёмся на Главной — карточку формы закрываем, чтобы человек увидел
+        // перерисованный манифест «С возвращением» и свою сцену, а не форму.
+        if (dest === 'home') setTimeout(function () { window.hgCloseForm(); }, 420);
 
         // При облачном входе cloud-sync сам делает один мягкий reload, подтянув данные.
         // Ставим целевой путь заранее — после reload route-hash откроет нужную вкладку
@@ -475,7 +538,8 @@
     // (window.moexUrl из core.js) — как остальные вкладки; прямой iss.moex.com
     // оставлен фолбэком, если core.js почему-то не отдал moexUrl.
     var IMOEX_PATH = '/iss/engines/stock/markets/index/securities.json' +
-        '?iss.meta=off&securities=IMOEX&iss.only=marketdata&marketdata.columns=SECID,LASTCHANGEPRC,UPDATETIME';
+        '?iss.meta=off&securities=IMOEX&iss.only=marketdata' +
+        '&marketdata.columns=SECID,CURRENTVALUE,LASTCHANGEPRC,UPDATETIME';
     function imoexUrl() {
         return (typeof window.moexUrl === 'function')
             ? window.moexUrl(IMOEX_PATH)
@@ -491,6 +555,14 @@
                 var md = j && j.marketdata;
                 if (!md || !md.data || !md.data.length) return;
                 var row = md.data[0];
+                // Само значение индекса — сердце «Обсерватории» (центр сцены)
+                var cur = row[md.columns.indexOf('CURRENTVALUE')];
+                var core = document.getElementById('hgCoreVal');
+                if (core && cur != null && !isNaN(cur)) {
+                    core.textContent = Number(cur).toLocaleString('ru-RU', {
+                        minimumFractionDigits: 2, maximumFractionDigits: 2
+                    });
+                }
                 var v = row[md.columns.indexOf('LASTCHANGEPRC')];
                 if (v == null || isNaN(v)) return;
                 var sign = v > 0 ? '+' : (v < 0 ? '−' : '');
@@ -606,8 +678,83 @@
         box.innerHTML = html;
     }
 
-    // Все живые карты на странице: фон Главной + фоны заглушек (.gx-heat)
+    // ============================================================
+    // ОБСЕРВАТОРИЯ — узлы-бумаги на эллиптических орбитах (#hgOrbits)
+    // ============================================================
+    // Те же данные, что кормили карту-фон: веса (размер узла) и дневное
+    // изменение (цвет по монохромному закону — заливка растёт, контур падает).
+    // Движение делает CSS (offset-path + offset-distance), js только раскладывает.
+    // Орбиты заданы в ПРОЦЕНТАХ поля — сцена адаптивна без пересчёта на resize.
+    var RINGS = [
+        { rx: 26, ry: 20.5, dur: 90,  rev: false },
+        { rx: 36, ry: 29,   dur: 140, rev: true  },   // средняя идёт навстречу
+        { rx: 46, ry: 38,   dur: 200, rev: false }
+    ];
+    var ORB_MAX = 12;      // столько бумаг живёт на сцене
+    var ORB_CAP = 3;       // ±3% — полная насыщенность цвета
+
+    // offset-path поддерживают не все браузеры: без него узлы расставляются
+    // статически (тригонометрией) — композиция сохраняется, движения нет.
+    var CAN_ORBIT = (function () {
+        try {
+            return !!(window.CSS && CSS.supports &&
+                CSS.supports('offset-path', 'ellipse(30% 20% at 50% 50%)'));
+        } catch (e) { return false; }
+    })();
+
+    function drawOrbits() {
+        var box = document.getElementById('hgOrbits');
+        if (!box || !weights) return;
+        var list = weights.slice(0, ORB_MAX);
+        var html = '';
+        list.forEach(function (item, i) {
+            var ring = RINGS[i % RINGS.length];
+            // фаза: равномерно по своему кольцу + смещение кольца, чтобы
+            // соседние орбиты не выстраивались в линию
+            var perRing = Math.ceil(list.length / RINGS.length);
+            var slot = Math.floor(i / RINGS.length);
+            var phase = (slot / perRing) + (i % RINGS.length) * 0.11;
+            phase = phase - Math.floor(phase);
+
+            var chg = changes ? changes[item.tk] : null;
+            var c = (chg == null || isNaN(chg)) ? 0 : +chg;
+            var k = Math.min(1, Math.abs(c) / ORB_CAP);
+            var cls = c < -0.02 ? 'dn' : 'up';
+            var w = item.value || 0;
+            var fs = (10 + Math.min(w, 14) * 0.55).toFixed(1);      // 10…17.7px
+            var pad = (5 + Math.min(w, 14) * 0.35).toFixed(1);
+            var sign = c > 0 ? '+' : (c < 0 ? '−' : '');
+            var pct = sign + Math.abs(c).toFixed(2).replace('.', ',') + '%';
+
+            var pos, extra;
+            if (CAN_ORBIT) {
+                pos = 'offset-path:ellipse(' + ring.rx + '% ' + ring.ry + '% at 50% 50%);' +
+                      '--od:' + (phase * 100).toFixed(2) + '%;' +
+                      'animation-duration:' + ring.dur + 's;' +
+                      'animation-direction:' + (ring.rev ? 'reverse' : 'normal') + ';';
+                extra = ' hg-flying';
+            } else {
+                var a = phase * Math.PI * 2;
+                pos = 'left:' + (50 + ring.rx * Math.cos(a)).toFixed(2) + '%;' +
+                      'top:' + (50 + ring.ry * Math.sin(a)).toFixed(2) + '%;' +
+                      'transform:translate(-50%,-50%);';
+                extra = '';
+            }
+            html += '<button type="button" class="hg-orb ' + cls + extra + '"' +
+                ' style="' + pos + '--k:' + k.toFixed(2) + ';padding:' + pad + 'px ' + (pad * 1.9).toFixed(1) + 'px"' +
+                ' onclick="switchTab(\'market\')" title="' + item.tk + ' ' + pct + ' — открыть Рынок">' +
+                '<b style="font-size:' + fs + 'px">' + item.tk + '</b>' +
+                (w > 3.2 ? '<span style="font-size:' + (fs * 0.82).toFixed(1) + 'px">' + pct + '</span>' : '') +
+                '</button>';
+        });
+        box.innerHTML = html;
+        var meta = document.getElementById('hgBtmMeta');
+        if (meta) meta.textContent = 'топ-' + list.length + ' весов индекса';
+    }
+
+    // Все живые сцены на странице: орбиты Главной + плитки заглушек (.gx-heat)
     function draw() {
+        drawOrbits();
         drawInto(document.getElementById('hgHeatBg'));
         var extra = document.querySelectorAll('.gx-heat');
         for (var i = 0; i < extra.length; i++) drawInto(extra[i]);
@@ -619,7 +766,10 @@
     };
 
     function load() {
-        if (!document.getElementById('hgHeatBg')) return;
+        // Цели рендера: орбиты Главной, фоны заглушек, старый слой карты
+        if (!document.getElementById('hgOrbits') &&
+            !document.getElementById('hgHeatBg') &&
+            !document.querySelector('.gx-heat')) return;
         Promise.all([weights ? Promise.resolve(null) : jget(A_URL), jget(M_URL)])
             .then(function (res) {
                 if (res[0]) {

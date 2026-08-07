@@ -50,11 +50,83 @@
             rgba(19, 26, 41, 0.40) 100%);
 }
 
-/* сетка Главной внутри сцены (база .hg-cover — из home-register.css) */
+/* Сетка «манифест + колонна» — СВОЯ.
+   Раньше базой служил .hg-cover из home-register.css, но с 2026-08-07
+   Главная стала «Обсерваторией» (центр + орбиты), и её .hg-cover —
+   флекс-колонка сцены. Заглушкам нужен прежний диптих, поэтому вся
+   раскладка и оформление манифеста живут здесь. */
 .gx-cover .hg-cover {
-    position: relative; z-index: 2; flex: 1;
+    position: relative; z-index: 2; flex: 1; min-height: 0;
+    display: grid; grid-template-columns: minmax(0, 1fr) 500px; gap: 56px;
     padding: 24px 84px 36px 64px;
+    background: none;
+    --hs-mono: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, monospace;
 }
+.gx-cover .hg-main {
+    position: relative; display: flex; flex-direction: column;
+    justify-content: center; min-width: 0; padding-bottom: 4vh;
+}
+.gx-cover .hg-brand { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.gx-cover .hg-brand-name { font-family: 'Inter', sans-serif; font-size: 18px; letter-spacing: 0.01em; }
+.gx-cover .hg-brand-sub {
+    font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.38em;
+}
+.gx-cover .hc-title {
+    margin: 24px 0 0; font-family: Georgia, 'Times New Roman', serif;
+    font-size: clamp(40px, 4.2vw, 58px); font-weight: 400; line-height: 1.12;
+    letter-spacing: -0.01em;
+}
+.gx-cover .hc-lead {
+    margin: 20px 0 0; max-width: 530px; font-family: 'Inter', sans-serif;
+    font-size: 16px; line-height: 1.7;
+}
+.gx-cover .hc-ctas { display: flex; align-items: center; gap: 16px; margin-top: 36px; flex-wrap: wrap; }
+.gx-cover .hc-cta {
+    display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+    padding: 16px 32px; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 700;
+    border: none; border-radius: 999px; cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+.gx-cover .hc-cta:active { transform: scale(0.97); }
+.gx-cover .hc-cta svg {
+    width: 17px; height: 17px; fill: none; stroke-width: 2.2;
+    stroke-linecap: round; stroke-linejoin: round;
+}
+.gx-cover .hg-live {
+    display: inline-flex; align-items: center; gap: 7px; padding: 13px 19px;
+    font-family: var(--hs-mono); font-size: 12px; font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 999px; cursor: pointer;
+}
+.gx-cover .hg-live-pct { font-variant-numeric: tabular-nums; font-weight: 700; }
+.gx-cover .hg-live-upd { color: #64748b; }
+
+/* Белая колонна заглушки. Набор .hr-* общий с Главной, но там он завязан
+   на тёмные токены --hg-*; объявляем светлые прямо на карточке — и весь
+   набор полей, кнопок и подписей становится «тёмным по белому». */
+.gx-cover .gx-side {
+    --hg-ink: #161B27;
+    --hg-mut: #7d8aa0;
+    --hg-dim: #8A94A6;
+    --hg-hair: #DFE5EE;
+    --hg-glass: #ffffff;
+    --hg-glass-edge: #DFE5EE;
+    --hg-accent: #4453EF;
+    position: relative; align-self: center; justify-self: end;
+    width: 100%; max-height: 100%; padding: 38px 38px 28px; box-sizing: border-box;
+    display: flex; flex-direction: column; overflow-y: auto; scrollbar-width: none;
+    background: #ffffff; border: 1px solid rgba(20, 27, 45, 0.09); border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 10px 26px -20px rgba(16, 24, 40, 0.22);
+    color: var(--hg-ink);
+}
+.gx-cover .gx-side::-webkit-scrollbar { display: none; }
+.gx-cover .gx-side .hr-title { font-size: 33px; }
+.gx-cover .gx-side .hr-label {
+    font-family: var(--hs-mono); font-size: 10.5px; font-weight: 500;
+    letter-spacing: 0.24em; color: var(--hg-dim);
+}
+.gx-cover .gx-side .hr-submit,
+.gx-cover .gx-side .hr-tg { border-radius: 14px; }
 
 /* ---- манифест: тёмные цвета (копии .dark-mode-правил) ---- */
 .gx-cover .hg-brand-name { color: #F1F5F9; }
@@ -106,15 +178,13 @@
 .gx-chan.on b { color: #161B27; }
 .gx-chan:disabled { opacity: 0.55; cursor: not-allowed; }
 
-/* ===== ДЕСКТОП: фон во весь экран, как на Главной ===== */
+/* ===== ДЕСКТОП: сцена во весь экран ===== */
 /* Пока открыта закрытая вкладка, JS вешает body.gx-on и форсит тёмную тему.
-   Тогда поднимается ОБЩИЙ фикс-слой Главной #hgHeatWrap (живая карта + вуаль
-   на весь экран, ПОД прозрачной шапкой и светлой рейкой — ровно как на
-   Главной), а панель-заглушка становится прозрачной: своя .gx-heat/.gx-scrim
-   и карточная рамка гасятся, сцена тянется от края до края. */
+   Раньше фон давал общий фикс-слой Главной #hgHeatWrap; с 2026-08-07 его нет
+   (Главная стала «Обсерваторией»), поэтому заглушка рисует карту сама —
+   своими .gx-heat и .gx-scrim, растянутыми на всю панель. */
 @media (min-width: 1024px) {
-    body.gx-on #hgHeatWrap { display: block; }
-    /* контент и рейка — над фикс-картой (копия поведения тёмной Главной) */
+    /* контент и рейка — над картой панели */
     body.gx-on #contentArea { z-index: 2; }
     body.gx-on #sideBar { position: relative; z-index: 50; }
 
@@ -127,12 +197,8 @@
     body.gx-on .tab-gated .gx-cover {
         flex: 1; min-height: 0;
         border-radius: 0; border: none; box-shadow: none;
-        background: transparent;   /* карту рисует #hgHeatWrap */
     }
-    /* свои фон и вуаль в панели не нужны — их даёт полноэкранный слой */
-    body.gx-on .tab-gated .gx-heat,
-    body.gx-on .tab-gated .gx-scrim { display: none; }
-    /* сетку манифеста центрируем во всю высоту, паддинги — как на Главной */
+    /* сетку манифеста центрируем во всю высоту, паддинги — как были на Главной */
     body.gx-on .tab-gated .hg-cover {
         flex: 1;
         padding: 8px 108px 30px 72px;

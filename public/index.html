@@ -249,12 +249,12 @@
     <link rel="stylesheet" href="css/calc-mode.css?v=12">
     <link rel="stylesheet" href="css/calc-r6.css?v=11">
     <link rel="stylesheet" href="css/calc-r7.css?v=1">
-    <link rel="stylesheet" href="css/home-register.css?v=22">
+    <link rel="stylesheet" href="css/home-register.css?v=24">
     <link rel="stylesheet" href="css/corner-stack.css?v=4">
     <link rel="stylesheet" href="css/site-bg.css?v=17">
     <link rel="stylesheet" href="css/profile-menu.css?v=21">
     <link rel="stylesheet" href="css/notifications.css?v=3">
-    <link rel="stylesheet" href="css/tab-gates.css?v=4">
+    <link rel="stylesheet" href="css/tab-gates.css?v=5">
     <link rel="stylesheet" href="css/admin.css?v=13">
     <link rel="stylesheet" href="css/rebalance-r6.css?v=22">
     <link rel="stylesheet" href="css/typography-tokens.css?v=16">
@@ -342,15 +342,10 @@
     <!-- ===== HOME BACKGROUND IMAGE (отключено, см. #siteBgTiles ниже) ===== -->
     <div id="homeBg" aria-hidden="true"></div>
 
-    <!-- Живая тепловая карта IMOEX ВО ВСЮ СТРАНИЦУ (видна только на Главной,
-         поверх пейзажа #homeBg). Плитки рисует js/home-register.js из данных
-         MOEX ISS, сверху вуаль .hg-scrim для читаемости текста. Fixed-слой
-         живёт здесь, а не в #panel-home: tabFadeIn-анимация вкладки ловит
-         position:fixed своим transform. -->
-    <div id="hgHeatWrap" aria-hidden="true">
-        <div class="hg-bg" id="hgHeatBg"></div>
-        <div class="hg-scrim"></div>
-    </div>
+    <!-- Живая тепловая карта IMOEX как фон Главной УБРАНА (2026-08-07):
+         первый экран стал «Обсерваторией» (см. css/home-register.css).
+         Сам рендер плиток жив и кормит заглушки вкладок (.gx-heat,
+         js/tab-gates.js) — код остался в js/home-register.js. -->
 
     <!-- Статичный узор-мозаика на ОСТАЛЬНЫХ вкладках (не Главная — там живая
          карта выше): та же эстетика плиток, но без тикеров и живых данных —
@@ -658,114 +653,191 @@
     <!-- ===================== CONTENT AREA ===================== -->
     <div id="contentArea">
 
-        <!-- ===== TAB: ГЛАВНАЯ — манифест и стеклянная колонна входа/регистрации
-             ВО ВЕСЬ ЭКРАН, без карточки. Фон — фикс-слой #hgHeatWrap в начале
-             #appShell (живая карта IMOEX, рисует js/home-register.js); вся
-             логика формы (Supabase/Telegram/демо) прежняя — id не менялись. ===== -->
+        <!-- ===== TAB: ГЛАВНАЯ — «ОБСЕРВАТОРИЯ»: рынок как планетная система.
+             В центре живой индекс IMOEX, вокруг по трём эллиптическим орбитам
+             плывут 12 крупнейших бумаг (рисует js/home-register.js, данные —
+             те же два эндпоинта MOEX ISS, что кормили карту-фон). Форма
+             регистрации/входа не модалка: раскрывается карточкой поверх сцены
+             (.hg-authcard), все прежние id формы сохранены — логика
+             Supabase/Telegram/демо не менялась. Мокап: dev/mockups/home10. ===== -->
         <div id="panel-home" class="tab-panel active">
-            <div class="hg-cover">
+            <div class="hg-cover" id="hgCover">
 
-                <div class="hg-main">
-                    <div class="hg-brand">
-                        <span class="hg-brand-name"><span style="font-weight:300;">Madame </span><span style="font-weight:800;">Solomi'na</span></span>
-                        <span class="hg-brand-sub">Wealth Management</span>
+                <!-- Шапка Главной: марка, разделы, вход. Одна полоса, одна ось. -->
+                <header class="hg-head">
+                    <span class="hg-mark" aria-hidden="true">M</span>
+                    <span class="hg-brandname"><span style="font-weight:300;">Madame </span><span style="font-weight:800;">Solomi'na</span></span>
+                    <nav class="hg-nav" aria-label="Разделы">
+                        <button type="button" onclick="switchTab('market')">Рынок</button>
+                        <button type="button" onclick="switchTab('calc')">Расчёт</button>
+                        <button type="button" onclick="switchTab('academy')">Академия</button>
+                    </nav>
+                    <!-- Тема: общая шапка сайта на Главной скрыта, переключатель живёт здесь
+                         (requestThemeToggle из core.js — на Главной спросит охват) -->
+                    <button class="hg-iconbtn" type="button" onclick="requestThemeToggle()" aria-label="Сменить тему" title="Сменить тему">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"></path></svg>
+                    </button>
+                    <button class="hg-headbtn" type="button" id="hgLoginBtn" onclick="hgOpenForm('login')">Войти</button>
+                    <button class="hg-headava" type="button" id="hgHeadAva" hidden onclick="switchTab('portfolios')" aria-label="Личный кабинет">Д</button>
+                </header>
+
+                <!-- Сцена: манифест, орбиты, центр -->
+                <div class="hg-stage" id="hgStage">
+                    <div class="hg-manifest">
+                        <!-- Текст живой: вошедшему js/home-register.js (updateAuthView)
+                             пишет «С возвращением, Имя» и меняет док внизу. -->
+                        <h1 class="hc-title" id="hcTitle">Терминал <em>спокойного</em> инвестора</h1>
+                        <p class="hc-lead" id="hcLead">Портфель из ОФЗ и акций под вашу цель, план ребаланса и выплаты по расписанию.</p>
                     </div>
-                    <!-- Текст манифеста живой: для вошедшего пользователя js/home-register.js
-                         (updateAuthView) меняет заголовок/лид на «С возвращением…» и ведёт
-                         кнопку на ребалансировку в Портфелях вместо калькулятора. -->
-                    <h1 class="hc-title" id="hcTitle">Добро пожаловать!<br>Спокойный доход<br>с&nbsp;Московской биржи</h1>
-                    <p class="hc-lead" id="hcLead">Рады видеть вас. За&nbsp;этим текстом&nbsp;— живая карта рынка прямо сейчас, а&nbsp;внутри&nbsp;— расчёт портфеля из&nbsp;ОФЗ и&nbsp;акций и&nbsp;план ребаланса в&nbsp;одном спокойном интерфейсе.</p>
-                    <div class="hc-ctas">
-                        <button class="hc-cta hc-cta-dark" type="button" id="hcCtaMain" onclick="hcCtaGo()">
-                            <span id="hcCtaLabel">Начать расчёт</span>
-                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg>
-                        </button>
-                        <!-- Живой пульс IMOEX (js/home-register.js), клик — вкладка Рынок -->
-                        <button class="hg-live" type="button" onclick="switchTab('market')" title="Открыть карту рынка">
-                            IMOEX <span class="hg-live-pct" id="hcStatImoex">—</span><span class="hg-live-upd" id="hgLiveUpd"></span>
-                        </button>
+
+                    <div class="hg-obs" id="hgObs">
+                        <!-- Направляющие орбит (проценты от поля — адаптивно) -->
+                        <svg class="hg-rings" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                            <ellipse cx="50" cy="50" rx="26" ry="20.5"></ellipse>
+                            <ellipse cx="50" cy="50" rx="36" ry="29"></ellipse>
+                            <ellipse cx="50" cy="50" rx="46" ry="38"></ellipse>
+                        </svg>
+                        <!-- Узлы-бумаги (js/home-register.js) -->
+                        <div class="hg-nodes" id="hgOrbits"></div>
+                        <!-- Центр: живой индекс -->
+                        <div class="hg-core">
+                            <div class="hg-core-lb">IMOEX</div>
+                            <div class="hg-core-v" id="hgCoreVal">—</div>
+                            <div class="hg-core-d">
+                                <span class="hg-live-pct" id="hcStatImoex">—</span><span class="hg-live-upd" id="hgLiveUpd"></span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Стеклянная колонна входа/регистрации -->
-                <aside class="hg-auth" id="homeRegister" aria-label="Вход и регистрация">
-                    <div class="hs-auth-inner" id="hsAuthInner">
-                        <div class="hs-tabs" role="tablist">
-                            <button class="hs-tab active" id="hsTabRegister" type="button" role="tab" onclick="homeAuthMode('register')">Регистрация</button>
-                            <button class="hs-tab" id="hsTabLogin" type="button" role="tab" onclick="homeAuthMode('login')">Вход</button>
-                        </div>
+                <!-- Док входа: гостю — почта и две кнопки, вошедшему — действия -->
+                <div class="hg-dock" id="hgDockGuest">
+                    <input class="hg-quick" id="hgQuickMail" type="email" autocomplete="email"
+                           placeholder="you@example.com" aria-label="Ваш email"
+                           onkeydown="if(event.key==='Enter')hgOpenForm('register')">
+                    <button class="hg-cta" type="button" onclick="hgOpenForm('register')">
+                        Начать
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg>
+                    </button>
+                    <button class="hg-quiet" type="button" onclick="homeTelegramLogin()">
+                        <svg class="hg-tg-icon" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M21.94 4.3 18.7 19.6c-.24 1.08-.88 1.34-1.78.84l-4.9-3.62-2.37 2.28c-.26.26-.48.48-.98.48l.35-4.98 9.06-8.19c.4-.35-.08-.54-.6-.2L6.27 13.2 1.43 11.7c-1.05-.33-1.07-1.05.22-1.55l18.95-7.3c.88-.32 1.65.2 1.34 1.45Z"/>
+                        </svg>
+                        Telegram
+                    </button>
+                </div>
+                <div class="hg-dock" id="hgDockAuthed" hidden>
+                    <span class="hg-cap" id="hgDockCap" hidden></span>
+                    <button class="hg-cta" type="button" id="hcCtaMain" onclick="hcCtaGo()">
+                        <span id="hcCtaLabel">Сделать ребалансировку</span>
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg>
+                    </button>
+                    <button class="hg-quiet" type="button" onclick="switchTab('portfolios')">В кабинет</button>
+                </div>
 
-                        <h2 class="hr-title" id="hsAuthTitle">Создайте аккаунт</h2>
-                        <p class="hr-sub">Личный кабинет инвестора Madame Solomi'na</p>
+                <!-- Подвал: источник данных, правило чтения карты, срез -->
+                <div class="hg-btm">
+                    <span>Данные Московской биржи</span>
+                    <span class="sp"></span>
+                    <span>залито растёт, контур падает</span>
+                    <span class="num" id="hgBtmMeta">топ-12 весов индекса</span>
+                </div>
 
-                        <form class="hr-form" id="homeRegForm" onsubmit="return homeRegisterSubmit(event)" novalidate>
-                            <label class="hr-field" id="hsNameField">
-                                <span class="hr-label">Имя</span>
-                                <span class="hr-inputwrap">
-                                    <input class="hr-input" type="text" name="name" autocomplete="name" placeholder="Как к вам обращаться" required>
-                                    <svg class="hr-ficon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                                </span>
-                            </label>
-                            <label class="hr-field" id="hsEmailField">
-                                <span class="hr-label">Email</span>
-                                <span class="hr-inputwrap">
-                                    <input class="hr-input" type="email" name="email" autocomplete="email" placeholder="you@example.com" required>
-                                    <svg class="hr-ficon" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-10 6L2 7"></path></svg>
-                                </span>
-                            </label>
-                            <label class="hr-field">
-                                <span class="hr-label">Пароль</span>
-                                <span class="hr-inputwrap">
-                                    <input class="hr-input" type="password" name="password" autocomplete="new-password" placeholder="Минимум 6 символов" minlength="6" required>
-                                    <button class="hr-eye" type="button" aria-label="Показать пароль" onclick="hsTogglePass(this)">
-                                        <svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                                    </button>
-                                </span>
-                            </label>
-                            <!-- «Забыли пароль?» — показывается в режиме входа при подключённом Supabase -->
-                            <div class="hr-forgot" id="hsForgot" style="display:none"><a class="hr-link" onclick="homeForgotPassword()">Забыли пароль?</a></div>
-                            <div class="hr-error" id="homeRegError" role="alert"></div>
+                <!-- ===== Форма входа/регистрации: карточка поверх сцены =====
+                     Все id прежние (homeRegForm, hsTab*, hsAuthTitle, hsNameField,
+                     hsEmailField, hsForgot, homeRegError, hsSubmit, hsFoot,
+                     hgAuthed) — js/home-register.js не переписывался. -->
+                <div class="hg-authwrap" id="hgAuthWrap" onclick="if(event.target===this)hgCloseForm()">
+                    <aside class="hg-authcard" id="homeRegister" aria-label="Вход и регистрация">
+                        <div class="hs-auth-inner" id="hsAuthInner">
+                            <button class="hg-back" type="button" onclick="hgCloseForm()">
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"></path></svg>
+                                Назад
+                            </button>
 
-                            <button class="hr-submit" type="submit" id="hsSubmit">
-                                <span id="hsSubmitLabel">Создать аккаунт</span>
+                            <!-- Переключатель режимов остался кнопками с прежними id,
+                                 но живёт строкой в подвале карточки (см. #hsFoot);
+                                 сами узлы скрыты — homeAuthMode() их по-прежнему метит. -->
+                            <div class="hs-tabs" role="tablist" hidden>
+                                <button class="hs-tab active" id="hsTabRegister" type="button" role="tab" onclick="homeAuthMode('register')">Регистрация</button>
+                                <button class="hs-tab" id="hsTabLogin" type="button" role="tab" onclick="homeAuthMode('login')">Вход</button>
+                            </div>
+
+                            <h2 class="hr-title" id="hsAuthTitle">Создайте аккаунт</h2>
+                            <p class="hr-sub" id="hsAuthSub">Личный кабинет инвестора Madame Solomi'na</p>
+
+                            <form class="hr-form" id="homeRegForm" onsubmit="return homeRegisterSubmit(event)" novalidate>
+                                <label class="hr-field" id="hsNameField">
+                                    <span class="hr-label">Имя</span>
+                                    <span class="hr-inputwrap">
+                                        <input class="hr-input" type="text" name="name" autocomplete="name" placeholder="Как к вам обращаться" required>
+                                        <svg class="hr-ficon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                                    </span>
+                                </label>
+                                <label class="hr-field" id="hsEmailField">
+                                    <span class="hr-label">Email</span>
+                                    <span class="hr-inputwrap">
+                                        <input class="hr-input" type="email" name="email" autocomplete="email" placeholder="you@example.com" required>
+                                        <svg class="hr-ficon" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-10 6L2 7"></path></svg>
+                                    </span>
+                                </label>
+                                <label class="hr-field">
+                                    <span class="hr-label">
+                                        Пароль
+                                        <!-- «Забыли пароль?» — в строке подписи поля: виден в момент,
+                                             когда вспоминаешь пароль (только вход + облако) -->
+                                        <span class="hr-forgot" id="hsForgot" style="display:none"><a class="hr-link" onclick="homeForgotPassword()">Забыли пароль?</a></span>
+                                    </span>
+                                    <span class="hr-inputwrap">
+                                        <input class="hr-input" type="password" name="password" autocomplete="new-password" placeholder="Придумайте пароль" minlength="6" required>
+                                        <button class="hr-eye" type="button" aria-label="Показать пароль" onclick="hsTogglePass(this)">
+                                            <svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        </button>
+                                    </span>
+                                    <!-- постоянная подсказка вместо исчезающего плейсхолдера -->
+                                    <span class="hr-help" id="hsPassHint">Минимум 6 символов</span>
+                                </label>
+                                <div class="hr-error" id="homeRegError" role="alert" aria-live="polite"></div>
+
+                                <button class="hr-submit" type="submit" id="hsSubmit">
+                                    <span id="hsSubmitLabel">Создать аккаунт</span>
+                                    <svg class="hr-submit-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg>
+                                </button>
+                            </form>
+
+                            <div class="hr-divider"><span>или</span></div>
+
+                            <button class="hr-tg" type="button" onclick="homeTelegramLogin()">
+                                <svg class="hr-tg-icon" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M21.94 4.3 18.7 19.6c-.24 1.08-.88 1.34-1.78.84l-4.9-3.62-2.37 2.28c-.26.26-.48.48-.98.48l.35-4.98 9.06-8.19c.4-.35-.08-.54-.6-.2L6.27 13.2 1.43 11.7c-1.05-.33-1.07-1.05.22-1.55l18.95-7.3c.88-.32 1.65.2 1.34 1.45Z"/>
+                                </svg>
+                                Войти через Telegram
+                            </button>
+
+                            <p class="hr-foot" id="hsFoot">Уже есть аккаунт? <a class="hr-link" onclick="homeAuthMode('login')">Войти</a></p>
+                            <p class="hr-policy">
+                                <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                Secure Access
+                            </p>
+                        </div><!-- /hs-auth-inner -->
+
+                        <!-- Вид карточки для вошедшего (режим recovery показывает форму
+                             даже при активной сессии; обычно вошедшего встречает док) -->
+                        <div class="hg-authed" id="hgAuthed" hidden>
+                            <h2 class="hr-title">Рады видеть вас</h2>
+                            <p class="hr-sub" id="hgAuthedEmail"></p>
+                            <button class="hr-submit" type="button" onclick="switchTab('portfolios')">
+                                <span>В кабинет</span>
                                 <svg class="hr-submit-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg>
                             </button>
-                        </form>
-
-                        <div class="hr-divider"><span>или</span></div>
-
-                        <button class="hr-tg" type="button" onclick="homeTelegramLogin()">
-                            <svg class="hr-tg-icon" viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M21.94 4.3 18.7 19.6c-.24 1.08-.88 1.34-1.78.84l-4.9-3.62-2.37 2.28c-.26.26-.48.48-.98.48l.35-4.98 9.06-8.19c.4-.35-.08-.54-.6-.2L6.27 13.2 1.43 11.7c-1.05-.33-1.07-1.05.22-1.55l18.95-7.3c.88-.32 1.65.2 1.34 1.45Z"/>
-                            </svg>
-                            Войти через Telegram
-                        </button>
-
-                        <p class="hr-foot" id="hsFoot">Уже есть аккаунт? <a class="hr-link" onclick="homeAuthMode('login')">Войти</a></p>
-                        <p class="hr-policy">
-                            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                            Secure Access
-                        </p>
-                    </div><!-- /hs-auth-inner -->
-
-                    <!-- Вид колонны для вошедшего пользователя (js/home-register.js) -->
-                    <div class="hg-authed" id="hgAuthed" hidden>
-                        <span class="hr-label">Личный кабинет</span>
-                        <!-- «С возвращением» переехало в манифест слева (hcTitle),
-                             тут — нейтральный заголовок, чтобы не дублировать -->
-                        <h2 class="hr-title">Рады видеть вас</h2>
-                        <p class="hr-sub" id="hgAuthedEmail"></p>
-                        <button class="hr-submit" type="button" onclick="switchTab('portfolios')">
-                            <span>В кабинет</span>
-                            <svg class="hr-submit-arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg>
-                        </button>
-                        <button class="hr-tg hg-authed-calc" type="button" onclick="switchTab('calc')">Новый расчёт</button>
-                        <p class="hr-policy">
-                            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                            Secure Access
-                        </p>
-                    </div>
-                </aside>
+                            <button class="hr-tg hg-authed-calc" type="button" onclick="switchTab('calc')">Новый расчёт</button>
+                            <p class="hr-policy">
+                                <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                Secure Access
+                            </p>
+                        </div>
+                    </aside>
+                </div>
 
             </div>
         </div>
@@ -2824,7 +2896,7 @@
 <script src="js/supabase-config.js?v=1" defer></script>
 <script src="js/telegram-config.js?v=1" defer></script>
 <script src="js/supabase-client.js?v=7" defer></script>
-<script src="js/home-register.js?v=22" defer></script>
+<script src="js/home-register.js?v=24" defer></script>
 <!-- адрес прокси брокера (Яндекс-функция) — ДО broker-api.js: тот читает window.BROKER_PROXY_URL -->
 <script src="js/broker-proxy-config.js?v=2" defer></script>
 <script src="js/broker-api.js?v=13" defer></script>
