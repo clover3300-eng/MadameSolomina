@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Ребаланс · раунд 5 — два вопроса и один обмен</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+       --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+       --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding:44px 0 90px;-webkit-font-smoothing:antialiased}
+.page{width:1520px;max-width:100%;margin:0 auto;padding:0 20px}
+
+/* ---------------- документ ---------------- */
+.doc-h{margin-bottom:30px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-acc);margin-bottom:9px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
+.doc-h p{margin-top:12px;font-size:15px;line-height:1.6;color:var(--doc-mut);max-width:960px}
+.verdict{margin-top:20px;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid var(--doc-acc);border-radius:14px;padding:16px 20px;max-width:1040px}
+.verdict p{margin:0;font-size:14.5px;line-height:1.62;color:var(--doc-quote)}
+.verdict p+p{margin-top:10px}
+.verdict b{font-weight:700;color:var(--doc-ink)}
+.fix{margin-top:14px;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid #16a34a;border-radius:14px;padding:16px 20px;max-width:1040px}
+.fix p{margin:0;font-size:14.5px;line-height:1.62;color:var(--doc-quote)}
+.fix p+p{margin-top:10px}
+.fix b{color:var(--doc-ink);font-weight:700}
+.fixlist{margin-top:12px;display:grid;gap:9px}
+.fixrow{display:grid;grid-template-columns:minmax(0,1fr) 20px minmax(0,1fr);gap:14px;align-items:baseline;font-size:13.5px;line-height:1.5}
+.fixrow .was{color:var(--doc-mut);text-decoration:line-through;text-decoration-color:color-mix(in srgb,#dc2626 55%,transparent)}
+.fixrow .ar{color:var(--doc-dim);text-align:center}
+.fixrow .now{color:var(--doc-ink);font-weight:600}
+
+.mk{margin-top:52px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-tag.ok{background:color-mix(in srgb,#16a34a 16%,transparent);color:#16a34a}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.62;max-width:1040px;margin-bottom:18px}
+.notes{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 26px;max-width:1440px}
+.note{display:flex;gap:9px;font-size:13px;line-height:1.5;color:var(--doc-quote)}
+.note i{flex:none;width:18px;height:18px;border-radius:50%;background:var(--doc-ink);color:var(--doc-bg);font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.note b{color:var(--doc-ink)}
+.scroller{overflow-x:auto;padding:4px 0 40px;margin-bottom:-28px}
+@media (max-width:1100px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} .fixrow{grid-template-columns:1fr} }
+
+.map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th{text-align:left;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);padding:10px 14px;border-bottom:1px solid var(--doc-line)}
+.map td{padding:9px 14px;border-bottom:1px solid var(--doc-line);color:var(--doc-quote);line-height:1.5;vertical-align:top}
+.map tr:last-child td{border-bottom:0}
+.map td.n{font-family:var(--fN);font-size:12px;color:var(--doc-ink)}
+
+/* ======================================================================
+   СЦЕНА 1440×880 — полноэкранный «Ребаланс», раунд 5
+   Язык раунда: один вопрос на экран, максимум пять смысловых блоков,
+   ноль терминов. Всё, что можно посчитать, посчитано; всё, что можно
+   отложить, отложено в «Подробности».
+   ====================================================================== */
+.scr{--ink:#101828; --mut:#5c6a7d; --dim:#8d9aad; --line:#e6eaf1; --hair:rgba(16,24,40,.06);
+     --card:#fff; --acc:#4453ef; --grn:#16a34a; --red:#dc2626; --amb:#b45309;
+     --st:#c9683f; --st-s:#fbf1ea; --bd:#5f7fa8; --bd-s:#eef3f9;
+     position:relative;width:1440px;height:880px;flex:none;overflow:hidden;
+     background:#f4f6fa;color:var(--ink);font-family:var(--fU);line-height:normal;
+     border-radius:16px;border:1px solid rgba(15,23,42,.09);
+     box-shadow:0 2px 4px rgba(15,23,42,.05),0 34px 70px -34px rgba(24,38,60,.4)}
+.scr .num{font-family:var(--fN);font-variant-numeric:tabular-nums}
+/* :where() обнуляет специфичность сброса — иначе `.scr button` съедает фон кнопок */
+.scr :where(button){font-family:inherit;border:0;background:none;cursor:pointer;color:inherit}
+
+/* ── верхняя строка ── */
+.r5-top{height:66px;display:flex;align-items:center;gap:20px;padding:0 44px;position:relative;z-index:5}
+.r5-top::after{content:"";position:absolute;left:44px;right:44px;bottom:0;height:1px;background:var(--hair)}
+.r5-back{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--mut)}
+.r5-back svg{width:14px;height:14px}
+.r5-brand{padding-left:20px;margin-left:4px;border-left:1px solid var(--line)}
+.r5-brand em{display:block;font-style:normal;font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--acc)}
+.r5-brand b{display:block;font-family:var(--fT);font-weight:400;font-size:18px;margin-top:2px}
+.r5-pfs{display:flex;align-items:center;gap:7px;margin-left:auto}
+.r5-pf{display:inline-flex;align-items:center;height:32px;padding:0 15px;border-radius:999px;
+       border:1px solid var(--line);background:var(--card);font-size:12.5px;font-weight:600;color:var(--mut)}
+.r5-pf.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.r5-pf i{font-style:normal;width:6px;height:6px;border-radius:50%;background:var(--amb);margin-left:8px}
+.r5-clock{font-family:var(--fN);font-size:11px;color:var(--dim);white-space:nowrap}
+
+/* ── рабочая область ── */
+.r5-stage{position:relative;height:814px;padding:44px 84px 0;display:flex;flex-direction:column}
+.r5-glow{position:absolute;left:50%;top:100px;width:1100px;height:520px;transform:translateX(-50%);pointer-events:none;
+         background:radial-gradient(520px 300px at 50% 40%,rgba(68,83,239,.08),transparent 70%)}
+.r5-kick{font-family:var(--fN);font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);position:relative;z-index:2}
+.r5-kick b{color:var(--mut)}
+.r5-h1{font-family:var(--fT);font-weight:400;font-size:46px;line-height:1.14;letter-spacing:-.018em;margin-top:12px;position:relative;z-index:2}
+.r5-sub{font-size:15.5px;line-height:1.55;color:var(--mut);margin-top:13px;max-width:720px;position:relative;z-index:2}
+.r5-sub b{color:var(--ink);font-weight:700}
+
+/* ── ЭКРАН 1: два способа ── */
+.r5-pick{flex:none;display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:34px;position:relative;z-index:2}
+.r5-pc{flex:none;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:28px 30px 24px;
+       display:flex;flex-direction:column;position:relative;
+       box-shadow:0 1px 2px rgba(16,24,40,.04),0 26px 58px -42px rgba(24,38,60,.5)}
+.r5-pc.reco{box-shadow:0 0 0 2px color-mix(in srgb,var(--acc) 30%,transparent),0 26px 58px -36px rgba(68,83,239,.5);border-color:transparent}
+.r5-pc-tag{position:absolute;right:26px;top:26px;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+     border-radius:999px;padding:5px 11px;background:color-mix(in srgb,var(--acc) 13%,transparent);color:var(--acc)}
+.r5-pc h3{font-family:var(--fT);font-weight:400;font-size:31px;letter-spacing:-.012em}
+.r5-pc p{font-size:14.5px;line-height:1.55;color:var(--mut);margin-top:11px;max-width:26em}
+.r5-pc-fig{margin-top:24px;padding-top:22px;border-top:1px solid var(--hair)}
+/* картинка «раз в год»: две полосы — сейчас и план */
+.r5-brow{display:flex;align-items:center;gap:14px}
+.r5-brow+.r5-brow{margin-top:11px}
+.r5-brow em{font-style:normal;flex:none;width:56px;font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.r5-bbar{flex:1;min-width:0;height:22px;border-radius:8px;display:flex;overflow:hidden;background:var(--hair)}
+.r5-bbar i{height:100%}
+.r5-bbar i.st{background:color-mix(in srgb,var(--st) 78%,#fff)}
+.r5-bbar i.bd{background:color-mix(in srgb,var(--bd) 60%,#fff)}
+.r5-brow.plan .r5-bbar{height:12px;background:transparent;box-shadow:inset 0 0 0 1px var(--line)}
+.r5-brow.plan .r5-bbar i.st{background:color-mix(in srgb,var(--ink) 20%,transparent)}
+.r5-brow.plan .r5-bbar i.bd{background:transparent}
+.r5-brow b{flex:none;width:74px;text-align:right;font-family:var(--fN);font-size:13.5px;font-weight:700}
+.r5-brow.plan b{font-size:12.5px;font-weight:600;color:var(--mut)}
+/* картинка «в моменте»: было → станет */
+.r5-cnt{display:flex;align-items:center;gap:18px}
+.r5-cnt .v{font-family:var(--fN);font-size:44px;font-weight:700;line-height:1.08;letter-spacing:-.03em}
+.r5-cnt .v.was{color:var(--dim)}
+.r5-cnt .v.now{color:var(--grn)}
+.r5-cnt .ar{color:var(--dim);font-size:22px}
+.r5-cnt .cap{font-size:13px;color:var(--mut);line-height:1.45}
+.r5-pc-note{font-size:13.5px;color:var(--mut);margin-top:18px;line-height:1.5}
+.r5-pc-note b{color:var(--ink);font-weight:700}
+.r5-pc-go{margin-top:auto;padding-top:22px}
+.r5-btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;height:52px;padding:0 28px;border-radius:999px;flex:none;
+     white-space:nowrap;background:var(--ink);color:#fff;font-size:15px;font-weight:700;
+     box-shadow:0 16px 34px -18px rgba(16,24,40,.7)}
+.r5-btn svg{width:17px;height:17px}
+.r5-btn.acc{background:var(--acc);box-shadow:0 16px 34px -18px rgba(68,83,239,.8)}
+.r5-btn.ghost{background:transparent;color:var(--mut);border:1px solid var(--line);box-shadow:none;font-weight:600;font-size:14px}
+.r5-btn.full{width:100%}
+.r5-quiet{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;color:var(--mut);flex:none;white-space:nowrap}
+.r5-quiet svg{width:13px;height:13px}
+
+/* ── КАРТА ОБМЕНА (экраны 2–3) ── */
+/* КАРТА ОБМЕНА. В раунде 4 она читалась «обрезанной» по двум причинам, обе сняты:
+   (1) середина имела border-left+border-right — две вертикальные линии резали карту
+       на три отдельных куска; теперь их нет, вместо них ОДНА горизонтальная волосяная
+       линия, проходящая ЗА кружком: она связывает ноги, а не разделяет;
+   (2) карта шла во всю ширину 1272, из-за чего «−244» и «+96» разъезжались к самым
+       краям, а середина зияла пустотой. Ширина 1080 — половины держатся вместе. */
+.r5-deal{flex:none;margin-top:34px;width:1120px;max-width:100%;background:var(--card);border:1px solid var(--line);border-radius:22px;
+     overflow:hidden;position:relative;z-index:2;
+     box-shadow:0 1px 2px rgba(16,24,40,.04),0 30px 64px -40px rgba(24,38,60,.5)}
+.r5-deal-top{display:flex;align-items:stretch;position:relative}
+.r5-deal-top::before{content:"";position:absolute;left:38px;right:38px;top:50%;height:1px;background:var(--hair)}
+.r5-leg{flex:1;min-width:0;padding:36px 38px 32px;display:flex;flex-direction:column;gap:15px}
+.r5-leg.buy{align-items:flex-end;text-align:right}
+.r5-legk{font-family:var(--fN);font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.r5-inst{display:flex;align-items:center;gap:13px;min-width:0}
+.r5-leg.buy .r5-inst{flex-direction:row-reverse}
+.r5-mn{flex:none;width:42px;height:42px;border-radius:13px;display:grid;place-items:center;
+     font-family:var(--fN);font-size:11.5px;font-weight:700;background:var(--st-s);color:var(--st)}
+.r5-mn.bd{background:var(--bd-s);color:var(--bd)}
+.r5-inst .t b{display:block;font-size:18px;font-weight:700;white-space:nowrap}
+.r5-inst .t span{display:block;font-size:12.5px;color:var(--mut);margin-top:3px;white-space:nowrap}
+/* line-height ≥1.06 обязателен: при .96 глифы срезаются снизу и карта читается «обрезанной» */
+.r5-q{font-family:var(--fN);font-size:72px;font-weight:700;letter-spacing:-.045em;line-height:1.16;white-space:nowrap}
+.r5-q span{font-size:29%;font-weight:600;letter-spacing:0;color:var(--mut)}
+.r5-q.sell{color:var(--red)} .r5-q.buy{color:var(--bd)}
+.r5-money{font-size:15px;font-weight:700}
+.r5-money em{font-style:normal;font-weight:600;color:var(--mut)}
+.r5-mid{flex:none;width:112px;display:grid;place-items:center;position:relative;z-index:1}
+.r5-mid span{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:#fff;
+     box-shadow:0 0 0 10px var(--card)}
+.r5-mid svg{width:22px;height:22px}
+/* единственная строка итога — во всю ширину подвала карты */
+.r5-out{display:flex;align-items:flex-start;gap:14px;padding:18px 34px;border-top:1px solid var(--hair);
+     background:color-mix(in srgb,var(--grn) 6%,transparent);font-size:15px;line-height:1.55;color:var(--mut)}
+.r5-out .tx{min-width:0}
+.r5-out .ic{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
+     background:color-mix(in srgb,var(--grn) 18%,transparent);color:var(--grn)}
+.r5-out .ic svg{width:14px;height:14px}
+.r5-out b{color:var(--ink);font-weight:700}
+.r5-acts{margin-top:auto;padding:26px 0 34px;display:flex;align-items:center;gap:20px;position:relative;z-index:2}
+/* экран-обмен: пять блоков не растягиваем по высоте, а собираем в оптический центр —
+   иначе между картой и кнопкой зияет 200 px пустоты */
+.r5-stage.center{justify-content:center}
+.r5-stage.center .r5-acts{margin-top:34px;padding-bottom:0}
+.r5-acts .sp{flex:1}
+
+/* ── ЭКРАН 4: подробности ── */
+.r5-two{flex:none;display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:30px;position:relative;z-index:2}
+.r5-dc{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px 28px}
+.r5-dc-h{display:flex;align-items:center;gap:13px;padding-bottom:16px;border-bottom:1px solid var(--hair)}
+.r5-dc-h .t b{display:block;font-size:17px;font-weight:700}
+.r5-dc-h .t span{display:block;font-size:12.5px;color:var(--mut);margin-top:2px}
+.r5-dc-h .ch{margin-left:auto;font-size:12.5px;font-weight:700;color:var(--acc);white-space:nowrap}
+.r5-fr{display:flex;align-items:baseline;gap:14px;padding:13px 0;border-bottom:1px solid var(--hair);font-size:14px}
+.r5-fr:last-child{border-bottom:0}
+.r5-fr .k{color:var(--mut)}
+.r5-fr .v{margin-left:auto;font-family:var(--fN);font-size:14.5px;font-weight:700;text-align:right}
+.r5-fr .v.pos{color:var(--grn)}
+.r5-why{margin-top:16px;padding:14px 16px;border-radius:14px;background:color-mix(in srgb,var(--ink) 4%,transparent);
+     font-size:13.5px;line-height:1.55;color:var(--mut)}
+.r5-why b{color:var(--ink);font-weight:700}
+.r5-money-strip{flex:none;margin-top:24px;display:grid;grid-template-columns:repeat(4,1fr);gap:24px;padding:20px 28px;
+     background:var(--card);border:1px solid var(--line);border-radius:20px;position:relative;z-index:2}
+.r5-ms em{display:block;font-style:normal;font-size:12.5px;color:var(--mut)}
+.r5-ms b{display:block;font-family:var(--fN);font-size:22px;font-weight:700;margin-top:7px;letter-spacing:-.015em}
+
+/* ── ЭКРАН 5: сколько продаём ── */
+.r5-slab{flex:none;margin-top:34px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:34px 40px 30px;position:relative;z-index:2;
+     box-shadow:0 1px 2px rgba(16,24,40,.04),0 30px 64px -42px rgba(24,38,60,.5)}
+.r5-big{display:flex;align-items:baseline;gap:16px}
+.r5-big b{font-family:var(--fN);font-size:74px;font-weight:700;line-height:1.08;letter-spacing:-.04em}
+.r5-big span{font-size:17px;color:var(--mut)}
+.r5-track{position:relative;height:16px;border-radius:999px;background:var(--hair);margin:34px 0 0}
+.r5-track .fill{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:color-mix(in srgb,var(--st) 72%,#fff)}
+/* засечка рисуется ТОЛЬКО НАД дорожкой: в состоянии по умолчанию ползунок стоит
+   ровно на ней, и общая вертикальная линия просто спряталась бы под белым кругом */
+.r5-track .mark{position:absolute;top:-15px;height:11px;width:2px;background:var(--ink);border-radius:2px}
+.r5-track .mark::after{content:"столько нужно, чтобы вернуться к плану";position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);
+     font-size:11.5px;font-weight:600;color:var(--ink);white-space:nowrap}
+.r5-track .knob{position:absolute;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:#fff;
+     border:1px solid var(--line);box-shadow:0 8px 20px -8px rgba(16,24,40,.55)}
+.r5-scale{display:flex;justify-content:space-between;margin-top:16px;font-size:11.5px;color:var(--dim)}
+.r5-res{margin-top:30px;padding-top:24px;border-top:1px solid var(--hair);display:flex;align-items:center;gap:18px}
+.r5-res .t{font-size:16px;line-height:1.5;color:var(--mut)}
+.r5-res .t b{color:var(--ink);font-weight:700}
+.r5-res .warn{margin-left:auto;font-size:13px;color:var(--amb);text-align:right;line-height:1.45;flex:none}
+
+/* ── ЭКРАН 6: готово ── */
+.r5-done{flex:none;width:760px;margin:0 auto;text-align:center;position:relative;z-index:2}
+.r5-done .ic{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;margin:0 auto 18px;
+     background:color-mix(in srgb,var(--grn) 15%,transparent);color:var(--grn)}
+.r5-done .ic svg{width:30px;height:30px}
+.r5-done h3{font-family:var(--fT);font-weight:400;font-size:42px;letter-spacing:-.016em}
+.r5-done p{font-size:15.5px;color:var(--mut);margin-top:12px;line-height:1.55}
+.r5-rows{margin-top:32px;background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden;text-align:left}
+.r5-rr{display:grid;grid-template-columns:42px minmax(0,1fr) 96px 118px;gap:16px;align-items:center;padding:17px 26px;border-bottom:1px solid var(--hair)}
+.r5-rr:last-child{border-bottom:0}
+.r5-rr .mn{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-family:var(--fN);font-size:10.5px;font-weight:700;background:var(--st-s);color:var(--st)}
+.r5-rr .mn.bd{background:var(--bd-s);color:var(--bd)}
+.r5-rr .t b{display:block;font-size:15px;font-weight:700}
+.r5-rr .t span{display:block;font-size:12.5px;color:var(--mut);margin-top:2px}
+.r5-rr .q{text-align:right;font-family:var(--fN);font-size:15px;font-weight:700}
+.r5-rr .s{text-align:right;font-size:13px;font-weight:700;color:var(--grn)}
+.r5-plain{margin-top:26px;font-size:15px;line-height:1.6;color:var(--mut)}
+.r5-plain b{color:var(--ink);font-weight:700}
+
+/* ── ЭКРАН 7: ровно ── */
+.r5-calm{max-width:900px;position:relative;z-index:2}
+.r5-hint{margin-top:auto;margin-bottom:38px;padding-top:22px;border-top:1px solid var(--hair);display:flex;align-items:center;gap:18px;
+     position:relative;z-index:2}
+.r5-hint .t{font-size:14.5px;line-height:1.5;color:var(--mut);max-width:640px}
+.r5-hint .t b{color:var(--ink);font-weight:700}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="doc-h">
+  <div class="doc-kicker">Мокапы · «Ребаланс» · раунд 5</div>
+  <h1>Два вопроса и один обмен</h1>
+  <p>Правка раунда 4: выбор способа вернуть на место, а информации — убрать. Здесь мастер снова спрашивает,
+     <b>какую ребалансировку делаем — раз в год или в моменте</b>, но спрашивает один раз, двумя карточками и без
+     единого термина. На всех остальных экранах остаётся <b>не больше пяти смысловых блоков</b>.</p>
+</div>
+
+<div class="verdict">
+  <p><b>Что вы сказали по раунду 4 и что с этим сделано.</b></p>
+  <div class="fixlist">
+    <div class="fixrow"><span class="was">Способ выбирался сам, экрана выбора не было</span><span class="ar">→</span>
+      <span class="now">Экран 01: два больших выбора — «Раз в год» и «В моменте»</span></div>
+    <div class="fixrow"><span class="was">«Дрейф 4,1 п.п. при пороге 3,0»</span><span class="ar">→</span>
+      <span class="now">«Акций 64 %, а по плану 60 %» — слова «дрейф», «п.п.» и «порог» из интерфейса убраны совсем</span></div>
+    <div class="fixrow"><span class="was">Колода из четырёх ходов с четырьмя разными метриками выгоды</span><span class="ar">→</span>
+      <span class="now">Колоды нет. Один способ — один обмен — одна строка результата</span></div>
+    <div class="fixrow"><span class="was">Подвал карты: доли, дрейф, купоны, комиссия, остаток, степпер — шесть вещей в ряд</span><span class="ar">→</span>
+      <span class="now">Одна зелёная строка: что будет после обмена. Всё остальное — на экране «Подробности»</span></div>
+    <div class="fixrow"><span class="was">Карта обмена выглядела обрезанной</span><span class="ar">→</span>
+      <span class="now">Это был настоящий дефект: <code>line-height: .96</code> при кегле 62 px срезал низ цифр. Теперь 1,1</span></div>
+  </div>
+</div>
+<div class="fix">
+  <p><b>Правило раунда:</b> на экране не больше <b>пяти смысловых блоков</b> и <b>одного числа, которое надо понять</b>.
+     Если факт не меняет решения прямо сейчас — он уезжает в «Подробности».</p>
+  <p><b>Что осталось за кадром намеренно:</b> проценты округлены до целых (64 / 36 вместо 64,1 / 35,9 — десятая доля
+     ничего не решает), режим «Авто» как отдельный выбор снят: подбор пары и так работает внутри обоих способов,
+     а третья карточка на экране выбора — это ещё один вопрос без ответа.</p>
+</div>
+
+<!-- ═══════════════════════ 01 · ВЫБОР СПОСОБА ═══════════════════════ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">01</span><h2>Что будем делать — раз в год или в моменте</h2>
+    <span class="mk-tag">новый экран</span></div>
+  <div class="mk-sub">Экран, которого не хватало. Два способа, у каждого: имя, одна фраза человеческими словами, одна
+     картинка и одна строка «почему сейчас». Никаких третьих вариантов, порогов и настроек — только выбор.</div>
+
+<div class="scroller"><div class="scr">
+  <div class="r5-top">
+    <button class="r5-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Портфели</button>
+    <div class="r5-brand"><em>Ребаланс</em><b>Основной</b></div>
+    <div class="r5-pfs">
+      <span class="r5-pf on">Основной<i></i></span>
+      <span class="r5-pf">Пенсионный<i></i></span>
+      <span class="r5-pf">Дивидендный</span>
+      <span class="r5-pf">Т-Инвестиции</span>
+    </div>
+    <span class="r5-clock">MOEX · 12:41</span>
+  </div>
+
+  <div class="r5-stage center">
+    <div class="r5-glow"></div>
+    <div class="r5-kick">Портфель «Основной» · <b>1 283 996 ₽</b></div>
+    <div class="r5-h1">Что будем делать?</div>
+    <div class="r5-sub">Два способа привести портфель в порядок. Выберите любой — что продать и что купить,
+      мы посчитаем сами.</div>
+
+    <div class="r5-pick">
+      <div class="r5-pc reco">
+        <span class="r5-pc-tag">советуем</span>
+        <h3>Раз в год</h3>
+        <p>Вернуть портфель к плану: продать то, чего стало слишком много, и купить то, чего не хватает.</p>
+        <div class="r5-pc-fig">
+          <div class="r5-brow"><em>Сейчас</em>
+            <span class="r5-bbar"><i class="st" style="width:64%"></i><i class="bd" style="width:36%"></i></span>
+            <b class="num">64 / 36</b></div>
+          <div class="r5-brow plan"><em>По плану</em>
+            <span class="r5-bbar"><i class="st" style="width:60%"></i><i class="bd" style="width:40%"></i></span>
+            <b class="num">60 / 40</b></div>
+        </div>
+        <div class="r5-pc-note">Акций у вас <b>на 4 % больше</b>, чем вы задумывали. Один обмен это выправит.</div>
+        <div class="r5-pc-go"><button class="r5-btn acc full">Выбрать этот способ
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M13 6l6 6-6 6"/></svg></button></div>
+      </div>
+
+      <div class="r5-pc">
+        <h3>В моменте</h3>
+        <p>Забрать то, что выросло: продать подорожавшую бумагу и на те же деньги купить больше бумаг подешевле.</p>
+        <div class="r5-pc-fig">
+          <div class="r5-cnt">
+            <span class="v num was">120</span>
+            <span class="ar">→</span>
+            <span class="v num now">130</span>
+            <span class="cap">облигаций станет<br>у вас на руках</span>
+          </div>
+        </div>
+        <div class="r5-pc-note">Ваша <b>ОФЗ 26221</b> подорожала на 3,1 % за месяц. Доли акций и облигаций не изменятся.</div>
+        <div class="r5-pc-go"><button class="r5-btn ghost full">Выбрать этот способ</button></div>
+      </div>
+    </div>
+
+    <div class="r5-acts" style="margin-top:34px;padding-bottom:0">
+      <span class="r5-quiet">Изменить план портфеля</span>
+      <span class="sp"></span>
+      <span class="r5-quiet">Чем эти способы отличаются
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+    </div>
+  </div>
+</div></div>
+
+  <div class="notes">
+    <div class="note"><i>1</i><span><b>Вопрос вынесен в заголовок</b> — «Что будем делать?». Экран отвечает ровно на него
+      и больше ни на что.</span></div>
+    <div class="note"><i>2</i><span><b>Имена способов — те, которыми вы их называете:</b> «Раз в год» и «В моменте».
+      Под каждым одна фраза, объясняющая смысл без единого термина.</span></div>
+    <div class="note"><i>3</i><span><b>У каждой карточки ровно одна картинка.</b> Слева — две полосы «сейчас» и «по плану»,
+      ступенька между ними и есть повод. Справа — «120 → 130»: столько бумаг станет.</span></div>
+    <div class="note"><i>4</i><span><b>Слов «дрейф», «п.п.» и «порог» на экране нет.</b> Вместо них — «акций на 4 % больше,
+      чем вы задумывали». Порог живёт в настройках и на решение не влияет.</span></div>
+    <div class="note"><i>5</i><span><b>Совет дан, но не навязан:</b> пилюля «советуем» и акцентная кнопка у одного способа,
+      призрачная — у другого. Оба выбираются одним кликом.</span></div>
+    <div class="note"><i>6</i><span><b>Третьего варианта нет.</b> «Авто» был не способом, а нашим алгоритмом подбора —
+      он и так работает внутри обоих. Лишняя карточка = лишний вопрос.</span></div>
+    <div class="note"><i>7</i><span><b>Чипы портфелей без чисел:</b> точка вместо «4,1». Точка отвечает на вопрос «там
+      есть работа?», а число требовало объяснения, чем 4,1 отличается от 3,4.</span></div>
+    <div class="note"><i>8</i><span><b>«Чем эти способы отличаются» — тихая ссылка,</b> а не третий абзац на экране.
+      Открывает короткое объяснение на две карточки.</span></div>
+    <div class="note"><i>9</i><span><b>Если способ доступен один</b> (в портфеле только облигации), карточка «Раз в год»
+      гаснет с подписью «нужны и акции, и облигации» — экран не исчезает, чтобы выбор оставался понятным.</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 02 · ОБМЕН · РАЗ В ГОД ═══════════════════════ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">02</span><h2>Обмен · «Раз в год»</h2>
+    <span class="mk-tag mute">вместо перегруженного экрана раунда 4</span></div>
+  <div class="mk-sub">Пять блоков: откуда пришли, что делаем, карта обмена, что получится, кнопка. Подвал из шести фактов
+     и полоса со штриховкой убраны — полоса уже сделала свою работу на экране выбора, а цифры уехали в «Подробности».</div>
+
+<div class="scroller"><div class="scr">
+  <div class="r5-top">
+    <button class="r5-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Другой способ</button>
+    <div class="r5-brand"><em>Раз в год</em><b>Основной</b></div>
+    <div class="r5-pfs"><span class="r5-pf on">Основной<i></i></span></div>
+    <span class="r5-clock">MOEX · 12:41</span>
+  </div>
+
+  <div class="r5-stage center">
+    <div class="r5-glow"></div>
+    <div class="r5-kick">Шаг 2 из 2 · осталось подтвердить</div>
+    <div class="r5-h1">Продаём немного акций, покупаем облигации</div>
+    <div class="r5-sub">Так портфель вернётся к плану <b>60 / 40</b>. Доплачивать ничего не нужно —
+      покупка делается на деньги от продажи.</div>
+
+    <div class="r5-deal">
+      <div class="r5-deal-top">
+        <div class="r5-leg sell">
+          <div class="r5-legk">Продаём</div>
+          <div class="r5-inst"><span class="r5-mn">МТС</span><div class="t"><b>МТС</b><span>213,50 ₽ за штуку · у вас 640</span></div></div>
+          <div class="r5-q num sell">−244<span> шт</span></div>
+          <div class="r5-money num">52 094 ₽ <em>получим</em></div>
+        </div>
+        <div class="r5-mid"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h15l-4-4"/><path d="M20 15H5l4 4"/></svg></span></div>
+        <div class="r5-leg buy">
+          <div class="r5-legk">Покупаем</div>
+          <div class="r5-inst"><span class="r5-mn bd">26238</span><div class="t"><b>ОФЗ 26238</b><span>542,04 ₽ за штуку</span></div></div>
+          <div class="r5-q num buy">+96<span> шт</span></div>
+          <div class="r5-money num">52 036 ₽ <em>потратим</em></div>
+        </div>
+      </div>
+      <div class="r5-out">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+        <div class="tx">После обмена у вас будет <b>60 % акций и 40 % облигаций</b> — ровно как вы задумывали.
+        Облигации будут приносить <b>на 6 749 ₽ в год больше</b>.</div>
+      </div>
+    </div>
+
+    <div class="r5-acts">
+      <button class="r5-btn">Сделать обмен
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M13 6l6 6-6 6"/></svg></button>
+      <span class="r5-quiet">Сколько продаём</span>
+      <span class="r5-quiet">Другие бумаги</span>
+      <span class="r5-quiet">Подробности</span>
+    </div>
+  </div>
+</div></div>
+
+  <div class="notes">
+    <div class="note"><i>1</i><span><b>Заголовок говорит действие,</b> а не диагноз: «Продаём немного акций, покупаем
+      облигации». Диагноз человек уже прочитал на экране выбора — повторять его незачем.</span></div>
+    <div class="note"><i>2</i><span><b>Числа обмена — самое крупное на экране</b> (моно 66 px против серифа 46) и с
+      правильным <code>line-height: 1,1</code>: ничего не срезано.</span></div>
+    <div class="note"><i>3</i><span><b>Одна строка результата вместо шести фактов.</b> Зелёная полоса в подвале карты
+      отвечает на единственный вопрос, который остаётся: «и что мне с этого будет».</span></div>
+    <div class="note"><i>4</i><span><b>Комиссия, остаток, НКД, доходность — не здесь.</b> Они не меняют решения
+      «делать / не делать» и живут на экране «Подробности» (04).</span></div>
+    <div class="note"><i>5</i><span><b>Три тихие ссылки вместо трёх контролов:</b> «Сколько продаём», «Другие бумаги»,
+      «Подробности». Каждая открывает свой спокойный экран, а не раскрывает панель поверх этого.</span></div>
+    <div class="note"><i>6</i><span><b>«Шаг 2 из 2»</b> — счётчик остался, потому что шагов теперь действительно два.
+      Рельса на 252 px для двух шагов не нужна: хватает строки.</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 03 · ОБМЕН · В МОМЕНТЕ ═══════════════════════ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">03</span><h2>Обмен · «В моменте»</h2>
+    <span class="mk-tag mute">та же раскладка, другое содержание</span></div>
+  <div class="mk-sub">Второй способ живёт на том же скелете — меняются только слова и числа. Одна раскладка на оба
+     способа значит, что второй раз учиться нечему.</div>
+
+<div class="scroller"><div class="scr">
+  <div class="r5-top">
+    <button class="r5-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Другой способ</button>
+    <div class="r5-brand"><em>В моменте</em><b>Основной</b></div>
+    <div class="r5-pfs"><span class="r5-pf on">Основной<i></i></span></div>
+    <span class="r5-clock">MOEX · 12:41</span>
+  </div>
+
+  <div class="r5-stage center">
+    <div class="r5-glow"></div>
+    <div class="r5-kick">Шаг 2 из 2 · осталось подтвердить</div>
+    <div class="r5-h1">Продаём подорожавшую, берём больше подешевле</div>
+    <div class="r5-sub">ОФЗ 26221 выросла в цене — эту прибыль забираем и на те же деньги покупаем
+      <b>на 10 бумаг больше</b>. Доли акций и облигаций не сдвинутся.</div>
+
+    <div class="r5-deal">
+      <div class="r5-deal-top">
+        <div class="r5-leg sell">
+          <div class="r5-legk">Продаём</div>
+          <div class="r5-inst"><span class="r5-mn bd">26221</span><div class="t"><b>ОФЗ 26221</b><span>648,20 ₽ за штуку · подорожала на 3,1 %</span></div></div>
+          <div class="r5-q num sell">−120<span> шт</span></div>
+          <div class="r5-money num">77 784 ₽ <em>получим</em></div>
+        </div>
+        <div class="r5-mid"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h15l-4-4"/><path d="M20 15H5l4 4"/></svg></span></div>
+        <div class="r5-leg buy">
+          <div class="r5-legk">Покупаем</div>
+          <div class="r5-inst"><span class="r5-mn bd">26244</span><div class="t"><b>ОФЗ 26244</b><span>596,60 ₽ за штуку · дешевле и доходнее</span></div></div>
+          <div class="r5-q num buy">+130<span> шт</span></div>
+          <div class="r5-money num">77 558 ₽ <em>потратим</em></div>
+        </div>
+      </div>
+      <div class="r5-out">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>
+        <div class="tx">Облигаций станет <b>130 вместо 120</b> — за те же деньги. Купоны вырастут
+        <b>с 9 214 до 14 586 ₽ в год</b>.</div>
+      </div>
+    </div>
+
+    <div class="r5-acts">
+      <button class="r5-btn">Сделать обмен
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M13 6l6 6-6 6"/></svg></button>
+      <span class="r5-quiet">Сколько продаём</span>
+      <span class="r5-quiet">Другие бумаги</span>
+      <span class="r5-quiet">Подробности</span>
+    </div>
+  </div>
+</div></div>
+
+  <div class="notes">
+    <div class="note"><i>1</i><span><b>Скелет тот же:</b> надстрочник, заголовок-действие, одна поясняющая фраза, карта,
+      зелёная строка, кнопка и три ссылки. Различаются только слова.</span></div>
+    <div class="note"><i>2</i><span><b>«Подорожала на 3,1 %» стоит в мете бумаги,</b> а не отдельной плашкой: это признак
+      выбора, а не самостоятельный факт.</span></div>
+    <div class="note"><i>3</i><span><b>Главное число способа — 130 вместо 120,</b> оно же было картинкой на экране выбора.
+      Обещание и результат сказаны одними и теми же словами.</span></div>
+    <div class="note"><i>4</i><span><b>«Машина денег» как термин не звучит.</b> Идея осталась: продали 120 — купили 130,
+      доплачивать нечего.</span></div>
+    <div class="note"><i>5</i><span><b>Купоны названы рублями в год,</b> а не «доходностью к погашению». Доходность —
+      на «Подробностях», рядом с объяснением, что это.</span></div>
+    <div class="note"><i>6</i><span><b>Если выгодной пары нет,</b> экран показывает одну фразу «Сейчас менять нечего:
+      ни одна бумага не выросла настолько, чтобы обмен окупил комиссию» и кнопку назад.</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 04 · ПОДРОБНОСТИ ═══════════════════════ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">04</span><h2>Подробности — всё, что убрали с главного экрана</h2>
+    <span class="mk-tag ok">по ссылке, не по умолчанию</span></div>
+  <div class="mk-sub">Цифры никуда не делись — они просто перестали спорить с решением. Здесь их можно спокойно
+     проверить: почему выбрана эта бумага, что с деньгами, какие есть замены.</div>
+
+<div class="scroller"><div class="scr">
+  <div class="r5-top">
+    <button class="r5-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>К обмену</button>
+    <div class="r5-brand"><em>Раз в год</em><b>Подробности</b></div>
+    <div class="r5-pfs"><span class="r5-pf on">Основной<i></i></span></div>
+    <span class="r5-clock">MOEX · 12:41</span>
+  </div>
+
+  <div class="r5-stage">
+    <div class="r5-h1" style="margin-top:0">Почему именно эти бумаги</div>
+
+    <div class="r5-two">
+      <div class="r5-dc">
+        <div class="r5-dc-h"><span class="r5-mn">МТС</span>
+          <div class="t"><b>Продаём МТС</b><span>244 из 640 штук</span></div>
+          <span class="ch">выбрать другую ›</span></div>
+        <div class="r5-fr"><span class="k">Цена сейчас</span><span class="v">213,50 ₽</span></div>
+        <div class="r5-fr"><span class="k">Ожидаемый рост</span><span class="v">+6 %</span></div>
+        <div class="r5-fr"><span class="k">Прибыль по этой бумаге</span><span class="v pos">+4 120 ₽</span></div>
+        <div class="r5-why">Из ваших пяти акций у МТС <b>самый слабый ожидаемый рост</b> — у Сбербанка он +24 %.
+          Продавая её, вы отдаёте меньше всего будущего.</div>
+      </div>
+
+      <div class="r5-dc">
+        <div class="r5-dc-h"><span class="r5-mn bd">26238</span>
+          <div class="t"><b>Покупаем ОФЗ 26238</b><span>96 штук</span></div>
+          <span class="ch">выбрать другую ›</span></div>
+        <div class="r5-fr"><span class="k">Цена сейчас</span><span class="v">542,04 ₽</span></div>
+        <div class="r5-fr"><span class="k">Даёт в год, если держать до конца</span><span class="v">19,4 %</span></div>
+        <div class="r5-fr"><span class="k">Купоны с этих 96 штук</span><span class="v pos">6 749 ₽ в год</span></div>
+        <div class="r5-why">Из доступных выпусков у 26238 <b>самая высокая доходность</b>, и цена ниже номинала —
+          к погашению государство вернёт больше, чем вы платите сейчас.</div>
+      </div>
+    </div>
+
+    <div class="r5-money-strip">
+      <div class="r5-ms"><em>Получим за акции</em><b class="num">52 094 ₽</b></div>
+      <div class="r5-ms"><em>Потратим на облигации</em><b class="num">52 036 ₽</b></div>
+      <div class="r5-ms"><em>Комиссия брокера</em><b class="num">52 ₽</b></div>
+      <div class="r5-ms"><em>Останется на счёте</em><b class="num">6 ₽</b></div>
+    </div>
+
+    <div class="r5-acts">
+      <button class="r5-btn">Всё понятно — к обмену
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M13 6l6 6-6 6"/></svg></button>
+      <span class="sp"></span>
+      <span class="r5-quiet">Налог с продажи — 0 ₽, бумаги куплены больше трёх лет назад</span>
+    </div>
+  </div>
+</div></div>
+
+  <div class="notes">
+    <div class="note"><i>1</i><span><b>Две карточки — по одной на сторону обмена.</b> Каждая: три числа и один абзац
+      «почему». Больше на этом экране ничего нет.</span></div>
+    <div class="note"><i>2</i><span><b>Термины переведены прямо в подписи:</b> «доходность к погашению» → «даёт в год,
+      если держать до конца»; «потенциал» → «ожидаемый рост». Тултипов не нужно.</span></div>
+    <div class="note"><i>3</i><span><b>Деньги — отдельной полосой из четырёх чисел,</b> в порядке рассказа: получим →
+      потратим → комиссия → останется. Так их читают вслух.</span></div>
+    <div class="note"><i>4</i><span><b>«Выбрать другую» — в шапке каждой карточки,</b> открывает список замен. Список не
+      висит на экране постоянно: он нужен раз в жизни, а мешает каждый раз.</span></div>
+    <div class="note"><i>5</i><span><b>Налог — одной строкой у края,</b> вместе с причиной. Строка есть всегда, даже когда
+      налог нулевой: её отсутствие рождает вопрос.</span></div>
+    <div class="note"><i>6</i><span><b>Выход — кнопка «Всё понятно»,</b> а не крестик. Экран — часть пути, а не окно
+      поверх.</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 05 · СКОЛЬКО ПРОДАЁМ ═══════════════════════ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">05</span><h2>Сколько продаём — один вопрос, один ползунок</h2>
+    <span class="mk-tag mute">от «Рычага» раунда 4 остался приём, а не экран</span></div>
+  <div class="mk-sub">Тянуть доли портфеля оказалось слишком абстрактно. Здесь тот же приём, но про понятное:
+     сколько штук продаём. На шкале стоит засечка «столько нужно, чтобы вернуться к плану» — попасть в неё
+     можно, не целясь.</div>
+
+<div class="scroller"><div class="scr">
+  <div class="r5-top">
+    <button class="r5-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>К обмену</button>
+    <div class="r5-brand"><em>Раз в год</em><b>Сколько продаём</b></div>
+    <div class="r5-pfs"><span class="r5-pf on">Основной<i></i></span></div>
+    <span class="r5-clock">MOEX · 12:41</span>
+  </div>
+
+  <div class="r5-stage center">
+    <div class="r5-glow"></div>
+    <div class="r5-h1" style="margin-top:0">Сколько акций МТС продаём?</div>
+    <div class="r5-sub">У вас 640 штук. Мы предлагаем 244 — ровно столько, чтобы вернуться к плану.
+      Можно поставить любое другое число.</div>
+
+    <div class="r5-slab">
+      <div class="r5-big"><b class="num">244</b><span>штуки из 640 · на 52 094 ₽</span></div>
+      <div class="r5-track">
+        <span class="fill" style="width:38.1%"></span>
+        <span class="mark" style="left:38.1%"></span>
+        <span class="knob" style="left:38.1%"></span>
+      </div>
+      <div class="r5-scale"><span>1 штука</span><span>640 штук — все</span></div>
+      <div class="r5-res">
+        <div class="t">На эти деньги купим <b>96 облигаций ОФЗ 26238</b>.
+          Акций останется <b>60 %</b> — ровно по плану.</div>
+      </div>
+    </div>
+
+    <div class="r5-acts">
+      <button class="r5-btn">Готово
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M13 6l6 6-6 6"/></svg></button>
+      <button class="r5-btn ghost">Вернуть 244</button>
+      <span class="sp"></span>
+      <span class="r5-quiet">Ползунок двигается по одной бумаге — половины штуки не бывает</span>
+    </div>
+  </div>
+</div></div>
+
+  <div class="notes">
+    <div class="note"><i>1</i><span><b>Вопрос про штуки, а не про проценты.</b> «Сколько акций продаём» человек понимает
+      сразу; «какую долю оставить в акциях» — уже задача.</span></div>
+    <div class="note"><i>2</i><span><b>Засечка на шкале объясняет себя словами</b> прямо над собой, а не легендой сбоку.
+      Ползунок к ней подтягивается.</span></div>
+    <div class="note"><i>3</i><span><b>Число 244 — самое крупное на экране</b> (74 px) и стоит над ползунком, а не под
+      ним: сначала ответ, потом инструмент.</span></div>
+    <div class="note"><i>4</i><span><b>Одна строка последствия</b> под ползунком, живая: меняется вместе с числом.
+      Проценты в ней — целые.</span></div>
+    <div class="note"><i>5</i><span><b>«Вернуть 244» вместо «Сбросить»</b> — кнопка называет результат, а не операцию.
+      Она гаснет, пока значение не тронуто.</span></div>
+    <div class="note"><i>6</i><span><b>Если продать больше, чем нужно,</b> строка результата спокойно скажет:
+      «акций останется 54 % — меньше плана», без красного и без запрета.</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 06 · ГОТОВО ═══════════════════════ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">06</span><h2>Готово</h2>
+    <span class="mk-tag mute">квитанция без квитанции</span></div>
+  <div class="mk-sub">Раньше экран показывал таблицу заявок со статусами, три карточки итогов, дату сверки и четыре
+     действия. Осталось: что произошло, две строки заявок и одна фраза про то, что стало.</div>
+
+<div class="scroller"><div class="scr">
+  <div class="r5-top">
+    <button class="r5-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Портфели</button>
+    <div class="r5-brand"><em>Ребаланс</em><b>Основной</b></div>
+    <div class="r5-pfs"><span class="r5-pf on">Основной</span></div>
+    <span class="r5-clock">MOEX · 12:44</span>
+  </div>
+
+  <div class="r5-stage center" style="padding-top:56px">
+    <div class="r5-glow"></div>
+    <div class="r5-done">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+      <h3>Портфель снова по плану</h3>
+      <p>Обе заявки исполнены. Всё записано в историю операций.</p>
+
+      <div class="r5-rows">
+        <div class="r5-rr"><span class="mn">МТС</span>
+          <div class="t"><b>Продали МТС</b><span>по 213,50 ₽</span></div>
+          <div class="q">244 шт</div><div class="s">52 094 ₽</div></div>
+        <div class="r5-rr"><span class="mn bd">26238</span>
+          <div class="t"><b>Купили ОФЗ 26238</b><span>по 542,04 ₽</span></div>
+          <div class="q">96 шт</div><div class="s">−52 036 ₽</div></div>
+      </div>
+
+      <div class="r5-plain">Теперь у вас <b>60 % акций и 40 % облигаций</b>.
+        Облигации будут приносить <b>на 6 749 ₽ в год больше</b>.<br>
+        Следующая сверка — <b>14 марта 2027</b>, напомним сами.</div>
+    </div>
+
+    <div class="r5-acts" style="justify-content:center;margin-top:38px;padding-bottom:0">
+      <button class="r5-btn">В портфель
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M13 6l6 6-6 6"/></svg></button>
+      <span class="r5-quiet">Отменить обмен</span>
+    </div>
+  </div>
+</div></div>
+
+  <div class="notes">
+    <div class="note"><i>1</i><span><b>Заголовок — результат для человека,</b> а не для системы: «Портфель снова по плану»
+      вместо «Заявки отправлены».</span></div>
+    <div class="note"><i>2</i><span><b>Две строки вместо таблицы со статусами.</b> Когда всё исполнено, статус — лишнее
+      слово; он появляется, только если что-то исполнилось частично.</span></div>
+    <div class="note"><i>3</i><span><b>Итог — обычным предложением,</b> без трёх карточек с надстрочниками. Числа в нём
+      те же, что были обещаны на экране обмена, слово в слово.</span></div>
+    <div class="note"><i>4</i><span><b>Дата следующей сверки — в том же предложении,</b> с обещанием напомнить.
+      Отдельной карточки она не заслуживает.</span></div>
+    <div class="note"><i>5</i><span><b>Отмена — тихая ссылка рядом с кнопкой</b> и работает через существующую
+      <code>pfRbUndoTrade</code>. Экран необратимого действия без выхода делать нельзя.</span></div>
+    <div class="note"><i>6</i><span><b>Частичное исполнение</b> добавляет в строку янтарную дробь «118 / 130» и одну
+      фразу «остаток докупится сам, пришлём звоночек» — и больше ничего.</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 07 · РОВНО ═══════════════════════ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">07</span><h2>Когда делать нечего</h2>
+    <span class="mk-tag ok">состояние, которого не было</span></div>
+  <div class="mk-sub">Портфель в порядке — мастер говорит это прямо и не выдумывает работу. Единственное, что он
+     добавляет, — тихая строка про второй способ, потому что «в моменте» бывает выгодно и при ровных долях.</div>
+
+<div class="scroller"><div class="scr">
+  <div class="r5-top">
+    <button class="r5-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Портфели</button>
+    <div class="r5-brand"><em>Ребаланс</em><b>Дивидендный</b></div>
+    <div class="r5-pfs">
+      <span class="r5-pf">Основной</span>
+      <span class="r5-pf">Пенсионный<i></i></span>
+      <span class="r5-pf on">Дивидендный</span>
+      <span class="r5-pf">Т-Инвестиции</span>
+    </div>
+    <span class="r5-clock">MOEX · 12:44</span>
+  </div>
+
+  <div class="r5-stage" style="padding-top:96px">
+    <div class="r5-calm">
+      <div class="r5-kick">Портфель «Дивидендный» · <b>612 400 ₽</b></div>
+      <div class="r5-h1" style="font-size:52px">Здесь всё в порядке.</div>
+      <div class="r5-sub" style="font-size:16.5px;max-width:780px">У вас <b>59 % акций и 41 % облигаций</b> —
+        это и есть ваш план. Обмен на такой разнице стоил бы дороже, чем дал бы. <b>Делать ничего не нужно.</b></div>
+
+      <div style="margin-top:36px;max-width:820px">
+        <div class="r5-brow"><em>Сейчас</em>
+          <span class="r5-bbar"><i class="st" style="width:59%"></i><i class="bd" style="width:41%"></i></span>
+          <b class="num">59 / 41</b></div>
+        <div class="r5-brow plan"><em>По плану</em>
+          <span class="r5-bbar"><i class="st" style="width:60%"></i><i class="bd" style="width:40%"></i></span>
+          <b class="num">60 / 40</b></div>
+      </div>
+
+      <div class="r5-acts" style="margin-top:0;padding-top:38px">
+        <button class="r5-btn ghost">Напомнить 14 марта 2027</button>
+        <span class="r5-quiet">Изменить план портфеля</span>
+        <span class="r5-quiet">Сверить другой портфель</span>
+      </div>
+    </div>
+
+    <div class="r5-hint">
+      <div class="t"><b>Одна возможность всё-таки есть.</b> Ваша ОФЗ 26221 подорожала на 3,1 % за месяц —
+        её можно продать и на те же деньги взять больше бумаг подешевле. Доли при этом не сдвинутся.</div>
+      <span class="sp" style="flex:1"></span>
+      <button class="r5-btn ghost">Посмотреть обмен</button>
+    </div>
+  </div>
+</div></div>
+
+  <div class="notes">
+    <div class="note"><i>1</i><span><b>«Делать ничего не нужно» — сказано прямо.</b> Продукт, который умеет отговорить от
+      сделки, вызывает больше доверия, чем продукт, всегда её предлагающий.</span></div>
+    <div class="note"><i>2</i><span><b>Причина названа деньгами,</b> а не порогом: «обмен стоил бы дороже, чем дал бы».
+      Число порога человеку ничего не объясняет.</span></div>
+    <div class="note"><i>3</i><span><b>Полосы — те же, что на экране выбора,</b> просто ступеньки между ними почти нет.
+      Одна картинка обслуживает все состояния.</span></div>
+    <div class="note"><i>4</i><span><b>Главная кнопка — напоминание.</b> Единственный экран мастера, где главное действие
+      не сделка.</span></div>
+    <div class="note"><i>5</i><span><b>Второй способ предложен внизу и тихо,</b> отдельной строкой с призрачной кнопкой:
+      это не призыв, а честная оговорка.</span></div>
+    <div class="note"><i>6</i><span><b>Точка на чипе «Пенсионный»</b> напоминает, что работа есть в другом портфеле —
+      без чисел и без тревоги.</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ КАРТА ДАННЫХ ═══════════════════════ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">08</span><h2>Откуда берутся числа</h2></div>
+  <div class="mk-sub">Ни одного нового расчёта раунд не требует: всё уже посчитано в мастере и в карточке «Ребаланс».
+     Меняется только то, что показываем и какими словами.</div>
+  <table class="map">
+    <thead><tr><th style="width:26%">Поле макета</th><th style="width:34%">Откуда берётся</th><th>Что меняется в словах</th></tr></thead>
+    <tbody>
+      <tr><td>«Сейчас 64 / 36» и «По плану 60 / 40»</td><td class="n">PF.calcPf(p).stockPct, targetBond(p)</td><td>округляем до целых; «дрейф … п.п.» не показываем нигде</td></tr>
+      <tr><td>«Акций на 4 % больше, чем вы задумывали»</td><td class="n">|c.stockPct − (100 − targetBond)|</td><td>та же величина, что раньше звалась дрейфом, — без термина</td></tr>
+      <tr><td>Карточка «В моменте»: 120 → 130</td><td class="n">autoBondPair → computeBondDeal(qty, buyQty)</td><td>показываем штуки, а не «машину денег» и не купонную дельту</td></tr>
+      <tr><td>«Подорожала на 3,1 % за месяц»</td><td class="n">ck.pnlPct за период (momYield — критерий отбора)</td><td>momYield остаётся правилом продажи, но на экран не выводится</td></tr>
+      <tr><td>Числа обмена −244 / +96</td><td class="n">deal.qty, deal.buyQty</td><td>—</td></tr>
+      <tr><td>Зелёная строка «после обмена…»</td><td class="n">allocAfter(p, ctx) + deal.coupDelta</td><td>одна фраза вместо шести фактов подвала</td></tr>
+      <tr><td>«Даёт в год, если держать до конца»</td><td class="n">PF.rbBondEconAt(...).annual</td><td>перевод «доходности к погашению»; только на «Подробностях»</td></tr>
+      <tr><td>«Ожидаемый рост +6 %»</td><td class="n">PF.rbLivePotential(h)</td><td>перевод «потенциала»</td></tr>
+      <tr><td>Полоса денег (получим / потратим / комиссия / останется)</td><td class="n">deal.proceeds, buyQty×unit, feeTax(), deal.rest</td><td>порядок как в рассказе, НКД спрятан в цену за штуку</td></tr>
+      <tr><td>Ползунок «сколько продаём»</td><td class="n">bondQtyFor1More / нужное для возврата к плану</td><td>шаг = 1 бумага; засечка подписана словами</td></tr>
+      <tr><td>Строки «Готово»</td><td class="n">PF.pftPlaceOrders → executionReportStatus</td><td>статус показываем ТОЛЬКО при частичном исполнении</td></tr>
+      <tr><td>«Следующая сверка 14 марта 2027»</td><td class="n">p.nextReview (+1 год при исполнении)</td><td>в предложении, а не карточкой</td></tr>
+      <tr><td>Точка на чипе портфеля</td><td class="n">PF.pfDriftCount() по каждому портфелю</td><td>точка вместо числа дрейфа</td></tr>
+      <tr><td>Порог 3,0 п.п.</td><td class="n">p.driftThreshold</td><td>с экранов мастера уходит совсем, живёт в «Изменить план портфеля»</td></tr>
+    </tbody>
+  </table>
+</section>
+
+</div>
+</body>
+</html>

@@ -100,14 +100,14 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
 .r4-kick{font-family:var(--fN);font-size:10px;font-weight:700;letter-spacing:.17em;text-transform:uppercase;color:var(--dim)}
 .r4-kick b{color:var(--ink)}
-.r4-verd{font-family:var(--fT);font-weight:400;font-size:50px;line-height:1.1;letter-spacing:-.018em;margin-top:12px;position:relative;z-index:2}
+.r4-verd{font-family:var(--fT);font-weight:400;font-size:45px;line-height:1.1;letter-spacing:-.018em;margin-top:10px;position:relative;z-index:2}
 .r4-verd u{text-decoration:none;color:var(--amb)}
 .r4-verd .q{color:var(--dim)}
 .r4-verd small{display:block;font-family:var(--fU);font-size:15px;font-weight:500;color:var(--mut);line-height:1.5;margin-top:14px;letter-spacing:0;max-width:760px}
 .r4-verd small b{color:var(--ink);font-weight:700}
 
 /* --- ПОЛОСА ДОЛЕЙ: штриховка = ровно то, что надо переложить --- */
-.r4-alloc{margin-top:30px;position:relative;z-index:2}
+.r4-alloc{margin-top:24px;position:relative;z-index:2}
 .r4-alloc-hd{display:flex;align-items:flex-end;margin-bottom:9px}
 .r4-alloc-hd .s{min-width:0}
 .r4-alloc-hd .s.r{margin-left:auto;text-align:right}
@@ -133,7 +133,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .r4-bracelbl{position:absolute;top:calc(100% + 20px);transform:translateX(-50%);white-space:nowrap;text-align:center}
 .r4-bracelbl b{font-family:var(--fN);font-size:13px;font-weight:700;color:var(--amb)}
 .r4-bracelbl span{display:block;font-size:10.5px;color:var(--mut);margin-top:1px}
-.r4-legend{display:flex;align-items:center;gap:18px;margin-top:46px;font-size:11px;color:var(--mut)}
+.r4-legend{display:flex;align-items:center;gap:18px;margin-top:42px;font-size:11px;color:var(--mut)}
 .r4-legend span{display:inline-flex;align-items:center;gap:6px}
 .r4-legend i{width:10px;height:10px;border-radius:3px}
 .r4-legend i.st{background:color-mix(in srgb,var(--st) 78%,#fff)}
@@ -142,9 +142,13 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .r4-legend i.tg{width:2px;height:12px;border-radius:2px;background:var(--ink)}
 
 /* --- КАРТА ХОДА --- */
-.r4-deal{position:relative;z-index:2;background:var(--card);border:1px solid var(--line);border-radius:20px;
+/* flex:none ОБЯЗАТЕЛЕН. Карта — элемент колоночного флекса .r4-stage: со стандартным
+   flex-shrink:1 она сжималась по высоте и, имея overflow:hidden, срезала собственный
+   подвал. Это и была «обрезанная» карта — не line-height и не рамки середины. */
+.r4-deal{flex:none;position:relative;z-index:2;background:var(--card);border:1px solid var(--line);border-radius:20px;
      box-shadow:0 1px 2px rgba(16,24,40,.04),0 30px 60px -40px rgba(24,38,60,.45);overflow:hidden}
-.r4-deal-top{display:flex;align-items:stretch}
+.r4-deal-top{display:flex;align-items:stretch;position:relative}
+.r4-deal-top::before{content:"";position:absolute;left:26px;right:26px;top:50%;height:1px;background:var(--hair)}
 .r4-leg{flex:1;min-width:0;padding:22px 26px 20px;display:flex;flex-direction:column;gap:10px}
 .r4-leg.buy{align-items:flex-end;text-align:right}
 .r4-legk{font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
@@ -156,13 +160,19 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .r4-inst .t{min-width:0}
 .r4-inst .t b{display:block;font-size:15px;font-weight:700;white-space:nowrap}
 .r4-inst .t span{display:block;font-size:11.5px;color:var(--mut);margin-top:2px;white-space:nowrap}
-.r4-q{font-family:var(--fN);font-size:62px;font-weight:700;letter-spacing:-.045em;line-height:.96;white-space:nowrap}
+/* line-height был .96 — глифы 62px не помещались в строку. Одна из двух причин,
+   по которым карта читалась «обрезанной» (правка владельца) */
+.r4-q{font-family:var(--fN);font-size:62px;font-weight:700;letter-spacing:-.045em;line-height:1.08;white-space:nowrap}
 .r4-q span{font-size:30%;font-weight:600;letter-spacing:0;color:var(--mut)}
 .r4-q.sell{color:var(--red)} .r4-q.buy{color:var(--bd)}
 .r4-money{font-size:14px;font-weight:700}
 .r4-money em{font-style:normal;font-weight:600;color:var(--mut)}
-.r4-mid{flex:none;width:84px;display:grid;place-items:center;border-left:1px solid var(--hair);border-right:1px solid var(--hair)}
-.r4-mid span{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:#fff}
+/* ГЛАВНАЯ причина «карта обрезана»: середина имела border-left+border-right — две
+   вертикальные линии резали карту на три куска. Вместо них ОДНА горизонтальная
+   волосяная за кружком: она связывает ноги, а не разделяет их */
+.r4-mid{flex:none;width:84px;display:grid;place-items:center;position:relative;z-index:1}
+.r4-mid span{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:#fff;
+     box-shadow:0 0 0 9px var(--card)}
 .r4-mid svg{width:20px;height:20px}
 .r4-deal-foot{display:flex;align-items:center;gap:26px;padding:14px 26px;border-top:1px solid var(--hair);
      background:color-mix(in srgb,var(--ink) 3%,transparent)}
@@ -177,7 +187,7 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
      font-size:14px;color:var(--mut);background:var(--card)}
 
 /* --- нижняя строка действий --- */
-.r4-acts{margin-top:auto;padding:22px 0 30px;display:flex;align-items:center;gap:16px;position:relative;z-index:2}
+.r4-acts{margin-top:auto;padding:20px 0 26px;display:flex;align-items:center;gap:16px;position:relative;z-index:2}
 .r4-cta{display:inline-flex;align-items:center;gap:11px;height:56px;padding:0 30px;border-radius:999px;flex:none;
      white-space:nowrap;background:var(--ink);color:#fff;font-size:15.5px;font-weight:700;
      box-shadow:0 18px 40px -20px rgba(16,24,40,.75)}
