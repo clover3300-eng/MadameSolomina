@@ -1,0 +1,1237 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Ребаланс · раунд 4 — мастер без мастера</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+       --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+       --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding:44px 0 90px;-webkit-font-smoothing:antialiased}
+.page{width:1520px;max-width:100%;margin:0 auto;padding:0 20px}
+
+/* ---------------- документ ---------------- */
+.doc-h{margin-bottom:30px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-acc);margin-bottom:9px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
+.doc-h p{margin-top:12px;font-size:15px;line-height:1.6;color:var(--doc-mut);max-width:960px}
+.verdict{margin-top:20px;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid #dc2626;border-radius:14px;padding:16px 20px;max-width:1040px}
+.verdict p{margin:0;font-size:14.5px;line-height:1.62;color:var(--doc-quote)}
+.verdict p+p{margin-top:10px}
+.verdict b{font-weight:700;color:var(--doc-ink)}
+.fix{margin-top:14px;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid #16a34a;border-radius:14px;padding:16px 20px;max-width:1040px}
+.fix p{margin:0;font-size:14.5px;line-height:1.62;color:var(--doc-quote)}
+.fix p+p{margin-top:10px}
+.fix b{color:var(--doc-ink);font-weight:700}
+
+.mk{margin-top:52px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-tag.ok{background:color-mix(in srgb,#16a34a 16%,transparent);color:#16a34a}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.62;max-width:1040px;margin-bottom:18px}
+.notes{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 26px;max-width:1440px}
+.note{display:flex;gap:9px;font-size:13px;line-height:1.5;color:var(--doc-quote)}
+.note i{flex:none;width:18px;height:18px;border-radius:50%;background:var(--doc-ink);color:var(--doc-bg);font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.note b{color:var(--doc-ink)}
+.scroller{overflow-x:auto;padding:4px 0 40px;margin-bottom:-28px}
+@media (max-width:1100px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} }
+
+.map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th{text-align:left;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);padding:10px 14px;border-bottom:1px solid var(--doc-line)}
+.map td{padding:9px 14px;border-bottom:1px solid var(--doc-line);color:var(--doc-quote);line-height:1.5;vertical-align:top}
+.map tr:last-child td{border-bottom:0}
+.map td.n{font-family:var(--fN);font-size:12px;color:var(--doc-ink)}
+
+/* ======================================================================
+   СЦЕНА ПРИЛОЖЕНИЯ 1440×880 — полноэкранный «Ребаланс»
+   ====================================================================== */
+.scr{--ink:#101828; --mut:#5c6a7d; --dim:#8d9aad; --line:#e6eaf1; --hair:rgba(16,24,40,.06);
+     --card:#fff; --acc:#4453ef; --grn:#16a34a; --red:#dc2626; --amb:#b45309;
+     --st:#c9683f; --st-s:#fbf1ea; --bd:#5f7fa8; --bd-s:#eef3f9;
+     position:relative;width:1440px;height:880px;flex:none;overflow:hidden;
+     background:#f4f6fa;color:var(--ink);font-family:var(--fU);line-height:normal;
+     border-radius:16px;border:1px solid rgba(15,23,42,.09);
+     box-shadow:0 2px 4px rgba(15,23,42,.05),0 34px 70px -34px rgba(24,38,60,.4)}
+.scr .num{font-family:var(--fN);font-variant-numeric:tabular-nums}
+/* :where() обнуляет специфичность сброса — иначе `.scr button` (0,1,1) бьёт
+   одноклассовые `.r4-cta` / `.r4-take` / `.r4-qb` и съедает их фон и рамки */
+.scr :where(button){font-family:inherit;border:0;background:none;cursor:pointer;color:inherit}
+
+/* --- верхняя строка: выход, марка, чипы портфелей, часы котировок --- */
+.r4-top{height:66px;display:flex;align-items:center;gap:20px;padding:0 44px;position:relative;z-index:5}
+.r4-top::after{content:"";position:absolute;left:44px;right:44px;bottom:0;height:1px;background:var(--hair)}
+.r4-back{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--mut)}
+.r4-back svg{width:14px;height:14px}
+.r4-brand{padding-left:20px;margin-left:4px;border-left:1px solid var(--line)}
+.r4-brand em{display:block;font-style:normal;font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--acc)}
+.r4-brand b{display:block;font-family:var(--fT);font-weight:400;font-size:18px;margin-top:2px}
+.r4-pfs{display:flex;align-items:center;gap:7px;margin-left:auto}
+.r4-pf{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 14px;border-radius:999px;
+       border:1px solid var(--line);background:var(--card);font-size:12.5px;font-weight:600;color:var(--mut)}
+.r4-pf i{font-style:normal;font-family:var(--fN);font-size:11px;font-weight:700;color:var(--dim)}
+.r4-pf.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.r4-pf.on i{color:rgba(255,255,255,.62)}
+.r4-pf.warn i{color:var(--amb)}
+.r4-clock{font-family:var(--fN);font-size:11px;color:var(--dim);white-space:nowrap}
+
+/* --- рабочая область --- */
+.r4-stage{position:relative;height:814px;padding:36px 84px 0;display:flex;flex-direction:column}
+.r4-glow{position:absolute;left:50%;top:120px;width:1100px;height:520px;transform:translateX(-50%);pointer-events:none;
+         background:radial-gradient(520px 300px at 50% 40%,rgba(68,83,239,.09),transparent 70%)}
+
+.r4-kick{font-family:var(--fN);font-size:10px;font-weight:700;letter-spacing:.17em;text-transform:uppercase;color:var(--dim)}
+.r4-kick b{color:var(--ink)}
+.r4-verd{font-family:var(--fT);font-weight:400;font-size:50px;line-height:1.1;letter-spacing:-.018em;margin-top:12px;position:relative;z-index:2}
+.r4-verd u{text-decoration:none;color:var(--amb)}
+.r4-verd .q{color:var(--dim)}
+.r4-verd small{display:block;font-family:var(--fU);font-size:15px;font-weight:500;color:var(--mut);line-height:1.5;margin-top:14px;letter-spacing:0;max-width:760px}
+.r4-verd small b{color:var(--ink);font-weight:700}
+
+/* --- ПОЛОСА ДОЛЕЙ: штриховка = ровно то, что надо переложить --- */
+.r4-alloc{margin-top:30px;position:relative;z-index:2}
+.r4-alloc-hd{display:flex;align-items:flex-end;margin-bottom:9px}
+.r4-alloc-hd .s{min-width:0}
+.r4-alloc-hd .s.r{margin-left:auto;text-align:right}
+.r4-alloc-hd b{display:block;font-family:var(--fN);font-size:26px;font-weight:700;letter-spacing:-.02em}
+.r4-alloc-hd b.st{color:var(--st)} .r4-alloc-hd b.bd{color:var(--bd)}
+.r4-alloc-hd span{display:block;font-size:11.5px;color:var(--mut);margin-top:3px}
+.r4-bar{position:relative;height:34px;border-radius:10px;display:flex;overflow:visible;background:var(--hair)}
+.r4-bar i{display:block;height:100%}
+.r4-bar i:first-child{border-radius:10px 0 0 10px}
+.r4-bar i:last-child{border-radius:0 10px 10px 0}
+.r4-bar i.st{background:color-mix(in srgb,var(--st) 78%,#fff)}
+.r4-bar i.bd{background:color-mix(in srgb,var(--bd) 62%,#fff)}
+.r4-bar i.over{background:repeating-linear-gradient(45deg,
+    color-mix(in srgb,var(--amb) 52%,transparent) 0 5px, color-mix(in srgb,var(--amb) 20%,transparent) 5px 10px);
+    animation:r4-breath 3.4s ease-in-out infinite alternate}
+@keyframes r4-breath{from{opacity:.75}to{opacity:1}}
+.r4-bar u.tgt{position:absolute;top:-8px;bottom:-8px;width:2px;border-radius:2px;background:var(--ink);transform:translateX(-1px)}
+.r4-bar .tgtlbl{position:absolute;top:-30px;transform:translateX(-50%);font-family:var(--fN);font-size:10px;font-weight:700;
+     letter-spacing:.1em;text-transform:uppercase;color:var(--ink);white-space:nowrap}
+/* скоба под штриховкой + подпись «переложить» */
+.r4-brace{position:absolute;top:calc(100% + 7px);height:9px;border:1px solid color-mix(in srgb,var(--amb) 55%,transparent);
+     border-top:0;border-radius:0 0 6px 6px}
+.r4-bracelbl{position:absolute;top:calc(100% + 20px);transform:translateX(-50%);white-space:nowrap;text-align:center}
+.r4-bracelbl b{font-family:var(--fN);font-size:13px;font-weight:700;color:var(--amb)}
+.r4-bracelbl span{display:block;font-size:10.5px;color:var(--mut);margin-top:1px}
+.r4-legend{display:flex;align-items:center;gap:18px;margin-top:46px;font-size:11px;color:var(--mut)}
+.r4-legend span{display:inline-flex;align-items:center;gap:6px}
+.r4-legend i{width:10px;height:10px;border-radius:3px}
+.r4-legend i.st{background:color-mix(in srgb,var(--st) 78%,#fff)}
+.r4-legend i.bd{background:color-mix(in srgb,var(--bd) 62%,#fff)}
+.r4-legend i.hz{background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--amb) 55%,transparent) 0 3px,color-mix(in srgb,var(--amb) 22%,transparent) 3px 6px)}
+.r4-legend i.tg{width:2px;height:12px;border-radius:2px;background:var(--ink)}
+
+/* --- КАРТА ХОДА --- */
+.r4-deal{position:relative;z-index:2;background:var(--card);border:1px solid var(--line);border-radius:20px;
+     box-shadow:0 1px 2px rgba(16,24,40,.04),0 30px 60px -40px rgba(24,38,60,.45);overflow:hidden}
+.r4-deal-top{display:flex;align-items:stretch}
+.r4-leg{flex:1;min-width:0;padding:22px 26px 20px;display:flex;flex-direction:column;gap:10px}
+.r4-leg.buy{align-items:flex-end;text-align:right}
+.r4-legk{font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.r4-inst{display:flex;align-items:center;gap:11px;min-width:0}
+.r4-leg.buy .r4-inst{flex-direction:row-reverse}
+.r4-mn{flex:none;width:36px;height:36px;border-radius:11px;display:grid;place-items:center;
+     font-family:var(--fN);font-size:11px;font-weight:700;background:var(--st-s);color:var(--st)}
+.r4-mn.bd{background:var(--bd-s);color:var(--bd)}
+.r4-inst .t{min-width:0}
+.r4-inst .t b{display:block;font-size:15px;font-weight:700;white-space:nowrap}
+.r4-inst .t span{display:block;font-size:11.5px;color:var(--mut);margin-top:2px;white-space:nowrap}
+.r4-q{font-family:var(--fN);font-size:62px;font-weight:700;letter-spacing:-.045em;line-height:.96;white-space:nowrap}
+.r4-q span{font-size:30%;font-weight:600;letter-spacing:0;color:var(--mut)}
+.r4-q.sell{color:var(--red)} .r4-q.buy{color:var(--bd)}
+.r4-money{font-size:14px;font-weight:700}
+.r4-money em{font-style:normal;font-weight:600;color:var(--mut)}
+.r4-mid{flex:none;width:84px;display:grid;place-items:center;border-left:1px solid var(--hair);border-right:1px solid var(--hair)}
+.r4-mid span{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:#fff}
+.r4-mid svg{width:20px;height:20px}
+.r4-deal-foot{display:flex;align-items:center;gap:26px;padding:14px 26px;border-top:1px solid var(--hair);
+     background:color-mix(in srgb,var(--ink) 3%,transparent)}
+.r4-fct{display:flex;flex-direction:column;gap:2px}
+.r4-fct em{font-style:normal;font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.r4-fct b{font-family:var(--fN);font-size:14px;font-weight:700}
+.r4-fct b.pos{color:var(--grn)} .r4-fct b.mut{color:var(--mut);font-weight:600}
+.r4-fct .ar{color:var(--dim);font-weight:400}
+.r4-qty{margin-left:auto;display:flex;align-items:center;gap:9px}
+.r4-qty em{font-style:normal;font-size:10.5px;color:var(--dim)}
+.r4-qb{width:30px;height:30px;border-radius:10px;border:1px solid var(--line);display:grid;place-items:center;
+     font-size:14px;color:var(--mut);background:var(--card)}
+
+/* --- нижняя строка действий --- */
+.r4-acts{margin-top:auto;padding:22px 0 30px;display:flex;align-items:center;gap:16px;position:relative;z-index:2}
+.r4-cta{display:inline-flex;align-items:center;gap:11px;height:56px;padding:0 30px;border-radius:999px;flex:none;
+     white-space:nowrap;background:var(--ink);color:#fff;font-size:15.5px;font-weight:700;
+     box-shadow:0 18px 40px -20px rgba(16,24,40,.75)}
+.r4-cta svg{width:18px;height:18px}
+.r4-cta.acc{background:var(--acc);box-shadow:0 18px 40px -20px rgba(68,83,239,.85)}
+.r4-cta.ghost{background:transparent;color:var(--mut);border:1px solid var(--line);box-shadow:none;font-weight:600;font-size:14px}
+.r4-quiet{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--mut);flex:none;white-space:nowrap}
+.r4-quiet svg{width:13px;height:13px}
+.r4-quiet.on{color:var(--acc)}
+.r4-note{margin-left:auto;font-size:12px;color:var(--dim);text-align:right;line-height:1.5}
+.r4-note b{color:var(--mut);font-family:var(--fN)}
+
+/* --- доказательство (экран 2) --- */
+.r4-why{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;position:relative;z-index:2}
+.r4-why-lead{padding:16px 22px;font-size:13.5px;line-height:1.6;color:var(--mut);border-bottom:1px solid var(--hair)}
+.r4-why-lead b{color:var(--ink);font-weight:700}
+.r4-why-cols{display:grid;grid-template-columns:1fr 1fr}
+.r4-why-c{padding:14px 22px 16px;min-width:0}
+.r4-why-c+.r4-why-c{border-left:1px solid var(--hair)}
+.r4-why-h{display:flex;align-items:baseline;gap:8px;padding-bottom:8px;border-bottom:1px solid var(--hair)}
+.r4-why-h b{font-size:13.5px;font-weight:700}
+.r4-why-h span{margin-left:auto;font-family:var(--fN);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.r4-wr{display:grid;grid-template-columns:30px minmax(0,1fr) 74px 78px;gap:11px;align-items:center;padding:8px 0;border-bottom:1px solid var(--hair)}
+.r4-wr:last-child{border-bottom:0}
+.r4-wr .mn{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font-family:var(--fN);font-size:9.5px;font-weight:700;background:var(--st-s);color:var(--st)}
+.r4-wr .mn.bd{background:var(--bd-s);color:var(--bd)}
+.r4-wr .t b{display:block;font-size:12.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.r4-wr .t span{display:block;font-size:10.5px;color:var(--dim);margin-top:1px}
+.r4-wr .m{text-align:right;font-family:var(--fN);font-size:12.5px;font-weight:700}
+.r4-wr .q{text-align:right;font-size:11px;color:var(--mut)}
+.r4-wr.pick{background:color-mix(in srgb,var(--acc) 6%,transparent);border-radius:10px;padding-left:8px;padding-right:8px;
+     margin:2px -8px;border-bottom-color:transparent;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--acc) 26%,transparent)}
+.r4-wr.pick .t b{color:var(--acc)}
+.r4-wr.dim{opacity:.55}
+
+/* --- КОНЦЕПТ Б: зеркало слева + колода ходов справа --- */
+.r4-two{display:grid;grid-template-columns:396px minmax(0,1fr);gap:30px;flex:1;min-height:0;position:relative;z-index:2}
+.r4-mirror{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px 24px;display:flex;flex-direction:column;
+     box-shadow:0 1px 2px rgba(16,24,40,.04),0 26px 60px -42px rgba(24,38,60,.5)}
+.r4-mirror .k{font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--dim)}
+.r4-mirror .big{font-family:var(--fN);font-size:32px;font-weight:700;letter-spacing:-.025em;margin-top:8px}
+.r4-mirror .big span{font-size:44%;font-weight:600;color:var(--mut)}
+.r4-mbar{margin-top:18px}
+.r4-mbar .lb{display:flex;justify-content:space-between;font-size:11px;color:var(--mut);margin-bottom:7px}
+.r4-mbar .lb b{font-family:var(--fN);font-weight:700;color:var(--ink)}
+.r4-mini{position:relative;height:20px;border-radius:7px;display:flex;overflow:visible;background:var(--hair)}
+.r4-mini i{height:100%}
+.r4-mini i:first-child{border-radius:7px 0 0 7px} .r4-mini i:last-child{border-radius:0 7px 7px 0}
+.r4-mini i.st{background:color-mix(in srgb,var(--st) 78%,#fff)}
+.r4-mini i.bd{background:color-mix(in srgb,var(--bd) 62%,#fff)}
+.r4-mini i.over{background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--amb) 52%,transparent) 0 4px,color-mix(in srgb,var(--amb) 20%,transparent) 4px 8px)}
+.r4-mini u.tgt{position:absolute;top:-5px;bottom:-5px;width:2px;background:var(--ink);border-radius:2px}
+.r4-mrows{margin-top:22px;padding-top:16px;border-top:1px solid var(--hair);display:flex;flex-direction:column;gap:14px}
+.r4-mrow{display:flex;align-items:baseline;gap:10px}
+.r4-mrow .kk{font-size:12px;color:var(--mut);min-width:0}
+.r4-mrow .vv{margin-left:auto;font-family:var(--fN);font-size:14.5px;font-weight:700;white-space:nowrap}
+.r4-mrow .vv s{text-decoration:none;color:var(--dim);font-weight:600}
+.r4-mrow .vv em{font-style:normal;color:var(--dim);padding:0 5px}
+.r4-mrow .vv b.pos{color:var(--grn)} .r4-mrow .vv b.zero{color:var(--grn)}
+.r4-mfoot{margin-top:auto;padding-top:18px;font-size:11.5px;line-height:1.55;color:var(--dim)}
+.r4-mfoot b{color:var(--mut)}
+.r4-mcomp{margin-top:18px;padding-top:15px;border-top:1px solid var(--hair);display:flex;flex-direction:column;gap:12px}
+.r4-mcomp .ck{font-family:var(--fN);font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.r4-mgoal{margin-top:18px;padding-top:15px;border-top:1px solid var(--hair);display:flex;align-items:center;gap:10px;font-size:12px;color:var(--mut)}
+.r4-mgoal .ed{margin-left:auto;font-weight:700;color:var(--acc)}
+.r4-more{display:flex;align-items:center;gap:9px;padding:13px 20px;border-radius:14px;border:1px dashed var(--line);
+     font-size:12.5px;font-weight:600;color:var(--mut);margin-bottom:12px}
+.r4-more b{font-family:var(--fN);color:var(--dim)}
+.r4-more svg{width:14px;height:14px;margin-left:auto;color:var(--dim)}
+
+.r4-moves{display:flex;flex-direction:column;min-height:0}
+.r4-moves-h{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
+.r4-moves-h b{font-family:var(--fT);font-weight:400;font-size:22px}
+.r4-moves-h span{font-size:12.5px;color:var(--mut)}
+.r4-moves-h .srt{margin-left:auto;font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+.r4-mv{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:19px 20px;display:flex;align-items:center;gap:20px;
+     margin-bottom:12px;position:relative}
+.r4-mv:hover{border-color:color-mix(in srgb,var(--ink) 22%,transparent)}
+.r4-mv.lead{box-shadow:0 0 0 2px color-mix(in srgb,var(--acc) 34%,transparent),0 20px 44px -30px rgba(68,83,239,.55);border-color:transparent}
+.r4-mv.taken{background:color-mix(in srgb,var(--grn) 6%,transparent);border-color:color-mix(in srgb,var(--grn) 30%,transparent)}
+.r4-mv.skip{opacity:.45}
+.r4-mv-t{flex:1;min-width:0}
+.r4-mv-t .ttl{display:flex;align-items:center;gap:9px}
+.r4-mv-t .ttl b{font-size:15.5px;font-weight:700}
+.r4-mv-t .ttl .tag{font-family:var(--fN);font-size:8.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+     border-radius:999px;padding:3px 8px;background:color-mix(in srgb,var(--acc) 13%,transparent);color:var(--acc)}
+.r4-mv-t .ttl .tag.g{background:color-mix(in srgb,var(--grn) 14%,transparent);color:var(--grn)}
+.r4-mv-t .ttl .tag.m{background:color-mix(in srgb,var(--ink) 7%,transparent);color:var(--mut)}
+.r4-mv-t .dl{display:flex;align-items:center;gap:10px;margin-top:9px;font-size:12.5px;color:var(--mut);flex-wrap:wrap}
+.r4-mv-t .dl b{font-family:var(--fN);font-weight:700;color:var(--ink)}
+.r4-mv-t .dl .mn{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;font-family:var(--fN);font-size:8.5px;font-weight:700;background:var(--st-s);color:var(--st)}
+.r4-mv-t .dl .mn.bd{background:var(--bd-s);color:var(--bd)}
+.r4-mv-t .dl svg{width:15px;height:15px;color:var(--dim)}
+.r4-mv-f{flex:none;text-align:right;min-width:154px}
+.r4-mv-f b{display:block;font-family:var(--fN);font-size:23px;font-weight:700;letter-spacing:-.02em;color:var(--grn)}
+.r4-mv-f b.ink{color:var(--ink)}
+.r4-mv-f span{display:block;font-size:11px;color:var(--mut);margin-top:3px}
+.r4-mv-b{flex:none;display:flex;align-items:center;gap:8px}
+.r4-take{display:inline-flex;align-items:center;gap:7px;height:40px;padding:0 20px;border-radius:999px;background:var(--ink);color:#fff;font-size:13.5px;font-weight:700}
+.r4-take svg{width:15px;height:15px}
+.r4-take.acc{background:var(--acc)}
+.r4-take.done{background:color-mix(in srgb,var(--grn) 15%,transparent);color:var(--grn)}
+.r4-skip{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;color:var(--dim)}
+.r4-skip svg{width:15px;height:15px}
+
+.r4-plan{margin-top:auto;display:flex;align-items:center;gap:16px;padding:16px 22px;border-radius:16px;
+     background:var(--ink);color:#fff;box-shadow:0 24px 54px -30px rgba(16,24,40,.8)}
+.r4-plan.empty{background:transparent;color:var(--dim);border:1px dashed var(--line);box-shadow:none}
+.r4-plan .pk{font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.5)}
+.r4-plan.empty .pk{color:var(--dim)}
+.r4-chips{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.r4-chip{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 8px 0 13px;border-radius:999px;
+     background:rgba(255,255,255,.12);font-size:12.5px;font-weight:600}
+.r4-chip x{font-style:normal;opacity:.55;font-size:14px;padding:0 4px;cursor:pointer}
+.r4-plan .tot{margin-left:auto;text-align:right;flex:none}
+.r4-plan .tot b{display:block;font-family:var(--fN);font-size:18px;font-weight:700}
+.r4-plan .tot span{display:block;font-size:11px;color:rgba(255,255,255,.55);margin-top:2px}
+.r4-plan .go{flex:none;display:inline-flex;align-items:center;gap:9px;height:46px;padding:0 24px;border-radius:999px;
+     background:#fff;color:var(--ink);font-size:14.5px;font-weight:700}
+.r4-plan .go svg{width:16px;height:16px}
+
+/* --- КОНЦЕПТ В: рычаг --- */
+.r4-lever{position:relative;z-index:2;margin-top:6px}
+.r4-lv-hd{display:flex;align-items:flex-end;margin-bottom:16px}
+.r4-lv-hd .s{min-width:0}
+.r4-lv-hd .s.r{margin-left:auto;text-align:right}
+.r4-lv-hd em{display:block;font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+.r4-lv-hd b{display:block;font-family:var(--fN);font-size:64px;font-weight:700;letter-spacing:-.035em;line-height:1;margin-top:10px}
+.r4-lv-hd b.st{color:var(--st)} .r4-lv-hd b.bd{color:var(--bd)}
+.r4-lv-hd s{display:block;text-decoration:none;font-size:12.5px;color:var(--mut);margin-top:7px}
+.r4-lv-hd s i{font-style:normal;font-family:var(--fN);color:var(--dim)}
+.r4-track{position:relative;height:94px;border-radius:18px;display:flex;overflow:visible;background:var(--hair)}
+.r4-track i{height:100%}
+.r4-track i:first-child{border-radius:16px 0 0 16px} .r4-track i:last-child{border-radius:0 16px 16px 0}
+.r4-track i.st{background:linear-gradient(180deg,color-mix(in srgb,var(--st) 84%,#fff),color-mix(in srgb,var(--st) 70%,#fff))}
+.r4-track i.bd{background:linear-gradient(180deg,color-mix(in srgb,var(--bd) 68%,#fff),color-mix(in srgb,var(--bd) 54%,#fff))}
+.r4-ghost{position:absolute;top:-6px;bottom:-6px;width:2px;border-left:2px dashed color-mix(in srgb,var(--ink) 30%,transparent)}
+.r4-ghostlbl{position:absolute;top:-52px;transform:translateX(-50%);font-family:var(--fN);font-size:10px;font-weight:700;color:var(--dim);white-space:nowrap}
+.r4-ghostlbl::after{content:"";position:absolute;left:50%;top:16px;width:1px;height:14px;background:color-mix(in srgb,var(--ink) 22%,transparent)}
+.r4-handle{position:absolute;top:-14px;bottom:-14px;width:16px;transform:translateX(-8px);border-radius:9px;background:#fff;
+     border:1px solid var(--line);box-shadow:0 10px 26px -10px rgba(16,24,40,.5);display:grid;place-items:center;cursor:ew-resize}
+.r4-handle::before{content:"";width:2px;height:22px;border-radius:2px;background:var(--dim);box-shadow:-4px 0 0 var(--dim),4px 0 0 var(--dim)}
+.r4-magnet{position:absolute;top:-14px;bottom:-14px;width:2px;background:var(--ink);border-radius:2px}
+.r4-magnet::after{content:"ЦЕЛЬ 60 / 40";position:absolute;left:50%;top:-26px;transform:translateX(-50%);
+     font-family:var(--fN);font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--ink);white-space:nowrap}
+.r4-pull{position:absolute;top:calc(100% + 16px);transform:translateX(-50%);white-space:nowrap;text-align:center}
+.r4-pull b{font-family:var(--fN);font-size:20px;font-weight:700;color:var(--amb)}
+.r4-pull span{display:block;font-size:11.5px;color:var(--mut);margin-top:2px}
+.r4-live{margin-top:92px;display:grid;grid-template-columns:1fr 1fr 0.86fr;gap:18px}
+.r4-lrow{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;display:flex;align-items:center;gap:16px}
+.r4-lrow.tot{flex-direction:column;align-items:stretch;gap:9px;justify-content:center;background:color-mix(in srgb,var(--ink) 3%,transparent)}
+.r4-lrow.tot em{font-style:normal;font-family:var(--fN);font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.r4-lrow.tot .l{display:flex;align-items:baseline;gap:10px;font-size:12px;color:var(--mut)}
+.r4-lrow.tot .l b{margin-left:auto;font-family:var(--fN);font-size:13.5px;font-weight:700;color:var(--ink)}
+.r4-lrow.tot .l b.pos{color:var(--grn)}
+.r4-lrow .mn{flex:none;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-family:var(--fN);font-size:11px;font-weight:700;background:var(--st-s);color:var(--st)}
+.r4-lrow .mn.bd{background:var(--bd-s);color:var(--bd)}
+.r4-lrow .t{min-width:0}
+.r4-lrow .t em{display:block;font-style:normal;font-family:var(--fN);font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.r4-lrow .t b{display:block;font-size:14.5px;font-weight:700;margin-top:3px}
+.r4-lrow .n{margin-left:auto;text-align:right;flex:none}
+.r4-lrow .n b{display:block;font-family:var(--fN);font-size:26px;font-weight:700;letter-spacing:-.02em}
+.r4-lrow .n b.sell{color:var(--red)} .r4-lrow .n b.buy{color:var(--bd)}
+.r4-lrow .n span{display:block;font-size:11px;color:var(--mut);margin-top:2px}
+
+/* --- квитанция / отправлено --- */
+.r4-sent{width:820px;margin:0 auto;position:relative;z-index:2}
+.r4-sent-h{text-align:center;margin-bottom:26px}
+.r4-sent-h .ic{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;margin:0 auto 14px;
+     background:color-mix(in srgb,var(--grn) 15%,transparent);color:var(--grn)}
+.r4-sent-h .ic svg{width:26px;height:26px}
+.r4-sent-h h4{font-family:var(--fT);font-weight:400;font-size:34px;letter-spacing:-.015em}
+.r4-sent-h p{font-size:13.5px;color:var(--mut);margin-top:9px;line-height:1.55}
+.r4-ord{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.r4-o{display:grid;grid-template-columns:12px 34px minmax(0,1fr) 110px 130px;gap:14px;align-items:center;
+     padding:14px 22px;border-bottom:1px solid var(--hair)}
+.r4-o:last-of-type{border-bottom:0}
+.r4-o .st-d{width:9px;height:9px;border-radius:50%;background:var(--grn)}
+.r4-o .st-d.part{background:var(--amb)}
+.r4-o .mn{width:32px;height:32px;border-radius:10px;display:grid;place-items:center;font-family:var(--fN);font-size:10px;font-weight:700;background:var(--st-s);color:var(--st)}
+.r4-o .mn.bd{background:var(--bd-s);color:var(--bd)}
+.r4-o .t b{display:block;font-size:13.5px;font-weight:700}
+.r4-o .t span{display:block;font-size:11px;color:var(--mut);margin-top:2px}
+.r4-o .q{text-align:right;font-family:var(--fN);font-size:13.5px;font-weight:700}
+.r4-o .s{text-align:right;font-size:12px;font-weight:600;color:var(--grn)}
+.r4-o .s.part{color:var(--amb)}
+.r4-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px}
+.r4-sc{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px 20px}
+.r4-sc em{display:block;font-style:normal;font-family:var(--fN);font-size:9px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+.r4-sc b{display:block;font-family:var(--fN);font-size:26px;font-weight:700;margin-top:10px;letter-spacing:-.02em}
+.r4-sc b.pos{color:var(--grn)}
+.r4-sc span{display:block;font-size:11.5px;color:var(--mut);margin-top:5px}
+
+/* --- «Ровно» --- */
+.r4-calmwrap{display:grid;grid-template-columns:minmax(0,1fr) 348px;gap:52px;align-items:start;position:relative;z-index:2}
+.r4-calm{min-width:0}
+.r4-calmbar{margin-top:34px}
+.r4-side{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 22px;margin-top:64px}
+.r4-side em{display:block;font-style:normal;font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.r4-side b{display:block;font-size:14.5px;font-weight:700;margin-top:9px;line-height:1.4}
+.r4-side p{font-size:12px;color:var(--mut);margin-top:7px;line-height:1.55}
+.r4-side .go{display:inline-flex;align-items:center;gap:7px;margin-top:13px;font-size:12.5px;font-weight:700;color:var(--acc)}
+.r4-side .go svg{width:14px;height:14px}
+/* подвал «Ровно»: прошлая сверка — единственное, что уместно на экране без работы */
+.r4-last{margin-top:auto;margin-bottom:34px;padding-top:20px;border-top:1px solid var(--hair);position:relative;z-index:2;
+     display:grid;grid-template-columns:210px repeat(3,1fr);gap:34px;align-items:baseline}
+.r4-last .lk{font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);line-height:1.6}
+.r4-last .lk b{display:block;color:var(--mut);letter-spacing:.1em}
+.r4-last .lc em{display:block;font-style:normal;font-size:11px;color:var(--dim);margin-bottom:5px}
+.r4-last .lc b{font-size:13.5px;font-weight:650}
+.r4-last .lc b .num{font-family:var(--fN)}
+.r4-last .lc b.pos{color:var(--grn);font-family:var(--fN)}
+</style>
+</head>
+<body>
+<div class="page">
+
+<div class="doc-h">
+  <div class="doc-kicker">Мокапы · «Ребаланс» · раунд 4</div>
+  <h1>Мастер без мастера: ребаланс перестаёт быть анкетой</h1>
+  <p>Полный редизайн вкладки «Ребаланс» (мастер сверки, <code>rebalance-wizard.js</code>). Три концепта одного и того же
+     решения — снять с человека работу, которую машина уже сделала. Все числа сцен пересчитаны от одного портфеля и сходятся
+     между экранами: 1 283 996 ₽, доли 64,1 / 35,9 при цели 60 / 40, дрейф 4,1 п.п. при пороге 3,0.</p>
+</div>
+
+<div class="verdict">
+  <p><b>Диагноз.</b> Сегодня, чтобы переложить деньги, человек делает <b>четыре решения подряд</b>: какой портфель → каким
+     способом («Годовая» / «В моменте» / «Авто») → какую бумагу продать и какую купить → и только потом видит результат.
+     Из этих четырёх машина умеет принять <b>все четыре</b>: портфель с максимальным дрейфом известен, способ выбирается
+     порогом, пара подбирается <code>autoBondPair</code>/<code>autoStockPair</code>, количество — <code>bondQtyFor1More</code>.</p>
+  <p>Хуже того, шаг 2 просит выбрать <b>наш внутренний термин</b>. «Годовая сверка», «В моменте», «Авто» — это названия
+     алгоритмов, а не желаний человека. У пользователя нет способа узнать, что ему нужнее, кроме как прочитать три абзаца
+     и угадать. Рельса шагов при этом занимает 252 px и на четырёх экранах из шести не сообщает ничего нового.</p>
+</div>
+<div class="fix">
+  <p><b>Что меняем.</b> Мастер превращается в <b>один живой экран</b>. Ответ уже посчитан и стоит в центре; шаги, режимы и
+     списки становятся <b>вторым слоем — по требованию</b>. Названия режимов исчезают из интерфейса совсем: вместо
+     «Годовая сверка» человек читает <b>последствие</b> — «вернуть доли к цели», «больше дохода на те же деньги»,
+     «сменить слабую бумагу».</p>
+  <p><b>Один приём держит все три концепта:</b> заштрихованный кусок полосы долей — это ровно те деньги, которые надо
+     переложить. Он и есть сделка. В концепте А его исполняют кнопкой, в Б — набирают ходами, в В — тянут пальцем.</p>
+</div>
+
+<!-- ═══════════════════════ 1 · КОНЦЕПТ А ═══════════════════════ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">01</span><h2>Концепт А · «Ход» — ноль шагов, один готовый обмен</h2>
+    <span class="mk-tag">рекомендую как базу</span></div>
+  <div class="mk-sub">Вкладка открывается сразу на ответе. Портфель выбран (тот, где дрейф больше), способ выбран (порогом),
+     пара подобрана, количество посчитано. Человеку остаётся согласиться. Рельсы шагов нет вовсе — портфели переехали
+     чипами в верхнюю строку, всё остальное живёт за тремя тихими ссылками внизу.</div>
+
+<div class="scroller"><div class="scr">
+  <div class="r4-top">
+    <button class="r4-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Портфели</button>
+    <div class="r4-brand"><em>Ребаланс</em><b>Основной</b></div>
+    <div class="r4-pfs">
+      <span class="r4-pf on">Основной <i>4,1</i></span>
+      <span class="r4-pf warn">Пенсионный <i>3,4</i></span>
+      <span class="r4-pf">Дивидендный <i>0,6</i></span>
+      <span class="r4-pf">Т-Инвестиции <i>1,2</i></span>
+    </div>
+    <span class="r4-clock">MOEX · 12:41</span>
+  </div>
+
+  <div class="r4-stage">
+    <div class="r4-glow"></div>
+
+    <div class="r4-kick">Портфель «Основной» · <b>1 283 996 ₽</b> · цель 60 / 40 · порог 3,0 п.п.</div>
+    <div class="r4-verd">Акций стало больше цели <u>на 4,1 %</u>.<span class="q" style="display:block">Один обмен вернёт 60 / 40.</span>
+      <small>Мы уже выбрали, что продать и что купить: <b>МТС</b> — самый слабый ожидаемый рост среди ваших акций,
+        <b>ОФЗ 26238</b> — самая высокая доходность к погашению среди доступных. Всё можно поменять.</small></div>
+
+    <div class="r4-alloc">
+      <div class="r4-alloc-hd">
+        <div class="s"><b class="num st">64,1 %</b><span>Акции · 822 556 ₽</span></div>
+        <div class="s r"><b class="num bd">35,9 %</b><span>Облигации · 461 440 ₽</span></div>
+      </div>
+      <div class="r4-bar">
+        <i class="st" style="width:60%"></i>
+        <i class="over" style="width:4.1%"></i>
+        <i class="bd" style="width:35.9%"></i>
+        <u class="tgt" style="left:60%"></u>
+        <span class="tgtlbl" style="left:60%">цель 60 / 40</span>
+        <span class="r4-brace" style="left:60%;width:4.1%"></span>
+        <span class="r4-bracelbl" style="left:62.05%"><b>52 158 ₽</b><span>переложить из акций в облигации</span></span>
+      </div>
+      <div class="r4-legend">
+        <span><i class="st"></i>акции</span><span><i class="bd"></i>облигации</span>
+        <span><i class="hz"></i>сверх цели — это и есть сделка</span><span><i class="tg"></i>цель</span>
+      </div>
+    </div>
+
+    <div class="r4-deal" style="margin-top:26px">
+      <div class="r4-deal-top">
+        <div class="r4-leg sell">
+          <div class="r4-legk">Отдаём</div>
+          <div class="r4-inst"><span class="r4-mn">МТС</span><div class="t"><b>МТС</b><span>обыкновенная · 213,50 ₽ · у вас 640 шт</span></div></div>
+          <div class="r4-q num sell">−244<span> шт</span></div>
+          <div class="r4-money num">52 094 ₽ <em>освободится</em></div>
+        </div>
+        <div class="r4-mid"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h15l-4-4"/><path d="M20 15H5l4 4"/></svg></span></div>
+        <div class="r4-leg buy">
+          <div class="r4-legk">Получаем</div>
+          <div class="r4-inst"><span class="r4-mn bd">26238</span><div class="t"><b>ОФЗ 26238</b><span>531,20 ₽ + НКД 10,84 · доходность 19,4 %</span></div></div>
+          <div class="r4-q num buy">+96<span> шт</span></div>
+          <div class="r4-money num">52 036 ₽ <em>спишется</em></div>
+        </div>
+      </div>
+      <div class="r4-deal-foot">
+        <div class="r4-fct"><em>Доли станут</em><b>64,1 / 35,9 <span class="ar">→</span> 60,0 / 40,0</b></div>
+        <div class="r4-fct"><em>Дрейф</em><b>4,1 <span class="ar">→</span> <span style="color:var(--grn)">0,0</span> п.п.</b></div>
+        <div class="r4-fct"><em>Купоны в год</em><b class="pos">+6 749 ₽</b></div>
+        <div class="r4-fct"><em>Комиссия · остаток</em><b class="mut">52 ₽ · 6 ₽ в кэш</b></div>
+        <div class="r4-qty">
+          <em>количество</em>
+          <button class="r4-qb">−</button><b class="num" style="font-size:16px;min-width:44px;text-align:center">244</b><button class="r4-qb">+</button>
+          <u style="text-decoration:none;font-size:11px;color:var(--dim)">из 640</u>
+        </div>
+      </div>
+    </div>
+
+    <div class="r4-acts">
+      <button class="r4-cta">Исполнить обмен
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M13 6l6 6-6 6"/></svg></button>
+      <span class="r4-quiet">Почему эта пара
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+      <span class="r4-quiet">Другие ходы <i style="font-style:normal;font-family:var(--fN);color:var(--dim)">2</i>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+      <span class="r4-quiet">Что если — предпросмотр</span>
+      <div class="r4-note">Заявки уходят в терминал Т-Инвестиций по одной:<br>сначала продажа, покупка — как придут деньги.</div>
+    </div>
+  </div>
+</div></div>
+
+  <div class="notes">
+    <div class="note"><i>1</i><span><b>Рельсы шагов нет.</b> Все четыре шага сжаты в один экран: портфель — чипы наверху
+      (число в чипе = дрейф, отсортированы по нему), режим — выбран порогом, пара и количество — посчитаны.</span></div>
+    <div class="note"><i>2</i><span><b>Заголовок — вердикт, а не название экрана.</b> Georgia 50px, одна фраза, в ней
+      единственное жёлтое число. Второй строкой тем же кеглем, но серым — что с этим делать.</span></div>
+    <div class="note"><i>3</i><span><b>Штриховка = сделка.</b> Кусок полосы между целью (60 %) и фактом (64,1 %) — ровно те
+      52 665 ₽, что перекладываем. Скоба и подпись стоят под ним, а не сбоку: связь читается без легенды.</span></div>
+    <div class="note"><i>4</i><span><b>Числа сделки крупнее заголовка</b> (моно 62px против серифа 50). «−244» и «+96» —
+      первое, что видит глаз при взгляде на карту. Знак и цвет несут смысл, слова «продать/купить» не нужны.</span></div>
+    <div class="note"><i>5</i><span><b>Подвал карты — четыре факта в одном формате</b> «до → после»: доли, дрейф, купоны,
+      деньги. Ни одного термина, который нужно разгадывать; НКД и доходность стоят в мете бумаги.</span></div>
+    <div class="note"><i>6</i><span><b>Количество правится прямо на карте</b> степпером, без ухода на другой экран.
+      «из 640» — граница, дальше которой продавать нечего.</span></div>
+    <div class="note"><i>7</i><span><b>Одна кнопка — одно действие.</b> Всё остальное — тихие ссылки того же ряда:
+      доказательство, другие ходы, предпросмотр. Они не спорят с CTA ни весом, ни цветом.</span></div>
+    <div class="note"><i>8</i><span><b>Слова «Годовая» на экране нет.</b> Режим виден только последствием («вернёт 60 / 40»).
+      Термины остаются внутри кода и в подсказках, но не в интерфейсе.</span></div>
+    <div class="note"><i>9</i><span><b>Смена портфеля не роняет прогресс:</b> клик по чипу пересобирает вердикт и карту на
+      месте — это не шаг назад, а переключение канала.</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 2 · А · доказательство ═══════════════════════ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">02</span><h2>Концепт А · «Почему эта пара» — механика по требованию</h2>
+    <span class="mk-tag mute">то же состояние, раскрыта ссылка</span></div>
+  <div class="mk-sub">Возражение к простоте всегда одно: «а вдруг машина ошиблась». Ответ — не показывать списки всем и всегда,
+     а держать их <b>в одном клике</b>. Раскрытие происходит на месте: карта обмена уезжает вверх, под ней разворачивается
+     доказательство — два ранжированных списка, где выбранные строки подсвечены, и одна фраза словами.</div>
+
+<div class="scroller"><div class="scr">
+  <div class="r4-top">
+    <button class="r4-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Портфели</button>
+    <div class="r4-brand"><em>Ребаланс</em><b>Основной</b></div>
+    <div class="r4-pfs">
+      <span class="r4-pf on">Основной <i>4,1</i></span>
+      <span class="r4-pf warn">Пенсионный <i>3,4</i></span>
+      <span class="r4-pf">Дивидендный <i>0,6</i></span>
+      <span class="r4-pf">Т-Инвестиции <i>1,2</i></span>
+    </div>
+    <span class="r4-clock">MOEX · 12:41</span>
+  </div>
+
+  <div class="r4-stage">
+    <div class="r4-glow"></div>
+    <div class="r4-kick">Портфель «Основной» · <b>1 283 996 ₽</b> · переложить 52 158 ₽</div>
+
+    <div class="r4-deal" style="margin-top:16px">
+      <div class="r4-deal-top">
+        <div class="r4-leg sell" style="padding-bottom:16px">
+          <div class="r4-legk">Отдаём</div>
+          <div class="r4-inst"><span class="r4-mn">МТС</span><div class="t"><b>МТС</b><span>213,50 ₽ · потенциал +6 %</span></div></div>
+          <div class="r4-q num sell" style="font-size:46px">−244<span> шт</span></div>
+        </div>
+        <div class="r4-mid"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h15l-4-4"/><path d="M20 15H5l4 4"/></svg></span></div>
+        <div class="r4-leg buy" style="padding-bottom:16px">
+          <div class="r4-legk">Получаем</div>
+          <div class="r4-inst"><span class="r4-mn bd">26238</span><div class="t"><b>ОФЗ 26238</b><span>542,04 ₽ с НКД · доходность 19,4 %</span></div></div>
+          <div class="r4-q num buy" style="font-size:46px">+96<span> шт</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="r4-why" style="margin-top:18px">
+      <div class="r4-why-lead">Мы взяли эту пару, потому что: <b>МТС</b> — самый слабый ожидаемый рост среди ваших акций
+        (+6 % против +24 % у лучшей), значит на этой сумме теряем меньше всего будущего; <b>ОФЗ 26238</b> — самая высокая
+        доходность к погашению среди доступных выпусков (19,4 %) и цена ниже номинала. <b>Любую строку можно выбрать
+        самому — расчёт пересоберётся на месте.</b></div>
+      <div class="r4-why-cols">
+        <div class="r4-why-c">
+          <div class="r4-why-h"><b>Ваши акции</b><span>сортировка: ожидаемый рост ↑</span></div>
+          <div class="r4-wr pick"><span class="mn">МТС</span><div class="t"><b>МТС</b><span>640 шт · 136 640 ₽</span></div><div class="m">+6 %</div><div class="q">рост</div></div>
+          <div class="r4-wr"><span class="mn">ММК</span><div class="t"><b>ММК</b><span>800 шт · 29 120 ₽</span></div><div class="m">+4 %</div><div class="q">рост</div></div>
+          <div class="r4-wr dim"><span class="mn">ГМКН</span><div class="t"><b>Норникель</b><span>90 шт · 11 250 ₽</span></div><div class="m">+11 %</div><div class="q">рост</div></div>
+          <div class="r4-wr dim"><span class="mn">ЛКОХ</span><div class="t"><b>ЛУКОЙЛ</b><span>42 шт · 269 640 ₽</span></div><div class="m">+18 %</div><div class="q">рост</div></div>
+          <div class="r4-wr dim"><span class="mn">СБЕР</span><div class="t"><b>Сбербанк</b><span>1 290 шт · 375 906 ₽</span></div><div class="m">+24 %</div><div class="q">рост</div></div>
+        </div>
+        <div class="r4-why-c">
+          <div class="r4-why-h"><b>Куда переложить</b><span>сортировка: доходность ↓</span></div>
+          <div class="r4-wr pick"><span class="mn bd">26238</span><div class="t"><b>ОФЗ 26238</b><span>542,04 ₽ · погашение 2041</span></div><div class="m">19,4 %</div><div class="q">96 шт</div></div>
+          <div class="r4-wr"><span class="mn bd">26244</span><div class="t"><b>ОФЗ 26244</b><span>596,60 ₽ · погашение 2034</span></div><div class="m">19,0 %</div><div class="q">87 шт</div></div>
+          <div class="r4-wr dim"><span class="mn bd">26243</span><div class="t"><b>ОФЗ 26243</b><span>612,30 ₽ · погашение 2038</span></div><div class="m">18,6 %</div><div class="q">85 шт</div></div>
+          <div class="r4-wr dim"><span class="mn bd">26240</span><div class="t"><b>ОФЗ 26240</b><span>558,90 ₽ · погашение 2036</span></div><div class="m">18,1 %</div><div class="q">93 шт</div></div>
+          <div class="r4-wr dim"><span class="mn bd">26221</span><div class="t"><b>ОФЗ 26221</b><span>648,20 ₽ · погашение 2033 · уже в портфеле</span></div><div class="m">16,5 %</div><div class="q">80 шт</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="r4-acts">
+      <button class="r4-cta">Исполнить обмен
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M13 6l6 6-6 6"/></svg></button>
+      <span class="r4-quiet on">Свернуть доказательство
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg></span>
+      <span class="r4-quiet">Другие ходы <i style="font-style:normal;font-family:var(--fN);color:var(--dim)">2</i></span>
+      <div class="r4-note">Данные списков — те же, что кормят карточку «Ребаланс» на «Обзоре»:<br><b>PF.rbOfzMarket / rbOfzCand / rbLivePotential</b>. Второго источника правды нет.</div>
+    </div>
+  </div>
+</div></div>
+
+  <div class="notes">
+    <div class="note"><i>1</i><span><b>Сначала вывод словами, потом таблицы.</b> Одна фраза объясняет обе стороны выбора;
+      списки под ней — доказательство, а не задание.</span></div>
+    <div class="note"><i>2</i><span><b>Списки ранжированы по критерию отбора</b> и критерий подписан в шапке колонки
+      («ожидаемый рост ↑», «доходность ↓»). Видно не только что выбрано, но и почему остальное — нет.</span></div>
+    <div class="note"><i>3</i><span><b>Выбранная строка — кольцо акцента, не заливка.</b> Ближайший конкурент показан в
+      полную силу, дальние приглушены до 55 %: глаз сразу видит, насколько выбор был очевиден.</span></div>
+    <div class="note"><i>4</i><span><b>Карта обмена не исчезает</b> при раскрытии — ужимается по высоте (числа 62 → 46 px)
+      и остаётся якорем. Человек не теряет из виду то, что подтверждает.</span></div>
+    <div class="note"><i>5</i><span><b>Пометка «в портфеле»</b> у кандидата, который уже есть, — на месте; докупка своего
+      выпуска допустима и иногда лучший ход.</span></div>
+    <div class="note"><i>6</i><span><b>CTA не меняется.</b> Раскрытие доказательства — не другой экран и не другой шаг:
+      кнопка на том же месте, тем же весом.</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 3 · КОНЦЕПТ Б ═══════════════════════ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">03</span><h2>Концепт Б · «План» — портфель отвечает на каждый ход</h2>
+    <span class="mk-tag">для тех, кто хочет управлять</span></div>
+  <div class="mk-sub">Если ход один, концепт А идеален. Но чаще их несколько: доли уплыли, одна облигация выстрелила, и одна
+     акция явно слабее соседней. Здесь экран делится надвое: слева <b>зеркало портфеля</b>, справа <b>колода найденных
+     ходов</b>. Берёшь ход — зеркало слева мгновенно перестраивается. Режимов снова нет: у каждого хода написано,
+     что он даёт.</div>
+
+<div class="scroller"><div class="scr">
+  <div class="r4-top">
+    <button class="r4-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Портфели</button>
+    <div class="r4-brand"><em>Ребаланс</em><b>Основной</b></div>
+    <div class="r4-pfs">
+      <span class="r4-pf on">Основной <i>4,1</i></span>
+      <span class="r4-pf warn">Пенсионный <i>3,4</i></span>
+      <span class="r4-pf">Дивидендный <i>0,6</i></span>
+      <span class="r4-pf">Т-Инвестиции <i>1,2</i></span>
+    </div>
+    <span class="r4-clock">MOEX · 12:41</span>
+  </div>
+
+  <div class="r4-stage" style="padding-top:28px">
+    <div class="r4-glow"></div>
+    <div class="r4-verd" style="font-size:34px;margin-bottom:22px">Мы нашли четыре хода.<span class="q"> Возьмите те, что нравятся.</span></div>
+
+    <div class="r4-two">
+      <div class="r4-mirror">
+        <div class="k">Портфель сейчас</div>
+        <div class="big">1 283 996<span> ₽</span></div>
+        <div class="r4-mbar">
+          <div class="lb"><span>Акции <b>64,1 %</b></span><span>Облигации <b>35,9 %</b></span></div>
+          <div class="r4-mini">
+            <i class="st" style="width:60%"></i><i class="over" style="width:4.1%"></i><i class="bd" style="width:35.9%"></i>
+            <u class="tgt" style="left:60%"></u>
+          </div>
+        </div>
+        <div class="r4-mrows">
+          <div class="r4-mrow"><span class="kk">Дрейф от цели 60 / 40</span><span class="vv num">4,1 п.п.</span></div>
+          <div class="r4-mrow"><span class="kk">Прибыль в день, облигации</span><span class="vv num">212 ₽</span></div>
+          <div class="r4-mrow"><span class="kk">Купоны в год</span><span class="vv num">56 612 ₽</span></div>
+          <div class="r4-mrow"><span class="kk">Свободных денег</span><span class="vv num">8 240 ₽</span></div>
+        </div>
+        <div class="r4-mcomp">
+          <div class="ck">Состав</div>
+          <div class="r4-mrow"><span class="kk">Акции · 5 бумаг</span><span class="vv num">822 556 ₽</span></div>
+          <div class="r4-mrow"><span class="kk">Облигации · 3 выпуска</span><span class="vv num">461 440 ₽</span></div>
+        </div>
+        <div class="r4-mgoal">Цель 60 / 40 · порог 3,0 п.п.<span class="ed">изменить</span></div>
+        <div class="r4-mfoot">Зеркало пересчитывается на каждый взятый ход — <b>до отправки заявок портфель не меняется.</b>
+          Последняя сверка: 14 марта 2026.</div>
+      </div>
+
+      <div class="r4-moves">
+        <div class="r4-moves-h"><b>Ходы</b><span>отсортированы по тому, сколько дают</span>
+          <span class="srt">выгода ↓</span></div>
+
+        <div class="r4-mv lead">
+          <div class="r4-mv-t">
+            <div class="ttl"><b>Вернуть доли к цели</b><span class="tag">главное</span></div>
+            <div class="dl"><span class="mn">МТС</span><b>−244 шт</b>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h15l-4-4"/><path d="M20 15H5l4 4"/></svg>
+              <span class="mn bd">26238</span><b>+96 шт</b><span>· 52 094 ₽ · комиссия 52 ₽</span></div>
+          </div>
+          <div class="r4-mv-f"><b class="ink">4,1 → 0,0</b><span>дрейф, п.п.</span></div>
+          <div class="r4-mv-b">
+            <button class="r4-take acc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Взять</button>
+            <button class="r4-skip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></button>
+          </div>
+        </div>
+
+        <div class="r4-mv">
+          <div class="r4-mv-t">
+            <div class="ttl"><b>Больше дохода на те же деньги</b><span class="tag g">облигация выросла на 3,1 %</span></div>
+            <div class="dl"><span class="mn bd">26221</span><b>−120 шт</b>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h15l-4-4"/><path d="M20 15H5l4 4"/></svg>
+              <span class="mn bd">26244</span><b>+130 шт</b><span>· бумаг станет на 10 больше, доплачивать нечего</span></div>
+          </div>
+          <div class="r4-mv-f"><b>+5 ₽</b><span>в день · 158 ₽ в месяц</span></div>
+          <div class="r4-mv-b">
+            <button class="r4-take"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Взять</button>
+            <button class="r4-skip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></button>
+          </div>
+        </div>
+
+        <div class="r4-mv">
+          <div class="r4-mv-t">
+            <div class="ttl"><b>Сменить слабую акцию</b><span class="tag m">тот же уровень риска</span></div>
+            <div class="dl"><span class="mn">ММК</span><b>−800 шт</b>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h15l-4-4"/><path d="M20 15H5l4 4"/></svg>
+              <span class="mn">СБЕР</span><b>+99 шт</b><span>· доля акций не меняется</span></div>
+          </div>
+          <div class="r4-mv-f"><b>+4 % → +24 %</b><span>ожидаемый рост</span></div>
+          <div class="r4-mv-b">
+            <button class="r4-take"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Взять</button>
+            <button class="r4-skip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></button>
+          </div>
+        </div>
+
+        <div class="r4-mv">
+          <div class="r4-mv-t">
+            <div class="ttl"><b>Пристроить свободные деньги</b><span class="tag m">8 240 ₽ лежат без дела</span></div>
+            <div class="dl"><span class="mn bd">26238</span><b>+15 шт</b><span>· 8 131 ₽ · остаток 109 ₽ · доли почти не сдвинутся</span></div>
+          </div>
+          <div class="r4-mv-f"><b>+4 ₽</b><span>в день · 133 ₽ в месяц</span></div>
+          <div class="r4-mv-b">
+            <button class="r4-take"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Взять</button>
+            <button class="r4-skip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></button>
+          </div>
+        </div>
+
+        <div class="r4-more">Ещё <b>6</b> обменов с меньшей выгодой — мы их не предлагаем, но показать можно
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div>
+
+        <div class="r4-plan empty">
+          <span class="pk">План пуст</span>
+          <span style="font-size:13px;color:var(--mut)">Возьмите ход — он появится здесь, а зеркало слева покажет, каким портфель станет.</span>
+          <span class="tot" style="color:var(--dim)"><b style="font-family:var(--fN);font-size:16px">0 ₽</b><span style="color:var(--dim)">оборот</span></span>
+        </div>
+      </div>
+    </div>
+    <div style="height:26px"></div>
+  </div>
+</div></div>
+
+  <div class="notes">
+    <div class="note"><i>1</i><span><b>Слева — зеркало, а не карточка-копия.</b> Оно существует ради одного: показать, каким
+      портфель станет. До взятия хода в нём «сейчас», после — «сейчас → станет» на тех же строках.</span></div>
+    <div class="note"><i>2</i><span><b>Ход подписан последствием, не режимом.</b> «Вернуть доли к цели» вместо «Годовая»,
+      «Больше дохода на те же деньги» вместо «В моменте». Алгоритмы прежние, слова — человеческие.</span></div>
+    <div class="note"><i>3</i><span><b>Одна строка сделки на ход:</b> монограмма, −244 шт, стрелка обмена, +96 шт. Читается
+      слева направо как предложение и не требует раскрытия.</span></div>
+    <div class="note"><i>4</i><span><b>У каждого хода одно число выгоды в своём измерении</b> — п.п. дрейфа, ₽ в день,
+      ожидаемый рост. Мы не сводим разные вещи к фальшивой общей метрике.</span></div>
+    <div class="note"><i>5</i><span><b>«Взять» и «Пропустить» — на карточке</b>, а не в подвале экрана. Решение
+      принимается там же, где читается; пропущенное гаснет, но остаётся видимым и возвращается кликом.</span></div>
+    <div class="note"><i>6</i><span><b>Первый ход выделен кольцом акцента</b> и подписан «главное» — сортировка по выгоде
+      честная, но у ребаланса есть приоритет: доли важнее приработка.</span></div>
+    <div class="note"><i>7</i><span><b>План — тёмная плита внизу правой колонки.</b> Пустая — пунктирная рамка с
+      объяснением, что произойдёт; заполненная — чипы, оборот и кнопка отправки (следующий экран).</span></div>
+    <div class="note"><i>8</i><span><b>Обещание безопасности стоит в зеркале:</b> «до отправки заявок портфель не
+      меняется». Именно этого боятся на экране, где деньги двигают в один клик.</span></div>
+    <div class="note"><i>9</i><span><b>Ходов ровно столько, сколько нашлось.</b> Пустая колода — это состояние «Ровно»
+      (экран 07), а не пустая сетка с тремя заглушками.</span></div>
+    <div class="note"><i>10</i><span><b>Новый тип хода: «Пристроить свободные деньги».</b> Сегодня мастер не умеет
+      замечать кэш, лежащий без дела. Покупка без продажи — самый простой обмен, и он почти не двигает доли.</span></div>
+    <div class="note"><i>11</i><span><b>«Ещё 6 обменов» — пунктирная строка, не карточка.</b> Полный перебор
+      существует и доступен, но по умолчанию не соперничает за внимание с отобранными ходами.</span></div>
+    <div class="note"><i>12</i><span><b>Клавиатура:</b> ↑ ↓ по колоде, Enter — взять, Backspace — пропустить,
+      Cmd + Enter — отправить план. Колода без мыши обязана работать целиком.</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 4 · Б · два хода взяты ═══════════════════════ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">04</span><h2>Концепт Б · два хода взяты — зеркало ответило</h2>
+    <span class="mk-tag mute">то же место, другое состояние</span></div>
+  <div class="mk-sub">Главное движение раунда. Взяли ход — и <b>слева всё поехало</b>: штриховка на полосе схлопнулась,
+     дрейф упал до нуля, прибыль в день и купоны выросли. Это и есть «вау»: не анимация ради анимации, а видимое
+     последствие своего решения до того, как заплачены деньги.</div>
+
+<div class="scroller"><div class="scr">
+  <div class="r4-top">
+    <button class="r4-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Портфели</button>
+    <div class="r4-brand"><em>Ребаланс</em><b>Основной</b></div>
+    <div class="r4-pfs">
+      <span class="r4-pf on">Основной <i>4,1</i></span>
+      <span class="r4-pf warn">Пенсионный <i>3,4</i></span>
+      <span class="r4-pf">Дивидендный <i>0,6</i></span>
+      <span class="r4-pf">Т-Инвестиции <i>1,2</i></span>
+    </div>
+    <span class="r4-clock">MOEX · 12:41</span>
+  </div>
+
+  <div class="r4-stage" style="padding-top:28px">
+    <div class="r4-glow"></div>
+    <div class="r4-verd" style="font-size:34px;margin-bottom:22px">Два хода в плане.<span class="q"> Портфель станет таким:</span></div>
+
+    <div class="r4-two">
+      <div class="r4-mirror">
+        <div class="k">Портфель станет</div>
+        <div class="big">1 283 712<span> ₽</span></div>
+        <div class="r4-mbar">
+          <div class="lb"><span>Акции <b>60,0 %</b></span><span>Облигации <b>40,0 %</b></span></div>
+          <div class="r4-mini">
+            <i class="st" style="width:60%"></i><i class="bd" style="width:40%"></i>
+            <u class="tgt" style="left:60%"></u>
+          </div>
+        </div>
+        <div class="r4-mrows">
+          <div class="r4-mrow"><span class="kk">Дрейф от цели 60 / 40</span>
+            <span class="vv num"><s>4,1</s><em>→</em><b class="zero">0,0 п.п.</b></span></div>
+          <div class="r4-mrow"><span class="kk">Прибыль в день, облигации</span>
+            <span class="vv num"><s>212</s><em>→</em><b class="pos">245 ₽</b></span></div>
+          <div class="r4-mrow"><span class="kk">Купоны в год</span>
+            <span class="vv num"><s>56 612</s><em>→</em><b class="pos">68 733 ₽</b></span></div>
+          <div class="r4-mrow"><span class="kk">Свободных денег</span>
+            <span class="vv num"><s>8 240</s><em>→</em>8 394 ₽</span></div>
+        </div>
+        <div class="r4-mcomp">
+          <div class="ck">Состав</div>
+          <div class="r4-mrow"><span class="kk">Акции · 5 бумаг</span><span class="vv num"><s>822 556</s><em>→</em>770 462 ₽</span></div>
+          <div class="r4-mrow"><span class="kk">Облигации · <s style="text-decoration:none;color:var(--dim)">3</s> → 5 выпусков</span><span class="vv num"><s>461 440</s><em>→</em>513 250 ₽</span></div>
+        </div>
+        <div class="r4-mgoal">Цель 60 / 40 · порог 3,0 п.п.<span class="ed">изменить</span></div>
+        <div class="r4-mfoot">Заявок будет <b>4</b>: две продажи и две покупки. Оборот <b>259 472 ₽</b>,
+          комиссия <b>130 ₽</b>, налог с прибыли — <b>0 ₽</b> (ставка берётся из настроек «Ребаланса»).</div>
+      </div>
+
+      <div class="r4-moves">
+        <div class="r4-moves-h"><b>Ходы</b><span>2 взяты · 1 пропущен · 1 остался</span><span class="srt">выгода ↓</span></div>
+
+        <div class="r4-mv taken">
+          <div class="r4-mv-t">
+            <div class="ttl"><b>Вернуть доли к цели</b><span class="tag g">в плане</span></div>
+            <div class="dl"><span class="mn">МТС</span><b>−244 шт</b>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h15l-4-4"/><path d="M20 15H5l4 4"/></svg>
+              <span class="mn bd">26238</span><b>+96 шт</b><span>· 52 094 ₽</span></div>
+          </div>
+          <div class="r4-mv-f"><b class="ink">4,1 → 0,0</b><span>дрейф, п.п.</span></div>
+          <div class="r4-mv-b">
+            <button class="r4-take done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>В плане</button>
+            <button class="r4-skip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></button>
+          </div>
+        </div>
+
+        <div class="r4-mv taken">
+          <div class="r4-mv-t">
+            <div class="ttl"><b>Больше дохода на те же деньги</b><span class="tag g">в плане</span></div>
+            <div class="dl"><span class="mn bd">26221</span><b>−120 шт</b>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h15l-4-4"/><path d="M20 15H5l4 4"/></svg>
+              <span class="mn bd">26244</span><b>+130 шт</b><span>· бумаг на 10 больше</span></div>
+          </div>
+          <div class="r4-mv-f"><b>+5 ₽</b><span>в день · 158 ₽ в месяц</span></div>
+          <div class="r4-mv-b">
+            <button class="r4-take done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>В плане</button>
+            <button class="r4-skip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></button>
+          </div>
+        </div>
+
+        <div class="r4-mv skip">
+          <div class="r4-mv-t">
+            <div class="ttl"><b>Сменить слабую акцию</b><span class="tag m">пропущен</span></div>
+            <div class="dl"><span class="mn">ММК</span><b>−800 шт</b>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h15l-4-4"/><path d="M20 15H5l4 4"/></svg>
+              <span class="mn">СБЕР</span><b>+99 шт</b><span>· вернуть кликом</span></div>
+          </div>
+          <div class="r4-mv-f"><b>+4 % → +24 %</b><span>ожидаемый рост</span></div>
+          <div class="r4-mv-b">
+            <button class="r4-take"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Вернуть</button>
+          </div>
+        </div>
+
+        <div class="r4-mv">
+          <div class="r4-mv-t">
+            <div class="ttl"><b>Пристроить свободные деньги</b><span class="tag m">8 240 ₽ лежат без дела</span></div>
+            <div class="dl"><span class="mn bd">26238</span><b>+15 шт</b><span>· 8 131 ₽ · доли почти не сдвинутся</span></div>
+          </div>
+          <div class="r4-mv-f"><b>+4 ₽</b><span>в день · 133 ₽ в месяц</span></div>
+          <div class="r4-mv-b">
+            <button class="r4-take"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Взять</button>
+            <button class="r4-skip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg></button>
+          </div>
+        </div>
+
+        <div class="r4-more">Ещё <b>6</b> обменов с меньшей выгодой — мы их не предлагаем, но показать можно
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div>
+
+        <div class="r4-plan">
+          <span class="pk">План</span>
+          <div class="r4-chips">
+            <span class="r4-chip">Доли к цели <x>×</x></span>
+            <span class="r4-chip">МТС → 26238 <x>×</x></span>
+            <span class="r4-chip">26221 → 26244 <x>×</x></span>
+          </div>
+          <span class="tot"><b>259 472 ₽</b><span>оборот · 4 заявки</span></span>
+          <button class="go">Отправить план
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M13 6l6 6-6 6"/></svg></button>
+        </div>
+      </div>
+    </div>
+    <div style="height:26px"></div>
+  </div>
+</div></div>
+
+  <div class="notes">
+    <div class="note"><i>1</i><span><b>Зеркало переименовалось:</b> «Портфель сейчас» → «Портфель станет». Заголовок блока
+      честно говорит, что показанное — прогноз, а не факт.</span></div>
+    <div class="note"><i>2</i><span><b>Строки метрик держат «до → после» в одной строке:</b> старое значение перечёркнуто
+      цветом (не линией — линия читается как ошибка), новое жирным. Формат одинаковый у всех четырёх.</span></div>
+    <div class="note"><i>3</i><span><b>Штриховка исчезла с полосы</b> — визуальный эквивалент «дрейф 0,0». Ничего не мигает
+      и не поздравляет: пропажа тревожного элемента и есть награда.</span></div>
+    <div class="note"><i>4</i><span><b>Взятый ход остаётся на месте</b>, только зеленеет и меняет кнопку на «В плане».
+      Карточки не перепрыгивают в другой контейнер — иначе теряется связь «я нажал вот это».</span></div>
+    <div class="note"><i>5</i><span><b>Пропущенный гаснет до 45 %,</b> но остаётся читаемым и возвращается одной кнопкой.
+      Ошибиться пропуском нельзя.</span></div>
+    <div class="note"><i>6</i><span><b>Итоги плана — в подвале зеркала,</b> а не в плите: сколько заявок, оборот, комиссия,
+      налог. Плита остаётся действием, а не сводкой.</span></div>
+    <div class="note"><i>7</i><span><b>Чипов три, а ходов два</b> — «Доли к цели» показывает намерение, две другие строки —
+      конкретные обмены. Каждый чип снимается крестиком без выхода из плана.</span></div>
+    <div class="note"><i>8</i><span><b>Кнопка отправки светлая на тёмном</b> — единственная инверсия на экране. Это
+      действие с деньгами, оно обязано выглядеть иначе, чем «Взять».</span></div>
+    <div class="note"><i>9</i><span><b>Налог показан явным нулём,</b> а не спрятан. Строка «0 ₽» снимает вопрос быстрее,
+      чем отсутствие строки.</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 5 · КОНЦЕПТ В ═══════════════════════ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">05</span><h2>Концепт В · «Рычаг» — сделка собирается под пальцем</h2>
+    <span class="mk-tag">максимальный «вау»</span></div>
+  <div class="mk-sub">Самый смелый: убрать форму совсем и дать <b>трогать сами доли</b>. Полоса портфеля становится
+     контролом — тянешь границу между акциями и облигациями, и внизу вживую пересобирается сделка: сколько бумаг продать,
+     сколько купить, на какую сумму. У цели стоит магнит: отпустишь рядом — прилипнет ровно к 60 / 40.</div>
+
+<div class="scroller"><div class="scr">
+  <div class="r4-top">
+    <button class="r4-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Портфели</button>
+    <div class="r4-brand"><em>Ребаланс</em><b>Основной</b></div>
+    <div class="r4-pfs">
+      <span class="r4-pf on">Основной <i>4,1</i></span>
+      <span class="r4-pf warn">Пенсионный <i>3,4</i></span>
+      <span class="r4-pf">Дивидендный <i>0,6</i></span>
+      <span class="r4-pf">Т-Инвестиции <i>1,2</i></span>
+    </div>
+    <span class="r4-clock">MOEX · 12:41</span>
+  </div>
+
+  <div class="r4-stage" style="padding-top:34px">
+    <div class="r4-glow"></div>
+    <div class="r4-kick">Портфель «Основной» · <b>1 283 996 ₽</b> · тяните границу — сделка соберётся сама</div>
+    <div class="r4-verd" style="font-size:36px;margin-top:10px">Сколько оставить в акциях?</div>
+
+    <div class="r4-lever" style="margin-top:44px">
+      <div class="r4-lv-hd">
+        <div class="s"><em>Акции</em><b class="num st">62,0 %</b><s>796 082 ₽ <i>было 822 556 ₽</i></s></div>
+        <div class="s r"><em>Облигации</em><b class="num bd">38,0 %</b><s>487 458 ₽ <i>было 461 440 ₽</i></s></div>
+      </div>
+      <div class="r4-track">
+        <i class="st" style="width:62%"></i><i class="bd" style="width:38%"></i>
+        <span class="r4-ghost" style="left:64.1%"></span>
+        <span class="r4-ghostlbl" style="left:64.1%">было 64,1</span>
+        <span class="r4-magnet" style="left:60%"></span>
+        <span class="r4-handle" style="left:62%"></span>
+        <span class="r4-pull" style="left:63.05%"><b>26 474 ₽</b><span>перекладываем · до цели ещё 2,0 % — магнит подтянет сам</span></span>
+      </div>
+
+      <div class="r4-live">
+        <div class="r4-lrow">
+          <span class="mn">МТС</span>
+          <div class="t"><em>Продаём</em><b>МТС · 213,50 ₽</b></div>
+          <div class="n"><b class="num sell">−124</b><span>шт · 26 474 ₽</span></div>
+        </div>
+        <div class="r4-lrow">
+          <span class="mn bd">26238</span>
+          <div class="t"><em>Покупаем</em><b>ОФЗ 26238 · 542,04 ₽</b></div>
+          <div class="n"><b class="num buy">+48</b><span>шт · 26 018 ₽</span></div>
+        </div>
+        <div class="r4-lrow tot">
+          <em>Итог сделки</em>
+          <span class="l">Комиссия<b>26 ₽</b></span>
+          <span class="l">Остаток в кэш<b>430 ₽</b></span>
+          <span class="l">Купоны в год<b class="pos">+3 374 ₽</b></span>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;margin-top:18px;font-size:12.5px;color:var(--dim)">
+        Бумаги подобраны автоматически — <span style="color:var(--acc);font-weight:700">сменить ›</span>
+        <span style="margin-left:18px">Щелчков ручки: <b class="num" style="color:var(--mut)">37</b> — по одному на каждую бумагу, которую можно доложить или снять.</span>
+      </div>
+    </div>
+
+    <div class="r4-acts">
+      <button class="r4-cta acc">Собрать заявки
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M13 6l6 6-6 6"/></svg></button>
+      <button class="r4-cta ghost">Ровно к цели 60 / 40</button>
+      <span class="r4-quiet">Вернуть как было</span>
+      <div class="r4-note">Шаг ручки — одна бумага, а не процент: доли не могут встать там,<br>где сделка не собирается из целых лотов.</div>
+    </div>
+  </div>
+</div></div>
+
+  <div class="notes">
+    <div class="note"><i>1</i><span><b>Полоса стала контролом.</b> Тот же объект, что на экранах 01 и 03 объяснял ситуацию,
+      здесь ею управляет. Ничему новому учиться не надо.</span></div>
+    <div class="note"><i>2</i><span><b>Пунктир «было 64,1»</b> остаётся на месте всё перетаскивание — иначе через секунду
+      человек не помнит, откуда начал, и не понимает масштаб своего движения.</span></div>
+    <div class="note"><i>3</i><span><b>Магнит у цели.</b> Чёрная риска 60 / 40 притягивает ручку в пределах ±0,4 п.п.
+      Попасть точно в цель пальцем невозможно — и не нужно.</span></div>
+    <div class="note"><i>4</i><span><b>Шаг ручки — одна бумага.</b> Ручка не идёт непрерывно: она щёлкает по позициям, где
+      сделка собирается из целых бумаг. Промежуточные доли — ложь, их не показываем.</span></div>
+    <div class="note"><i>5</i><span><b>Два больших числа наверху — сами доли,</b> моно 54px, в цветах классов. Проценты
+      важнее рублей: рубли идут второй строкой и тише.</span></div>
+    <div class="note"><i>6</i><span><b>Сделка внизу пересобирается на каждом щелчке</b> — количество, сумма, комиссия,
+      остаток, купоны. Это единственная анимация экрана, и она несёт данные.</span></div>
+    <div class="note"><i>7</i><span><b>«Ровно к цели» рядом с CTA</b> — для тех, кто не хочет тянуть вообще: одна кнопка
+      ставит ручку на магнит. Концепт В без единого перетаскивания превращается в концепт А.</span></div>
+    <div class="note"><i>8</i><span><b>Бумаги подобраны, но заменяемы</b> тихой ссылкой — та же логика «механика по
+      требованию», что на экране 02.</span></div>
+    <div class="note"><i>9</i><span><b>Клавиатура обязательна:</b> ручка получает фокус, стрелки ← → двигают на один щелчок,
+      Home / End — на края, Enter — «ровно к цели». Иначе экран недоступен без мыши.</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 6 · Отправлено ═══════════════════════ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">06</span><h2>Общее · «Отправлено» — честная квитанция</h2>
+    <span class="mk-tag mute">одинаково для всех трёх концептов</span></div>
+  <div class="mk-sub">Экран после кнопки. Единственное место, где раунд оставляет прежнюю форму — чек: она работает и
+     проверена. Правки — про честность: частичное исполнение показано статусом строки, а не спрятано, и рядом стоит
+     отмена остатка.</div>
+
+<div class="scroller"><div class="scr">
+  <div class="r4-top">
+    <button class="r4-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Портфели</button>
+    <div class="r4-brand"><em>Ребаланс</em><b>Основной</b></div>
+    <div class="r4-pfs"><span class="r4-pf on">Основной <i>0,0</i></span></div>
+    <span class="r4-clock">MOEX · 12:44</span>
+  </div>
+
+  <div class="r4-stage" style="padding-top:38px">
+    <div class="r4-glow"></div>
+    <div class="r4-sent">
+      <div class="r4-sent-h">
+        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+        <h4>Портфель выровнен</h4>
+        <p>Три заявки исполнены полностью, одна — частично. Остаток живёт в терминале Т-Инвестиций;<br>
+           звоночек придёт, когда он доисполнится.</p>
+      </div>
+
+      <div class="r4-ord">
+        <div class="r4-o"><span class="st-d"></span><span class="mn">МТС</span>
+          <div class="t"><b>Продажа МТС</b><span>рыночная · 213,50 ₽</span></div>
+          <div class="q">244 шт</div><div class="s">исполнена</div></div>
+        <div class="r4-o"><span class="st-d"></span><span class="mn bd">26238</span>
+          <div class="t"><b>Покупка ОФЗ 26238</b><span>лимит 531,20 ₽ + НКД</span></div>
+          <div class="q">96 шт</div><div class="s">исполнена</div></div>
+        <div class="r4-o"><span class="st-d"></span><span class="mn bd">26221</span>
+          <div class="t"><b>Продажа ОФЗ 26221</b><span>рыночная · 648,20 ₽</span></div>
+          <div class="q">120 шт</div><div class="s">исполнена</div></div>
+        <div class="r4-o"><span class="st-d part"></span><span class="mn bd">26244</span>
+          <div class="t"><b>Покупка ОФЗ 26244</b><span>лимит 587,40 ₽ + НКД · <span style="color:var(--acc);font-weight:700">отменить остаток</span></span></div>
+          <div class="q">118 <span style="color:var(--dim);font-weight:600">/ 130</span></div><div class="s part">частично</div></div>
+      </div>
+
+      <div class="r4-sum">
+        <div class="r4-sc"><em>Доли</em><b>60,0 / 40,0</b><span>было 64,1 / 35,9 · дрейф 0,0 п.п.</span></div>
+        <div class="r4-sc"><em>Купоны в год</em><b class="pos">+10 775 ₽</b><span>56 612 → 67 387 ₽ по факту исполнения</span></div>
+        <div class="r4-sc"><em>Следующая сверка</em><b style="font-size:22px">14 марта 2027</b><span>напомним звоночком за неделю</span></div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:14px;margin-top:26px">
+        <button class="r4-cta">В портфель
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M13 6l6 6-6 6"/></svg></button>
+        <span class="r4-quiet">История операций</span>
+        <span class="r4-quiet">Отменить сделку целиком</span>
+        <div class="r4-note">Записано в историю портфеля.<br>Отмена вернёт бумаги и деньги в исходное состояние.</div>
+      </div>
+    </div>
+  </div>
+</div></div>
+
+  <div class="notes">
+    <div class="note"><i>1</i><span><b>Заголовок про результат, а не про процесс:</b> «Портфель выровнен», не «Заявки
+      отправлены». Человек пришёл за первым.</span></div>
+    <div class="note"><i>2</i><span><b>Частичное исполнение — строка янтарного статуса</b> с дробью «118 / 130» и отменой
+      остатка прямо в мете. Ничего не прячем в звоночек.</span></div>
+    <div class="note"><i>3</i><span><b>Три итога в одном формате</b> — доли, деньги, дата. Купоны посчитаны <b>по факту
+      исполнения</b>, а не по плану: 63 256 ₽ вместо обещанных 63 601 ₽.</span></div>
+    <div class="note"><i>4</i><span><b>Дата следующей сверки — итог наравне с деньгами.</b> Ребаланс не событие, а
+      привычка; экран заканчивается напоминанием, когда вернуться.</span></div>
+    <div class="note"><i>5</i><span><b>Отмена целиком доступна</b> тихой ссылкой и работает через существующий
+      <code>pfRbUndoTrade</code>. Экран необратимых действий без выхода — плохой экран.</span></div>
+    <div class="note"><i>6</i><span><b>Чип портфеля наверху уже показывает 0,0</b> — верхняя строка живёт вместе с
+      результатом и подтверждает его без слов.</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ 7 · Ровно ═══════════════════════ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">07</span><h2>Общее · «Ровно» — состояние, которого сейчас нет</h2>
+    <span class="mk-tag ok">закрывает старый хвост</span></div>
+  <div class="mk-sub">В прошлых раундах это состояние было отмечено как нерешённое («третье состояние кнопки не нарисовано»).
+     Вот оно. Портфель в пределах порога — мастеру нечего предлагать по долям, и он <b>не выдумывает работу</b>. Но и пустым
+     экран не оставляет: приработок «в моменте» возможен и когда доли ровные.</div>
+
+<div class="scroller"><div class="scr">
+  <div class="r4-top">
+    <button class="r4-back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Портфели</button>
+    <div class="r4-brand"><em>Ребаланс</em><b>Дивидендный</b></div>
+    <div class="r4-pfs">
+      <span class="r4-pf">Основной <i>0,0</i></span>
+      <span class="r4-pf warn">Пенсионный <i>3,4</i></span>
+      <span class="r4-pf on">Дивидендный <i>0,6</i></span>
+      <span class="r4-pf">Т-Инвестиции <i>1,2</i></span>
+    </div>
+    <span class="r4-clock">MOEX · 12:44</span>
+  </div>
+
+  <div class="r4-stage" style="padding-top:92px">
+    <div class="r4-calmwrap">
+    <div class="r4-calm">
+      <div class="r4-kick">Портфель «Дивидендный» · <b>612 400 ₽</b> · цель 60 / 40 · порог 3,0 п.п.</div>
+      <div class="r4-verd" style="font-size:52px">Доли держатся плана.<small>Отклонение <b>0,6 п.п.</b> — вчетверо меньше порога.
+        Обмен на такой разнице съест на комиссии больше, чем выправит. <b>Ничего делать не нужно.</b></small></div>
+
+      <div class="r4-alloc r4-calmbar">
+        <div class="r4-alloc-hd">
+          <div class="s"><b class="num st">59,4 %</b><span>Акции · 363 766 ₽</span></div>
+          <div class="s r"><b class="num bd">40,6 %</b><span>Облигации · 248 634 ₽</span></div>
+        </div>
+        <div class="r4-bar">
+          <i class="st" style="width:59.4%"></i><i class="bd" style="width:40.6%"></i>
+          <u class="tgt" style="left:60%"></u>
+          <span class="tgtlbl" style="left:60%">цель 60 / 40</span>
+        </div>
+        <div class="r4-legend" style="margin-top:20px">
+          <span><i class="st"></i>акции</span><span><i class="bd"></i>облигации</span><span><i class="tg"></i>цель</span>
+          <span style="margin-left:8px;color:var(--grn);font-weight:700">в пределах порога</span>
+        </div>
+      </div>
+
+      <div class="r4-acts" style="padding-top:44px;margin-top:0">
+        <button class="r4-cta ghost" style="height:50px">Следующая сверка — 14 марта 2027</button>
+        <span class="r4-quiet">Изменить цель и порог</span>
+        <span class="r4-quiet">Сверить другой портфель</span>
+      </div>
+    </div>
+
+    <div class="r4-side">
+      <em>Ход всё-таки есть</em>
+      <b>ОФЗ 26221 выросла на 3,1 % за месяц</b>
+      <p>Доли трогать не нужно, но рост можно забрать: продать выросшую и на ту же сумму взять доходнее — бумаг станет
+         больше, доли не сдвинутся.</p>
+      <span class="go">Посмотреть ход
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="M13 6l6 6-6 6"/></svg></span>
+    </div>
+    </div>
+
+    <div class="r4-last">
+      <div class="lk">Прошлая сверка<b>14 марта 2026</b></div>
+      <div class="lc"><em>Что сделали</em><b>Продали <span class="num">96</span> МТС, взяли <span class="num">37</span> ОФЗ 26230</b></div>
+      <div class="lc"><em>Доли были</em><b><span class="num">63,8 / 36,2</span> → <span class="num">60,1 / 39,9</span></b></div>
+      <div class="lc"><em>Что это дало за год</em><b class="pos">+2 601 ₽ купонами</b></div>
+    </div>
+  </div>
+</div></div>
+
+  <div class="notes">
+    <div class="note"><i>1</i><span><b>Главное сообщение — «ничего делать не нужно».</b> Продукт, который умеет сказать
+      «сегодня не надо», вызывает больше доверия, чем продукт, всегда предлагающий сделку.</span></div>
+    <div class="note"><i>2</i><span><b>Полоса без штриховки и без скобы</b> — тот же контрол, но нечего перекладывать.
+      Отличие состояний считывается формой, а не цветом надписи.</span></div>
+    <div class="note"><i>3</i><span><b>Причина названа числом:</b> «0,6 п.п. — вчетверо меньше порога» и «комиссия съест
+      больше». Не «всё хорошо», а почему.</span></div>
+    <div class="note"><i>4</i><span><b>Главное действие — дата,</b> оформленная как призрачная кнопка: нажатие ставит
+      напоминание. Единственный экран мастера без сделки.</span></div>
+    <div class="note"><i>5</i><span><b>Карточка справа — не реклама сделки,</b> а честная оговорка: «в моменте» ход есть и
+      он не трогает доли. Тихий вход, не CTA.</span></div>
+    <div class="note"><i>6</i><span><b>Чип «Пенсионный · 3,4»</b> остаётся янтарным в верхней строке: если работа есть в
+      другом портфеле, экран не даёт об этом забыть.</span></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════ рекомендация + карта данных ═══════════════════════ -->
+<section class="mk">
+  <div class="mk-h"><span class="mk-n">08</span><h2>Что предлагаю взять</h2></div>
+  <div class="fix" style="max-width:1440px">
+    <p><b>Основа — концепт А.</b> Он снимает три шага из четырёх и не теряет ничего: доказательство и альтернативы живут
+      за тихими ссылками. Это самый дешёвый в реализации вариант — вся арифметика уже написана
+      (<code>autoBondPair</code>, <code>computeBondDeal</code>, <code>allocAfter</code>), меняется только сборка экрана.</p>
+    <p><b>Концепт Б — не альтернатива, а второй слой А.</b> Ссылка «Другие ходы» на экране 01 раскрывается в колоду
+      экрана 03. Один и тот же экран умеет быть простым по умолчанию и подробным по требованию; переключаться между
+      «режимами» не нужно, потому что режимов больше нет.</p>
+    <p><b>Концепт В — контрол внутри А для случая «хочу иначе».</b> Ссылка «изменить количество» на карте обмена вместо
+      степпера открывает рычаг: тянешь границу — сделка пересобирается. Кнопка «Ровно к цели» возвращает к тому, что
+      предложил мастер.</p>
+    <p><b>Что уходит совсем:</b> рельса шагов (252 px), экран выбора портфеля, экран выбора режима, слова «Годовая» /
+      «В моменте» / «Авто» в интерфейсе, персист прогресса <code>rbw_state_v1</code> (шагов нет — нечего восстанавливать,
+      останется только выбранный портфель). <b>Что остаётся как есть:</b> все формулы, гейт доступа, боевые заявки
+      <code>PF.pftPlaceOrders</code>, звоночек, история и отмена.</p>
+  </div>
+
+  <table class="map">
+    <thead><tr><th style="width:26%">Поле макета</th><th style="width:34%">Откуда берётся</th><th>Примечание</th></tr></thead>
+    <tbody>
+      <tr><td>Чипы портфелей с числом дрейфа</td><td class="n">PF.store.items → PF.calcPf(p), targetBond(p)</td><td>сортировка по убыванию дрейфа; янтарный — дрейф ≥ порога; скрытые и брокерские показываем тоже</td></tr>
+      <tr><td>Заголовок-вердикт</td><td class="n">c.stockPct − (100 − targetBond(p))</td><td>знак определяет «акций больше» / «облигаций больше»; при дрейфе &lt; порога — сцена «Ровно»</td></tr>
+      <tr><td>Полоса долей, штриховка, скоба</td><td class="n">c.stockPct, c.bondPct, targetBond(p), ctx.move</td><td>ширина штриховки = |факт − цель| в %, подпись скобы = сумма к перекладыванию</td></tr>
+      <tr><td>Пара бумаг и количество</td><td class="n">autoBondPair / autoStockPair, resolveSell / resolveBuy</td><td>годовой ход — computeCrossDeal, внутриклассовый — computeBondDeal / computeStockDeal</td></tr>
+      <tr><td>Числа −244 / +96</td><td class="n">deal.qty, deal.buyQty</td><td>степпер правит deal.qty, максимум — sell.qty</td></tr>
+      <tr><td>«Доли станут», «Дрейф →»</td><td class="n">allocAfter(p, ctx)</td><td>уже существует, показывается на карте вместо отдельной панели</td></tr>
+      <tr><td>«Купоны в год +6 749 ₽»</td><td class="n">deal.coupBefore / coupAfter / coupDelta</td><td>только для облигационной ноги; у акций вместо купонов — ожидаемый рост (pot)</td></tr>
+      <tr><td>«Прибыль в день 41 → 76 ₽»</td><td class="n">Σ econ.perDay × qty (PF.rbBondEconAt)</td><td>метрика раунда 10 мастера, считается от текущей цены (price + НКД) с обеих сторон</td></tr>
+      <tr><td>Комиссия, остаток, налог</td><td class="n">feeTax() из pf_rebal_params, deal.rest, saleTax()</td><td>налог показываем строкой даже при нуле</td></tr>
+      <tr><td>Списки доказательства</td><td class="n">heldStocks / heldBonds / bondCands / stockCandsFor</td><td>сортировка: акции по pot ↑ (что продать), облигации по econ.annual ↓ (что купить)</td></tr>
+      <tr><td>Ход «Больше дохода» и его тег</td><td class="n">x.momYield (ck.pnl / ck.days × 365 / ck.invested)</td><td>«выросла на 3,1 % за месяц» — из ck.pnlPct за период; правило продажи не меняется</td></tr>
+      <tr><td>Ручка рычага и её шаг</td><td class="n">bondQtyFor1More(sell.unit, buy.unit, maxQty)</td><td>позиции ручки = целые количества бумаг, промежуточных долей не бывает</td></tr>
+      <tr><td>Строки квитанции и статусы</td><td class="n">PF.pftPlaceOrders → executionReportStatus, lotsExecuted / lotsRequested</td><td>частично = янтарная точка + дробь; отмена остатка — CancelOrder</td></tr>
+      <tr><td>«Следующая сверка»</td><td class="n">p.nextReview (+1 год при исполнении)</td><td>просрочка шлёт звоночек через scanReviews()</td></tr>
+      <tr><td>Порог дрейфа</td><td class="n">p.driftThreshold (дефолт 3)</td><td>правится в «Изменить цель и порог», из мастера уходит с экрана</td></tr>
+    </tbody>
+  </table>
+</section>
+
+</div>
+</body>
+</html>
