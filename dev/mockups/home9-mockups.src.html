@@ -125,8 +125,8 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .fm-sub{margin-top:12px;font-size:14.5px;line-height:1.6;color:#5C6A7D}
 .pg--dark .fm-sub{color:#9AA2B5}
 .fm-fields{margin-top:30px;display:flex;flex-direction:column;gap:16px}
-.fm-lb{display:flex;align-items:baseline;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#8D9AAD;margin-bottom:7px}
-.pg--dark .fm-lb{color:#68718A}
+.fm-lb{display:flex;align-items:baseline;font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#6B7789;margin-bottom:7px}
+.pg--dark .fm-lb{color:#8A94AD}
 .fm-lb .sp{flex:1}
 .fm-lb a{font-size:11px;font-weight:700;letter-spacing:0;text-transform:none;color:#4453EF;text-decoration:none}
 .pg--dark .fm-lb a{color:#AEB7FF}
@@ -144,6 +144,12 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 .pg--dark .fm-inp.focus{background:rgba(255,255,255,.09)}
 .fm-inp.err{border-color:#D8452B;background:rgba(216,69,43,.045)}
 .fm-msg{font-size:12.5px;font-weight:600;color:#C43A20;margin-top:-6px}
+.fm-help{font-size:12px;color:#8D9AAD;margin-top:-9px}
+.pg--dark .fm-help{color:#68718A}
+.fm-dots{display:inline-flex;gap:5px}
+.fm-dots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.85);font-style:normal}
+.fm-dots i:nth-child(2){opacity:.6}
+.fm-dots i:nth-child(3){opacity:.35}
 .fm-btn{margin-top:8px;height:58px;border-radius:16px;display:flex;align-items:center;justify-content:center;gap:10px;
         background:linear-gradient(180deg,#5B67F2,#4453EF);color:#fff;font-size:15.5px;font-weight:700;
         box-shadow:0 18px 38px -16px rgba(68,83,239,.55)}
@@ -242,8 +248,10 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
   <!-- ================= 02 ================= -->
   <section class="mk">
     <div class="mk-h"><span class="mk-n">02</span><h2>Вход: по «Войти» из шапки</h2><span class="mk-tag">Маршрут</span></div>
-    <p class="mk-sub">Кнопка «Войти» в шапке подсвечена активным состоянием, форма короче: почта, пароль
-       с «Забыли пароль?» в строке подписи, кнопка и Telegram. Перелистывание створки то же.</p>
+    <p class="mk-sub">Заголовок — «Вход в кабинет», а не «С возвращением»: до входа мы не знаем, кто перед
+       нами, приветствие по имени звучит только после (в манифесте вошедшего). Кнопка «Войти» в шапке
+       подсвечена активным состоянием, форма короче: почта, пароль с «Забыли пароль?» в строке подписи,
+       кнопка и Telegram.</p>
     <div class="scroller"><div id="mk2"></div></div>
     <div class="notes">
       <div class="note"><i>1</i><span>«Забыли пароль?» стоит в строке подписи поля, а не под формой — виден в момент, когда вспоминаешь пароль.</span></div>
@@ -254,9 +262,12 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
 
   <!-- ================= 03 ================= -->
   <section class="mk">
-    <div class="mk-h"><span class="mk-n">03</span><h2>Состояния полей</h2><span class="mk-tag mute">Состояние</span></div>
-    <p class="mk-sub">Три момента: фокус с индиго-кольцом, ошибка входа строкой под полем (краснеет только
-       поле, не форма), и «Проверьте почту» — зелёная кнопка боевого is-done со строкой, что делать дальше.</p>
+    <div class="mk-h"><span class="mk-n">03</span><h2>Состояния полей и кнопки</h2><span class="mk-tag mute">Состояние</span></div>
+    <p class="mk-sub">Четыре момента: фокус с индиго-кольцом · ошибка входа строкой под полем (краснеет
+       только поле, введённое не стирается, фокус возвращается в него) · отправка (кнопка «Входим…»
+       блокируется, чтобы клик не ушёл дважды) · «Проверьте почту» — зелёный боевой is-done.
+       Подсказка пароля — постоянная строка под полем, а не исчезающий плейсхолдер;
+       валидация срабатывает при уходе из поля, а не только по кнопке.</p>
     <div class="scroller"><div class="stage" id="mk3"></div></div>
   </section>
 
@@ -292,6 +303,9 @@ body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding
       <tr><td>«Войти» в шапке</td><td>home-register.css</td><td>Состояние .on: индиго-кромка и кольцо, пока открыта форма входа.</td></tr>
       <tr><td>Меню вошедшего</td><td>profile-menu.js</td><td>Аватар шапки — это боевой #profileHub в новой посадке; пункты те же, «Новый расчёт» → calc.</td></tr>
       <tr><td>Recovery</td><td>home-register.js</td><td>Ссылка из письма открывает форму входа в режиме нового пароля — ветка hsOpenAuth('recovery') не меняется.</td></tr>
+      <tr><td>Доступность формы</td><td>index.html, home-register.js</td><td>autocomplete: name / email / new-password (регистрация) / current-password (вход); homeRegError получает role="alert" (сейчас — просто div); глаз пароля — кнопка с aria-label; валидация полей на blur, не только на submit.</td></tr>
+      <tr><td>Отправка</td><td>home-register.js</td><td>hsSubmit блокируется на время запроса и показывает «Входим…» / «Создаём…»; введённое при ошибке не стирается, фокус — в ошибочное поле.</td></tr>
+      <tr><td>Хит-зоны</td><td>home-register.css</td><td>«Забыли пароль?» и «‹ Назад» получают паддинги до 44px зоны нажатия (визуальный размер не меняется); focus-visible кольцо — у всех кнопок и ссылок, не только у полей.</td></tr>
       <tr><td>Версии</td><td>index.html</td><td>Бамп ?v у home-register.css/js.</td></tr>
     </table>
   </section>
@@ -425,7 +439,8 @@ function field(label, value, opts){
   var cls='fm-inp'+(opts.focus?' focus':'')+(opts.err?' err':'');
   var val=opts.placeholder?'<i>'+value+'</i>':'<i class="filled">'+value+'</i>';
   return '<div>'+lb+'<span class="'+cls+'">'+val+(opts.icon||'')+'</span></div>'
-    + (opts.msg?'<p class="fm-msg">'+opts.msg+'</p>':'');
+    + (opts.msg?'<p class="fm-msg">'+opts.msg+'</p>':'')
+    + (opts.help?'<p class="fm-help">'+opts.help+'</p>':'');
 }
 
 /* формы */
@@ -438,7 +453,7 @@ function regFormHtml(o){
     + '<div class="fm-fields">'
     +   field('Имя','Как к вам обращаться',{placeholder:true,focus:true,icon:IC.user})
     +   field('Email','clover3300@gmail.com',{icon:IC.mail})
-    +   field('Пароль','Минимум 6 символов',{placeholder:true,icon:IC.eye})
+    +   field('Пароль','••••••••',{placeholder:true,icon:IC.eye,help:'Минимум 6 символов'})
     +   '<span class="fm-btn">Создать аккаунт'+ARROW+'</span>'
     + '</div>'
     + '<div class="fm-or">или</div>'
@@ -450,8 +465,8 @@ function regFormHtml(o){
 function loginFormHtml(dark){
   return '<div class="fm">'
     + '<span class="fm-back">'+BACK+' Назад</span>'
-    + '<h1 class="fm-title">С возвращением</h1>'
-    + '<p class="fm-sub">Портфели и настройки ждут в кабинете</p>'
+    + '<h1 class="fm-title">Вход в кабинет</h1>'
+    + '<p class="fm-sub">Портфели и настройки ждут внутри</p>'
     + '<div class="fm-fields">'
     +   field('Email','clover3300@gmail.com',{icon:IC.mail})
     +   field('Пароль','••••••••',{focus:true,forgot:true,icon:IC.eye})
@@ -498,10 +513,13 @@ document.getElementById('mk2').innerHTML = screenHtml({left: loginFormHtml(), he
     + field('Пароль','••••••',{err:true,icon:IC.eye,msg:'Неверная почта или пароль'})
     + '<span class="fm-btn">Войти'+ARROW+'</span>'
     + '</div></div></div>';
+  var wait='<div class="frag"><div class="frag-lb">Отправка</div><div class="fm"><div class="fm-fields">'
+    + '<span class="fm-btn" style="opacity:.85">Входим <span class="fm-dots"><i></i><i></i><i></i></span></span>'
+    + '</div><p class="fm-ok">Кнопка заблокирована, повторный клик не создаст второй запрос</p></div></div>';
   var done='<div class="frag"><div class="frag-lb">Письмо отправлено</div><div class="fm"><div class="fm-fields">'
     + '<span class="fm-btn done">Проверьте почту</span>'
     + '</div><p class="fm-ok">Ссылка для входа отправлена на clover3300@gmail.com</p></div></div>';
-  document.getElementById('mk3').innerHTML = focus+err+done;
+  document.getElementById('mk3').innerHTML = focus+err+wait+done;
 })();
 
 /* 04: вошедший + меню */
