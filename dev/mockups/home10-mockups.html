@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Главная · раунд 10 — «вау»: живая «Обсерватория» и «Эквалайзер»</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+       --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+       --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding:44px 0 90px;-webkit-font-smoothing:antialiased}
+.page{width:1480px;max-width:100%;margin:0 auto;padding:0 20px}
+
+/* ---------------- документ ---------------- */
+.doc-h{margin-bottom:34px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-acc);margin-bottom:9px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
+.doc-h p{margin-top:12px;font-size:15px;line-height:1.6;color:var(--doc-mut);max-width:900px}
+.verdict{margin-top:20px;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid var(--doc-acc);border-radius:14px;padding:16px 20px;max-width:980px}
+.verdict p{margin:0;font-size:14.5px;line-height:1.62;color:var(--doc-quote)}
+.verdict p+p{margin-top:10px}
+.verdict b{font-weight:700;color:var(--doc-ink)}
+
+.mk{margin-top:52px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.62;max-width:980px;margin-bottom:18px}
+.notes{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 26px;max-width:1360px}
+.note{display:flex;gap:9px;font-size:13px;line-height:1.5;color:var(--doc-quote)}
+.note i{flex:none;width:18px;height:18px;border-radius:50%;background:var(--doc-ink);color:var(--doc-bg);font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.scroller{overflow-x:auto;padding:4px 0 44px;margin-bottom:-32px}
+@media (max-width:1000px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} }
+
+.map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th{text-align:left;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);padding:10px 14px;border-bottom:1px solid var(--doc-line)}
+.map td{padding:9px 14px;border-bottom:1px solid var(--doc-line);color:var(--doc-quote);line-height:1.5;vertical-align:top}
+.map tr:last-child td{border-bottom:0}
+
+/* ======================================================================
+   ОБЩЕЕ: тёмная сцена (обе идеи живут только в тёмном)
+   ====================================================================== */
+.pg{position:relative;width:1440px;height:880px;flex:none;font-family:var(--fU);overflow:hidden;color:#E9EDF6;
+    border-radius:16px;border:1px solid rgba(15,23,42,.09);
+    box-shadow:0 2px 4px rgba(15,23,42,.05),0 34px 70px -34px rgba(24,38,60,.4);
+    background:
+      radial-gradient(900px 620px at 50% 44%, rgba(68,83,239,.14) 0%, rgba(68,83,239,0) 62%),
+      radial-gradient(760px 520px at 6% 8%, rgba(31,58,68,.7) 0%, rgba(31,58,68,0) 60%),
+      radial-gradient(820px 560px at 94% 6%, rgba(43,44,80,.7) 0%, rgba(43,44,80,0) 62%),
+      linear-gradient(160deg,#0A0F16 0%,#0D1119 50%,#090E15 100%)}
+.num{font-family:var(--fN);font-variant-numeric:tabular-nums}
+
+.hd{height:84px;display:flex;align-items:center;gap:14px;padding:0 64px;position:relative;z-index:6}
+.hd::after{content:"";position:absolute;left:64px;right:64px;bottom:0;height:1px;background:rgba(233,237,246,.08)}
+.hd-mark{width:38px;height:38px;border-radius:11px;background:#fff;color:#161B27;display:grid;place-items:center;
+         font-family:var(--fT);font-size:20px;font-weight:700}
+.hd-name{font-size:16.5px;margin-right:auto}
+.hd-name .w3{font-weight:300}
+.hd-name .w8{font-weight:800}
+.hd-nav{display:flex;align-items:center;gap:30px;margin-right:34px}
+.hd-nav a{font-size:13.5px;font-weight:600;color:#9AA2B5;text-decoration:none}
+.hd-login{display:inline-flex;align-items:center;height:38px;padding:0 20px;border-radius:999px;
+          border:1px solid rgba(233,237,246,.16);background:rgba(255,255,255,.06);font-size:13.5px;font-weight:700;color:#E9EDF6}
+.hd-ava{width:38px;height:38px;border-radius:50%;background:linear-gradient(180deg,#5B67F2,#4453EF);color:#fff;
+        display:grid;place-items:center;font-family:var(--fT);font-size:17px}
+
+.btm{position:absolute;left:64px;right:64px;bottom:0;height:54px;display:flex;align-items:center;gap:16px;
+     font-size:12px;color:#68718A;border-top:1px solid rgba(233,237,246,.08);z-index:6}
+.btm .sp{flex:1}
+.btm .num{font-size:11.5px}
+
+/* ---------------- А «Обсерватория» ---------------- */
+.obs-title{position:absolute;top:112px;left:0;right:0;text-align:center;z-index:5}
+.obs-title h1{font-family:var(--fT);font-weight:400;font-size:40px;letter-spacing:-.012em}
+.obs-title h1 em{font-style:italic}
+.obs-title p{margin-top:10px;font-size:14.5px;color:#9AA2B5}
+/* сцена орбит */
+.obs{position:absolute;inset:0;z-index:2}
+.obs svg.rings{position:absolute;inset:0}
+/* центр: живой индекс */
+.core{position:absolute;left:50%;top:434px;transform:translate(-50%,-50%);text-align:center;z-index:4;
+      animation:breath 6s ease-in-out infinite alternate}
+@keyframes breath{from{transform:translate(-50%,-50%) scale(1)}to{transform:translate(-50%,-50%) scale(1.014)}}
+.core-lb{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.22em;color:#68718A}
+.core-v{font-family:var(--fN);font-size:92px;font-weight:700;letter-spacing:-.02em;line-height:1.05;color:#EDF0FA;
+        text-shadow:0 0 46px rgba(120,134,255,.34)}
+.core-d{margin-top:4px;font-family:var(--fN);font-size:15px;font-weight:700;color:#AEB7FF}
+/* узлы-бумаги на эллиптических путях */
+.orb{position:absolute;left:0;top:0;z-index:3;display:inline-flex;align-items:center;gap:7px;
+     border-radius:999px;padding:7px 13px;white-space:nowrap;
+     offset-rotate:0deg;animation:orbit linear infinite}
+@keyframes orbit{from{offset-distance:var(--od)}to{offset-distance:calc(var(--od) + 100%)}}
+.orb b{font-family:var(--fN);font-weight:700;letter-spacing:.03em}
+.orb span{font-family:var(--fN);font-weight:600;opacity:.85}
+@media (prefers-reduced-motion: reduce){
+  .orb{animation:none;offset-distance:var(--od)}
+  .core{animation:none}
+  .eq-bar i{animation:none}
+}
+/* вход по центру снизу */
+.obs-enter{position:absolute;left:50%;bottom:96px;transform:translateX(-50%);z-index:5;display:flex;gap:10px;align-items:center}
+.oe-mail{display:flex;align-items:center;width:300px;height:54px;border-radius:16px;background:rgba(255,255,255,.06);
+         border:1px solid rgba(233,237,246,.14);padding:0 20px;font-family:var(--fN);font-size:13px;color:#68718A}
+.oe-btn{display:inline-flex;align-items:center;gap:9px;height:54px;padding:0 26px;border-radius:16px;
+        background:linear-gradient(180deg,#5B67F2,#4453EF);color:#fff;font-size:15px;font-weight:700;
+        box-shadow:0 18px 44px -16px rgba(68,83,239,.6)}
+.oe-btn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.oe-tg{display:inline-flex;align-items:center;gap:9px;height:54px;padding:0 22px;border-radius:16px;
+       background:rgba(255,255,255,.06);border:1px solid rgba(233,237,246,.14);font-size:14px;font-weight:700;color:#E9EDF6}
+.oe-tg svg{width:18px;height:18px}
+.oe-quiet{display:inline-flex;align-items:center;height:54px;padding:0 24px;border-radius:16px;
+          border:1px solid rgba(233,237,246,.16);background:rgba(255,255,255,.06);font-size:14.5px;font-weight:700;color:#E9EDF6}
+
+/* ---------------- Б «Эквалайзер» ---------------- */
+.eq-left{position:absolute;left:64px;top:84px;bottom:54px;width:560px;display:flex;flex-direction:column;justify-content:center;z-index:5}
+.eq-title{font-family:var(--fT);font-weight:400;font-size:58px;line-height:1.1;letter-spacing:-.014em}
+.eq-title em{font-style:italic}
+.eq-lead{margin-top:20px;font-size:16px;line-height:1.6;color:#9AA2B5;max-width:26em}
+.eq-enter{margin-top:36px;display:flex;gap:10px;max-width:470px}
+.eq-enter .oe-mail{flex:1;width:auto}
+.eq-tg-line{margin-top:15px;font-size:13px;color:#9AA2B5}
+.eq-tg-line b{color:#AEB7FF;font-weight:700}
+/* колонны */
+.eq{position:absolute;right:64px;top:150px;bottom:120px;width:640px;display:flex;align-items:flex-end;gap:14px;z-index:3}
+.eq-bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;height:100%;justify-content:flex-end}
+.eq-bar i{display:block;width:100%;border-radius:10px 10px 6px 6px;transform-origin:bottom;font-style:normal;
+          animation:eqbreath ease-in-out infinite alternate}
+@keyframes eqbreath{from{transform:scaleY(1)}to{transform:scaleY(1.05)}}
+.eq-bar b{font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.04em;color:#8A94AD}
+.eq-bar span{font-family:var(--fN);font-size:10px;font-weight:600;color:#AEB7FF}
+.eq-hd{position:absolute;right:64px;top:108px;width:640px;display:flex;align-items:baseline;z-index:4}
+.eq-hd .nm{font-family:var(--fT);font-size:19px}
+.eq-hd .sp{flex:1}
+.eq-hd .ix{font-family:var(--fN);font-size:13px;font-weight:600;color:#9AA2B5}
+.eq-hd .ix b{color:#E9EDF6;font-weight:700}
+.eq-hd .ix .up{color:#AEB7FF;font-weight:700}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="doc-h">
+    <div class="doc-kicker">Главная · раунд 10 · «вау»-концепты</div>
+    <h1>Живая страница: «Обсерватория» и «Эквалайзер»</h1>
+    <p>Оба концепта — ЖИВЫЕ прямо в этом мокапе: откройте его в браузере и подождите три секунды.
+       Движение медленное, как дыхание — вау-эффект без суеты, в характере «спокойного инвестора».
+       Правило монохрома живёт: индиго — рост, контур — падение.</p>
+    <div class="verdict">
+      <p><b>А «Обсерватория» (рекомендую).</b> Рынок как планетная система: в центре дышит живой индекс,
+         вокруг по трём орбитам медленно плывут двенадцать крупнейших бумаг. Размер пилюли — вес в индексе,
+         заливка или контур — движение дня. Один оборот ближней орбиты — полторы минуты: страница живёт,
+         но никуда не торопит. Такого нет ни у одного брокера.</p>
+      <p><b>Б «Эквалайзер».</b> Бережный вариант того же вау: привычный диптих, но вместо карты справа —
+         двенадцать колонн света, высота которых равна весу бумаги, и каждая едва заметно дышит со своим
+         периодом. Ночной орган рынка.</p>
+      <p><b>Честность движения:</b> вся анимация — transform и offset-distance (GPU, без перерисовок),
+         каждая гаснет при prefers-reduced-motion, узлы и колонны остаются на статичных позициях.
+         Вход и CTA видны всегда, взаимодействия не заперты за анимацией.</p>
+    </div>
+  </header>
+
+  <!-- ================= 01 ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">А</span><h2>«Обсерватория» — рынок как звёздная система</h2><span class="mk-tag">Рекомендую</span></div>
+    <p class="mk-sub">Живой экран: индекс в центре дышит (масштаб 1,4% за шесть секунд), бумаги плывут по
+       эллиптическим орбитам с разными периодами и направлениями. Заголовок сверху, вход одной строкой снизу —
+       всегда на виду. Наведение на бумагу (спека) останавливает её орбиту и показывает имя компании,
+       клик ведёт в карточку на «Рынке».</p>
+    <div class="scroller"><div id="mk1"><div class="pg"><div class="hd"><span class="hd-mark">M</span><span class="hd-name"><span class="w3">Madame </span><span class="w8">Solomi'na</span></span><span class="hd-nav"><a href="#">Рынок</a><a href="#">Расчёт</a><a href="#">Академия</a></span><span class="hd-login">Войти</span></div><div class="obs-title"><h1>Терминал <em>спокойного</em> инвестора</h1><p>Портфель из ОФЗ и акций, план ребаланса и выплаты по расписанию.</p></div><div class="obs"><svg class="rings" width="1440" height="880" viewBox="0 0 1440 880" fill="none"><ellipse cx="720" cy="434" rx="336" ry="118" stroke="rgba(142,155,255,.11)" stroke-width="1"/><ellipse cx="720" cy="434" rx="478" ry="168" stroke="rgba(142,155,255,.11)" stroke-width="1"/><ellipse cx="720" cy="434" rx="610" ry="214" stroke="rgba(142,155,255,.11)" stroke-width="1"/></svg><span class="orb" style="offset-path:ellipse(336px 118px at 720px 434px);--od:0.0%;animation-duration:90s;animation-direction:normal;padding:9.8px 18.62px;color:#CFD5F7;background:oklch(0.5 0.17 274 / 0.47);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:17.5px">SBER</b><span style="font-size:14.3px">+1,12%</span></span><span class="orb" style="offset-path:ellipse(336px 118px at 720px 434px);--od:25.0%;animation-duration:90s;animation-direction:normal;padding:7.1px 13.489999999999998px;color:#CFD5F7;background:oklch(0.5 0.17 274 / 0.50);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:13.2px">TATN</b><span style="font-size:10.8px">+1,35%</span></span><span class="orb" style="offset-path:ellipse(336px 118px at 720px 434px);--od:50.0%;animation-duration:90s;animation-direction:normal;padding:6.5px 12.35px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.68);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:12.4px">GMKN</b><span style="font-size:10.2px">+2,52%</span></span><span class="orb" style="offset-path:ellipse(336px 118px at 720px 434px);--od:75.0%;animation-duration:90s;animation-direction:normal;padding:6.2px 11.78px;color:#CFD5F7;background:oklch(0.5 0.17 274 / 0.36);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:11.9px">SNGS</b><span style="font-size:9.8px">+0,42%</span></span><span class="orb" style="offset-path:ellipse(478px 168px at 720px 434px);--od:11.0%;animation-duration:140s;animation-direction:reverse;padding:8.9px 16.91px;color:#9AA5CC;background:rgba(233,237,246,.03);border:1px solid rgba(142,155,255,0.41);"><b style="font-size:16.2px">LKOH</b><span style="font-size:13.3px">−0,83%</span></span><span class="orb" style="offset-path:ellipse(478px 168px at 720px 434px);--od:36.0%;animation-duration:140s;animation-direction:reverse;padding:6.9px 13.11px;color:#9AA5CC;background:rgba(233,237,246,.03);border:2px solid rgba(142,155,255,0.45);"><b style="font-size:13.0px">NVTK</b><span style="font-size:10.7px">−1,14%</span></span><span class="orb" style="offset-path:ellipse(478px 168px at 720px 434px);--od:61.0%;animation-duration:140s;animation-direction:reverse;padding:6.5px 12.35px;color:#9AA5CC;background:rgba(233,237,246,.03);border:2px solid rgba(142,155,255,0.47);"><b style="font-size:12.4px">ROSN</b><span style="font-size:10.2px">−1,24%</span></span><span class="orb" style="offset-path:ellipse(478px 168px at 720px 434px);--od:86.0%;animation-duration:140s;animation-direction:reverse;padding:6.2px 11.78px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.58);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:11.8px">T</b><span style="font-size:9.7px">+1,88%</span></span><span class="orb" style="offset-path:ellipse(610px 214px at 720px 434px);--od:22.0%;animation-duration:200s;animation-direction:normal;padding:8.3px 15.770000000000001px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.61);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:15.1px">GAZP</b><span style="font-size:12.4px">+2,06%</span></span><span class="orb" style="offset-path:ellipse(610px 214px at 720px 434px);--od:47.0%;animation-duration:200s;animation-direction:normal;padding:6.8px 12.92px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.61);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:12.8px">YDEX</b><span style="font-size:10.5px">+2,08%</span></span><span class="orb" style="offset-path:ellipse(610px 214px at 720px 434px);--od:72.0%;animation-duration:200s;animation-direction:normal;padding:6.4px 12.16px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.75);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:12.2px">PLZL</b><span style="font-size:10.0px">+4,97%</span></span><span class="orb" style="offset-path:ellipse(610px 214px at 720px 434px);--od:97.0%;animation-duration:200s;animation-direction:normal;padding:6.0px 11.399999999999999px;color:#9AA5CC;background:rgba(233,237,246,.03);border:1px solid rgba(142,155,255,0.38);"><b style="font-size:11.6px">X5</b></span></div><div class="core"><div class="core-lb">IMOEX</div><div class="core-v">2 301,65</div><div class="core-d">+1,43% сегодня</div></div><div class="obs-enter"><span class="oe-mail">you@example.com</span><span class="oe-btn">Начать<svg viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span><span class="oe-tg"><svg viewBox="0 0 24 24" fill="#2AABEE"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0Zm5.9 8.2-2 9.3c-.1.7-.5.8-1.1.5l-3-2.2-1.5 1.4c-.2.2-.3.3-.6.3l.2-3.1 5.6-5c.2-.2-.1-.3-.4-.1l-6.9 4.3-3-.9c-.6-.2-.7-.6.2-.9l11.6-4.5c.5-.2 1 .1.9.9Z"/></svg> Telegram</span></div><div class="btm"><span>Данные Московской биржи</span><span class="sp"></span><span>залито растёт, контур падает</span><span class="num">топ-12 весов · срез 19:25</span></div></div></div></div>
+    <div class="notes">
+      <div class="note"><i>1</i><span>Три орбиты: 90, 140 и 200 секунд на оборот, средняя крутится навстречу — созвездие никогда не повторяется.</span></div>
+      <div class="note"><i>2</i><span>Размер пилюли — вес бумаги в индексе; SBER заметно крупнее хвоста. Заливка индиго по силе роста, контур — падение.</span></div>
+      <div class="note"><i>3</i><span>Свечение центра — единственная светящаяся вещь страницы: индекс здесь солнце, всё остальное отражает.</span></div>
+      <div class="note"><i>4</i><span>Реализация — тот же фид ISS, что у карты: home-register.js раскладывает узлы по offset-path; двенадцать анимированных элементов — дешевле старой карты на 46 плиток.</span></div>
+      <div class="note"><i>5</i><span>При reduced-motion система замирает в разложенном виде — страница остаётся композицией, не ломается.</span></div>
+      <div class="note"><i>6</i><span>Светлой пары нет намеренно: обсерватория живёт только ночью; светлая тема получает «Эквалайзер» или монохром раунда 8.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 02 ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">А2</span><h2>«Обсерватория», вы вошли</h2><span class="mk-tag mute">Состояние</span></div>
+    <p class="mk-sub">Вместо входа — строка капитала и две кнопки; в шапке аватар. Система та же: рынок общий.</p>
+    <div class="scroller"><div id="mk2"><div class="pg"><div class="hd"><span class="hd-mark">M</span><span class="hd-name"><span class="w3">Madame </span><span class="w8">Solomi'na</span></span><span class="hd-nav"><a href="#">Рынок</a><a href="#">Расчёт</a><a href="#">Академия</a></span><span class="hd-ava">Д</span></div><div class="obs-title"><h1>С возвращением, <em>Денис</em></h1><p>Рынок не стоял на месте: доли ушли от цели на 33 пункта.</p></div><div class="obs"><svg class="rings" width="1440" height="880" viewBox="0 0 1440 880" fill="none"><ellipse cx="720" cy="434" rx="336" ry="118" stroke="rgba(142,155,255,.11)" stroke-width="1"/><ellipse cx="720" cy="434" rx="478" ry="168" stroke="rgba(142,155,255,.11)" stroke-width="1"/><ellipse cx="720" cy="434" rx="610" ry="214" stroke="rgba(142,155,255,.11)" stroke-width="1"/></svg><span class="orb" style="offset-path:ellipse(336px 118px at 720px 434px);--od:0.0%;animation-duration:90s;animation-direction:normal;padding:9.8px 18.62px;color:#CFD5F7;background:oklch(0.5 0.17 274 / 0.47);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:17.5px">SBER</b><span style="font-size:14.3px">+1,12%</span></span><span class="orb" style="offset-path:ellipse(336px 118px at 720px 434px);--od:25.0%;animation-duration:90s;animation-direction:normal;padding:7.1px 13.489999999999998px;color:#CFD5F7;background:oklch(0.5 0.17 274 / 0.50);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:13.2px">TATN</b><span style="font-size:10.8px">+1,35%</span></span><span class="orb" style="offset-path:ellipse(336px 118px at 720px 434px);--od:50.0%;animation-duration:90s;animation-direction:normal;padding:6.5px 12.35px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.68);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:12.4px">GMKN</b><span style="font-size:10.2px">+2,52%</span></span><span class="orb" style="offset-path:ellipse(336px 118px at 720px 434px);--od:75.0%;animation-duration:90s;animation-direction:normal;padding:6.2px 11.78px;color:#CFD5F7;background:oklch(0.5 0.17 274 / 0.36);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:11.9px">SNGS</b><span style="font-size:9.8px">+0,42%</span></span><span class="orb" style="offset-path:ellipse(478px 168px at 720px 434px);--od:11.0%;animation-duration:140s;animation-direction:reverse;padding:8.9px 16.91px;color:#9AA5CC;background:rgba(233,237,246,.03);border:1px solid rgba(142,155,255,0.41);"><b style="font-size:16.2px">LKOH</b><span style="font-size:13.3px">−0,83%</span></span><span class="orb" style="offset-path:ellipse(478px 168px at 720px 434px);--od:36.0%;animation-duration:140s;animation-direction:reverse;padding:6.9px 13.11px;color:#9AA5CC;background:rgba(233,237,246,.03);border:2px solid rgba(142,155,255,0.45);"><b style="font-size:13.0px">NVTK</b><span style="font-size:10.7px">−1,14%</span></span><span class="orb" style="offset-path:ellipse(478px 168px at 720px 434px);--od:61.0%;animation-duration:140s;animation-direction:reverse;padding:6.5px 12.35px;color:#9AA5CC;background:rgba(233,237,246,.03);border:2px solid rgba(142,155,255,0.47);"><b style="font-size:12.4px">ROSN</b><span style="font-size:10.2px">−1,24%</span></span><span class="orb" style="offset-path:ellipse(478px 168px at 720px 434px);--od:86.0%;animation-duration:140s;animation-direction:reverse;padding:6.2px 11.78px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.58);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:11.8px">T</b><span style="font-size:9.7px">+1,88%</span></span><span class="orb" style="offset-path:ellipse(610px 214px at 720px 434px);--od:22.0%;animation-duration:200s;animation-direction:normal;padding:8.3px 15.770000000000001px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.61);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:15.1px">GAZP</b><span style="font-size:12.4px">+2,06%</span></span><span class="orb" style="offset-path:ellipse(610px 214px at 720px 434px);--od:47.0%;animation-duration:200s;animation-direction:normal;padding:6.8px 12.92px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.61);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:12.8px">YDEX</b><span style="font-size:10.5px">+2,08%</span></span><span class="orb" style="offset-path:ellipse(610px 214px at 720px 434px);--od:72.0%;animation-duration:200s;animation-direction:normal;padding:6.4px 12.16px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.75);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:12.2px">PLZL</b><span style="font-size:10.0px">+4,97%</span></span><span class="orb" style="offset-path:ellipse(610px 214px at 720px 434px);--od:97.0%;animation-duration:200s;animation-direction:normal;padding:6.0px 11.399999999999999px;color:#9AA5CC;background:rgba(233,237,246,.03);border:1px solid rgba(142,155,255,0.38);"><b style="font-size:11.6px">X5</b></span></div><div class="core"><div class="core-lb">IMOEX</div><div class="core-v">2 301,65</div><div class="core-d">+1,43% сегодня</div></div><div class="obs-enter"><span style="display:inline-flex;align-items:center;height:54px;padding:0 22px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid rgba(233,237,246,.12);font-family:var(--fN);font-size:13px;color:#9AA2B5">Капитал&nbsp;<b style="color:#E9EDF6">18 180 623 ₽</b>&nbsp;·&nbsp;<b style="color:#AEB7FF">+129 444 ₽</b></span><span class="oe-btn">Сделать ребалансировку<svg viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span><span class="oe-quiet">В кабинет</span></div><div class="btm"><span>Данные Московской биржи</span><span class="sp"></span><span>залито растёт, контур падает</span><span class="num">топ-12 весов · срез 19:25</span></div></div></div></div>
+  </section>
+
+  <!-- ================= 03 ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">Б</span><h2>«Эквалайзер» — двенадцать колонн света</h2><span class="mk-tag mute">Бережный</span></div>
+    <p class="mk-sub">Диптих раунда 8, но правая створка — орган: колонны высотой по весу бумаги, дышащие
+       каждая со своим периодом от шести до одиннадцати секунд. Рост — столб света с индиго-градиентом,
+       падение — стеклянный контур. Подписи тикеров внизу, проценты на макушках.</p>
+    <div class="scroller"><div id="mk3"><div class="pg"><div class="hd"><span class="hd-mark">M</span><span class="hd-name"><span class="w3">Madame </span><span class="w8">Solomi'na</span></span><span class="hd-nav"><a href="#">Рынок</a><a href="#">Расчёт</a><a href="#">Академия</a></span><span class="hd-login">Войти</span></div><div class="eq-left"><h1 class="eq-title">Терминал <em>спокойного</em> инвестора</h1><p class="eq-lead">Портфель из ОФЗ и акций под вашу цель, план ребаланса и выплаты по расписанию.</p><div class="eq-enter"><span class="oe-mail">you@example.com</span><span class="oe-btn">Начать<svg viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span></div><p class="eq-tg-line">Быстрее <b>войти через Telegram</b></p></div><div class="eq-hd"><span class="nm">Рынок сейчас</span><span class="sp"></span><span class="ix">IMOEX <b>2 301,65</b> <span class="up">+1,43%</span></span></div><div class="eq"><div class="eq-bar"><span>+1,12%</span><i style="height:472px;background:linear-gradient(180deg, oklch(0.6 0.17 274 / 0.21) 0%, oklch(0.5 0.18 274 / 0.55) 100%);border:1px solid rgba(142,155,255,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.1);animation-duration:6.00s"></i><b>SBER</b></div><div class="eq-bar"><span>−0,83%</span><i style="height:400px;background:rgba(233,237,246,.02);border:1px solid rgba(142,155,255,0.41);animation-duration:7.25s"></i><b>LKOH</b></div><div class="eq-bar"><span>+2,06%</span><i style="height:343px;background:linear-gradient(180deg, oklch(0.6 0.17 274 / 0.28) 0%, oklch(0.5 0.18 274 / 0.67) 100%);border:1px solid rgba(142,155,255,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.1);animation-duration:8.50s"></i><b>GAZP</b></div><div class="eq-bar"><span>+1,35%</span><i style="height:241px;background:linear-gradient(180deg, oklch(0.6 0.17 274 / 0.23) 0%, oklch(0.5 0.18 274 / 0.58) 100%);border:1px solid rgba(142,155,255,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.1);animation-duration:9.75s"></i><b>TATN</b></div><div class="eq-bar"><span>−1,14%</span><i style="height:226px;background:rgba(233,237,246,.02);border:2px solid rgba(142,155,255,0.45);animation-duration:11.00s"></i><b>NVTK</b></div><div class="eq-bar"><span>+2,08%</span><i style="height:214px;background:linear-gradient(180deg, oklch(0.6 0.17 274 / 0.28) 0%, oklch(0.5 0.18 274 / 0.68) 100%);border:1px solid rgba(142,155,255,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.1);animation-duration:6.00s"></i><b>YDEX</b></div><div class="eq-bar"><span>+2,52%</span><i style="height:196px;background:linear-gradient(180deg, oklch(0.6 0.17 274 / 0.31) 0%, oklch(0.5 0.18 274 / 0.74) 100%);border:1px solid rgba(142,155,255,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.1);animation-duration:7.25s"></i><b>GMKN</b></div><div class="eq-bar"><span>−1,24%</span><i style="height:193px;background:rgba(233,237,246,.02);border:2px solid rgba(142,155,255,0.47);animation-duration:8.50s"></i><b>ROSN</b></div><div class="eq-bar"><span>+4,97%</span><i style="height:184px;background:linear-gradient(180deg, oklch(0.6 0.17 274 / 0.34) 0%, oklch(0.5 0.18 274 / 0.80) 100%);border:1px solid rgba(142,155,255,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.1);animation-duration:9.75s"></i><b>PLZL</b></div><div class="eq-bar"><span>+0,42%</span><i style="height:166px;background:linear-gradient(180deg, oklch(0.6 0.17 274 / 0.17) 0%, oklch(0.5 0.18 274 / 0.46) 100%);border:1px solid rgba(142,155,255,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.1);animation-duration:11.00s"></i><b>SNGS</b></div><div class="eq-bar"><span>+1,88%</span><i style="height:163px;background:linear-gradient(180deg, oklch(0.6 0.17 274 / 0.27) 0%, oklch(0.5 0.18 274 / 0.65) 100%);border:1px solid rgba(142,155,255,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.1);animation-duration:6.00s"></i><b>T</b></div><div class="eq-bar"><i style="height:151px;background:rgba(233,237,246,.02);border:1px solid rgba(142,155,255,0.38);animation-duration:7.25s"></i><b>X5</b></div></div><div class="btm"><span>Данные Московской биржи</span><span class="sp"></span><span>залито растёт, контур падает</span><span class="num">топ-12 весов · срез 19:25</span></div></div></div></div>
+    <div class="notes">
+      <div class="note"><i>1</i><span>Высота колонны — вес в индексе: силуэт скайлайна читается с другого конца комнаты.</span></div>
+      <div class="note"><i>2</i><span>Дыхание — scaleY от опоры, максимум пять процентов роста: живое, но не пляшет.</span></div>
+      <div class="note"><i>3</i><span>Наведение (спека): колонна подсвечивается, всплывает имя и цена; клик — карточка бумаги.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= карта кода ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">04</span><h2>Что где живёт в коде</h2></div>
+    <table class="map">
+      <tr><th>Часть</th><th>Файл</th><th>Правка</th></tr>
+      <tr><td>Сцена «Обсерватории»</td><td>home-register.js, home-register.css</td><td>Вместо squarified-карты: узлы .orb с offset-path: ellipse(), фазы через отрицательные animation-delay; данные — те же веса и изменения из ISS.</td></tr>
+      <tr><td>Живой индекс</td><td>home-register.js</td><td>Число центра — тот же пульс IMOEX (LASTCHANGEPRC/UPDATETIME), обновление без перерисовки орбит.</td></tr>
+      <tr><td>«Эквалайзер»</td><td>home-register.css</td><td>Колонны — CSS-грид с высотами из весов; дыхание — keyframes с разными duration через переменную.</td></tr>
+      <tr><td>Ховеры и клики</td><td>home-register.js</td><td>animation-play-state: paused на узле под курсором; клик — switchTab('market') + карточка бумаги.</td></tr>
+      <tr><td>Движение</td><td>home-register.css</td><td>Только transform/offset-distance; всё в @media (prefers-reduced-motion: no-preference), статические позиции — фолбэк.</td></tr>
+      <tr><td>Версии</td><td>index.html</td><td>Бамп ?v у home-register.css/js.</td></tr>
+    </table>
+  </section>
+
+</div>
+
+</body>
+</html>
