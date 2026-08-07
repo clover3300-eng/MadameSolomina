@@ -25,7 +25,14 @@
   var EQ_PREM = 0.03;      // оценочная премия акций к доходности ОФЗ
   var DIV_Y   = 0.08;      // оценочная дивидендная доходность акций
   var FALLBACK_R = 0.145;  // ставка ОФЗ до загрузки цен MOEX
-  var YEARS = 3;           // горизонт прогноза (совпадает с «горизонт от 3 лет»)
+  var YEARS_DEF = 3;       // горизонт прогноза по умолчанию
+  // СРОК задаёт полка условий R9 (window.cxYears). Держим его тут, потому что
+  // от него зависят и прогноз, и разбивка прибыли, и подписи лет на графике.
+  function years() { var y = +(window.cxYears || 0); return (y >= 1 && y <= 15) ? Math.round(y) : YEARS_DEF; }
+  function setYears(y) {
+    window.cxYears = Math.max(1, Math.min(15, Math.round(y)));
+    recalc();
+  }
 
   // ── helpers ───────────────────────────────────────────────────────────────
   function $(id) { return document.getElementById(id); }
@@ -144,9 +151,9 @@
     var cash = S * (b * rB + (1 - b) * DIV_Y) * (1 - taxRate()) / 12; // купоны+дивиденды в месяц
     return {
       r: r, rB: rB, b: b,
-      base: S * Math.pow(1 + r, YEARS),
-      lo:   S * Math.pow(1 + Math.max(0.001, r - sig), YEARS),
-      hi:   S * Math.pow(1 + r + sig, YEARS),
+      base: S * Math.pow(1 + r, years()),
+      lo:   S * Math.pow(1 + Math.max(0.001, r - sig), years()),
+      hi:   S * Math.pow(1 + r + sig, years()),
       cash: cash
     };
   }
@@ -192,16 +199,16 @@
     // Небольшой запас снизу: иначе линия стартует ровно в углу поля и выглядит
     // приклеенной к нему (в мокапе старт приподнят над нижним краем).
     var vMin = S - (vMax - S) * 0.10;
-    function X(t) { return x0 + (x1 - x0) * t / YEARS; }
+    function X(t) { return x0 + (x1 - x0) * t / years(); }
     function Y(v) {
       if (vMax <= vMin) return yB;
       return yB - (yB - yT) * ((v - vMin) / (vMax - vMin));
     }
-    function rate(vEnd) { return Math.pow(vEnd / S, 1 / YEARS) - 1; }
+    function rate(vEnd) { return Math.pow(vEnd / S, 1 / years()) - 1; }
     function pts(rr, rev) {
       var out = [];
       for (var i = 0; i <= 24; i++) {
-        var t = YEARS * i / 24;
+        var t = years() * i / 24;
         out.push([X(t), Y(S * Math.pow(1 + rr, t))]);
       }
       if (rev) out.reverse();
@@ -238,7 +245,7 @@
       '<circle cx="' + x1 + '" cy="' + yEnd.toFixed(1) + '" r="4" fill="var(--cx-bond,#3B7AD1)"/>' +
       '<text x="' + (x1 - 9) + '" y="' + (yEnd - 11).toFixed(1) + '" text-anchor="end" font-family="var(--r5-mono,monospace)" font-size="12" font-weight="700" fill="currentColor">' + fmtCapPlain(g.base) + '</text>' +
       '<text x="2" y="' + (H - 5) + '" font-family="var(--r5-mono,monospace)" font-size="10" fill="var(--cx-dim,#66748A)">' + year0 + '</text>' +
-      '<text x="' + x1 + '" y="' + (H - 5) + '" text-anchor="end" font-family="var(--r5-mono,monospace)" font-size="10" fill="var(--cx-dim,#66748A)">' + (year0 + YEARS) + '</text>' +
+      '<text x="' + x1 + '" y="' + (H - 5) + '" text-anchor="end" font-family="var(--r5-mono,monospace)" font-size="10" fill="var(--cx-dim,#66748A)">' + (year0 + years()) + '</text>' +
     '</svg>';
   }
 
@@ -269,7 +276,7 @@
     var padT = 34, padB = 28, bot = H - padB, plot = bot - padT;
     var vMax = g.base * 1.10;                 // запас над самым высоким столбиком
     var hOf = function (x) { return (x / vMax) * plot; };
-    var n = YEARS + 1;
+    var n = years() + 1;
     var gap = Math.max(16, Math.round(W * 0.08));
     var bw = Math.max(26, Math.floor((W - gap * (n - 1)) / n));
     var x0 = Math.round((W - (n * bw + (n - 1) * gap)) / 2);
@@ -529,7 +536,7 @@
     };
     // Кикеры сняты (водяные номера прячет css): заголовок карточки сам себя
     // называет, и капслок-подписей на экране остаётся ровно одна — у суммы.
-    setCard(cap, '', '', 'Ваш портфель через ' + YEARS + ' года');
+    setCard(cap, '', '', 'Ваш портфель через ' + years() + ' года');
     setCard(dist, '', '', 'Стратегия');
     // приписки в правом углу заголовка: коридор сценариев и легенда полосы
     addAside(cap, 'cxFcRange', '');
@@ -550,7 +557,7 @@
       '<div id="cxFcChart"></div>' +
       '<div id="cxFcFacts">' +
         '<span class="f"><span class="fl">Доход в месяц</span><b id="cxFcCash" class="o">—</b></span>' +
-        '<span class="f"><span class="fl">Прибыль за ' + YEARS + ' года</span><b id="cxFcYield" class="g">—</b></span>' +
+        '<span class="f"><span class="fl">Прибыль за ' + years() + ' года</span><b id="cxFcYield" class="g">—</b></span>' +
       '</div>' +
       '<div id="cxFcCta"></div>';
     if (body) body.insertBefore(fc, body.firstChild);
@@ -578,11 +585,11 @@
     var gb = $('cxGrowBig');
     if (gb) {
       if (g) {
-        gb.innerHTML = '≈ ' + fmtCap(g.base) + ' <small>через ' + YEARS + ' года</small>';
+        gb.innerHTML = '≈ ' + fmtCap(g.base) + ' <small>через ' + years() + ' года</small>';
         $('cxGrowRng').textContent = 'при стратегии «' + stratName() + '» · ' + (g.r * 100).toFixed(1).replace('.', ',') + '% годовых';
         renderFan($('cxGrowViz'), S, g);
       } else {
-        gb.innerHTML = 'Введите сумму <small>— покажем прогноз на ' + YEARS + ' года</small>';
+        gb.innerHTML = 'Введите сумму <small>— покажем прогноз на ' + years() + ' года</small>';
         $('cxGrowRng').textContent = '';
         $('cxGrowViz').innerHTML = '';
       }
@@ -608,7 +615,7 @@
     var fb = $('cxFcBig');
     if (fb) {
       if (g) {
-        fb.innerHTML = '≈ ' + fmtCap(g.base) + ' <small>через ' + YEARS + ' года</small>';
+        fb.innerHTML = '≈ ' + fmtCap(g.base) + ' <small>через ' + years() + ' года</small>';
         // доли названы теми же цветами, что полоса стратегии и столбики графика
         $('cxFcRng').innerHTML = 'облигации <b class="cxb">' + bondsPct() + '%</b> · акции <b class="cxe">' +
           (100 - bondsPct()) + '%</b> · доходность <b>' + (g.r * 100).toFixed(1).replace('.', ',') + '% годовых</b>';
@@ -857,6 +864,16 @@
   } else {
     setTimeout(init, 40);
   }
+
+  // ── ЭКСПОРТ ДЛЯ СЛОЯ R9 ──────────────────────────────────────────────────
+  // Полки «Расчёта» (js/calc-r9.js) рисуют свои числа из этих же функций:
+  // финансовая математика остаётся в одном месте.
+  window.cxSim = {
+    income: simIncome, growth: simGrowth, split: profitSplit,
+    bondsPct: bondsPct, stratName: stratName, sum: heroSum, tax: taxRate,
+    years: years, setYears: setYears,
+    EQ_PREM: EQ_PREM, DIV_Y: DIV_Y, FALLBACK_R: FALLBACK_R, recalc: recalc
+  };
 
   // отладка
   window.r6Recalc = recalc;

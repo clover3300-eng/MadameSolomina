@@ -1,0 +1,163 @@
+/* ==========================================================================
+   R9 · «ПОЛКИ» — рабочая площадь вкладки «Расчёт»
+   ==========================================================================
+   ФАЙЛ СГЕНЕРИРОВАН из утверждённого мокапа dev/mockups/calc3-mockups.src.html
+   (вариант Б, сцены Б.1–Б.4) скриптом: числа перенесены машиной, руками не
+   правились. Селекторы отличаются от мокапа ровно тремя подстановками:
+     .sc        -> #panel-calc .cx9
+     .sc.dark   -> body.dark-mode #panel-calc .cx9
+     .sc.narrow -> @media (max-width: 1439px)
+   и префиксом .c9-* у каждого класса: в проекте уже есть .bt (522 объявления),
+   .v3, .btn, .big, .qty, .num — без префикса они бы протекли в новую вёрстку.
+
+   Перегенерация: python3 dev/gen-calc-r9-css.py (из корня репозитория).
+   Правки вносить в МОКАП и перегенерировать, иначе слой и макет разойдутся.
+   Ручные блоки проекта (монтаж, гашение старого слоя, поле суммы) лежат
+   в calc-r9-mount.css.
+   ========================================================================== */
+
+#panel-calc .cx9{--ink:#101828;--mut:#5F6C82;--dim:#66748A;--line:#E6EBF2;--soft:rgba(16,24,40,.035);--card:#fff;--grn:#177A4F;--sbacc:#4453EF;--bond:#3B7AD1;--bondtx:#2F63AC;--eq:#D08A3C;--eqtx:#96591A;--cbase:#DDE5F1;color:var(--ink);font-family:var(--fU);-webkit-font-smoothing:antialiased}
+body.dark-mode #panel-calc .cx9{--ink:#E9EEF8;--mut:#929FB3;--dim:#8E9BAF;--line:rgba(255,255,255,.10);--soft:rgba(255,255,255,.04);--card:#141A24;--grn:#3FBF87;--sbacc:#8E9BFF;--bond:#6BA4F5;--bondtx:#8FBBF8;--eq:#E8A05A;--eqtx:#EFBC85;--cbase:#2A3444}
+#panel-calc .cx9 .c9-num{font-family:var(--fN);font-variant-numeric:tabular-nums}
+#panel-calc .cx9 svg{fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+#panel-calc .cx9 svg.c9-f{fill:currentColor;stroke:none}
+#panel-calc .cx9 svg.c9-pl{stroke:none}
+#panel-calc .cx9 .c9-ct{flex:1;min-width:0;display:flex;flex-direction:column;padding:22px 34px 26px 20px;gap:20px}
+#panel-calc .cx9 .c9-sh{background:var(--card);border-radius:22px;box-shadow:0 1px 2px rgba(16,24,40,.04),0 26px 54px -34px rgba(16,24,40,.5)}
+body.dark-mode #panel-calc .cx9 .c9-sh{box-shadow:0 1px 2px rgba(0,0,0,.4),0 26px 54px -34px rgba(0,0,0,.9)}
+#panel-calc .cx9 .c9-pane{background:var(--soft);border-radius:22px}
+#panel-calc .cx9 .c9-lb{font-size:9.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+#panel-calc .cx9 .c9-hh{font-family:var(--fT);font-weight:400;font-size:24px;letter-spacing:-.01em}
+#panel-calc .cx9 .c9-hh.c9-sm{font-size:20px}
+#panel-calc .cx9 .c9-qt{font-size:12.5px;color:var(--mut)}
+#panel-calc .cx9 .c9-btn{display:inline-flex;align-items:center;gap:9px;height:46px;padding:0 22px;border-radius:13px;
+  background:#141A26;color:#fff;font-size:12.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+body.dark-mode #panel-calc .cx9 .c9-btn{background:#E9EEF8;color:#0A0E15}
+#panel-calc .cx9 .c9-btn svg{width:16px;height:16px}
+#panel-calc .cx9 .c9-btn.c9-gh{background:transparent;border:1.5px solid var(--line);color:var(--ink)}
+#panel-calc .cx9 .c9-mir{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--mut)}
+#panel-calc .cx9 .c9-mir b{font-family:var(--fN);font-size:12.5px;font-weight:700;color:var(--ink)}
+#panel-calc .cx9 .c9-mir svg{width:13px;height:13px;color:var(--dim)}
+#panel-calc .cx9 .c9-dv{height:1px;background:var(--line)}
+#panel-calc .cx9 .c9-vd{width:1px;align-self:stretch;background:var(--line)}
+#panel-calc .cx9 .c9-chv{width:13px;height:13px;color:var(--dim)}
+#panel-calc .cx9 .c9-fl em{font-style:normal;display:block;font-size:9.5px;font-weight:800;letter-spacing:.13em;text-transform:uppercase;color:var(--dim)}
+#panel-calc .cx9 .c9-fl .c9-v{display:flex;align-items:baseline;gap:6px;margin-top:7px;font-family:var(--fN);font-size:17px;font-weight:700;letter-spacing:-.015em;color:var(--ink)}
+#panel-calc .cx9 .c9-fl .c9-v svg{width:13px;height:13px;align-self:center;color:var(--dim)}
+#panel-calc .cx9 .c9-fl.c9-xl .c9-v{font-size:27px;letter-spacing:-.03em}
+#panel-calc .cx9 .c9-fl.c9-xl .c9-v i{font-style:normal;font-size:18px;color:var(--eqtx)}
+#panel-calc .cx9 .c9-fl.c9-inp .c9-v{padding-bottom:6px;border-bottom:2px solid var(--bond)}
+#panel-calc .cx9 .c9-stp{display:inline-flex;align-items:center;gap:4px;margin-left:2px}
+#panel-calc .cx9 .c9-stp i{width:22px;height:22px;border-radius:7px;background:var(--soft);display:grid;place-items:center;
+  font-style:normal;font-size:14px;font-weight:700;color:var(--mut);line-height:1}
+#panel-calc .cx9 .c9-seg{display:inline-flex;gap:4px;margin-top:6px;padding:3px;border-radius:11px;background:var(--soft)}
+#panel-calc .cx9 .c9-seg b{padding:6px 12px;border-radius:8px;font-family:var(--fN);font-size:11.5px;font-weight:700;color:var(--mut)}
+#panel-calc .cx9 .c9-seg b.c9-on{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(16,24,40,.06)}
+#panel-calc .cx9 .c9-cond{display:flex;align-items:center;gap:34px;padding:16px 30px 17px;position:relative;z-index:5}
+#panel-calc .cx9 .c9-cond .c9-src{margin-left:auto;text-align:right;font-family:var(--fN);font-size:10.5px;line-height:1.5;color:var(--dim)}
+#panel-calc .cx9 .c9-dd{position:absolute;top:calc(100% - 6px);width:186px;padding:7px;border-radius:14px;background:var(--card);
+  box-shadow:0 1px 2px rgba(16,24,40,.06),0 30px 60px -26px rgba(16,24,40,.55);z-index:9}
+body.dark-mode #panel-calc .cx9 .c9-dd{box-shadow:0 1px 2px rgba(0,0,0,.5),0 30px 60px -26px rgba(0,0,0,.95)}
+#panel-calc .cx9 .c9-dd .c9-r{display:flex;align-items:center;gap:8px;padding:8px 11px;border-radius:9px;font-family:var(--fN);
+  font-size:12.5px;font-weight:700;color:var(--mut)}
+#panel-calc .cx9 .c9-dd .c9-r.c9-on{background:var(--soft);color:var(--ink)}
+#panel-calc .cx9 .c9-dd .c9-r .c9-ck{margin-left:auto;width:16px;height:16px;border-radius:50%;background:var(--sbacc);color:#fff;display:grid;place-items:center}
+#panel-calc .cx9 .c9-dd .c9-r .c9-ck svg{width:9px;height:9px;stroke-width:3}
+#panel-calc .cx9 .c9-dd .c9-r.c9-cu{color:var(--mut);font-family:var(--fU);font-weight:600}
+#panel-calc .cx9 .c9-dd .c9-r.c9-cu span{margin-left:auto;color:var(--dim)}
+#panel-calc .cx9 .c9-pick{padding:17px 26px 22px}
+#panel-calc .cx9 .c9-pick-hd{display:flex;align-items:baseline;gap:14px;margin-bottom:14px}
+#panel-calc .cx9 .c9-pick-hd .c9-qt{margin-left:auto}
+#panel-calc .cx9 .c9-tiles{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
+#panel-calc .cx9 .c9-tl{padding:14px 15px 15px;border-radius:15px;background:var(--soft)}
+#panel-calc .cx9 .c9-tl.c9-on{background:var(--card);box-shadow:0 0 0 1.5px var(--ink) inset,0 1px 2px rgba(16,24,40,.05),0 16px 30px -22px rgba(16,24,40,.6)}
+#panel-calc .cx9 .c9-tl-n{font-size:14px;font-weight:700;letter-spacing:-.01em}
+#panel-calc .cx9 .c9-tl-s{margin-top:3px;font-size:11.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#panel-calc .cx9 .c9-tl-bar{margin-top:11px;height:5px;border-radius:3px;display:flex;overflow:hidden;background:var(--soft)}
+#panel-calc .cx9 .c9-tl-bar i{display:block;height:100%}
+#panel-calc .cx9 .c9-tl-bar i.c9-b{background:var(--bond)}
+#panel-calc .cx9 .c9-tl-bar i.c9-e{background:var(--eq)}
+#panel-calc .cx9 .c9-tl-sh{margin-top:8px;display:flex;gap:9px;font-family:var(--fN);font-size:10.5px;font-weight:700}
+#panel-calc .cx9 .c9-tl-sh .c9-b{color:var(--bondtx)}
+#panel-calc .cx9 .c9-tl-sh .c9-e{color:var(--eqtx)}
+#panel-calc .cx9 .c9-tl-y{margin-top:9px;font-family:var(--fN);font-size:14px;font-weight:700;letter-spacing:-.02em}
+#panel-calc .cx9 .c9-tl-y span{font-family:var(--fU);font-size:10.5px;font-weight:600;color:var(--dim);margin-left:5px}
+#panel-calc .cx9 .c9-tl-cu{display:flex;align-items:center;gap:7px;margin-top:11px;font-size:11.5px;font-weight:600;color:var(--mut)}
+#panel-calc .cx9 .c9-tl-cu svg{width:13px;height:13px;color:var(--dim)}
+#panel-calc .cx9 .c9-ans{flex:1;min-height:0;display:grid;grid-template-columns:380px 1fr;gap:40px;padding:26px 32px 26px}
+#panel-calc .cx9 .c9-ansv{flex:1;min-height:0;display:flex;flex-direction:column;padding:26px 32px 26px}
+#panel-calc .cx9 .c9-ansv .c9-top{display:flex;align-items:baseline;gap:18px}
+#panel-calc .cx9 .c9-ansv .c9-top .c9-rng{margin:0 0 0 auto}
+#panel-calc .cx9 .c9-ansv .c9-big{margin-top:12px}
+#panel-calc .cx9 .c9-ansv .c9-cv-h{margin-top:22px}
+#panel-calc .cx9 .c9-ansv .c9-chart{margin:auto 0}
+#panel-calc .cx9 .c9-ansv .c9-foot{margin-top:auto;padding-top:22px;display:flex;align-items:center;gap:26px}
+#panel-calc .cx9 .c9-facts.c9-row{flex-direction:row;gap:30px;margin-top:14px}
+#panel-calc .cx9 .c9-facts.c9-row .c9-fct{gap:9px}
+#panel-calc .cx9 .c9-facts.c9-row .c9-fct b{margin-left:0}
+#panel-calc .cx9 .c9-ans-l{display:flex;flex-direction:column;min-width:0}
+#panel-calc .cx9 .c9-ans-r{display:flex;flex-direction:column;min-width:0}
+#panel-calc .cx9 .c9-big{display:flex;align-items:baseline;gap:10px;margin-top:14px}
+#panel-calc .cx9 .c9-big i{font-style:normal;font-family:var(--fN);font-size:26px;font-weight:400;color:var(--dim)}
+#panel-calc .cx9 .c9-big b{font-family:var(--fN);font-size:56px;font-weight:700;letter-spacing:-.035em;line-height:1}
+#panel-calc .cx9 .c9-big span{font-family:var(--fN);font-size:17px;font-weight:700;color:var(--mut)}
+#panel-calc .cx9 .c9-rng{margin-top:9px;font-family:var(--fN);font-size:12px;color:var(--mut)}
+#panel-calc .cx9 .c9-rng b{font-weight:700;color:var(--ink)}
+#panel-calc .cx9 .c9-facts{margin-top:20px;display:flex;flex-direction:column;gap:12px}
+#panel-calc .cx9 .c9-fct{display:flex;align-items:baseline;gap:10px;font-size:12.5px;color:var(--mut)}
+#panel-calc .cx9 .c9-fct b{margin-left:auto;font-family:var(--fN);font-size:14.5px;font-weight:700;color:var(--ink)}
+#panel-calc .cx9 .c9-fct b.c9-g{color:var(--grn)}
+#panel-calc .cx9 .c9-go{margin-top:auto;display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+#panel-calc .cx9 .c9-cv-h{display:flex;align-items:baseline;gap:12px;margin-bottom:2px}
+#panel-calc .cx9 .c9-cv-h .c9-lb{margin-right:auto}
+#panel-calc .cx9 .c9-leg{display:flex;gap:18px;margin-top:12px;font-size:11.5px;color:var(--mut)}
+#panel-calc .cx9 .c9-leg s{text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+#panel-calc .cx9 .c9-leg s em{font-style:normal;width:9px;height:9px;border-radius:3px;display:block}
+#panel-calc .cx9 .c9-chart{margin-top:auto}
+#panel-calc .cx9 .c9-quiz{flex:1;display:flex;flex-direction:column;padding:30px 34px 28px}
+#panel-calc .cx9 .c9-quiz-top{display:flex;align-items:center;gap:14px}
+#panel-calc .cx9 .c9-quiz-top .c9-prog{flex:1;height:3px;border-radius:2px;background:var(--soft);overflow:hidden}
+#panel-calc .cx9 .c9-quiz-top .c9-prog i{display:block;height:100%;width:9%;background:var(--sbacc);border-radius:2px}
+#panel-calc .cx9 .c9-quiz-q{margin:34px 0 4px;font-family:var(--fT);font-weight:400;font-size:31px;line-height:1.22;letter-spacing:-.012em;max-width:760px}
+#panel-calc .cx9 .c9-qbody{margin:auto 0}
+#panel-calc .cx9 .c9-qopts{margin-top:28px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+#panel-calc .cx9 .c9-qo{display:flex;align-items:center;gap:13px;height:66px;padding:0 20px;border-radius:14px;background:var(--soft);font-size:14.5px;font-weight:600}
+#panel-calc .cx9 .c9-qo em{flex:none;width:19px;height:19px;border-radius:50%;border:1.6px solid var(--line);background:var(--card)}
+#panel-calc .cx9 .c9-qo.c9-on{background:var(--card);box-shadow:0 0 0 1.5px var(--ink) inset}
+#panel-calc .cx9 .c9-qo.c9-on em{border-color:var(--ink);background:radial-gradient(circle,var(--ink) 0 45%,transparent 47%)}
+#panel-calc .cx9 .c9-quiz-go{margin-top:auto;display:flex;align-items:center;gap:20px}
+#panel-calc .cx9 .c9-fork{display:grid;grid-template-columns:380px 1fr;gap:40px;padding:24px 32px}
+#panel-calc .cx9 .c9-v3{flex:1;display:grid;grid-template-columns:repeat(3,1fr);gap:20px;min-height:0}
+#panel-calc .cx9 .c9-vc{display:flex;flex-direction:column;padding:24px 24px 22px}
+#panel-calc .cx9 .c9-vc.c9-on{box-shadow:0 0 0 1.5px var(--ink) inset,0 1px 2px rgba(16,24,40,.05),0 26px 54px -34px rgba(16,24,40,.5)}
+#panel-calc .cx9 .c9-vc .c9-kick{font-family:var(--fN);font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+#panel-calc .cx9 .c9-vc .c9-big b{font-size:44px}
+#panel-calc .cx9 .c9-vc .c9-go{margin-top:auto}
+#panel-calc .cx9 .c9-tail{display:flex;align-items:center;gap:22px;padding:0 8px;font-size:12.5px;color:var(--mut)}
+#panel-calc .cx9 .c9-tail b{font-family:var(--fN);font-size:12.5px;font-weight:700;color:var(--ink)}
+#panel-calc .cx9 .c9-tail .c9-vd{height:16px;align-self:center}
+#panel-calc .cx9 .c9-bskt{padding:18px 28px 22px}
+#panel-calc .cx9 .c9-bskt.c9-sm{padding:15px 28px 15px}
+#panel-calc .cx9 .c9-bskt.c9-sm .c9-pick-hd{margin-bottom:8px}
+#panel-calc .cx9 .c9-bskt.c9-sm .c9-bt td{padding:5px 0}
+#panel-calc .cx9 .c9-bskt.c9-sm .c9-bt th{padding-bottom:8px}
+#panel-calc .cx9 .c9-bskt.c9-sm .c9-bt tfoot td{padding-top:9px}
+#panel-calc .cx9 .c9-bt{width:100%;border-collapse:collapse}
+#panel-calc .cx9 .c9-bt th{text-align:right;padding:0 0 11px;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+#panel-calc .cx9 .c9-bt th:first-child, #panel-calc .cx9 .c9-bt td:first-child{text-align:left}
+#panel-calc .cx9 .c9-bt td{text-align:right;padding:9px 0;border-top:1px solid var(--line);font-family:var(--fN);font-size:13.5px;font-weight:600}
+#panel-calc .cx9 .c9-bt .c9-nm{font-family:var(--fU);font-size:13.5px;font-weight:700}
+#panel-calc .cx9 .c9-bt .c9-nm em{display:block;font-style:normal;font-family:var(--fN);font-size:10.5px;font-weight:600;color:var(--dim);margin-top:2px}
+#panel-calc .cx9 .c9-bt .c9-y{color:var(--grn);font-weight:700}
+#panel-calc .cx9 .c9-bt .c9-mo{color:var(--mut)}
+#panel-calc .cx9 .c9-bt tfoot td{border-top:1px solid var(--line);padding-top:12px;font-size:13.5px;font-weight:700}
+#panel-calc .cx9 .c9-bt tfoot td.c9-k{font-family:var(--fU);font-size:11.5px;font-weight:600;color:var(--mut)}
+#panel-calc .cx9 .c9-qty{display:inline-flex;align-items:center;gap:5px}
+#panel-calc .cx9 .c9-qty i{width:24px;height:24px;border-radius:7px;background:var(--soft);display:grid;place-items:center;font-style:normal;font-size:14px;font-weight:700;color:var(--mut);line-height:1}
+#panel-calc .cx9 .c9-qty b{min-width:46px;text-align:center;font-family:var(--fN);font-size:13.5px;font-weight:700}
+
+/* узкий экран: та же полочная раскладка, ужатая (сцена 1280x800) */
+@media (max-width: 1439px) {
+  #panel-calc .cx9 .c9-ct{padding:18px 26px 22px 18px;gap:16px}
+  #panel-calc .cx9 .c9-ans{grid-template-columns:318px 1fr;gap:26px}
+}

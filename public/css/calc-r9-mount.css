@@ -1,0 +1,95 @@
+/* ==========================================================================
+   R9 · МОНТАЖ слоя «Полки» в проект
+   ==========================================================================
+   Здесь ТОЛЬКО то, чего нет в мокапе: посадка рабочей площади, гашение старого
+   слоя (r5/r6/r7) и поле суммы (в мокапе это статичное число, в проде —
+   настоящий input, которому надо отдать ту же геометрию .c9-v).
+
+   Оформление берётся из calc-r9.css — он сгенерирован из мокапа. Правки
+   внешнего вида вносить ТАМ (через мокап), а не здесь.
+   ========================================================================== */
+
+/* ── ШРИФТОВЫЕ ТОКЕНЫ МОКАПА → ТОКЕНЫ ПРОЕКТА ─────────────────────────────
+   В мокапе семейства зовутся --fT/--fU/--fN, в проекте — --font-title/-ui/-num
+   (css/typography-tokens.css, значения те же: Georgia + Inter + JetBrains Mono).
+   Без этого перехода var(--fN) молча откатывался бы на наследуемый шрифт и все
+   числа полок печатались бы Inter вместо моно. */
+#panel-calc .cx9 {
+  --fT: var(--font-title);
+  --fU: var(--font-ui);
+  --fN: var(--font-num);
+}
+
+/* ── посадка: площадь во всю ширину и высоту, поля — из мокапа (.c9-ct) ──── */
+body.cx9-on #calcPane {
+  max-width: none !important;
+  padding: 0 !important;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+body.cx9-on #calcPaneContent { flex: 1; min-height: 0; display: flex; }
+/* высота обязана быть ОПРЕДЕЛЁННОЙ по всей цепочке: без height:100% у панели
+   `height:100%` у #calcPane упирается в auto-родителя, полки перестают делить
+   экран и площадь вылезает за #contentArea (на 1280×800 было +164px). */
+body.cx9-on #panel-calc { padding: 0; height: 100%; min-height: 0; }
+#panel-calc .cx9 { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: normal; }
+/* страховка для совсем низких окон: полки не режутся, а прокручиваются */
+#panel-calc .cx9 .c9-ct { overflow-y: auto; }
+
+body.cx9-on #calcCtaBar { display: none !important; }
+/* слой выключен (узкий экран/мобила) — площадь не рисуется, старая вёрстка цела */
+body:not(.cx9-on) #cx9 { display: none !important; }
+
+/* ── поле суммы: input в геометрии мокапа (.c9-fl.c9-xl .c9-v) ───────────── */
+#panel-calc .cx9 .c9-sumf {
+  font-family: inherit; font-size: inherit; font-weight: inherit;
+  letter-spacing: inherit; color: inherit; line-height: normal;
+  border: 0; background: transparent; padding: 0; margin: 0;
+  min-width: 1ch; text-align: start; -moz-appearance: textfield;
+}
+#panel-calc .cx9 .c9-sumf::-webkit-outer-spin-button,
+#panel-calc .cx9 .c9-sumf::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+#panel-calc .cx9 .c9-sumf::placeholder { color: var(--dim); }
+#panel-calc .cx9 .c9-fl.c9-inp .c9-v { cursor: text; }
+
+/* ── кнопки: снимаем UA-оформление, геометрия приходит из .c9-btn мокапа ─── */
+#panel-calc .cx9 button { border: 0; background: none; font: inherit; color: inherit; cursor: pointer; }
+#panel-calc .cx9 button.c9-btn { border: 0; text-align: start; }
+#panel-calc .cx9 .c9-tl,
+#panel-calc .cx9 .c9-qo,
+#panel-calc .cx9 .c9-dd .c9-r,
+#panel-calc .cx9 .c9-mir,
+#panel-calc .cx9 .c9-qty i,
+#panel-calc .cx9 .c9-stp i,
+#panel-calc .cx9 .c9-seg b,
+#panel-calc .cx9 .c9-pick-hd .c9-qt:last-child,
+#panel-calc .cx9 .c9-fl .c9-v svg { cursor: pointer; }
+#panel-calc .cx9 [data-c9act] { cursor: pointer; }
+
+/* своя комиссия: поле в языке строки списка */
+#panel-calc .cx9 .c9-dd .c9-cu input {
+  width: 58px; border: 0; border-bottom: 1.5px solid var(--bond); background: transparent;
+  font-family: var(--fN); font-size: 12.5px; font-weight: 700; color: var(--ink);
+  padding: 0 0 2px; margin-left: auto; text-align: right;
+}
+
+/* ── «Своя» стратегия: штатная панель слайдера живёт поверх площади ──────── */
+body.cx9-on #customStrategyExpanded {
+  position: absolute; z-index: 40; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: min(560px, calc(100% - 80px)); max-height: calc(100% - 80px); overflow: auto;
+  display: none;
+}
+body.cx9-on #customStrategyExpanded.show { display: block; }
+body.cx9-on #cx9Veil {
+  position: absolute; inset: 0; z-index: 39; background: rgba(16, 24, 40, .28);
+  backdrop-filter: blur(2px); display: none;
+}
+body.cx9-on.cx9-cust #cx9Veil { display: block; }
+
+/* ── старый слой внутри «Расчёта» не рисуется ──────────────────────────────
+   Гасится ВЕСЬ каркас r5/r6 (.cx-rows.r5): он лежит флекс-элементом рядом с
+   новой площадью и без display:none отбирал бы всю ширину. Узлы внутри живут
+   движком — им нужны только value полей, не раскладка. */
+body.cx9-on #calcPaneContent > .cx-rows.r5 { display: none !important; }
