@@ -249,7 +249,7 @@
     <link rel="stylesheet" href="css/calc-mode.css?v=12">
     <link rel="stylesheet" href="css/calc-r6.css?v=11">
     <link rel="stylesheet" href="css/calc-r7.css?v=1">
-    <link rel="stylesheet" href="css/home-register.css?v=24">
+    <link rel="stylesheet" href="css/home-register.css?v=25">
     <link rel="stylesheet" href="css/corner-stack.css?v=4">
     <link rel="stylesheet" href="css/site-bg.css?v=17">
     <link rel="stylesheet" href="css/profile-menu.css?v=21">
@@ -685,9 +685,13 @@
                 <div class="hg-stage" id="hgStage">
                     <div class="hg-manifest">
                         <!-- Текст живой: вошедшему js/home-register.js (updateAuthView)
-                             пишет «С возвращением, Имя» и меняет док внизу. -->
-                        <h1 class="hc-title" id="hcTitle">Терминал <em>спокойного</em> инвестора</h1>
-                        <p class="hc-lead" id="hcLead">Портфель из ОФЗ и акций под вашу цель, план ребаланса и выплаты по расписанию.</p>
+                             пишет «С возвращением, Имя», прячет кикер и меняет док внизу.
+                             Кикер отвечает первому посетителю на вопрос «что это вообще»
+                             за полсекунды — заголовок и подпись отвечают уже «про что»
+                             и «что я получу» (мокап dev/mockups/home12, вариант А). -->
+                        <div class="hc-kick" id="hcKick">Терминал частного инвестора · Московская биржа</div>
+                        <h1 class="hc-title" id="hcTitle">Что будет с вашими деньгами <em>через три года</em></h1>
+                        <p class="hc-lead" id="hcLead">Соберём портфель из ОФЗ и акций по ценам Мосбиржи, покажем прогноз, выплаты и точный список к покупке.</p>
                     </div>
 
                     <div class="hg-obs" id="hgObs">
@@ -2896,7 +2900,7 @@
 <script src="js/supabase-config.js?v=1" defer></script>
 <script src="js/telegram-config.js?v=1" defer></script>
 <script src="js/supabase-client.js?v=7" defer></script>
-<script src="js/home-register.js?v=24" defer></script>
+<script src="js/home-register.js?v=25" defer></script>
 <!-- адрес прокси брокера (Яндекс-функция) — ДО broker-api.js: тот читает window.BROKER_PROXY_URL -->
 <script src="js/broker-proxy-config.js?v=2" defer></script>
 <script src="js/broker-api.js?v=13" defer></script>

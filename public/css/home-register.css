@@ -8,9 +8,10 @@
    .hg-obs (центр = живой индекс #hgCoreVal, вокруг по трём
    эллиптическим орбитам плывут 12 бумаг топ-весов, рисует
    js/home-register.js) → док входа .hg-dock снизу → строка-подвал
-   .hg-btm. Форма регистрации/входа не модалка: она раскрывается
-   карточкой .hg-authcard поверх сцены, сцена при этом отходит
-   на второй план (класс .hg-formopen на .hg-cover).
+   .hg-btm. Форма регистрации/входа не модалка: по классу .hg-formopen
+   на .hg-cover сцена сжимается и уезжает влево, а справа между шапкой
+   и подвалом пристыковывается СТВОРКА .hg-authcard — непрозрачная,
+   с вуалью по правой половине сцены (раунд 12, dev/mockups/home12).
 
    Закон цвета тот же, что у монохромной карты раунда 6: РОСТ —
    индиговая заливка по силе движения, ПАДЕНИЕ — контур без заливки.
@@ -69,6 +70,11 @@ body.dark-mode.tab-home #contentArea { z-index: 2; }
     --hg-glass: rgba(255, 255, 255, 0.06);
     --hg-glass-edge: rgba(233, 237, 246, 0.14);
     --hg-glass-strong: rgba(18, 23, 34, 0.86);
+    /* створка формы непрозрачна намеренно: сквозь стекло просвечивали
+       шапка и летящие узлы — форму невозможно было читать */
+    --hg-sash: linear-gradient(180deg, rgba(19, 25, 37, 0.97) 0%, rgba(12, 17, 26, 0.99) 100%);
+    --hg-veil: linear-gradient(90deg,
+        rgba(9, 13, 20, 0) 0%, rgba(9, 13, 20, 0.72) 46%, rgba(9, 13, 20, 0.92) 100%);
     --hg-ring: rgba(142, 155, 255, 0.11);
     --hg-accent: #8E9BFF;
     --hg-mark-bg: #ffffff;
@@ -92,6 +98,9 @@ body:not(.dark-mode) .hg-cover {
     --hg-glass: rgba(255, 255, 255, 0.72);
     --hg-glass-edge: rgba(16, 24, 40, 0.12);
     --hg-glass-strong: rgba(255, 255, 255, 0.96);
+    --hg-sash: linear-gradient(180deg, #ffffff 0%, #FBFCFE 100%);
+    --hg-veil: linear-gradient(90deg,
+        rgba(244, 247, 250, 0) 0%, rgba(244, 247, 250, 0.74) 46%, rgba(244, 247, 250, 0.94) 100%);
     --hg-ring: rgba(68, 83, 239, 0.14);
     --hg-accent: #4453EF;
     --hg-mark-bg: #161B27;
@@ -233,19 +242,36 @@ body:not(.dark-mode) .hg-cover {
     flex-direction: column;
     transition: opacity 0.28s ease, transform 0.28s ease;
 }
-/* Форма открыта — система отходит на второй план, но остаётся видимой */
-.hg-cover.hg-formopen .hg-stage {
-    opacity: 0.24;
-    transform: scale(0.97);
+/* Форма открыта — «стыковка»: система не гаснет, а сжимается и уезжает
+   влево, освобождая место створке справа (см. .hg-authwrap). Манифест и
+   док уходят: их работа кончилась, человек уже решился. */
+.hg-cover.hg-formopen .hg-stage { pointer-events: none; }
+.hg-cover.hg-formopen .hg-manifest,
+.hg-cover.hg-formopen .hg-dock {
+    opacity: 0;
     pointer-events: none;
 }
+.hg-cover.hg-formopen .hg-obs { transform: translateX(-15%) scale(0.72); }
 
 /* ---- манифест сверху по центру ---- */
 .hg-manifest {
     flex: 0 0 auto;
     padding: 28px 64px 0;
     text-align: center;
+    transition: opacity 0.28s ease;
 }
+/* кикер: «что это вообще» моно-разрядкой — той же деталью, что подписи
+   биржевых данных внизу экрана */
+.hc-kick {
+    margin-bottom: 13px;
+    font-family: var(--hs-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--hg-dim);
+}
+.hc-kick[hidden] { display: none; }
 .hc-title {
     margin: 0;
     font-family: Georgia, 'Times New Roman', serif;
@@ -272,6 +298,7 @@ body:not(.dark-mode) .hg-cover {
     min-height: 0;
     /* поля, чтобы узлы внешней орбиты не уезжали за кромку экрана */
     margin: 6px 96px 0;
+    transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .hg-rings {
     position: absolute;
@@ -512,36 +539,80 @@ body:not(.dark-mode) .hg-orb.dn {
 /* =========================================================
    КАРТОЧКА ФОРМЫ (регистрация / вход / новый пароль)
    ========================================================= */
+/* «Стыковка»: форма не накрывает сцену модалкой, а пристыковывается
+   створкой справа — между шапкой и подвалом, чтобы ни то, ни другое
+   не просвечивало сквозь неё. Сцена в это время живёт слева. */
+/* Обёртка остаётся во всю ширину — на ней висит закрытие по клику мимо
+   формы (onclick в разметке); створку к правому краю прижимает flex-end. */
 .hg-authwrap {
     position: absolute;
-    inset: 84px 0 0;
+    inset: 84px 0 54px 0;
     z-index: 20;
     display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+    align-items: stretch;
+    justify-content: flex-end;
+    padding: 26px 30px 26px 0;
 }
 .hg-cover.hg-formopen .hg-authwrap { display: flex; }
+/* вуаль по правой половине сцены: узлы за створкой больше не мельтешат.
+   z-index 4 — ниже шапки (6) и подвала (5), но выше сцены (2), иначе
+   вуаль гасила бы и строку данных биржи внизу.
+   Селектор по id, а не по .hg-cover: ту же сетку рисуют заглушки вкладок
+   (tab-gates.js собирает .hg-cover.gx-hg), и лишний слой им не нужен. */
+#hgCover::after {
+    content: "";
+    position: absolute;
+    right: 0; top: 0; bottom: 0;
+    width: 760px;
+    max-width: 60%;
+    z-index: 4;
+    pointer-events: none;
+    opacity: 0;
+    background: var(--hg-veil);
+    transition: opacity 0.42s ease;
+}
+#hgCover.hg-formopen::after { opacity: 1; }
 .hg-authcard {
     position: relative;
     width: 100%;
-    max-width: 496px;
+    max-width: 526px;
     max-height: 100%;
+    /* створка во всю высоту — «уже есть аккаунт?» и полиси прижимаются
+       к её низу (margin-top: auto у .hr-foot), иначе под формой зияет дыра */
+    display: flex;
+    flex-direction: column;
     overflow-y: auto;
     scrollbar-width: none;
     box-sizing: border-box;
-    padding: 30px 34px 26px;
-    background: var(--hg-glass-strong);
+    padding: 34px 44px 30px;
+    background: var(--hg-sash);
     border: 1px solid var(--hg-glass-edge);
     border-radius: 24px;
-    box-shadow: 0 40px 90px -40px rgba(0, 0, 0, 0.75);
-    -webkit-backdrop-filter: blur(22px);
-    backdrop-filter: blur(22px);
+    box-shadow: -40px 0 90px -50px rgba(0, 0, 0, 0.9),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
     animation: hgFormIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+/* внутренняя обёртка формы — тоже колонка: через неё «margin-top: auto»
+   у .hr-foot добирается до низа створки. display управляет js
+   (applyAuthView ставит '' — то есть возвращает это правило). */
+.hs-auth-inner {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+/* световая кромка по верху створки — единственное украшение */
+.hg-authcard::before {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--hg-accent), transparent);
+    opacity: 0.55;
 }
 .hg-authcard::-webkit-scrollbar { display: none; }
 @keyframes hgFormIn {
-    from { opacity: 0; transform: translateY(10px) scale(0.985); }
+    from { opacity: 0; transform: translateX(26px); }
     to   { opacity: 1; transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -780,7 +851,8 @@ body:not(.dark-mode) .hg-orb.dn {
 
 /* ---- подвалы карточки ---- */
 .hr-foot {
-    margin: 18px 0 0;
+    margin: auto 0 0;
+    padding-top: 18px;
     text-align: center;
     font-family: 'Inter', sans-serif;
     font-size: 13px;
@@ -880,8 +952,20 @@ body:not(.dark-mode) .hg-orb.dn {
         gap: 6px 14px;
     }
     .hg-btm .sp { display: none; }
-    .hg-authwrap { position: fixed; inset: 0; padding: 14px; }
-    .hg-authcard { max-height: 92vh; }
+    /* На телефоне створки нет: форма листом во весь экран, как было.
+       Специфичность повышена — иначе десктопные правила «стыковки» выше
+       (.hg-cover.hg-formopen .hg-authwrap) выигрывают у одиночного класса. */
+    .hg-cover .hg-authwrap {
+        position: fixed;
+        inset: 0;
+        padding: 14px;
+        align-items: center;
+        justify-content: center;
+    }
+    .hg-authcard { max-width: 496px; max-height: 92vh; }
+    /* сцена не сжимается и вуали нет: под формой всё равно ничего не видно */
+    .hg-cover.hg-formopen .hg-obs { transform: none; }
+    #hgCover::after { display: none; }
     @media (prefers-reduced-motion: no-preference) {
         .hg-core { animation: none; }
     }
