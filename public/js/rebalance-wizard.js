@@ -10,43 +10,38 @@
     'use strict';
     var PF = window.PF = window.PF || {};
 
-    /* ─────────── состояние визарда ─────────── */
+    /* ─────────── состояние мастера (раунд 5) ─────────── */
+    /* Шагов-номеров больше нет: мокап описывает ЭКРАНЫ, и состояние называет их
+       так же. diag → pick → (annual: deal) | (moment: sellpick → deal) → done;
+       qty/details/buypick — боковые экраны, возвращающие на deal. */
     var rbw = {
-        step: 1,                 // 1 портфель · 2 режим · 3 расчёт · 4 заявка · 'receipt' · 'done'
-        pid: null,               // выбранный портфель
-        mode: null,              // 'annual' | 'moment' | 'auto'
-        cls: 'bond',             // класс для режима «в моменте»: 'bond' | 'stock'
-        pick: { sell: null, buy: null, qty: null }, // ручной выбор сторон сделки
-        picker: null,            // 'sell' | 'buy' | null — открытый пикер
-        pickerQ: '',             // строка поиска в пикере
-        autoIdx: null,           // выбранный вариант в режиме «Авто»
-        ord: { sell: 'market', buy: 'limit' }, // тип заявки в корзине
-        cart: [],                // корзина обменов (мультизаявка): снимки сделок
-        whatIf: false,           // открыт предпросмотр «Что если»
-        receipt: null,           // результат исполнения
+        view: 'diag',            // diag | pick | sellpick | buypick | deal | qty | details | done
+        pid: null,               // выбранный портфель (чипы в верхней строке)
+        mode: null,              // 'annual' | 'moment'
+        cls: 'bond',             // класс для способа «в моменте»: 'bond' | 'stock'
+        pick: { sell: null, buy: null, qty: null }, // ручной выбор сторон и количества
+        receipt: null,           // результат исполнения (сцены 06 и 11)
         executing: false
     };
     try {
-        var sv = JSON.parse(localStorage.getItem('rbw_state_v1') || 'null');
+        var sv = JSON.parse(localStorage.getItem('rbw_state_v2') || 'null');
         if (sv) {
             if (sv.pid) rbw.pid = sv.pid;
             if (sv.mode) rbw.mode = sv.mode;
             if (sv.cls) rbw.cls = sv.cls;
             if (sv.pick && typeof sv.pick === 'object') rbw.pick = sv.pick;
-            if (typeof sv.autoIdx === 'number') rbw.autoIdx = sv.autoIdx;
-            // шаг восстанавливаем только валидный (1..4); receipt/done — транзиентны
-            if (typeof sv.step === 'number' && sv.step >= 1 && sv.step <= 4) rbw.step = sv.step;
+            // экран восстанавливаем только «спокойный»: done без квитанции пуст
+            if (['diag', 'pick', 'sellpick', 'deal'].indexOf(sv.view) >= 0) rbw.view = sv.view;
         }
     } catch (e) {}
     function persist() {
         try {
-            localStorage.setItem('rbw_state_v1', JSON.stringify({
-                pid: rbw.pid, step: (typeof rbw.step === 'number' ? rbw.step : 1),
-                mode: rbw.mode, cls: rbw.cls, pick: rbw.pick, autoIdx: rbw.autoIdx
+            localStorage.setItem('rbw_state_v2', JSON.stringify({
+                pid: rbw.pid, view: rbw.view, mode: rbw.mode, cls: rbw.cls, pick: rbw.pick
             }));
         } catch (e) {}
     }
-    function resetPicks() { rbw.pick = { sell: null, buy: null, qty: null }; rbw.picker = null; rbw.pickerQ = ''; rbw.autoIdx = null; }
+    function resetPicks() { rbw.pick = { sell: null, buy: null, qty: null }; }
     /* порог дрейфа (п.п.) — из портфеля, дефолт 3 */
     function driftThr(p) { return (p && p.driftThreshold != null && isFinite(+p.driftThreshold)) ? clamp(+p.driftThreshold, 0, 50) : 3; }
 
@@ -159,7 +154,24 @@
     // ВСЕ портфели (в т.ч. скрытые и брокерские): скрытие прячет карточку только
     // из «Обзора», но НЕ из перечней/выбора (правило проекта hide-scope-overview-only)
     function portfolios() { return ((PF.store && PF.store.items) || []).slice(); }
-    function curPf() { return rbw.pid ? PF.findPf(rbw.pid) : null; }
+    /* Портфель по умолчанию — тот, где расхождение с планом больше: экрана
+       выбора портфеля в раунде 5 нет, чипы наверху лишь переключают уже
+       выбранный. Пустой pid значит «мастер открыли впервые». */
+    function curPf() {
+        var p = rbw.pid ? PF.findPf(rbw.pid) : null;
+        if (p) return p;
+        var list = portfolios(); if (!list.length) return null;
+        var best = list[0], bestD = -1;
+        list.forEach(function (x) {
+            if (!hasTarget(x)) return;
+            var c = PF.calcPf(x); if (!(c.stockVal > 0 && c.bondVal > 0)) return;
+            var d = Math.abs(c.bondPct - targetBond(x));
+            if (d > bestD) { bestD = d; best = x; }
+        });
+        rbw.pid = best.id;
+        return best;
+    }
+    function find(arr, fn) { for (var i = 0; i < arr.length; i++) if (fn(arr[i])) return arr[i]; return null; }
     function plur(n, one, few, many) {
         n = Math.abs(n) % 100; var n1 = n % 10;
         if (n > 10 && n < 20) return many; if (n1 > 1 && n1 < 5) return few; if (n1 === 1) return one; return many;
@@ -188,15 +200,6 @@
         var d = s.match(/\d{4,5}/); if (d) return d[0].slice(-2);
         return s.replace(/[^A-Za-zА-Яа-я]/g, '').slice(0, 2).toUpperCase();
     }
-    // термин с всплывающим объяснением (пунктир + тултип по наведению) — чтобы не гуглить
-    function gl(term, tip) { return '<span class="rbw-gl" tabindex="0">' + term + '<span class="rbw-gl-tip">' + tip + '</span></span>'; }
-    var TIP = {
-        nkd: 'НКД — накопленный купонный доход. Небольшая сумма, которую при покупке облигации доплачиваете прежнему владельцу за уже набежавший купон. Вам она вернётся ближайшей выплатой.',
-        ytm: 'Доходность к погашению — сколько процентов годовых принесёт облигация, если держать её до конца: и купоны, и разница между ценой покупки и номиналом (1000 ₽).',
-        market: 'Рыночная заявка — купить/продать прямо сейчас по лучшей доступной цене. Исполняется мгновенно, но цена может чуть отличаться от показанной.',
-        limit: 'Лимитная заявка — по вашей цене (или лучше). Исполнится, только когда рынок дойдёт до неё; может подождать в очереди.'
-    };
-
     /* ═══════════ РАСЧЁТ ═══════════
        Ядро формул («машина денег») — из ЕДИНОГО модуля rb5 через PF.rb* (см.
        portfolios-trades.js), чтобы карточка и мастер не разъезжались. Здесь —
@@ -471,806 +474,667 @@
         return { bondPct: tot > 0 ? bondV / tot * 100 : 0, stockPct: tot > 0 ? stockV / tot * 100 : 0 };
     }
 
-    /* ═══════════ РЕНДЕР ═══════════ */
-    var STEPS = [['Портфель', 'какой сверяем'], ['Режим', 'как выравниваем'], ['Обмен', 'что на что'], ['Заявки', 'и отправка']];
-    function stepNo() { return rbw.step === 'receipt' || rbw.step === 'done' ? 4 : rbw.step; }
-    function railHtml() {
-        var active = stepNo(), rows = '', fin = rbw.step === 'done';
-        STEPS.forEach(function (s, i) {
-            var n = i + 1, cls = fin ? 'done' : (n === active ? 'on' : (n < active ? 'done' : ''));
-            var icn = (n < active || fin) ? '✓' : n;
-            var click = (n < active && n < rbw.step && rbw.step !== 'done') ? ' onclick="rbwGoStep(' + n + ')"' : '';
-            rows += '<div class="rbw-rs ' + cls + '"' + click + '><div class="rbw-rs-i">' + icn + '</div>'
-                + '<div class="rbw-rs-t"><b>' + s[0] + '</b><em>' + s[1] + '</em></div></div>';
-        });
-        // КОНТЕКСТ КОЛОНКИ — ФРАЗА, А НЕ КАРТОЧКА (мокап overview3, экран 21).
-        // Была мини-карточка портфеля с точкой, суммой, полосой долей и чипом
-        // режима — маленькая копия того, что и так стоит на экране крупно.
-        // Колонке достаточно одного предложения про то, чего на экране нет.
-        var p = curPf(), ctx = '';
-        if (!p || active < 2) {
-            ctx = 'Порог дрейфа — <b>' + d1(driftThr(p)) + ' п.п.</b>, общий для всех портфелей. '
-                + 'Меняется в настройках «Ребаланса».';
-        } else {
-            var c = PF.calcPf(p), tb = targetBond(p);
-            var oneClass = (c.stockVal <= 0 || c.bondVal <= 0), dev = Math.abs(c.bondPct - tb);
-            var modeLbl = { annual: '«Годовая»', moment: '«В моменте»', auto: '«Авто»' }[rbw.mode];
-            if (rbw.step === 'done') ctx = 'Всё записано в историю операций портфеля «' + esc(p.name) + '».';
-            else if (rbw.step === 'receipt') ctx = 'Остаток заявки живёт в терминале. Звоночек придёт, когда она доисполнится.';
-            else if (active === 4) ctx = 'Заявки уходят по одной: сначала продажа, покупка — как только придут деньги.';
-            else if (active === 3 && rbw.mode) {
-                ctx = 'Режим <b>' + modeLbl + '</b>. '
-                    + (rbw.mode === 'annual' ? 'Порог ' + d1(driftThr(p)) + ' п.п., дрейф сейчас ' + d1(dev) + ' п.п.'
-                        : rbw.mode === 'moment' ? 'Доплачивать не нужно: продажа полностью покрывает покупку.'
-                        : 'Перебор идёт по вашим бумагам и по кандидатам «Расчёта».');
-            } else if (oneClass) ctx = 'В портфеле «' + esc(p.name) + '» только один тип бумаг — доступен режим «В моменте».';
-            else ctx = 'Дрейф <b>' + d1(dev) + ' п.п.</b> '
-                + (dev >= driftThr(p) ? 'больше порога ' + d1(driftThr(p)) + ' п.п. — рекомендуем годовую сверку.'
-                    : 'в пределах порога ' + d1(driftThr(p)) + ' п.п. — можно поработать «в моменте».');
-        }
-        return '<div class="rbw-rail">'
-            + '<button type="button" class="rbw-exit" onclick="rbwExit()">' + IC.back + 'Портфели</button>'
-            + '<div class="rbw-brand"><em>Ребаланс</em><b>Мастер сверки</b></div>'
-            + '<div class="rbw-steps">' + rows + '</div>'
-            + '<div class="rbw-rail-bot"><div class="rbw-ctx">' + ctx + '</div>'
-            + '<div class="rbw-railsub"><i></i>' + (isDemo() ? 'Демо-режим' : 'Доступ для входа') + '</div></div></div>';
-    }
-    function mainHtml(kicker, title, sub, body, footHtml, headRight, wide) {
-        return '<div class="rbw-main"><div class="rbw-wrap' + (wide ? ' wide' : '') + '"><div class="rbw-mh">'
-            + '<div class="rbw-mh-t"><em>' + kicker + '</em><h3>' + title + '</h3>' + (sub ? '<p>' + sub + '</p>' : '') + '</div>'
-            + (headRight ? '<div class="rbw-mh-r">' + headRight + '</div>' : '') + '</div>'
-            + '<div class="rbw-body">' + body + '</div>' + (footHtml || '') + '</div></div>';
-    }
-    function footHtml(left, hint, primary, primaryDisabled) {
-        return '<div class="rbw-foot">'
-            + (left || '')
-            + (hint ? '<div class="rbw-foothint">' + hint + '</div>' : '')
-            + (primary ? '<button type="button" class="rbw-btn rbw-btn-dark wide"' + (primaryDisabled ? ' disabled' : '') + (primary.onclick ? ' onclick="' + primary.onclick + '"' : '') + '>' + primary.label + '</button>' : '')
-            + '</div>';
-    }
-    function isDemo() { var s = window.supa; return !(s && s.enabled); }
+    /* ═══════════ РЕНДЕР · РАУНД 5 ═══════════
+       Разметка перенесена ИЗ МОКАПА dev/mockups/rebalance-wizard5-mockups.html
+       поэлементно: те же классы, тот же порядок узлов, те же инлайновые стили,
+       те же слова. Данные подставляются в места, где в мокапе стояли примеры.
 
-    // ── ПОЛОСА ДОЛЕЙ (мокап overview3, экран 21) ── один контрол на весь мастер:
-    // «Сейчас» — полноценная полоса, где часть сверх цели ЗАШТРИХОВАНА (это и есть
-    // лишнее), «Цель» — тонкая опорная линия под фактом, а не вторая равноправная
-    // полоса. Ступенька между ними и есть дрейф: его видно, не читая цифр.
-    // now/tgt — доля АКЦИЙ в процентах; tgt === null значит «цель не задана».
-    function allocBar(now, tgt, o) {
-        o = o || {};
-        now = clamp(Math.round(now), 0, 100);
-        var over = tgt == null ? 0 : Math.max(0, now - tgt);
-        var inTgt = tgt == null ? now : Math.min(now, tgt);
-        var drift = tgt == null ? null : Math.abs(now - tgt);
-        return '<div class="rbw-alc">'
-            + '<div class="rbw-alc-r now"><span class="rbw-alc-k">Сейчас</span>'
-                + '<span class="rbw-alc-b"><i class="st" style="width:' + inTgt + '%"></i>'
-                + (over ? '<i class="over" style="width:' + over + '%"></i>' : '')
-                + '<i class="bd" style="width:' + (100 - now) + '%"></i></span>'
-                + '<span class="rbw-alc-n num">' + now + ' / ' + (100 - now) + '</span></div>'
-            + (tgt == null ? '' : '<div class="rbw-alc-r goal"><span class="rbw-alc-k">Цель</span>'
-                + '<span class="rbw-alc-b"><i class="st" style="width:' + tgt + '%"></i><i class="bd" style="width:' + (100 - tgt) + '%"></i></span>'
-                + '<span class="rbw-alc-n num">' + tgt + ' / ' + (100 - tgt) + '</span></div>')
-            + (!o.legend ? '' : (tgt == null
-                ? '<div class="rbw-alc-none">Цель по долям не задана — сверять не с чем</div>'
-                : '<div class="rbw-alc-lg"><span><i class="st"></i>акции</span><span><i class="bd"></i>облигации</span>'
-                    + (over ? '<span><i class="hatch"></i>сверх цели</span>' : '')
-                    + (o.pill ? '<b class="' + (drift <= o.thr ? 'ok' : '') + '">'
-                        + (drift <= o.thr ? 'в пределах порога' : 'дрейф ' + d1(drift) + ' п.п.') + '</b>' : '')
-                    + '</div>'))
-            + '</div>';
+       НАЗВАННЫЕ ОТСТУПЛЕНИЯ ПО ТЕКСТУ (данных для мокапного варианта нет):
+       · «подорожала на 3,1 % за месяц» → «подорожала на 3,1 %»: месячного ряда
+         цен у мастера нет, есть изменение с покупки; срок держания вынесен в
+         подпись строки («куплена 2 года назад»), как в мокапе;
+       · «налог 0 ₽, бумаги куплены больше трёх лет назад» → причина пишется по
+         факту: ставка НДФЛ берётся из pf_rebal_params, и при нулевой ставке
+         строка так и говорит.
+       Раскладка, кегли, отступы и порядок блоков не тронуты нигде. */
+
+    var ARR = ico('<path d="M5 12h13"/><path d="M13 6l6 6-6 6"/>', 2);
+    var CHEV = ico('<path d="M9 6l6 6-6 6"/>', 2);
+    var SWAP2 = ico('<path d="M4 9h15l-4-4"/><path d="M20 15H5l4 4"/>', 1.9);
+    var CHECK = ico('<path d="M20 6L9 17l-5-5"/>', 2.4);
+    var BACK = ico('<path d="M15 18l-6-6 6-6"/>', 1.9);
+
+    function pct0(n) { return Math.max(0, Math.min(100, Math.round(n || 0))); }
+    function rub(n) { return fmtRub(n); }
+    function nameOf(x, cls) { return cls === 'bond' ? (x.name || x.isin) : (x.ticker || x.name); }
+    function clock() { var d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+    function planStr(p) { var tb = targetBond(p); return (100 - tb) + ' / ' + tb; }
+    function devOf(p) { var c = PF.calcPf(p); return c.stockPct - (100 - targetBond(p)); } // >0 — акций больше плана
+    function oneClass(p) { var c = PF.calcPf(p); return !(c.stockVal > 0 && c.bondVal > 0); }
+    function annualOk(p) { return !!p && hasTarget(p) && !oneClass(p); }
+    function heldOf(p, cls) { return cls === 'bond' ? heldBonds(p) : heldStocks(p); }
+    /* рост с покупки, %: тот же ck.pnl/ck.invested, из которого считается momYield */
+    function growPct(x) { return (x && x.invested > 0) ? (x.pnl / x.invested * 100) : (x && x.pnlPct) || 0; }
+    function heldSorted(p, cls) {
+        return heldOf(p, cls).slice().sort(function (a, b) { return (b.momYield || -1e9) - (a.momYield || -1e9); });
+    }
+    function ageStr(x) {
+        var d = x && x.h && x.h.lots && x.h.lots.length ? x.h.lots[0].buyDate : null;
+        if (!d) return null;
+        var days = Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
+        if (!(days >= 0)) return null;
+        if (days < 45) return 'куплена ' + days + ' ' + plur(days, 'день', 'дня', 'дней') + ' назад';
+        if (days < 365) { var mo = Math.round(days / 30); return 'куплена ' + mo + ' ' + plur(mo, 'месяц', 'месяца', 'месяцев') + ' назад'; }
+        var yr = Math.round(days / 365); return 'куплена ' + yr + ' ' + plur(yr, 'год', 'года', 'лет') + ' назад';
+    }
+    /* сколько минимум продать, чтобы бумаг стало хотя бы на одну больше */
+    function minQtyForMore(sell, buy) {
+        if (!sell || !buy || !(sell.unit > 0) || !(buy.unit > 0)) return null;
+        var q = bondQtyFor1More(sell.unit, buy.unit, sell.qty);
+        return (q > 0) ? q : null;
     }
 
-    /* ── шаг 1 ── */
-    function driftBadge(c, tb, thr) {
-        var dev = c.bondPct - tb, ad = Math.abs(dev);
-        if (c.stockVal <= 0 || c.bondVal <= 0) return { cls: 'mid', txt: 'один тип бумаг' };
-        if (ad < (thr != null ? thr : 3)) return { cls: 'ok', txt: 'в норме' };
-        return { cls: 'hi', txt: 'перевес ' + (dev < 0 ? 'акций' : 'облигаций') + ' ' + d1(ad) + ' п.п.' };
+    /* ── верхняя строка (одинакова на всех сценах мокапа) ── */
+    function pfDot(p) {
+        if (!annualOk(p)) return false;
+        return Math.abs(PF.calcPf(p).stockPct - (100 - targetBond(p))) >= driftThr(p);
     }
-    function stepPortfolio() {
-        var list = portfolios();
-        var body;
-        if (!list.length) {
-            body = '<div class="rbw-empty">Пока нет ни одного портфеля. Соберите портфель на вкладке «Расчёт», и мастер поможет привести его в порядок.</div>';
+    function topHtml(o) {
+        var chips;
+        if (o.onePf) {
+            var p0 = curPf();
+            chips = '<span class="r5-pf on">' + esc(p0 ? p0.name : '—') + (pfDot(p0) ? '<i></i>' : '') + '</span>';
         } else {
-            // сортируем по убыванию дрейфа, предвыбор — максимальный
-            var rows = list.map(function (p) {
-                var c = PF.calcPf(p), tb = targetBond(p);
-                var stockPct = Math.round(c.stockPct), bondPct = 100 - stockPct;
-                var dev = Math.abs(c.bondPct - tb), oneClass = (c.stockVal <= 0 || c.bondVal <= 0);
-                return { p: p, c: c, tb: tb, stockPct: stockPct, bondPct: bondPct, oneClass: oneClass, dev: oneClass ? -1 : dev };
-            }).sort(function (a, b) { return b.dev - a.dev; });
-            if (!rbw.pid || !PF.findPf(rbw.pid)) rbw.pid = rows[0].p.id;
-            // СТРОКА НА ПОРТФЕЛЬ (мокап overview3, экран 21, п. 2). Были карточки
-            // с пилюлями, легендой и бейджем дрейфа — четыре способа сказать одно.
-            // Строка говорит то же короче: имя, деньги, две полосы (факт и цель),
-            // дрейф числом. Портфель без цели мастер не посчитает — и говорит это
-            // сразу на входе, а не на третьем шаге.
-            body = '<div class="rbw-wzp">' + rows.map(function (r) {
-                var p = r.p, sel = p.id === rbw.pid, hasT = hasTarget(p) && !r.oneClass;
-                var col = esc(p.color || '#5f7fa8');
-                var drift = hasT ? Math.abs(r.c.stockPct - (100 - r.tb)) : null;
-                var val = fmtRub(r.c.value).replace(/\s*₽\s*$/, '');
-                return '<div class="rbw-wzp-r' + (sel ? ' on' : '') + (hasT ? '' : ' off') + '" onclick="rbwPickPf(\'' + p.id + '\')">'
-                    + '<span class="rd"></span>'
-                    + '<span><span class="rbw-wzp-chip" style="--c:' + col + '">' + esc(p.name) + '</span></span>'
-                    + '<span class="rbw-wzp-sum num">' + val + '<em>&nbsp;₽</em></span>'
-                    + allocBar(r.c.stockPct, hasT ? Math.round(100 - r.tb) : null)
-                    + '<span class="rbw-wzp-d">' + (hasT
-                        ? '<b class="' + (drift > driftThr(p) ? 'warn' : '') + '">' + d1(drift) + '<span> п.п.</span></b>'
-                            + '<span>дрейф при пороге ' + d1(driftThr(p)) + '</span>'
-                        : '<span class="set">' + (r.oneClass ? 'Только один тип бумаг' : 'Задать цель ›') + '</span>'
-                            + '<span>' + (r.oneClass ? 'доступен режим «В моменте»' : 'без неё мастер не считает') + '</span>')
-                    + '</span></div>';
-            }).join('') + '</div>'
-            + '<div class="rbw-alc-lg" style="padding-left:0;margin-top:18px">'
-                + '<span><i class="st"></i>акции</span><span><i class="bd"></i>облигации</span>'
-                + '<span><i class="hatch"></i>сверх цели</span></div>';
-        }
-        var p0 = curPf(), hint = '';
-        if (p0) {
-            var c0 = PF.calcPf(p0), t0 = hasTarget(p0) ? Math.abs(c0.stockPct - (100 - targetBond(p0))) : null;
-            hint = 'Выбран «' + esc(p0.name) + '»' + (t0 != null ? ' · дрейф ' + d1(t0) + ' п.п.' : '');
-        }
-        var foot = footHtml('', hint, list.length ? { label: 'Дальше — режим <i>→</i>', onclick: 'rbwGoStep(2)' } : null, !list.length);
-        return mainHtml('Шаг 1 из 4', 'Какой портфель сверяем',
-            'Строка на портфель: слева доли сейчас, под ними цель. Ступенька между полосами и есть дрейф — его видно, не читая цифр.', body, foot);
-    }
-
-    /* ── шаг 2 ── */
-    function stepMode() {
-        var p = curPf(); if (!p) { rbw.step = 1; return stepPortfolio(); }
-        var c = PF.calcPf(p), tb = targetBond(p), dev = Math.abs(c.bondPct - tb), thr = driftThr(p);
-        var oneClass = (c.stockVal <= 0 || c.bondVal <= 0);
-        var recoAnnual = !oneClass && dev >= thr;
-        // ТРИ РЕЖИМА — ОДНО ЧИСЛО ВЫГОДЫ У КАЖДОГО (мокап overview3, экран 21, п. 5).
-        // Были иконка, полосы-визуализация и пилюля «Выбрать» в каждой карточке —
-        // три способа сказать «нажми сюда» и ни одного числа, ради которого нажимать.
-        // Теперь у каждого режима одна цифра в одном формате: дрейф → 0, купоны в
-        // год, число найденных вариантов. Выбор показывает кольцо карточки.
-        function modeCard(key, title, desc, fig, cap, dis, reco) {
-            return '<div class="rbw-wzm' + (rbw.mode === key ? ' on' : '') + (dis ? ' dis' : '') + '"'
-                + (dis ? '' : ' onclick="rbwSetMode(\'' + key + '\')"') + '>'
-                + (reco ? '<span class="rbw-wzm-rec">рекомендуем</span>' : '')
-                + '<h4>' + title + '</h4><p>' + desc + '</p>'
-                + '<div class="rbw-wzm-fig' + (fig.pos ? ' pos' : '') + '">' + fig.v + '</div>'
-                + '<div class="rbw-wzm-cap">' + cap + '</div></div>';
-        }
-        var annual = modeCard('annual', 'Годовая сверка',
-            oneClass ? 'В портфеле только один тип бумаг — выравнивать акции с облигациями нечего.'
-                : 'Продаём часть того, чего перебор, покупаем недостающее — доли возвращаются к цели ' + (100 - tb) + ' / ' + tb + '.',
-            { v: oneClass ? '—' : d1(dev) + ' → 0 <span>п.п.</span>' },
-            oneClass ? 'режим недоступен' : 'дрейф уходит в ноль', oneClass, recoAnnual);
-        // выгода «в моменте» — настоящая, из лучшей найденной пары, а не пример
-        var momGain = null, momCap = 'больше дохода на те же деньги';
-        try {
-            var ab0 = autoBondPair(p);
-            if (ab0) {
-                var bs0 = heldBonds(p), cd0 = bondCands();
-                var s0 = find(bs0, function (x) { return x.id === ab0.sellId; });
-                var b0 = find(cd0, function (x) { return x.isin === ab0.buyId; });
-                if (s0 && b0) {
-                    var dd0 = computeBondDeal(p, s0, b0);
-                    if (dd0 && dd0.coupDelta > 0.5) { momGain = '+' + fmtRub(dd0.coupDelta); momCap = 'купонов в год, без доплат'; }
-                }
-            }
-        } catch (e) { }
-        var moment = modeCard('moment', 'В моменте',
-            'Обмен внутри одного класса: продали десять бумаг — купили одиннадцать с большей доходностью.',
-            { v: momGain || '±0', pos: !!momGain }, momGain ? momCap : 'выгодной пары пока не видно', false, false);
-        var nAuto = 0; try { nAuto = autoVariants(p).length; } catch (e2) { }
-        var auto = modeCard('auto', 'Авто',
-            'Мастер перебирает пары в обоих классах и предлагает готовые варианты с посчитанной выгодой.',
-            { v: String(nAuto) }, nAuto ? plur(nAuto, 'вариант найден', 'варианта найдено', 'вариантов найдено') : 'вариантов пока нет', false, false);
-        var body = '<div class="rbw-wzmodes">' + annual + moment + auto + '</div>'
-            + '<div class="rbw-wzhint">Порог дрейфа ' + d1(thr) + ' п.п. — общий для всех портфелей, меняется в настройках «Ребаланса». '
-            + '<button type="button" class="rbw-thr-b" onclick="rbwSetThr(-1)">−</button>'
-            + '<button type="button" class="rbw-thr-b" onclick="rbwSetThr(1)">＋</button></div>';
-        var back = '<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwGoStep(1)">← Назад</button>';
-        var lbl = { annual: 'годовая сверка', moment: 'обмен в моменте', auto: 'авто' }[rbw.mode];
-        var foot = footHtml(back, rbw.mode ? 'Выбрана ' + lbl : 'Выберите способ',
-            rbw.mode ? { label: 'Дальше — обмен <i>→</i>', onclick: 'rbwGoStep(3)' } : null, !rbw.mode);
-        return mainHtml('Шаг 2 из 4', 'Как выравниваем',
-            'Три способа. Первый возвращает доли между классами, второй меняет бумаги внутри одного класса без доплат, третий подбирает пары сам.', body, foot);
-    }
-
-    /* ── шаг 3 · пикер ── */
-    function pickerHtml(ctx, side) {
-        var cls = side === 'sell' ? ctx.sellClass : ctx.buyClass;
-        var pos = 'left:0;top:calc(100% + 10px)';   // якорится под строкой сделки (.rbw-c2-inst — relative)
-        var rows = '', p = ctx.p;
-        if (side === 'sell') {
-            var list = cls === 'bond' ? heldBonds(p) : heldStocks(p);
-            // для облигаций сортируем по «росту в моменте» — сверху та, что выгоднее продать
-            if (cls === 'bond') list = list.slice().sort(function (a, b) { return (b.momYield || -1e9) - (a.momYield || -1e9); });
-            rows = list.map(function (x) {
-                var cur = ctx.sell && (cls === 'bond' ? ctx.sell.isin === x.isin : ctx.sell.ticker === x.ticker);
-                var metric = cls === 'bond' ? (x.momYield != null ? d1(x.momYield) + '%' : '—') : (x.pot != null ? fmtPct(x.pot) : '—');
-                var sub = f2(x.price) + ' ₽ · ' + x.qty + ' шт';
-                return '<div class="rbw-pop-row' + (cls === 'stock' ? ' stk' : '') + (cur ? ' sel' : '') + '" data-nm="' + esc((x.name + ' ' + (x.isin || x.ticker || '')).toLowerCase()) + '" onclick="rbwChoose(\'sell\',\'' + esc(x.id) + '\')">'
-                    + '<div class="dm">' + mono2(x.name) + '</div><div class="dt"><b>' + esc(x.name) + '</b><em>' + sub + '</em></div>'
-                    + '<div class="dv"><b>' + metric + '</b><em>' + (cls === 'bond' ? 'рост, годовых' : 'потенциал') + '</em></div>'
-                    + '<div class="dck">' + (cur ? '✓' : '') + '</div></div>';
-            }).join('');
-        } else {
-            if (cls === 'bond') {
-                var cands = bondCands().filter(function (x) { return !ctx.sell || isinKey(x.isin) !== isinKey(ctx.sell.isin); })
-                    .sort(function (a, b) { return (b.yield || 0) - (a.yield || 0); });
-                var held = {}; heldBonds(p).forEach(function (x) { held[isinKey(x.isin)] = 1; });
-                rows = cands.map(function (x) {
-                    var cur = ctx.buy && ctx.buy.isin === x.isin, own = held[isinKey(x.isin)];
-                    return '<div class="rbw-pop-row' + (cur ? ' sel' : '') + '" data-nm="' + esc((x.name + ' ' + x.isin).toLowerCase()) + '" onclick="rbwChoose(\'buy\',\'' + esc(x.isin) + '\')">'
-                        + '<div class="dm">' + mono2(x.name) + '</div><div class="dt"><b>' + esc(x.name) + (own ? ' <span class="rbw-own">в портф.</span>' : '') + '</b><em>' + f2(x.price) + ' ₽ · купон ' + f2(x.coupon) + '</em></div>'
-                        + '<div class="dv"><b>' + (x.yield != null ? fmtPct(x.yield) : '—') + '</b><em>доходность</em></div>'
-                        + '<div class="dck">' + (cur ? '✓' : '') + '</div></div>';
-                }).join('');
-            } else {
-                var ech = ctx.sell ? ctx.sell.ech : 0;
-                var sc = stockCandsFor(ech >= 1 ? ech : 0); if (!sc.length) sc = stockCandsFor(0);
-                sc = sc.filter(function (x) { return !ctx.sell || x.ticker !== ctx.sell.ticker; });
-                rows = sc.map(function (x) {
-                    var cur = ctx.buy && ctx.buy.ticker === x.ticker;
-                    return '<div class="rbw-pop-row stk' + (cur ? ' sel' : '') + '" data-nm="' + esc((x.ticker + ' ' + (x.name || '')).toLowerCase()) + '" onclick="rbwChoose(\'buy\',\'' + esc(x.ticker) + '\')">'
-                        + '<div class="dm">' + mono2(x.ticker) + '</div><div class="dt"><b>' + esc(x.ticker) + '</b><em>' + esc(x.name || '') + '</em></div>'
-                        + '<div class="dv"><b>' + (x.pot != null ? fmtPct(x.pot) : '—') + '</b><em>потенциал</em></div>'
-                        + '<div class="dck">' + (cur ? '✓' : '') + '</div></div>';
-                }).join('');
-            }
-        }
-        if (!rows) rows = '<div class="rbw-pop-empty">Кандидатов пока нет — данные подгружаются.</div>';
-        var sortTxt = cls === 'bond' ? (side === 'sell' ? 'рост в моменте ↓' : 'доходность ↓') : 'потенциал ↓';
-        return '<div class="rbw-pop left" style="' + pos + '" onclick="event.stopPropagation()">'
-            + '<div class="rbw-pop-search">' + IC.search + '<input class="rbw-pop-inp" type="text" placeholder="Поиск ' + (cls === 'bond' ? 'выпуска ОФЗ' : 'акции') + '…" value="' + esc(rbw.pickerQ) + '" oninput="rbwPickerFilter(this.value)" onkeydown="rbwPickerKey(event)"></div>'
-            + '<div class="rbw-pop-sort">Сортировка: <b>' + sortTxt + '</b> · ↑↓ выбор, Enter — взять</div>'
-            + '<div class="rbw-pop-scroll">' + rows + '</div></div>';
-    }
-    function pickHtml(ctx, side) {
-        var cls = side === 'sell' ? ctx.sellClass : ctx.buyClass, x = side === 'sell' ? ctx.sell : ctx.buy;
-        if (!x) return '<div class="rbw-pick" onclick="rbwOpenPicker(\'' + side + '\')"><div class="rbw-mono">?</div><div class="rbw-pk-t"><b>выбрать</b><em>нет данных</em></div><span class="rbw-pk-cv">▾</span></div>';
-        var name = cls === 'bond' ? x.name : x.ticker;
-        var meta = cls === 'bond' ? (f2(x.price) + ' ₽ · ' + (x.yield != null ? 'дох. ' + fmtPct(x.yield) : '—')) : (f2(x.price) + ' ₽ · ' + (x.pot != null ? 'потенц. ' + fmtPct(x.pot) : '—'));
-        var own = '';
-        if (side === 'buy' && cls === 'bond') { var h = {}; heldBonds(ctx.p).forEach(function (b) { h[isinKey(b.isin)] = 1; }); if (h[isinKey(x.isin)]) own = ' <span class="rbw-own">в портф.</span>'; }
-        var act = (rbw.picker === side) ? ' act' : '';
-        return '<div class="rbw-pick' + act + '" title="Нажмите, чтобы выбрать другую бумагу" onclick="event.stopPropagation();rbwOpenPicker(\'' + side + '\')">'
-            + '<div class="rbw-mono">' + mono2(name) + '</div>'
-            + '<div class="rbw-pk-t"><b>' + esc(name) + own + '</b><em>' + meta + '</em></div><span class="rbw-pk-cv">сменить ▾</span></div>';
-    }
-
-    /* ── шаг 3 · сцена-сделка (годовая/в моменте) ── */
-    function stepCalc() {
-        var p = curPf(); if (!p) { rbw.step = 1; return stepPortfolio(); }
-        if (rbw.mode === 'auto') return stepAuto();
-        var ctx = dealCtx();
-        if (!ctx || !ctx.sell || !ctx.buy || !ctx.deal) {
-            var msg = ctx && ctx.kind === 'annual' ? 'Для этого способа нужны и акции, и облигации — а здесь только один тип бумаг. Выберите «В моменте» или другой портфель.' : 'Пока нет выгодной пары для обмена — данные ещё подгружаются или бумага в портфеле одна.';
-            var body0 = '<div class="rbw-empty">' + msg + '</div>';
-            return mainHtml('Шаг 3 из 4', 'Расчёт', '', body0,
-                footHtml('<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwGoStep(2)">← Назад · режим</button>', '', null), '', true);
-        }
-        var d = ctx.deal, isAnnual = ctx.kind === 'annual';
-        var sellNm = ctx.sellClass === 'bond' ? ctx.sell.name : ctx.sell.ticker;
-        // заголовок + подзаголовок (плейн, «зачем» одной фразой)
-        var title, sub, c;
-        if (isAnnual) {
-            c = ctx.c; var over = ctx.over, dev = over === 'stock' ? (c.stockPct - (100 - ctx.tb)) : (c.bondPct - ctx.tb);
-            title = 'Переложить ≈ ' + fmtRub(ctx.move) + ' из ' + (over === 'stock' ? 'акций в облигации' : 'облигаций в акции');
-            sub = (over === 'stock' ? 'Акций' : 'Облигаций') + ' стало больше цели на ' + d1(Math.abs(dev)) + '% — этот обмен вернёт портфель к цели ' + (100 - ctx.tb) + ' / ' + ctx.tb + '. Всё можно поправить: бумагу, количество.';
-        } else if (ctx.cls === 'bond') {
-            var sMom = ctx.sell.momYield, momStr = (sMom != null && isFinite(sMom)) ? ' (≈ ' + d1(sMom) + '% годовых)' : '';
-            var betterY = (ctx.sell.yield != null && ctx.buy.yield != null && ctx.buy.yield > ctx.sell.yield), moreB = d.more > 0;
-            title = betterY ? 'Продать выросшую — купить доходнее' : 'Обмен внутри облигаций';
-            sub = 'Продаём ' + esc(sellNm) + ': она выросла в цене' + momStr + ', выгодно зафиксировать. На выручку берём '
-                + (betterY ? 'бумагу доходнее к погашению' : 'выбранную бумагу')
-                + (moreB ? ' — и её выходит больше' : '') + '. Прибыль в день растёт, доли акций и облигаций те же.';
-        } else {
-            title = 'Обменять акцию на более перспективную';
-            sub = esc(sellNm) + ' по ожидаемому росту слабее другой бумаги того же уровня. Доля акций та же.';
-        }
-        // ── РАСКЛАДКА (мокап overview3, экран 21). Была тёмная плита обмена над
-        //    двумя списками и третьей колонкой-панелью «Что изменится» — три
-        //    уровня контраста спорили за внимание, а числа сделки при этом были
-        //    16px. Теперь обмен читается за секунду: светлая карточка во всю
-        //    ширину, −10 слева, +11 справа, круг ⇄ между ними, числа 38px —
-        //    самое крупное на экране. Панель эффекта свернулась в ОДНУ фразу
-        //    пользы под карточкой; мелочь (остаток, комиссия, налог) ушла в
-        //    тихую строку 12px. Годовой режим показывает над карточкой две
-        //    полосы долей: как сейчас и как станет.
-        var body = (isAnnual ? annualBars(ctx) : '') + swapCard(ctx, d)
-            + dealActs()
-            + (isAnnual ? '' : '<div class="rbw-wztwo">' + wzListHtml('sell', ctx, d) + wzListHtml('buy', ctx, d) + '</div>')
-            + '<div class="rbw-wztail">' + dealTail(ctx, d) + '</div>';
-        var back = '<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwGoStep(2)">← Назад</button>'
-            + '<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwWhatIf()">' + IC.eye + 'Что если</button>';
-        var nDeals = effectiveDeals().length;
-        var foot = footHtml(back, calcNote(ctx), { label: 'Дальше — оформить заявку' + (nDeals > 1 ? ' (' + nDeals + ')' : '') + ' <i>→</i>', onclick: 'rbwToBasket()' });
-        // тумблер класса — в правый верх шапки (только «В моменте»: годовой всегда акции↔облигации)
-        var headRight = (!isAnnual) ? '<div class="rbw-clswrap"><span class="rbw-clslbl">Меняем</span>' + clsToggle() + '</div>' : '';
-        return mainHtml('Шаг 3 из 4 · ' + (isAnnual ? 'Годовая' : 'В моменте'), title, sub, body, foot, headRight, true);
-    }
-    // ── КАРТОЧКА ОБМЕНА (мокап overview3, экран 21, п. 3) ──
-    // Плечо: подпись, бумага с цветным моно-кружком, ЧИСЛО 38px со знаком, цена
-    // и сумма тихой строкой. Между плечами круг ⇄ — он и означает «меняем».
-    // Знак и цвет несут смысл: отдаём красным со знаком минус, получаем синим
-    // со знаком плюс; на числа больше ничего не претендует.
-    function swapCard(ctx, d) {
-        function leg(isSell) {
-            var cls = isSell ? ctx.sellClass : ctx.buyClass, x = isSell ? ctx.sell : ctx.buy;
-            var name = cls === 'bond' ? x.name : x.ticker, qty = isSell ? d.qty : d.buyQty;
-            var unit = cls === 'bond' ? x.unit : x.price, sum = qty * unit;
-            var word = cls === 'bond' ? 'за бумагу' : 'за акцию';
-            return '<div class="rbw-swp-leg">'
-                + '<div class="rbw-swp-k">' + (isSell ? 'Отдаём' : 'Получаем') + '</div>'
-                + '<span class="rbw-swp-pick cls-' + cls + '"><i>' + mono2(name) + '</i>' + esc(name) + '</span>'
-                + '<div class="rbw-swp-q num ' + (isSell ? 'sell' : 'buy') + '">' + (isSell ? '−' : '+') + fmtQty(qty)
-                    + '<span>&nbsp;шт</span></div>'
-                + '<div class="rbw-swp-s num">' + f2(unit) + ' ₽ ' + word + ' · '
-                    + (isSell ? 'освободит ' : 'спишет ') + fmtRub(sum) + '</div></div>';
-        }
-        return '<div class="rbw-swp">' + leg(true)
-            + '<div class="rbw-swp-mid"><span>' + IC.swap + '</span></div>' + leg(false) + '</div>'
-            + '<div class="rbw-swp-foot"><span>' + dealUse(ctx, d) + '</span>'
-            + '<span class="rbw-swp-cnt"><em>Кол-во</em>'
-                + '<button type="button" class="rbw-swp-b" onclick="event.stopPropagation();rbwQtyStep(-1)">−</button>'
-                + '<b class="num rbw-qty-v">' + fmtQty(d.qty) + '</b>'
-                + '<button type="button" class="rbw-swp-b" onclick="event.stopPropagation();rbwQtyStep(1)">＋</button>'
-                + '<u>из ' + ctx.sell.qty + '</u></span></div>';
-    }
-    // ОДНА фраза пользы вместо панели «Что изменится»: ради чего меняем. Всё,
-    // что не влияет на решение, в неё не попадает — оно ниже, строкой 12px.
-    function dealUse(ctx, d) {
-        if (ctx.kind === 'annual') {
-            var aa = allocAfter(ctx.p, ctx), tb = ctx.tb;
-            return 'Доли встанут <b>' + Math.round(aa.stockPct) + ' / ' + Math.round(aa.bondPct) + '</b>'
-                + ' при цели <b>' + (100 - tb) + ' / ' + tb + '</b>, переложим <b>≈ ' + fmtRub(ctx.move) + '</b>';
-        }
-        if (ctx.cls === 'bond') {
-            var up = d.coupDelta > 0.5, by = ctx.buy.yield, sy = ctx.sell.yield;
-            return 'Бумаг станет <b>' + d.buyQty + '</b> вместо ' + d.qty
-                + (up ? ', купонов в год <b class="pos">+' + fmtRub(d.coupDelta) + '</b>' : ', купоны те же')
-                + (by != null && sy != null ? ', доходность <b>' + fmtPct(by) + '</b> вместо ' + fmtPct(sy) : '');
-        }
-        return 'Акций станет <b>' + d.buyQty + '</b> вместо ' + d.qty
-            + (d.potDelta != null ? ', ожидаемый рост <b class="pos">+' + d1(d.potDelta) + '%</b>' : '');
-    }
-    // Мелочь тихой строкой: остаток, комиссия, налог. Это не про решение —
-    // это про то, что решение не бесплатно.
-    function dealTail(ctx, d) {
-        var spend = d.buyQty * (ctx.buyClass === 'bond' ? ctx.buy.unit : ctx.buy.price);
-        var tax = saleTax(ctx.sell, d.qty), fee = (d.proceeds + spend) * feeTax().fee;
-        var out = ['остаток ' + fmtRub(d.rest), 'комиссия ≈ ' + fmtRub(fee)];
-        if (tax > 0.5) out.push('налог ≈ ' + fmtRub(tax));
-        else out.push('доплат не требуется');
-        return out.join(' · ');
-    }
-    // Действия по самой сделке живут рядом с ней, а не в подвале: подвал —
-    // про переход к следующему шагу, а эти две кнопки меняют текущий обмен.
-    function dealActs() {
-        return '<div class="rbw-dacts"><button type="button" class="rbw-fx-act pri" onclick="rbwAuto()">' + IC.spark + 'Подобрать выгоднее</button>'
-            + '<button type="button" class="rbw-fx-act" onclick="rbwCartAdd()">＋ Ещё обмен' + (rbw.cart.length ? ' (' + rbw.cart.length + ')' : '') + '</button></div>';
-    }
-    // Годовой режим: две полосы долей над карточкой обмена — как сейчас и как
-    // станет. Ступенька между ними и есть весь смысл шага.
-    function annualBars(ctx) {
-        var c = PF.calcPf(ctx.p), aa = allocAfter(ctx.p, ctx), tb = ctx.tb;
-        return '<div class="rbw-abars">'
-            + '<div><div class="rbw-abars-k">Как сейчас</div>' + fxBaRow('', c.stockPct, c.bondPct, tb, false) + '</div>'
-            + '<div><div class="rbw-abars-k">Как станет после обмена</div>' + fxBaRow('', aa.stockPct, aa.bondPct, tb, true) + '</div>'
-            + '<div class="rbw-fx-leg"><span><i class="st"></i>Акции</span><span><i class="bd"></i>Облигации</span><span><i class="tg"></i>Цель</span></div>'
-            + '</div>';
-    }
-    // полоса долей с насечкой цели (панель эффекта, годовой режим)
-    function fxBaRow(lbl, sPct, bPct, tb, on) {
-        return '<div class="rbw-fxba-row' + (on ? ' on' : '') + '"><em>' + lbl + '</em>'
-            + '<div class="rbw-fxba-bar"><i class="st" style="width:' + clamp(sPct, 0, 100) + '%"></i><i class="bd" style="width:' + clamp(bPct, 0, 100) + '%"></i>'
-            + (tb != null ? '<u style="left:' + clamp(100 - tb, 0, 100) + '%"></u>' : '') + '</div>'
-            + '<b class="num">' + Math.round(sPct) + ' / ' + Math.round(bPct) + '</b></div>';
-    }
-    // ── ДВА СПИСКА ПОД КАРТОЧКОЙ ОБМЕНА (мокап overview3, экран 21, п. 4) ──
-    // Слева «В портфеле» — то, что у вас есть; справа «На замену» — кандидаты.
-    // Метрика названа ОДИН раз в шапке колонки, а не в каждой строке: раньше
-    // «к погашению» и «потенциал» повторялись по восемь раз и съедали строку.
-    // Выбранная строка помечена кольцом; клик берёт другую пару и пересчитывает
-    // карточку обмена.
-    // Год погашения из расписания MOEX; нет данных — подпись просто другая.
-    function matYear(isin, det) {
-        var d = det || (PF.bondDetail ? PF.bondDetail(isinKey(isin)) : null) || {};
-        var m = d.matDate;
-        return (m && m !== '—' && String(m).length >= 4) ? String(m).slice(0, 4) : null;
-    }
-    function wzRow(side, id, cur, nm, sub, metric, qty) {
-        return '<div class="rbw-wzr' + (cur ? ' on' : '') + '" onclick="rbwChoose(\'' + side + '\',\'' + esc(id) + '\')">'
-            + '<span class="rd"></span>'
-            + '<span class="nm"><b>' + nm + '</b><span>' + sub + '</span></span>'
-            + '<span class="m num">' + metric + '</span><span class="q num">' + qty + '</span></div>';
-    }
-    function wzListHtml(side, ctx, d) {
-        var p = ctx.p, f = feeTax().fee, isSell = side === 'sell';
-        var cls = isSell ? ctx.sellClass : ctx.buyClass;
-        var proceeds = d ? d.proceeds : 0;
-        var title = isSell ? 'В портфеле' : 'На замену', metric, unitWord, rows = '', n = 0;
-        if (isSell) {
-            if (cls === 'bond') {
-                metric = 'рост в моменте · количество'; unitWord = 'выпуск';
-                var hb = heldBonds(p).slice().sort(function (a, b) { return (b.momYield || -1e9) - (a.momYield || -1e9); });
-                n = hb.length;
-                rows = hb.map(function (x) {
-                    var my = matYear(x.isin, x.det);
-                    return wzRow('sell', x.id, ctx.sell && isinKey(ctx.sell.isin) === isinKey(x.isin),
-                        esc(x.name), my ? 'погашение ' + my : 'в портфеле',
-                        x.momYield != null ? (x.momYield >= 0 ? '+' : '') + d1(x.momYield) + '%' : '—', x.qty + ' шт');
-                }).join('');
-            } else {
-                metric = 'потенциал · количество'; unitWord = 'бумага';
-                var hs = heldStocks(p).slice().sort(function (a, b) { return (a.pot || 1e9) - (b.pot || 1e9); });
-                n = hs.length;
-                rows = hs.map(function (x) {
-                    return wzRow('sell', x.id, ctx.sell && ctx.sell.ticker === x.ticker,
-                        esc(x.ticker), esc(x.name || ''), x.pot != null ? fmtPct(x.pot) : '—', x.qty + ' шт');
-                }).join('');
-            }
-        } else if (cls === 'bond') {
-            metric = 'доходность · цена'; unitWord = 'выпуск';
-            var held = {}; heldBonds(p).forEach(function (b) { held[isinKey(b.isin)] = 1; });
-            var cands = bondCands().filter(function (x) { return !ctx.sell || isinKey(x.isin) !== isinKey(ctx.sell.isin); })
-                .sort(function (a, b) { return (b.yield || -1e9) - (a.yield || -1e9); });
-            n = cands.length;
-            rows = cands.map(function (x) {
-                var cnt = x.unit > 0 ? Math.floor(proceeds / (x.unit * (1 + f))) : 0;
-                var mc = matYear(x.isin, null);
-                var sub = (mc ? 'погашение ' + mc : 'на выручку ' + cnt + ' шт')
-                    + (held[isinKey(x.isin)] ? ' · в портфеле' : '');
-                return wzRow('buy', x.isin, ctx.buy && isinKey(ctx.buy.isin) === isinKey(x.isin),
-                    esc(x.name), sub, x.yield != null ? fmtPct(x.yield) : '—', f2(x.unit) + ' ₽');
-            }).join('');
-        } else {
-            metric = 'потенциал · цена'; unitWord = 'бумага';
-            var ech = ctx.sell ? ctx.sell.ech : 0;
-            var sc = stockCandsFor(ech >= 1 ? ech : 0); if (!sc.length) sc = stockCandsFor(0);
-            sc = sc.filter(function (x) { return !ctx.sell || x.ticker !== ctx.sell.ticker; });
-            n = sc.length;
-            rows = sc.map(function (x) {
-                var pr = x.price > 0 ? x.price : stkPriceOf(x.ticker);
-                return wzRow('buy', x.ticker, ctx.buy && ctx.buy.ticker === x.ticker,
-                    esc(x.ticker), esc(x.name || ''), x.pot != null ? fmtPct(x.pot) : '—', f2(pr) + ' ₽');
+            chips = portfolios().map(function (p) {
+                return '<span class="r5-pf' + (p.id === rbw.pid ? ' on' : '') + '" onclick="rbwPickPf(\'' + esc(p.id) + '\')">'
+                    + esc(p.name) + (pfDot(p) ? '<i></i>' : '') + '</span>';
             }).join('');
         }
-        // пусто = котировки ещё едут: скелетоны в форме строк, не спиннер
-        var skr = '<div class="rbw-skrow"><span class="rbw-skc"><span class="rbw-sk" style="width:64%"></span><span class="rbw-sk s2" style="width:42%"></span></span><span class="rbw-sk" style="width:44px"></span></div>';
-        return '<div class="rbw-wzl"><div class="rbw-wzlh"><b>' + title + '</b>'
-            + '<em>' + n + ' ' + plur(n, unitWord, unitWord === 'выпуск' ? 'выпуска' : 'бумаги', unitWord === 'выпуск' ? 'выпусков' : 'бумаг') + '</em>'
-            + '<span>' + metric + '</span></div>'
-            + (rows || (skr + skr + skr + '<div class="rbw-sk-note">данные подгружаются…</div>')) + '</div>';
+        return '<div class="r5-top">'
+            + '<button class="r5-back" onclick="' + (o.backFn || 'rbwExit()') + '">' + BACK + esc(o.back || 'Портфели') + '</button>'
+            + '<div class="r5-brand"><em>' + esc(o.eyebrow) + '</em><b>' + esc(o.name) + '</b></div>'
+            + '<div class="r5-pfs">' + chips + '</div>'
+            + '<span class="r5-clock">MOEX · ' + clock() + '</span></div>';
     }
-    function allocRow(cls, lbl, cur, tgt) {
-        var dev = cur - tgt;
-        return '<div class="rbw-al ' + cls + '"><span>' + lbl + '</span>'
-            + '<div class="rbw-al-track"><i style="width:' + clamp(cur, 0, 100) + '%"></i><u style="left:' + clamp(tgt, 0, 100) + '%"></u></div>'
-            + '<b>' + d1(cur) + '<s>' + (dev >= 0 ? '+' : '−') + d1(Math.abs(dev)) + '</s></b></div>';
+    function stage(cls, inner, style) {
+        return '<div class="r5-stage' + (cls ? ' ' + cls : '') + '"' + (style ? ' style="' + style + '"' : '') + '>' + inner + '</div>';
     }
-    function clsToggle() {
-        return '<div class="rbw-cls"><span class="' + (rbw.cls === 'bond' ? 'on' : '') + '" onclick="rbwSetCls(\'bond\')">Облигации</span>'
-            + '<span class="' + (rbw.cls === 'stock' ? 'on' : '') + '" onclick="rbwSetCls(\'stock\')">Акции</span></div>';
+    var GLOW = '<div class="r5-glow"></div>';
+    function btn(label, onclick, mod, dis) {
+        return '<button class="r5-btn' + (mod ? ' ' + mod : '') + '"' + (dis ? ' disabled' : ' onclick="' + onclick + '"') + '>' + label + '</button>';
     }
-    /* ── мультизаявка: снимок сделки и корзина ── */
-    function dealSnapshot(ctx) {
-        var d = ctx.deal;
-        var sellUnit = ctx.sellClass === 'bond' ? ctx.sell.unit : ctx.sell.price;
-        var buyUnit = ctx.buyClass === 'bond' ? ctx.buy.unit : ctx.buy.price;
-        return {
-            kind: ctx.kind, cls: ctx.cls, sellClass: ctx.sellClass, buyClass: ctx.buyClass,
-            sell: { id: ctx.sell.id, isin: ctx.sell.isin, ticker: ctx.sell.ticker, name: ctx.sell.name, price: ctx.sell.price, nkd: ctx.sell.nkd, unit: sellUnit, buy: ctx.sell.buy, det: ctx.sell.det, t: ctx.sell.t, coupon: ctx.sell.coupon, freq: ctx.sell.freq },
-            buy: { isin: ctx.buy.isin, ticker: ctx.buy.ticker, name: ctx.buy.name, price: ctx.buy.price, nkd: ctx.buy.nkd, unit: buyUnit, coupon: ctx.buy.coupon, freq: ctx.buy.freq, pot: ctx.buy.pot, t: ctx.buy.t, det: ctx.buy.det },
-            qty: d.qty, buyQty: d.buyQty, proceeds: d.proceeds, rest: d.rest, coupDelta: d.coupDelta, potDelta: d.potDelta
-        };
-    }
-    function sameDeal(a, b) {
-        if (!a || !b || a.sell.id !== b.sell.id) return false;
-        return a.buyClass === 'bond' ? isinKey(a.buy.isin) === isinKey(b.buy.isin) : a.buy.ticker === b.buy.ticker;
-    }
-    function curDraft() { var ctx = dealCtx(); return (ctx && ctx.sell && ctx.buy && ctx.deal && ctx.deal.buyQty > 0) ? dealSnapshot(ctx) : null; }
-    // все обмены к исполнению: корзина + текущий черновик (если не дубль уже добавленного)
-    function effectiveDeals() {
-        var arr = rbw.cart.slice(), dr = curDraft();
-        if (dr && !arr.some(function (x) { return sameDeal(x, dr); })) arr.push(dr);
-        return arr;
-    }
-    function calcNote(ctx) {
-        if (ctx.kind === 'annual') return 'Продаём часть того, чего перебор, и на эти деньги докупаем недостающее — доли возвращаются к цели. Бумаги и количество можно поменять.';
-        if (ctx.cls === 'bond') return 'Продаём облигацию, которая сильнее всех выросла в цене (забираем прибыль), и берём доходнее к погашению и дешевле — поэтому бумаг выходит больше. Бумаги можно поменять.';
-        return 'Продаём акцию послабее и берём более перспективную того же уровня. Бумаги можно поменять.';
+    function quiet(label, onclick, chev) {
+        return '<span class="r5-quiet"' + (onclick ? ' onclick="' + onclick + '"' : '') + '>' + label + (chev ? '\n        ' + CHEV : '') + '</span>';
     }
 
-    /* ── шаг 3 · авто ── */
-    function autoVariants(p) {
-        var vs = [];
-        var c = PF.calcPf(p), tb = targetBond(p);
-        if (c.stockVal > 0 && c.bondVal > 0 && Math.abs(c.bondPct - tb) >= driftThr(p)) {
-            var over = overClass(p), move = over === 'bond' ? (c.bondVal - c.value * tb / 100) : (c.stockVal - c.value * (100 - tb) / 100);
-            vs.push({ key: 'annual', ic: 'a', icon: IC.scale, title: 'Вернуть доли к цели', mode: 'способ «Годовая» · акции ↔ облигации',
-                pair: (over === 'stock' ? 'Акции → облигации' : 'Облигации → акции'),
-                line: 'переложить ≈ ' + fmtRub(Math.max(0, move)) + ' · доли ' + Math.round(c.stockPct) + ' / ' + Math.round(c.bondPct) + ' → ' + (100 - tb) + ' / ' + tb,
-                desc: (over === 'stock' ? 'Акций' : 'Облигаций') + ' больше цели на ' + d1(Math.abs(c.bondPct - tb)) + '%. Переложить ≈ ' + fmtRub(Math.max(0, move)) + ', чтобы вернуть к ' + (100 - tb) + ' / ' + tb + '.',
-                gain: '≈ ' + fmtRub(Math.max(0, move)), gsub: 'переложено к цели' });
-        }
-        var ab = autoBondPair(p);
-        if (ab) {
-            var bs = heldBonds(p), cd = bondCands();
-            var s = find(bs, function (x) { return x.id === ab.sellId; }), b = find(cd, function (x) { return x.isin === ab.buyId; });
-            if (s && b) { var dd = computeBondDeal(p, s, b); var more = dd.buyQty - dd.qty; vs.push({ key: 'moment-bond', ic: 'b', icon: IC.coin, title: 'Зафиксировать рост и купить доходную', mode: 'способ «В моменте» · внутри облигаций',
-                pair: esc(s.name) + ' → ' + esc(b.name),
-                line: 'продать ' + dd.qty + ' шт, купить ' + dd.buyQty + ' шт'
-                    + ((s.yield != null && b.yield != null) ? ' · доходность ' + fmtPct(s.yield) + ' → ' + fmtPct(b.yield) : ''),
-                desc: esc(s.name) + ' сильнее всех выросла' + (s.momYield != null ? ' (≈ ' + d1(s.momYield) + '%/год)' : '') + ' — продаём и берём ' + esc(b.name) + ' доходнее' + (b.yield != null ? ' (' + fmtPct(b.yield) + ')' : '') + ' и дешевле: облигаций ' + dd.qty + ' → ' + dd.buyQty + '.',
-                gain: more > 0 ? '+' + more + ' ' + plur(more, 'бумага', 'бумаги', 'бумаг') : (b.yield != null ? fmtPct(b.yield) : '+доход'), gsub: more > 0 ? 'на ту же сумму' : 'доходность', sellId: s.id, buyId: b.isin }); }
-        }
-        var as = autoStockPair(p);
-        if (as) {
-            var ss = heldStocks(p);
-            var s2 = find(ss, function (x) { return x.id === as.sellId; }), cands = stockCandsFor(0);
-            var b2 = find(cands, function (x) { return x.ticker === as.buyId; });
-            if (s2 && b2 && b2.pot != null && s2.pot != null) { var ds2 = computeStockDeal(s2, b2); vs.push({ key: 'moment-stock', ic: 's', icon: IC.bars, title: 'Акции с бо́льшим потенциалом', mode: 'способ «В моменте» · внутри акций',
-                pair: esc(s2.ticker) + ' → ' + esc(b2.ticker),
-                line: 'продать ' + ds2.qty + ' шт, купить ' + ds2.buyQty + ' шт · потенциал ' + fmtPct(s2.pot) + ' → ' + fmtPct(b2.pot),
-                desc: 'У ' + esc(s2.ticker) + ' ожидаемый рост ' + fmtPct(s2.pot) + ', у ' + esc(b2.ticker) + ' — ' + fmtPct(b2.pot) + '. Меняем на более перспективную, доля акций та же.',
-                gain: '+' + f2(b2.pot - s2.pot) + '%', gsub: 'ожидаемый рост', sellId: s2.id, buyId: b2.ticker }); }
-        }
-        return vs;
+    /* ── две полосы «Сейчас / По плану» (сцены 02 и 12) ── */
+    function browPair(stockNow, stockPlan) {
+        var n = pct0(stockNow), pl = pct0(stockPlan);
+        return '<div class="r5-brow"><em>Сейчас</em>'
+            + '<span class="r5-bbar"><i class="st" style="width:' + n + '%"></i><i class="bd" style="width:' + (100 - n) + '%"></i></span>'
+            + '<b class="num">' + n + ' / ' + (100 - n) + '</b></div>'
+            + '<div class="r5-brow plan"><em>По плану</em>'
+            + '<span class="r5-bbar"><i class="st" style="width:' + pl + '%"></i><i class="bd" style="width:' + (100 - pl) + '%"></i></span>'
+            + '<b class="num">' + pl + ' / ' + (100 - pl) + '</b></div>';
     }
-    function find(arr, fn) { for (var i = 0; i < arr.length; i++) if (fn(arr[i])) return arr[i]; return null; }
-    function stepAuto() {
+
+    /* ═══ СЦЕНА 01 · «Что происходит» ═══ */
+    function viewDiag() {
         var p = curPf();
-        var vs = autoVariants(p);
-        if (!vs.length) {
-            var body0 = '<div class="rbw-autolist"><div class="rbw-empty">Сейчас ребаланс не окупит комиссий — доли в норме, а бумаги работают хорошо. Загляните позже.</div></div>';
-            return mainHtml('Шаг 3 из 4 · Авто', 'Выгодных вариантов пока нет', '', body0,
-                footHtml('<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwGoStep(2)">← Назад · режим</button>', '', null));
-        }
-        if (rbw.autoIdx == null || rbw.autoIdx >= vs.length) rbw.autoIdx = 0;
-        // СТРОКИ, А НЕ КАРТОЧКИ (мокап overview3, экран 21, п. 5): каждый вариант —
-        // уже посчитанный обмен, и от него нужны три вещи: пара, что с ней делаем,
-        // сколько это даёт. Иконка режима и пилюля «Выбрать» не нужны ни одной из них.
-        var body = '<div class="rbw-wzauto">' + vs.map(function (v, i) {
-            return '<div class="rbw-wza' + (i === rbw.autoIdx ? ' on' : '') + '" onclick="rbwPickAuto(' + i + ')">'
-                + '<span class="rd"></span>'
-                + '<span class="tx"><b>' + (v.pair || v.title) + '</b><span>' + (v.line || v.desc) + '</span></span>'
-                + '<span class="fig"><b>' + v.gain + '</b><span>' + v.gsub + '</span></span></div>';
-        }).join('') + '</div>'
-        + '<div class="rbw-wn info"><span class="ic">' + IC.info + '</span>'
-        + '<span><b>Варианты не суммируются.</b> Берём один: после обмена состав меняется, '
-        + 'и остальные пары мастер пересчитает заново.</span></div>';
-        var back = '<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwGoStep(2)">← Назад</button>';
-        var foot = footHtml(back, 'Выбран вариант ' + (rbw.autoIdx + 1) + ' из ' + vs.length,
-            { label: 'Показать расчёт <i>→</i>', onclick: 'rbwOpenAuto()' });
-        return mainHtml('Шаг 3 из 4 · Авто', 'Готовые варианты',
-            'Мастер перебрал пары в обоих классах. Каждый вариант — уже посчитанный обмен: что продать, что купить и сколько это даёт.', body, foot);
-    }
+        if (!p) return viewNoPf();
+        if (!annualOk(p)) return viewCalm();
+        var c = PF.calcPf(p), tgtStock = 100 - targetBond(p), dev = c.stockPct - tgtStock;
+        if (Math.abs(dev) < driftThr(p)) return viewCalm();
 
-    /* ── шаг 4 · корзина ── */
-    function dealName(x) { return x.name || x.ticker || '—'; }
-    function allocAfterCart(p, deals) {
-        var c = PF.calcPf(p), bondV = c.bondVal, stockV = c.stockVal;
-        deals.forEach(function (dl) {
-            var sV = dl.qty * dl.sell.unit, bV = dl.buyQty * dl.buy.unit;
-            if (dl.sellClass === 'bond') bondV -= sV; else stockV -= sV;
-            if (dl.buyClass === 'bond') bondV += bV; else stockV += bV;
-        });
-        var tot = bondV + stockV;
-        return { bondPct: tot > 0 ? bondV / tot * 100 : 0, stockPct: tot > 0 ? stockV / tot * 100 : 0 };
-    }
-    /* №7 «Что если»: предпросмотр эффекта БЕЗ применения (портфель не трогаем) */
-    function buildWhatIf(p, deals) {
-        var c = PF.calcPf(p), ft = feeTax();
-        var before = { stockPct: c.stockPct, bondPct: c.bondPct };
-        var after = allocAfterCart(p, deals);
-        var coupBefore = heldBonds(p).reduce(function (s, x) { return s + x.coupYear; }, 0), coupAfter = coupBefore;
-        var proceeds = 0, spend = 0, rest = 0, tax = 0;
-        deals.forEach(function (dl) {
-            proceeds += dl.proceeds; spend += dl.buyQty * dl.buy.unit; rest += dl.rest; tax += saleTax(dl.sell, dl.qty);
-            var addC = dl.buyClass === 'bond' ? dl.buyQty * (dl.buy.coupon || 0) * (dl.buy.freq || 0) : 0;
-            var subC = dl.sellClass === 'bond' ? dl.qty * (dl.sell.coupon || 0) * (dl.sell.freq || 0) : 0;
-            coupAfter += (addC - subC);
-        });
-        return { before: before, after: after, coupBefore: coupBefore, coupAfter: coupAfter,
-            proceeds: proceeds, spend: spend, rest: rest, fee: (proceeds + spend) * ft.fee, tax: tax, value: c.value };
-    }
-    function baMini(before, after) {
-        function bar(a) { return '<div class="rbw-ba-mini"><i class="st" style="width:' + Math.round(a.stockPct) + '%"></i><i class="bd" style="width:' + Math.round(a.bondPct) + '%"></i></div>'
-            + '<div class="rbw-ba-cap"><span>Акции ' + Math.round(a.stockPct) + '</span><span>Обл. ' + Math.round(a.bondPct) + '</span></div>'; }
-        return '<div class="rbw-ba"><div class="rbw-ba-b"><em>сейчас</em>' + bar(before) + '</div><div class="rbw-ba-ar">→</div><div class="rbw-ba-a"><em>станет</em>' + bar(after) + '</div></div>';
-    }
-    function whatIfHtml() {
-        var p = curPf(); if (!p) return '';
-        var deals = effectiveDeals(); if (!deals.length) return '';
-        var w = buildWhatIf(p, deals);
-        var coupCard = (w.coupAfter > w.coupBefore + 0.5)
-            ? '<div class="rbw-done-c"><em>Купоны · доход в год</em><div class="rbw-mmini"><div class="rbw-mm-big">+' + fmtRub(w.coupAfter - w.coupBefore) + '</div>'
-                + '<div class="rbw-mm-t">' + fmtRub(w.coupBefore) + ' → <b>' + fmtRub(w.coupAfter) + '</b> в год</div></div></div>' : '';
-        return '<div class="rbw-wi-back" onclick="rbwWhatIfClose()"></div>'
-            + '<div class="rbw-wi"><div class="rbw-wi-h"><b>Что если применить?</b><span class="rbw-wi-x" onclick="rbwWhatIfClose()">✕</span></div>'
-            + '<p class="rbw-wi-sub">Предпросмотр эффекта — портфель <b>не меняется</b>, ничего не выставляется.</p>'
-            + '<div class="rbw-wi-cards"><div class="rbw-done-c"><em>Доли по классам</em>' + baMini(w.before, w.after) + '</div>' + coupCard + '</div>'
-            + '<div class="rbw-wi-tot">'
-            + '<span><em>Оборот</em><b>' + fmtRub(w.proceeds + w.spend) + '</b></span>'
-            + '<span><em>Остаток</em><b>' + fmtRub(w.rest) + '</b></span>'
-            + '<span><em>Комиссия</em><b>≈ ' + fmtRub(w.fee) + '</b></span>'
-            + (w.tax > 0.5 ? '<span><em>Налог</em><b>≈ ' + fmtRub(w.tax) + '</b></span>' : '')
+        var over = dev > 0 ? 'stock' : 'bond', ad = Math.abs(dev);
+        var move = Math.max(0, over === 'stock' ? (c.stockVal - c.value * tgtStock / 100) : (c.bondVal - c.value * targetBond(p) / 100));
+        var lo = Math.min(c.stockPct, tgtStock), w = ad;
+
+        var head = '<div class="r5-kick">Портфель «' + esc(p.name) + '» · <b>' + rub(c.value) + '</b> · план ' + planStr(p) + '</div>'
+            + '<div class="r5-h1">' + (over === 'stock' ? 'Акций' : 'Облигаций') + ' стало больше плана '
+                + '<span style="color:var(--amb)">на ' + d1(ad) + ' %</span>.</div>'
+            + '<div class="r5-sub" style="max-width:820px">Так бывает само собой: ' + (over === 'stock' ? 'акции выросли сильнее облигаций' : 'облигации выросли сильнее акций')
+                + ', и портфель стал ' + (over === 'stock' ? 'рискованнее' : 'осторожнее') + ', чем вы задумывали. Это лечится <b>одним обменом</b> — '
+                + 'заштрихованный кусок и есть те деньги, которые надо переложить.</div>';
+
+        var bar = '<div class="r5-hb">'
+            + '<div class="r5-hb-hd">'
+                + '<div class="s"><b class="num st">' + pct0(c.stockPct) + ' %</b><span>Акции · ' + rub(c.stockVal) + '</span></div>'
+                + '<div class="s r"><b class="num bd">' + pct0(c.bondPct) + ' %</b><span>Облигации · ' + rub(c.bondVal) + '</span></div>'
             + '</div>'
-            + '<div class="rbw-wi-foot"><button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwWhatIfClose()">Закрыть</button>'
-            + '<button type="button" class="rbw-btn rbw-btn-dark" onclick="rbwWhatIfClose();rbwGoStep(4)">К заявке →</button></div></div>';
-    }
-    function stepBasket() {
-        var p = curPf(); if (!p) { rbw.step = 1; return stepPortfolio(); }
-        var deals = effectiveDeals();
-        if (!deals.length) { rbw.step = 3; return stepCalc(); }
-        var ft = feeTax(), proceeds = 0, spend = 0, rest = 0, tax = 0, nLegs = 0;
-        deals.forEach(function (dl) { proceeds += dl.proceeds; spend += dl.buyQty * dl.buy.unit; rest += dl.rest; tax += saleTax(dl.sell, dl.qty); nLegs += 2; });
-        var fee = (proceeds + spend) * ft.fee;
-        var broker = !!p.broker, canTr = broker && brokerCanTrade(), cash = p.cash || 0;
-        // КОРЗИНА (мокап overview3, экран 21, п. 6): строка на заявку и ОДНА сводка
-        // тремя парами вместо полосы из пяти плиток. Предупреждения — блоки .rbw-wn
-        // с иконкой: янтарный про T+1-очередь (это не запрет, а порядок исполнения),
-        // серый — справка. Замка нигде нет: мастер объясняет, а не запрещает.
-        var chips = '';
-        if (rbw.cart.length) {
-            chips = '<div class="rbw-cart-chips">' + rbw.cart.map(function (dl, i) {
-                return '<span class="rbw-cchip">' + esc(dealName(dl.sell)) + ' → ' + esc(dealName(dl.buy)) + '<b onclick="rbwCartDel(' + i + ')" title="убрать">✕</b></span>';
-            }).join('') + (deals.length > rbw.cart.length ? '<span class="rbw-cchip cur">＋ текущий: ' + esc(dealName(deals[deals.length - 1].sell)) + ' → ' + esc(dealName(deals[deals.length - 1].buy)) + '</span>' : '') + '</div>';
-        }
-        var legs = deals.map(function (dl) {
-            return legHtml('sell', dl.sellClass, dl.sell, dl.qty, '+' + fmtRub(dl.proceeds), rbw.ord.sell)
-                + legHtml('buy', dl.buyClass, dl.buy, dl.buyQty, '−' + fmtRub(dl.buyQty * dl.buy.unit), rbw.ord.buy);
-        }).join('');
-        var sum = '<div class="rbw-osum"><span>Остаток</span><b class="num">' + fmtRub(rest) + '</b>'
-            + '<span>Комиссия</span><b class="num">≈ ' + fmtRub(fee) + '</b>'
-            + (tax > 0.5 ? '<span>Налог</span><b class="num">≈ ' + fmtRub(tax) + '</b>'
-                : '<span>Доплат</span><b>не требуется</b>') + '</div>';
-        var warns = '';
-        if (broker && canTr && cash < spend - 0.5) {
-            warns += wn('warn', '!', '<b>Деньги от продажи придут завтра (T+1).</b> Свободно ' + fmtRub(cash)
-                + ' — на всю покупку не хватает. Покупка встанет в очередь и уйдёт автоматически, как только средства окажутся на счёте. Отменить очередь можно в «Заявках».');
-        }
-        if (rbw.ord.buy === 'limit' || rbw.ord.sell === 'limit') {
-            warns += wn('info', IC.info, '<b>Лимит</b> — сделка пройдёт по указанной цене (или лучше), но может подождать, пока рынок до неё дойдёт. <b>Рыночная</b> — сразу по текущей цене, она может чуть отличаться от показанной.');
-        }
-        warns += !broker
-            ? wn('info', IC.info, 'Обмен' + (deals.length > 1 ? 'ы' : '') + ' <b>применится к портфелю сразу</b> и попадёт в историю сделок — можно отменить. Реальные заявки брокеру идут только у портфелей, подключённых к счёту.')
-            : (canTr
-                ? wn('warn', '!', 'Это <b>зеркало брокерского счёта</b>. По кнопке уйдут <b>реальные заявки</b> брокеру Т-Инвестиций (' + nLegs + ' шт). Спросим подтверждение. Состав обновится синком.')
-                : wn('info', IC.info, 'Это <b>зеркало брокерского счёта</b>, а торгующее подключение не активно. Мастер подготовит тикеты в терминале Т-Инвестиций — там один тап на отправку.'));
-        var body = chips + '<div class="rbw-ord">' + legs + sum + '</div>' + warns;
-        var back = '<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwGoStep(3)">← Назад</button>'
-            + '<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwWhatIf()">' + IC.eye + 'Что если</button>';
-        var primaryLabel = rbw.executing ? 'Отправляем…' : (broker ? (canTr ? 'Выставить ' + (nLegs > 1 ? 'все заявки' : 'заявку') + ' <i>→</i>' : 'Открыть в терминале <i>→</i>') : 'Применить ' + (deals.length > 1 ? deals.length + ' ' + plur(deals.length, 'обмен', 'обмена', 'обменов') : 'обмен') + ' <i>→</i>');
-        var hint = broker ? 'после отправки заявки видны в «Ребалансе» и в терминале' : 'применится к портфелю с записью в историю';
-        var foot = footHtml(back, hint, { label: primaryLabel, onclick: 'rbwExecute()' }, rbw.executing);
-        return mainHtml('Шаг 4 из 4', nLegs === 2 ? 'Две заявки' : nLegs + ' ' + plur(nLegs, 'заявка', 'заявки', 'заявок'),
-            (broker ? 'Продажа и покупка уйдут в терминал Т-Инвестиций.' : 'Продажа и покупка применятся к портфелю.')
-            + ' Тип каждой можно поменять здесь же — по рынку или лимитом.', body, foot);
-    }
-    // блок-предупреждение мастера: иконка в кружке + текст. Тон несёт только
-    // иконка и подложка, сам текст остаётся обычным (мокап, .wn)
-    function wn(tone, icon, html) {
-        return '<div class="rbw-wn ' + tone + '"><span class="ic">' + icon + '</span><span>' + html + '</span></div>';
-    }
-    function legHtml(side, cls, x, qty, sumVal, ordType) {
-        var name = cls === 'bond' ? x.name : x.ticker;
-        var mat = cls === 'bond' ? matYear(x.isin, x.det) : null;
-        var sub = (side === 'sell' ? 'Продаём' : 'Покупаем')
-            + (mat ? ' · погашение ' + mat : (cls === 'stock' && x.name && x.name !== x.ticker ? ' · ' + esc(x.name) : ''));
-        return '<div class="rbw-o"><span class="mono cls-' + cls + '">' + mono2(name) + '</span>'
-            + '<span class="tx"><b>' + esc(name) + '</b><span>' + sub + '</span></span>'
-            + '<span class="ty"><b class="' + (ordType === 'market' ? 'on' : '') + '" title="Сразу по текущей цене" onclick="rbwOrd(\'' + side + '\',\'market\')">По рынку</b>'
-                + '<b class="' + (ordType === 'limit' ? 'on' : '') + '" title="По указанной цене; может подождать" onclick="rbwOrd(\'' + side + '\',\'limit\')">Лимит</b></span>'
-            + '<span class="qt num">' + fmtQty(qty) + ' шт</span>'
-            + '<span class="vl num' + (side === 'sell' ? ' pos' : '') + '">' + sumVal + '</span></div>';
-    }
-
-    /* ── квитанция ── */
-    function screenReceipt() {
-        var r = rbw.receipt; if (!r) { rbw.step = 4; return stepBasket(); }
-        var d = new Date(), tm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-        // КВИТАНЦИЯ (мокап overview3, экран 21, п. 7). Квитанция не врёт про
-        // частичное: у каждой ноги честное «8 из 11», статус — цветная точка,
-        // а не слово-ярлык, и комиссия считается только с ИСПОЛНЕННОГО.
-        var anyPart = false;
-        var rows = r.legs.map(function (l) {
-            if (l.st === 'part' || l.st === 'open') anyPart = true;
-            var tone = l.st === 'done' ? 'ok' : l.st === 'rej' ? 'bad' : 'warn';
-            var what = (l.side === 'sell' ? 'продажа' : 'покупка')
-                + (l.ordType === 'limit' ? ' лимитом' : ' по рынку')
-                + (l.st === 'part' ? ' · остаток ждёт в очереди' : l.st === 'rej' ? ' · отклонена' : '');
-            return '<div class="rbw-rc-r"><span class="st ' + tone + '"></span>'
-                + '<span class="tx"><b>' + esc(l.name) + '</b><span>' + what + '</span></span>'
-                + '<span class="vl num">' + esc(l.note || (l.qty + ' шт')) + '<em>' + l.val
-                + (l.orderId && l.st === 'part' ? ' · <a class="rbw-rl-cancel" onclick="rbwCancelOrder(\'' + esc(l.orderId) + '\')">отменить</a>' : '')
-                + '</em></span></div>';
-        }).join('');
-        var st = anyPart ? { ic: '◐', tone: 'warn', t: 'Исполнено частично' } : { ic: '✓', tone: 'ok', t: r.title };
-        var body = '<div class="rbw-rc">'
-            + '<div class="rbw-rc-h"><span class="ic ' + st.tone + '">' + st.ic + '</span>'
-                + '<h4>' + st.t + '</h4><p>' + fmtDate(todayIso()) + ', ' + tm + ' · ' + esc(r.sub) + '</p></div>'
-            + rows
-            + r.tot.map(function (t, i) {
-                return '<div class="rbw-rc-tot' + (i ? ' plain' : '') + '"><span>' + t[0] + '</span><b class="num">' + t[1] + '</b></div>';
-            }).join('')
+            + '<div class="r5-bar">'
+                + (over === 'stock'
+                    ? '<i class="st" style="width:' + tgtStock + '%"></i><i class="over" style="width:' + ad + '%"></i><i class="bd" style="width:' + (100 - c.stockPct) + '%"></i>'
+                    : '<i class="st" style="width:' + c.stockPct + '%"></i><i class="over" style="width:' + ad + '%"></i><i class="bd" style="width:' + (100 - tgtStock) + '%"></i>')
+                + '<u class="tgt" style="left:' + tgtStock + '%"></u>'
+                + '<span class="tgtlbl" style="left:' + tgtStock + '%">план ' + planStr(p) + '</span>'
+                + '<span class="r5-brace" style="left:' + lo + '%;width:' + w + '%"></span>'
+                + '<span class="r5-bracelbl" style="left:' + (lo + w / 2) + '%"><b>' + rub(move) + '</b><span>столько нужно переложить</span></span>'
             + '</div>'
-            + wn(anyPart ? 'ok' : 'info', anyPart ? '✓' : IC.info, r.foot);
-        var foot = footHtml('', '', { label: 'Готово <i>→</i>', onclick: 'rbwGoDone()' });
-        return mainHtml('Шаг 4 из 4 · Квитанция', 'Что получилось',
-            anyPart ? 'Часть заявки исполнилась сразу, остаток живёт в терминале — звоночек придёт, когда он доисполнится.'
-                : 'Заявки исполнены полностью. Записи уже в истории портфеля.', body, foot);
+            + '<div class="r5-legend">'
+                + '<span><i class="st"></i>акции</span><span><i class="bd"></i>облигации</span>'
+                + '<span><i class="hz"></i>сверх плана — это и есть будущая сделка</span><span><i class="tg"></i>план</span>'
+            + '</div></div>';
+
+        var acts = '<div class="r5-acts" style="margin-top:36px;padding-bottom:0">'
+            + btn('Что можно сделать ' + ARR, 'rbwGo(\'pick\')')
+            + quiet('Изменить план портфеля', 'rbwEditPlan()')
+            + '<span class="sp"></span>'
+            + quiet('Ничего не делать, напомнить через год', 'rbwRemind(12)')
+            + '</div>';
+
+        return topHtml({ eyebrow: 'Ребаланс', name: p.name })
+            + stage('center', GLOW + head + bar + acts);
     }
 
-    /* ── готово ── */
-    function screenDone() {
-        var p = curPf(), r = rbw.receipt;
-        if (!p) { rbw.step = 1; return stepPortfolio(); }
-        var before = (r && r.alloc) ? r.alloc.before : null, after = (r && r.alloc) ? r.alloc.after : null;
-        var c = PF.calcPf(p), tb = hasTarget(p) ? Math.round(100 - targetBond(p)) : null;
-        // «ГОТОВО» — ТРИ ИТОГА И ДАТА (мокап overview3, экран 21, п. 8). Была
-        // страница-поздравление: галочка в кружке, заголовок, абзац и карточки
-        // разной природы. Осталось то, ради чего сверялись: полоса долей, три
-        // числа в одном формате и дата следующей сверки.
-        function dn(k, v, s2, pos) {
-            return '<div class="rbw-dn-c"><div class="k">' + k + '</div>'
-                + '<div class="v num' + (pos ? ' pos' : '') + '">' + v + '</div>'
-                + '<div class="s">' + s2 + '</div></div>';
-        }
-        var cards = '';
-        if (before && after) {
-            var dBefore = tb != null ? Math.abs(before.stockPct - tb) : null;
-            var dAfter = tb != null ? Math.abs(after.stockPct - tb) : null;
-            cards += dn('Доли', Math.round(after.stockPct) + ' / ' + Math.round(after.bondPct),
-                'было ' + Math.round(before.stockPct) + ' / ' + Math.round(before.bondPct)
-                + (dBefore != null ? ' · дрейф ' + d1(dBefore) + ' → ' + d1(dAfter) + ' п.п.' : ''));
-        }
-        var nB = heldBonds(p).reduce(function (a, x) { return a + x.qty; }, 0);
-        if (r && r.coup) {
-            cards += dn('Облигаций', fmtQty(nB) + ' <span>шт</span>', 'после обмена · без единой доплаты');
-            cards += dn('Купонов в год', '+' + fmtRub(r.coup.delta),
-                fmtRub(r.coup.beforeRub) + ' → ' + fmtRub(r.coup.afterRub) + ' в год', true);
-        } else if (r && r.forecast) {
-            var fc = r.forecast;
-            cards += dn('Купонами за год', '≈ ' + fmtRub(fc.coupYear), d1(fc.yieldPct) + '% на весь портфель');
-            cards += dn('Стоимость', fmtRub(c.value), (p.holdings || []).length + ' ' + plur((p.holdings || []).length, 'позиция', 'позиции', 'позиций'));
+    /* ═══ СЦЕНА 12 · «Здесь всё в порядке» ═══ */
+    function viewCalm() {
+        var p = curPf();
+        if (!p) return viewNoPf();
+        var c = PF.calcPf(p), hasT = annualOk(p), tgtStock = 100 - targetBond(p);
+        var dev = hasT ? Math.abs(c.stockPct - tgtStock) : null;
+        var sub = hasT
+            ? 'У вас <b>' + pct0(c.stockPct) + ' % акций и ' + pct0(c.bondPct) + ' % облигаций</b> — это и есть ваш план. '
+                + 'Обмен на такой разнице стоил бы дороже, чем дал бы. <b>Делать ничего не нужно.</b>'
+            : (oneClass(p)
+                ? 'В портфеле бумаги одного типа — выравнивать акции с облигациями нечего. <b>Доступен только обмен «в моменте».</b>'
+                : 'Плана по долям у этого портфеля нет — сверять не с чем. <b>Задайте план, и мастер посчитает обмен.</b>');
+
+        var body = '<div class="r5-calm">'
+            + '<div class="r5-kick">Портфель «' + esc(p.name) + '» · <b>' + rub(c.value) + '</b></div>'
+            + '<div class="r5-h1" style="font-size:52px">' + (hasT ? 'Здесь всё в порядке.' : (oneClass(p) ? 'Здесь один тип бумаг.' : 'План не задан.')) + '</div>'
+            + '<div class="r5-sub" style="font-size:16.5px;max-width:780px">' + sub + '</div>'
+            + (hasT ? '<div style="margin-top:36px;max-width:820px">' + browPair(c.stockPct, tgtStock) + '</div>' : '')
+            + '<div class="r5-acts" style="margin-top:0;padding-top:38px">'
+                + (hasT ? btn('Напомнить ' + fmtDate(nextReviewOf(p)), 'rbwRemind(12)', 'ghost')
+                        : btn('Задать план портфеля ' + ARR, 'rbwEditPlan()'))
+                + quiet('Изменить план портфеля', 'rbwEditPlan()')
+                + quiet('Сверить другой портфель', 'rbwNextPf()')
+            + '</div></div>';
+
+        var best = momentBest(p);
+        var hint = best ? '<div class="r5-hint">'
+            + '<div class="t"><b>Одна возможность всё-таки есть.</b> Ваша ' + esc(nameOf(best.sell, best.cls))
+                + ' подорожала на ' + d1(growPct(best.sell)) + ' % — её можно продать и на те же деньги взять больше бумаг подешевле. '
+                + 'Доли при этом не сдвинутся.</div>'
+            + '<span class="sp" style="flex:1"></span>'
+            + btn('Посмотреть обмен', 'rbwStartMoment()', 'ghost')
+            + '</div>' : '';
+
+        return topHtml({ eyebrow: 'Ребаланс', name: p.name })
+            + stage('', body + hint, 'padding-top:96px');
+    }
+
+    /* ═══ СЦЕНА 02 · «Что будем делать» ═══ */
+    function viewPick() {
+        var p = curPf();
+        if (!p) return viewNoPf();
+        var c = PF.calcPf(p), tgtStock = 100 - targetBond(p), dev = c.stockPct - tgtStock, ad = Math.abs(dev);
+        var hasT = annualOk(p), reco = hasT && ad >= driftThr(p);
+
+        var noteA = hasT
+            ? (ad >= driftThr(p)
+                ? (dev > 0 ? 'Акций' : 'Облигаций') + ' у вас <b>на ' + d1(ad) + ' % больше</b>, чем вы задумывали. Один обмен это выправит.'
+                : 'Доли держатся плана — расхождение всего ' + d1(ad) + ' %. Обмен сейчас почти ничего не изменит.')
+            : (oneClass(p) ? 'Нужны и акции, и облигации: в портфеле бумаги одного типа.' : 'План по долям не задан — сверять не с чем.');
+        var cardA = '<div class="r5-pc' + (reco ? ' reco' : '') + (hasT ? '' : ' dis') + '">'
+            + (reco ? '<span class="r5-pc-tag">советуем</span>' : '')
+            + '<h3>Раз в год</h3>'
+            + '<p>Вернуть портфель к плану: продать то, чего стало слишком много, и купить то, чего не хватает.</p>'
+            + '<div class="r5-pc-fig">' + (hasT ? browPair(c.stockPct, tgtStock)
+                : '<div class="r5-pc-note" style="margin-top:0">Здесь появятся две полосы — «сейчас» и «по плану».</div>') + '</div>'
+            + '<div class="r5-pc-note">' + noteA + '</div>'
+            + '<div class="r5-pc-go">' + btn('Выбрать этот способ\n          ' + ARR, 'rbwStartAnnual()', (reco ? 'acc full' : 'ghost full'), !hasT) + '</div>'
+            + '</div>';
+
+        var best = momentBest(p), figB, noteB;
+        if (best && best.deal && best.deal.buyQty > 0) {
+            var was = best.deal.qty, now = best.deal.buyQty;
+            figB = '<div class="r5-cnt">'
+                + '<span class="v num was">' + fmtQty(was) + '</span>'
+                + '<span class="ar">→</span>'
+                + '<span class="v num now">' + fmtQty(now) + '</span>'
+                + '<span class="cap">' + (best.cls === 'bond' ? 'облигаций' : 'акций') + ' станет<br>у вас на руках</span>'
+                + '</div>';
+            noteB = 'Ваша <b>' + esc(nameOf(best.sell, best.cls)) + '</b> подорожала на ' + d1(growPct(best.sell))
+                + ' %. Доли акций и облигаций не изменятся.';
         } else {
-            cards += dn('Стоимость', fmtRub(c.value), (p.holdings || []).length + ' ' + plur((p.holdings || []).length, 'позиция', 'позиции', 'позиций'));
+            figB = '<div class="r5-cnt"><span class="v num was">—</span><span class="cap">пока менять нечего:<br>ни одна бумага не выросла</span></div>';
+            noteB = 'Ни одна ваша бумага не подорожала настолько, чтобы обмен дал прибавку.';
         }
-        var body = '<div style="max-width:520px">' + allocBar(c.stockPct, tb) + '</div>'
-            + '<div class="rbw-dn3">' + cards + '</div>'
-            + (r && r.nextReview
-                ? wn('info', IC.info, '<b>Следующая сверка — ' + fmtDate(r.nextReview) + '</b> или раньше, если дрейф превысит '
-                    + d1(driftThr(p)) + ' п.п. Напоминание уже поставлено; отключить можно в настройках «Ребаланса».')
-                : wn('info', IC.info, 'Операции записаны в историю портфеля — оттуда их можно отменить.'));
-        var foot = footHtml('<button type="button" class="rbw-btn rbw-btn-ghost" onclick="rbwRestart()">Ещё один обмен</button>',
-            'Операции записаны в историю портфеля', { label: 'В «Обзор» <i>→</i>', onclick: 'rbwToPortfolio()' });
-        return mainHtml('Готово', 'Сверка закрыта',
-            'Доли вернулись к цели, бумаг стало больше, следующая сверка — через год либо когда дрейф снова перевалит порог.',
-            body, foot);
+        var cardB = '<div class="r5-pc' + (reco ? '' : (best ? ' reco' : '')) + '">'
+            + (!reco && best ? '<span class="r5-pc-tag">советуем</span>' : '')
+            + '<h3>В моменте</h3>'
+            + '<p>Забрать то, что выросло: продать подорожавшую бумагу и на те же деньги купить больше бумаг подешевле.</p>'
+            + '<div class="r5-pc-fig">' + figB + '</div>'
+            + '<div class="r5-pc-note">' + noteB + '</div>'
+            + '<div class="r5-pc-go">' + btn('Выбрать этот способ', 'rbwStartMoment()', (!reco && best ? 'acc full' : 'ghost full')) + '</div>'
+            + '</div>';
+
+        var body = '<div class="r5-kick">Портфель «' + esc(p.name) + '» · <b>' + rub(c.value) + '</b></div>'
+            + '<div class="r5-h1">Что будем делать?</div>'
+            + '<div class="r5-sub">Два способа привести портфель в порядок. Выберите любой — что продать и что купить, мы посчитаем сами.</div>'
+            + '<div class="r5-pick">' + cardA + cardB + '</div>'
+            + '<div class="r5-acts" style="margin-top:34px;padding-bottom:0">'
+                + quiet('Изменить план портфеля', 'rbwEditPlan()')
+                + '<span class="sp"></span>'
+                + quiet('Чем эти способы отличаются', 'rbwWhyModes()', true)
+            + '</div>';
+
+        return topHtml({ eyebrow: 'Ребаланс', name: p.name, back: 'Портфели', backFn: 'rbwGo(\'diag\')' })
+            + stage('center', GLOW + body);
+    }
+
+    /* ═══ СЦЕНА 07 · «Какая бумага выросла?» / СЦЕНА 13 · «забирать нечего» ═══ */
+    function viewSellPick() {
+        var p = curPf();
+        if (!p) return viewNoPf();
+        var cls = rbw.cls, list = heldSorted(p, cls);
+        var usable = list.filter(function (x) { return x.qty > 0; });
+        var best = momentBest(p);
+
+        var sw = '<span class="sw">'
+            + '<span class="' + (cls === 'bond' ? 'on' : '') + '" onclick="rbwSetCls(\'bond\')">Облигации</span>'
+            + '<span class="' + (cls === 'stock' ? 'on' : '') + '" onclick="rbwSetCls(\'stock\')">Акции</span></span>';
+
+        /* СЦЕНА 13: выгодной пары нет — список приглушён целиком, выбора нет */
+        if (!best || best.cls !== cls) {
+            var top1 = usable[0];
+            var rows13 = usable.slice(0, 6).map(function (x) { return lrHtml(x, cls, false, true); }).join('');
+            var calm = '<div class="r5-calm">'
+                + '<div class="r5-kick">Портфель «' + esc(p.name) + '» · в моменте</div>'
+                + '<div class="r5-h1" style="font-size:52px">Сейчас забирать нечего.</div>'
+                + '<div class="r5-sub" style="font-size:16.5px;max-width:820px">Ни одна ваша бумага не подорожала настолько, '
+                    + 'чтобы обмен дал прибавку.' + (top1 ? ' Самая выросшая — <b>' + esc(nameOf(top1, cls)) + ', всего на ' + d1(growPct(top1))
+                    + ' %</b>: на такой разнице бумаг не прибавится ни одной.' : '') + '</div></div>';
+            return topHtml({ eyebrow: 'В моменте', name: p.name, back: 'Другой способ', backFn: 'rbwGo(\'pick\')', onePf: true })
+                + stage('center', GLOW + calm
+                    + '<div class="r5-list" style="margin-top:30px">'
+                        /* Мокап (сцена 13) рисует шапку БЕЗ переключателя: там пары нет
+                           ни в облигациях, ни в акциях, и переключать нечего. Но если
+                           пара есть в ДРУГОМ классе (сюда пришли тумблером со сцены 07),
+                           убрать его — значит запереть человека на пустом экране. */
+                        + '<div class="r5-lh"><b>Ваши ' + (cls === 'bond' ? 'облигации' : 'акции') + ' — сверху те, что выросли сильнее</b>'
+                            + (best ? sw : '') + '</div>'
+                        + (rows13 || '<div class="r5-lnote">Бумаг этого типа в портфеле нет.</div>')
+                    + '</div>'
+                    + '<div class="r5-acts" style="margin-top:30px;padding-bottom:0">'
+                        + btn('Напомнить через месяц', 'rbwRemind(1)', 'ghost')
+                        + quiet('Проверить доли' + (annualOk(p) && Math.abs(devOf(p)) >= driftThr(p) ? ' — там работа есть' : ''), 'rbwGo(\'diag\')')
+                        + '<span class="sp"></span>'
+                        + quiet('Сверить другой портфель', 'rbwNextPf()')
+                    + '</div>');
+        }
+
+        var selId = rbw.pick.sell || best.sell.id;
+        var rows = usable.map(function (x) { return lrHtml(x, cls, x.id === selId, growPct(x) <= 0); }).join('');
+        var body = '<div class="r5-kick">В моменте · шаг 1 из 2</div>'
+            + '<div class="r5-h1">Какая бумага выросла?</div>'
+            + '<div class="r5-sub" style="max-width:800px">Продаём ту, что сильнее подорожала, и на те же деньги берём больше '
+                + 'бумаг подешевле. <b>Доли акций и облигаций при этом не сдвинутся.</b></div>'
+            + '<div class="r5-list">'
+                + '<div class="r5-lh"><b>Ваши бумаги — сверху те, что выросли сильнее</b>' + sw + '</div>'
+                + rows
+                + '<div class="r5-lnote">Продавать подешевевшую бумагу этим способом смысла нет — рост ещё не случился, '
+                    + 'забирать нечего. Такие строки приглушены, но выбрать их можно.</div>'
+            + '</div>'
+            + '<div class="r5-acts" style="margin-top:30px;padding-bottom:0">'
+                + btn('Дальше — что купим ' + ARR, 'rbwGo(\'deal\')')
+                + '<span class="sp"></span>'
+                + quiet('Почему список отсортирован по росту', 'rbwWhySort()')
+            + '</div>';
+
+        return topHtml({ eyebrow: 'В моменте', name: p.name, back: 'Другой способ', backFn: 'rbwGo(\'pick\')', onePf: true })
+            + stage('center', GLOW + body);
+    }
+    function lrHtml(x, cls, on, mute) {
+        var g = growPct(x), up = g >= 0, age = ageStr(x);
+        return '<div class="r5-lr' + (on ? ' on' : '') + (mute ? ' mute' : '') + '" onclick="rbwChoose(\'sell\',\'' + esc(x.id) + '\')">'
+            + '<span class="rd"></span><span class="mn' + (cls === 'stock' ? ' st' : '') + '">' + mono2(nameOf(x, cls)) + '</span>'
+            + '<div class="t"><b>' + esc(nameOf(x, cls)) + '</b><span>' + fmtQty(x.qty) + ' ' + plur(x.qty, 'штука', 'штуки', 'штук')
+                + ' · ' + f2(x.price) + ' ₽' + (age ? ' · ' + age : '') + '</span></div>'
+            + '<div class="g' + (up ? '' : ' down') + '">' + (up ? 'подорожала' : 'подешевела') + ' на ' + d1(Math.abs(g)) + ' %</div>'
+            + '<div class="p num' + (up ? '' : ' down') + '">' + (up ? '+' : '−') + rub(Math.abs(x.pnl || 0)) + '</div></div>';
+    }
+
+    /* ═══ СЦЕНЫ 03 и 08 · «обмен» ═══ */
+    function viewDeal() {
+        var p = curPf();
+        if (!p) return viewNoPf();
+        var ctx = dealCtx();
+        if (!ctx || !ctx.sell || !ctx.buy || !ctx.deal || !(ctx.deal.buyQty > 0)) return viewNoDeal(ctx);
+        var d = ctx.deal, annual = ctx.kind === 'annual';
+        var sellNm = nameOf(ctx.sell, ctx.sellClass), buyNm = nameOf(ctx.buy, ctx.buyClass);
+        var spend = d.buyQty * (ctx.buyClass === 'bond' ? ctx.buy.unit : ctx.buy.price);
+
+        var head, out;
+        if (annual) {
+            var toBond = ctx.buyClass === 'bond';
+            head = '<div class="r5-kick">Шаг 2 из 2 · осталось подтвердить</div>'
+                + '<div class="r5-h1">Продаём немного ' + (toBond ? 'акций, покупаем облигации' : 'облигаций, покупаем акции') + '</div>'
+                + '<div class="r5-sub">Так портфель вернётся к плану <b>' + planStr(p) + '</b>. Доплачивать ничего не нужно — '
+                    + 'покупка делается на деньги от продажи.</div>';
+            var a = allocAfter(p, ctx);
+            var coup = d.coupDelta != null ? d.coupDelta : coupDeltaOf(ctx, d);
+            out = 'После обмена у вас будет <b>' + pct0(a.stockPct) + ' % акций и ' + pct0(a.bondPct) + ' % облигаций</b> — ровно как вы задумывали.'
+                + (coup > 0.5 ? ' Облигации будут приносить <b>на ' + rub(coup) + ' в год больше</b>.' : '');
+        } else if (ctx.cls === 'bond') {
+            var more = d.buyQty - d.qty;
+            head = '<div class="r5-kick">В моменте · шаг 2 из 2</div>'
+                + '<div class="r5-h1">Продаём подорожавшую, берём ' + (more > 0 ? 'больше подешевле' : 'доходнее') + '</div>'
+                + '<div class="r5-sub">' + esc(sellNm) + ' выросла в цене — эту прибыль забираем и на те же деньги покупаем'
+                    + (more > 0 ? ' <b>на ' + more + ' ' + plur(more, 'бумагу', 'бумаги', 'бумаг') + ' больше</b>' : ' бумагу доходнее')
+                    + '. Доли акций и облигаций не сдвинутся.</div>';
+            out = (more > 0 ? 'Облигаций станет <b>' + d.buyQty + ' вместо ' + d.qty + '</b> — за те же деньги.' : 'Обмен идёт внутри облигаций, доли не двигаются.')
+                + (d.coupAfter != null && d.coupBefore != null && Math.abs(d.coupAfter - d.coupBefore) > 0.5
+                    ? ' Купоны ' + (d.coupAfter > d.coupBefore ? 'вырастут' : 'изменятся') + ' <b>с ' + rub(d.coupBefore) + ' до ' + rub(d.coupAfter) + ' в год</b>.' : '');
+        } else {
+            head = '<div class="r5-kick">В моменте · шаг 2 из 2</div>'
+                + '<div class="r5-h1">Меняем слабую акцию на более перспективную</div>'
+                + '<div class="r5-sub">' + esc(sellNm) + ' по ожидаемому росту слабее ' + esc(buyNm)
+                    + '. <b>Доля акций при этом не сдвинется.</b></div>';
+            out = 'Ожидаемый рост по этой части портфеля вырастет <b>с ' + fmtPct(ctx.sell.pot) + ' до ' + fmtPct(ctx.buy.pot) + '</b>.';
+        }
+
+        var deal = '<div class="r5-deal"><div class="r5-deal-top">'
+            + '<div class="r5-leg sell">'
+                + '<div class="r5-legk">Продаём</div>'
+                + '<div class="r5-inst"><span class="r5-mn' + (ctx.sellClass === 'bond' ? ' bd' : '') + '">' + mono2(sellNm) + '</span>'
+                    + '<div class="t"><b>' + esc(sellNm) + '</b><span>' + f2(ctx.sellClass === 'bond' ? ctx.sell.unit : ctx.sell.price)
+                    + ' ₽ за штуку · у вас ' + fmtQty(ctx.sell.qty) + '</span></div></div>'
+                + '<div class="r5-q num sell">−' + fmtQty(d.qty) + '<span> шт</span></div>'
+                + '<div class="r5-money num">' + rub(d.proceeds) + ' <em>получим</em></div>'
+            + '</div>'
+            + '<div class="r5-mid"><span>' + SWAP2 + '</span></div>'
+            + '<div class="r5-leg buy">'
+                + '<div class="r5-legk">Покупаем</div>'
+                + '<div class="r5-inst"><span class="r5-mn' + (ctx.buyClass === 'bond' ? ' bd' : '') + '">' + mono2(buyNm) + '</span>'
+                    + '<div class="t"><b>' + esc(buyNm) + '</b><span>' + f2(ctx.buyClass === 'bond' ? ctx.buy.unit : ctx.buy.price)
+                    + ' ₽ за штуку' + (ctx.kind === 'moment' && ctx.cls === 'bond' ? ' · дешевле и доходнее' : '') + '</span></div></div>'
+                + '<div class="r5-q num buy">+' + fmtQty(d.buyQty) + '<span> шт</span></div>'
+                + '<div class="r5-money num">' + rub(spend) + ' <em>потратим</em></div>'
+            + '</div></div>'
+            + '<div class="r5-out"><span class="ic">' + CHECK + '</span><div class="tx">' + out + '</div></div></div>';
+
+        var acts = '<div class="r5-acts">'
+            + btn('Сделать обмен\n        ' + ARR, 'rbwExecute()', '', rbw.executing)
+            + quiet(annual ? 'Сколько продаём' : 'Сколько меняем', 'rbwGo(\'qty\')')
+            + quiet('Другие бумаги', 'rbwGo(\'' + (annual ? 'pick' : 'sellpick') + '\')')
+            + quiet('Подробности', 'rbwGo(\'details\')')
+            + '</div>';
+
+        return topHtml({ eyebrow: annual ? 'Раз в год' : 'В моменте', name: p.name,
+                back: annual ? 'Другой способ' : 'К выбору бумаги', backFn: annual ? 'rbwGo(\'pick\')' : 'rbwGo(\'sellpick\')', onePf: true })
+            + stage('center', GLOW + head + deal + acts);
+    }
+    function coupDeltaOf(ctx, d) {
+        var add = ctx.buyClass === 'bond' ? d.buyQty * (ctx.buy.coupon || 0) * (ctx.buy.freq || 0) : 0;
+        var sub = ctx.sellClass === 'bond' ? d.qty * (ctx.sell.coupon || 0) * (ctx.sell.freq || 0) : 0;
+        return add - sub;
+    }
+
+    /* ═══ СЦЕНЫ 04 и 09 · «Сколько продаём / меняем» ═══ */
+    function viewQty() {
+        var p = curPf();
+        if (!p) return viewNoPf();
+        var ctx = dealCtx();
+        if (!ctx || !ctx.sell || !ctx.deal) return viewNoDeal(ctx);
+        var d = ctx.deal, annual = ctx.kind === 'annual';
+        var sellNm = nameOf(ctx.sell, ctx.sellClass), buyNm = nameOf(ctx.buy, ctx.buyClass);
+        var maxQ = ctx.sell.qty, q = d.qty, pos = maxQ > 1 ? (q - 1) / (maxQ - 1) * 100 : 100;
+        var sugg = suggestQty(ctx);
+        var suggPos = maxQ > 1 ? (sugg - 1) / (maxQ - 1) * 100 : 100;
+        var minMore = (!annual && ctx.cls === 'bond') ? minQtyForMore(ctx.sell, ctx.buy) : null;
+        var deadPos = (minMore && maxQ > 1) ? Math.max(0, (minMore - 1) / (maxQ - 1) * 100) : 0;
+        var more = d.buyQty - d.qty;
+
+        var head = '<div class="r5-h1" style="margin-top:0">Сколько ' + (ctx.sellClass === 'bond' ? 'облигаций' : 'акций')
+                + ' ' + esc(sellNm) + ' продаём?</div>'
+            + '<div class="r5-sub"' + (annual ? '' : ' style="max-width:800px"') + '>У вас ' + fmtQty(maxQ) + '. Мы предлагаем <b>' + fmtQty(sugg) + '</b> — '
+                + (annual ? 'ровно столько, чтобы вернуться к плану. Можно поставить любое другое число.'
+                    : 'при таком объёме бумаг станет на ' + Math.max(0, more) + ' больше. Чем больше продаёте, тем больше прибавка.') + '</div>';
+
+        var a = allocAfter(p, ctx);
+        var res = annual
+            ? 'На эти деньги купим <b>' + fmtQty(d.buyQty) + ' ' + (ctx.buyClass === 'bond' ? 'облигаций ' : 'акций ') + esc(buyNm) + '</b>. '
+                + 'Акций останется <b>' + pct0(a.stockPct) + ' %</b> — ' + (Math.abs(a.stockPct - (100 - targetBond(p))) < 1 ? 'ровно по плану' : 'план ' + (100 - targetBond(p)) + ' %') + '.'
+            : 'На эти деньги купим <b>' + fmtQty(d.buyQty) + ' ' + (ctx.buyClass === 'bond' ? 'облигаций ' : 'акций ') + esc(buyNm) + '</b>'
+                + (more > 0 ? ' — <b>на ' + more + ' ' + plur(more, 'бумагу', 'бумаги', 'бумаг') + ' больше</b>, чем продали' : '') + '. Доплачивать не нужно.';
+
+        var slab = '<div class="r5-slab">'
+            + '<div class="r5-big"><b class="num">' + fmtQty(q) + '</b><span>' + plur(q, 'штука', 'штуки', 'штук') + ' из ' + fmtQty(maxQ)
+                + ' · на ' + rub(d.proceeds) + '</span></div>'
+            + '<div class="r5-track" id="rbwTrack" tabindex="0" role="slider" aria-label="Сколько продаём" onclick="rbwTrackClick(event)" onkeydown="rbwTrackKey(event)">'
+                + (deadPos > 0.4 ? '<span class="dead" style="width:' + deadPos.toFixed(1) + '%"></span>' : '')
+                + '<span class="fill" style="width:' + pos.toFixed(1) + '%"></span>'
+                + '<span class="mark' + (annual ? '' : ' m2') + '" style="left:' + suggPos.toFixed(1) + '%"></span>'
+                + '<span class="knob" style="left:' + pos.toFixed(1) + '%"></span>'
+            + '</div>'
+            + '<div class="r5-scale"><span>1 штука</span><span>' + fmtQty(maxQ) + ' ' + plur(maxQ, 'штука', 'штуки', 'штук') + ' — все</span></div>'
+            + '<div class="r5-res"><div class="t">' + res + '</div></div>'
+            + '</div>';
+
+        var acts = '<div class="r5-acts"' + (annual ? '' : ' style="margin-top:30px;padding-bottom:0"') + '>'
+            + btn('Готово' + (annual ? '\n        ' : ' ') + ARR, 'rbwGo(\'deal\')')
+            + btn('Вернуть ' + fmtQty(sugg), 'rbwSetQty(' + sugg + ')', 'ghost', q === sugg)
+            + '<span class="sp"></span>'
+            + quiet(minMore ? 'До ' + minMore + ' штук бумаг не прибавится — этот кусок шкалы заштрихован'
+                            : 'Ползунок двигается по одной бумаге — половины штуки не бывает')
+            + '</div>';
+
+        return topHtml({ eyebrow: annual ? 'Раз в год' : 'В моменте', name: annual ? 'Сколько продаём' : 'Сколько меняем',
+                back: 'К обмену', backFn: 'rbwGo(\'deal\')', onePf: true })
+            + stage('center', GLOW + head + slab + acts);
+    }
+    function suggestQty(ctx) {
+        var p = ctx.p, save = rbw.pick.qty;
+        rbw.pick.qty = null;
+        var fresh = dealCtx();
+        rbw.pick.qty = save;
+        return (fresh && fresh.deal) ? fresh.deal.qty : (ctx.deal ? ctx.deal.qty : 1);
+    }
+
+    /* ═══ СЦЕНЫ 05 и 10 · «Подробности» ═══ */
+    function viewDetails() {
+        var p = curPf();
+        if (!p) return viewNoPf();
+        var ctx = dealCtx();
+        if (!ctx || !ctx.sell || !ctx.buy || !ctx.deal) return viewNoDeal(ctx);
+        var d = ctx.deal, annual = ctx.kind === 'annual';
+        var sellNm = nameOf(ctx.sell, ctx.sellClass), buyNm = nameOf(ctx.buy, ctx.buyClass);
+        var spend = d.buyQty * (ctx.buyClass === 'bond' ? ctx.buy.unit : ctx.buy.price);
+        var ft = feeTax(), fee = (d.proceeds + spend) * ft.fee, tax = saleTax(ctx.sell, d.qty);
+
+        /* левая карточка — что продаём */
+        var sellRows, sellWhy;
+        if (ctx.sellClass === 'stock') {
+            var others = heldStocks(p).filter(function (x) { return x.id !== ctx.sell.id && x.pot != null; })
+                .sort(function (a, b) { return (b.pot || 0) - (a.pot || 0); });
+            sellRows = fr('Цена сейчас', f2(ctx.sell.price) + ' ₽')
+                + fr('Ожидаемый рост', ctx.sell.pot != null ? fmtPct(ctx.sell.pot) : '—')
+                + fr('Прибыль по этой бумаге', (ctx.sell.pnl >= 0 ? '+' : '−') + rub(Math.abs(ctx.sell.pnl || 0)), ctx.sell.pnl >= 0 ? 'pos' : '');
+            sellWhy = 'Из ваших ' + fmtQty(heldStocks(p).length) + ' ' + plur(heldStocks(p).length, 'акции', 'акций', 'акций')
+                + ' у ' + esc(sellNm) + ' <b>самый слабый ожидаемый рост</b>'
+                + (others[0] && others[0].pot != null ? ' — у ' + esc(others[0].ticker) + ' он ' + fmtPct(others[0].pot) : '')
+                + '. Продавая её, вы отдаёте меньше всего будущего.';
+        } else {
+            var nHeld = heldBonds(p).length;
+            sellRows = fr('Цена сейчас', f2(ctx.sell.unit) + ' ₽')
+                + fr('Подорожала с покупки', (growPct(ctx.sell) >= 0 ? '+' : '−') + d1(Math.abs(growPct(ctx.sell))) + ' %', growPct(ctx.sell) >= 0 ? 'pos' : '')
+                + fr('Принесла с покупки', (ctx.sell.pnl >= 0 ? '+' : '−') + rub(Math.abs(ctx.sell.pnl || 0)), ctx.sell.pnl >= 0 ? 'pos' : '');
+            sellWhy = 'Из ваших ' + fmtQty(nHeld) + ' ' + plur(nHeld, 'выпуска', 'выпусков', 'выпусков') + ' ' + esc(sellNm)
+                + ' подорожала сильнее всех. <b>Рост уже случился</b> — забираем его, пока цена высокая, а не ждём, пока она вернётся назад.';
+        }
+
+        /* правая карточка — что покупаем */
+        var buyRows, buyWhy;
+        if (ctx.buyClass === 'bond') {
+            var coupY = d.buyQty * (ctx.buy.coupon || 0) * (ctx.buy.freq || 0);
+            buyRows = fr('Цена сейчас', f2(ctx.buy.unit) + ' ₽')
+                + fr('Даёт в год, если держать до конца', ctx.buy.yield != null ? fmtPct(ctx.buy.yield) : '—')
+                + fr('Купоны с этих ' + fmtQty(d.buyQty) + ' штук', coupY > 0 ? rub(coupY) + ' в год' : '—', 'pos');
+            buyWhy = annual
+                ? 'Из доступных выпусков у ' + esc(buyNm) + ' <b>самая высокая доходность</b>, и цена ниже номинала — '
+                    + 'к погашению государство вернёт больше, чем вы платите сейчас.'
+                : 'Она <b>дешевле проданной и доходнее</b> — поэтому на ту же сумму бумаг выходит больше, '
+                    + 'а платить купоны будут все ' + fmtQty(d.buyQty) + ' штук вместо ' + fmtQty(d.qty) + '.';
+        } else {
+            buyRows = fr('Цена сейчас', f2(ctx.buy.price) + ' ₽')
+                + fr('Ожидаемый рост', ctx.buy.pot != null ? fmtPct(ctx.buy.pot) : '—', 'pos')
+                + fr('Уровень риска', ctx.buy.ech ? 'уровень ' + ctx.buy.ech : 'тот же, что у проданной');
+            buyWhy = 'У неё <b>выше ожидаемый рост</b> при том же уровне риска — доля акций в портфеле не меняется, '
+                + 'меняется только состав.';
+        }
+
+        var two = '<div class="r5-two">'
+            + '<div class="r5-dc">'
+                + '<div class="r5-dc-h"><span class="r5-mn' + (ctx.sellClass === 'bond' ? ' bd' : '') + '">' + mono2(sellNm) + '</span>'
+                    + '<div class="t"><b>Продаём ' + esc(sellNm) + '</b><span>' + fmtQty(d.qty) + ' из ' + fmtQty(ctx.sell.qty) + ' штук</span></div>'
+                    + '<span class="ch" onclick="rbwGo(\'sellpick\')">выбрать другую ›</span></div>'
+                + sellRows + '<div class="r5-why">' + sellWhy + '</div>'
+            + '</div>'
+            + '<div class="r5-dc">'
+                + '<div class="r5-dc-h"><span class="r5-mn' + (ctx.buyClass === 'bond' ? ' bd' : '') + '">' + mono2(buyNm) + '</span>'
+                    + '<div class="t"><b>Покупаем ' + esc(buyNm) + '</b><span>' + fmtQty(d.buyQty) + ' штук</span></div>'
+                    + '<span class="ch" onclick="rbwBuyPicker()">выбрать другую ›</span></div>'
+                + buyRows + '<div class="r5-why">' + buyWhy + '</div>'
+            + '</div></div>';
+
+        /* пара «было → станет» — только у обмена внутри облигаций (сцена 10) */
+        var fig2 = '';
+        if (!annual && ctx.cls === 'bond' && d.coupBefore != null) {
+            fig2 = '<div class="r5-fig2">'
+                + '<div class="r5-fc"><em>Облигаций<br>станет</em>'
+                    + '<span class="vv"><s class="num">' + fmtQty(d.qty) + '</s><i>→</i><b class="num">' + fmtQty(d.buyQty) + '</b></span></div>'
+                + '<div class="r5-fc"><em>Купоны<br>в год</em>'
+                    + '<span class="vv"><s class="num">' + rub(d.coupBefore) + '</s><i>→</i><b class="num">' + rub(d.coupAfter) + '</b></span></div>'
+                + '</div>';
+        }
+
+        var strip = '<div class="r5-money-strip"' + (fig2 ? ' style="margin-top:20px"' : '') + '>'
+            + ms('Получим за ' + esc(sellNm), rub(d.proceeds))
+            + ms('Потратим на ' + esc(buyNm), rub(spend))
+            + ms('Комиссия брокера', rub(fee))
+            + ms('Останется на счёте', rub(d.rest))
+            + '</div>';
+
+        var taxTxt = tax > 0.5
+            ? 'Налог с продажи — ' + rub(tax) + ' по ставке ' + d1(ft.tax * 100) + ' %'
+            : 'Налог с продажи — 0 ₽' + (ft.tax > 0 ? ', прибыли по этой сделке нет' : ', ставка налога в настройках «Ребаланса» не задана');
+
+        var acts = '<div class="r5-acts">'
+            + btn('Всё понятно — к обмену' + (annual ? '\n        ' : ' ') + ARR, 'rbwGo(\'deal\')')
+            + '<span class="sp"></span>'
+            + quiet(taxTxt)
+            + '</div>';
+
+        return topHtml({ eyebrow: annual ? 'Раз в год' : 'В моменте', name: 'Подробности',
+                back: 'К обмену', backFn: 'rbwGo(\'deal\')', onePf: true })
+            + stage('', '<div class="r5-h1" style="margin-top:0">Почему именно ' + (annual ? 'эти бумаги' : 'эта пара') + '</div>'
+                + two + fig2 + strip + acts);
+    }
+    function fr(k, v, mod) { return '<div class="r5-fr"><span class="k">' + k + '</span><span class="v' + (mod ? ' ' + mod : '') + '">' + v + '</span></div>'; }
+    function ms(k, v) { return '<div class="r5-ms"><em>' + k + '</em><b class="num">' + v + '</b></div>'; }
+
+    /* ═══ СЦЕНЫ 06 и 11 · «Готово» ═══ */
+    function viewDone() {
+        var p = curPf(), r = rbw.receipt;
+        if (!p) return viewNoPf();
+        if (!r) return viewDiag();
+        var rows = r.rows.map(function (l) {
+            return '<div class="r5-rr"><span class="mn' + (l.cls === 'bond' ? ' bd' : '') + '">' + mono2(l.name) + '</span>'
+                + '<div class="t"><b>' + esc(l.title) + '</b><span>по ' + f2(l.price) + ' ₽</span></div>'
+                + '<div class="q">' + fmtQty(l.qty) + ' шт</div>'
+                + '<div class="s' + (l.side === 'buy' ? ' out' : '') + (l.part ? ' part' : '') + '">'
+                    + (l.part ? l.part : ((l.side === 'buy' ? '−' : '') + rub(l.sum))) + '</div></div>';
+        }).join('');
+        var acts = '<div class="r5-acts" style="justify-content:center;margin-top:38px;padding-bottom:0">'
+            + btn('В портфель' + ' ' + ARR, 'rbwToPortfolio()')
+            + (r.canUndo ? quiet('Отменить обмен', 'rbwUndo()') : '')
+            + (r.mode === 'moment' ? quiet('Забрать ещё одну выросшую', 'rbwStartMoment()') : '')
+            + '</div>';
+        var body = '<div class="r5-done">'
+            + '<div class="ic">' + CHECK + '</div>'
+            + '<h3>' + r.headline + '</h3>'
+            + '<p>' + r.sub + '</p>'
+            + '<div class="r5-rows">' + rows + '</div>'
+            + '<div class="r5-plain">' + r.plain + '</div>'
+            + '</div>';
+        return topHtml({ eyebrow: 'Ребаланс', name: p.name, onePf: true })
+            + stage('center', GLOW + body + acts, 'padding-top:56px');
+    }
+
+    /* ═══ служебные экраны (в мокапе не нарисованы — язык взят у сцены 12) ═══ */
+    function plain(eyebrow, name, h1, sub, actsHtml) {
+        var p = curPf();
+        return topHtml({ eyebrow: eyebrow, name: name || (p ? p.name : 'Ребаланс') })
+            + stage('center', GLOW + '<div class="r5-calm">'
+                + '<div class="r5-h1" style="font-size:46px">' + h1 + '</div>'
+                + '<div class="r5-empty">' + sub + '</div>'
+                + '<div class="r5-acts" style="margin-top:0;padding-top:32px">' + (actsHtml || '') + '</div></div>');
+    }
+    function viewNoPf() {
+        return plain('Ребаланс', 'Ребаланс', 'Пока нет ни одного портфеля.',
+            'Соберите портфель на вкладке «Расчёт» — и мастер поможет держать его в плане.',
+            btn('К портфелям ' + ARR, 'rbwExit()'));
+    }
+    function viewNoDeal(ctx) {
+        var annual = ctx && ctx.kind === 'annual';
+        return plain(annual ? 'Раз в год' : 'В моменте', curPf() ? curPf().name : 'Ребаланс',
+            'Пары для обмена пока нет.',
+            annual ? 'Для этого способа нужны и акции, и облигации, а ещё живые цены — они могут ещё подгружаться.'
+                   : 'Ни одна бумага не выросла настолько, чтобы обмен окупился, либо цены ещё подгружаются.',
+            btn('Другой способ ' + ARR, 'rbwGo(\'pick\')', 'ghost'));
+    }
+
+    /* ═══════════ ЛУЧШИЙ ОБМЕН «В МОМЕНТЕ» ═══════════
+       Одна пара на портфель: сначала облигации (правило владельца — продаём ту,
+       что сильнее выросла, берём доходнее и дешевле, чтобы бумаг стало больше),
+       и только если там нечего — акции. Питает карточку способа на сцене 02,
+       подсказку на сцене 12 и решение «рисовать сцену 07 или сцену 13». */
+    function momentBest(p) {
+        if (!p) return null;
+        var res = null;
+        ['bond', 'stock'].forEach(function (cls) {
+            if (res && res.cls === 'bond') return;
+            var auto = cls === 'bond' ? autoBondPair(p) : autoStockPair(p);
+            if (!auto) return;
+            var hs = heldOf(p, cls);
+            var s = find(hs, function (x) { return x.id === auto.sellId; });
+            if (!s) return;
+            var cd = cls === 'bond' ? bondCands() : stockCandsFor(s.ech >= 1 ? s.ech : 0);
+            var b = find(cd, function (x) { return cls === 'bond' ? x.isin === auto.buyId : x.ticker === auto.buyId; });
+            if (!b) return;
+            var d = cls === 'bond' ? computeBondDeal(p, s, b) : computeStockDeal(s, b);
+            if (!d || !(d.buyQty > 0)) return;
+            /* «В моменте» = ЗАБРАТЬ УЖЕ СЛУЧИВШИЙСЯ РОСТ. Бумага в минусе сюда не
+               годится, даже если обмен формально даёт больше штук: продавать
+               подешевевшую — это фиксировать убыток, а не забирать прибыль.
+               Без этого условия сцена 13 («забирать нечего») не наступала бы
+               никогда, а мокап её рисует именно для такого дня. */
+            if (!(growPct(s) > 0)) return;
+            var gain = cls === 'bond' ? (d.buyQty - d.qty) : ((b.pot || 0) - (s.pot || 0));
+            if (!(gain > 0)) return;
+            if (!res || cls === 'bond') res = { cls: cls, sell: s, buy: b, deal: d, gain: gain };
+        });
+        return res;
+    }
+    function nextReviewOf(p) {
+        if (p && p.nextReview) return p.nextReview;
+        var d = new Date(); d.setFullYear(d.getFullYear() + 1);
+        return d.toISOString().slice(0, 10);
     }
 
     /* ═══════════ ГЛАВНЫЙ РЕНДЕР ═══════════ */
-    var rbwLastKey = null;
     PF.rbwSceneHtml = function () {
         var main;
         try {
-            if (rbw.step === 1) main = stepPortfolio();
-            else if (rbw.step === 2) main = stepMode();
-            else if (rbw.step === 3) main = stepCalc();
-            else if (rbw.step === 4) main = stepBasket();
-            else if (rbw.step === 'receipt') main = screenReceipt();
-            else if (rbw.step === 'done') main = screenDone();
-            else main = stepPortfolio();
+            var v = rbw.view;
+            if (v === 'pick') main = viewPick();
+            else if (v === 'sellpick') main = viewSellPick();
+            else if (v === 'buypick') main = viewBuyPick();
+            else if (v === 'deal') main = viewDeal();
+            else if (v === 'qty') main = viewQty();
+            else if (v === 'details') main = viewDetails();
+            else if (v === 'done') main = viewDone();
+            else main = viewDiag();
         } catch (e) {
-            main = mainHtml('Ошибка', 'Что-то пошло не так', esc(e && e.message), '<div class="rbw-empty">Обновите страницу и попробуйте снова.</div>', '');
+            main = plain('Ребаланс', 'Ребаланс', 'Что-то пошло не так.',
+                esc((e && e.message) || 'Неизвестная ошибка') + '<br>Обновите страницу и попробуйте снова.',
+                btn('К портфелям ' + ARR, 'rbwExit()', 'ghost'));
             if (window.console) console.error('[rbw]', e);
         }
-        // плавное появление контента ТОЛЬКО при смене шага/режима (не на каждый ре-рендер пикера/кол-ва)
-        var key = String(rbw.step) + '|' + String(rbw.mode) + '|' + String(rbw.cls);
-        if (key !== rbwLastKey) { main = main.replace('class="rbw-main"', 'class="rbw-main rbw-anim"'); rbwLastKey = key; }
-        var overlay = (rbw.whatIf && (rbw.step === 3 || rbw.step === 4)) ? whatIfHtml() : '';
-        return '<div class="rbw" id="rbwBar" onclick="rbwClosePicker()">' + railHtml() + main + overlay + '</div>';
+        return '<div class="rbw" id="rbwBar">' + main + '</div>';
     };
 
     PF.rbwReady = function () {
@@ -1283,29 +1147,24 @@
         return '<div class="pfd-grid" style="display:block"><div style="max-width:560px;margin:60px auto;text-align:center;padding:40px 32px;border:1px solid var(--border-color,#e7ecf3);border-radius:20px;background:var(--card-bg,#fff)">'
             + '<div style="width:56px;height:56px;margin:0 auto 18px;border-radius:16px;display:grid;place-items:center;background:rgba(68,83,239,.1);color:#4453ef">' + IC.lock + '</div>'
             + '<div class="pftg-t" style="font-family:var(--font-title);font-size:23px;margin-bottom:10px">Мастер ребаланса</div>'
-            + '<p style="color:var(--text-muted,#64748b);font-size:14px;line-height:1.6;margin-bottom:22px">Пошаговый расчёт самой выгодной сделки и выставление заявки прямо из мастера. Доступен зарегистрированным пользователям.</p>'
-            + '<button type="button" class="rbw-btn rbw-btn-dark" style="margin:0 auto" onclick="(window.msAuth&&window.msAuth.open?window.msAuth.open():(window.openAuth&&window.openAuth()))">Войти</button>'
+            + '<p style="color:var(--text-muted,#64748b);font-size:14px;line-height:1.6;margin-bottom:22px">Два вопроса и один обмен: мастер сам считает, что продать и что купить, и выставляет заявку. Доступен зарегистрированным пользователям.</p>'
+            + '<button type="button" class="r5-btn" style="margin:0 auto" onclick="(window.msAuth&&window.msAuth.open?window.msAuth.open():(window.openAuth&&window.openAuth()))">Войти</button>'
             + '</div></div>';
     };
 
-    /* дорисовка после рендера: Esc, фокус в пикер, разовое напоминание о сверке */
+    /* дорисовка после рендера: Esc и разовое напоминание о сверке */
     var escBound = false, reviewScanned = false;
+    var BACK_OF = { pick: 'diag', sellpick: 'pick', buypick: 'details', deal: null, qty: 'deal', details: 'deal', done: null, diag: null };
     PF.rbwAfterRender = function () {
         if (!escBound) {
             escBound = true;
             document.addEventListener('keydown', function (e) {
                 if (e.key !== 'Escape') return;
                 if (!document.getElementById('rbwBar')) return;
-                if (rbw.picker) { rbw.picker = null; rerender(); e.preventDefault(); return; }
-                if (typeof rbw.step === 'number' && rbw.step > 1) { rbwGoStep(rbw.step - 1); e.preventDefault(); }
+                var to = BACK_OF[rbw.view];
+                if (rbw.view === 'deal') to = rbw.mode === 'annual' ? 'pick' : 'sellpick';
+                if (to) { window.rbwGo(to); e.preventDefault(); }
             });
-        }
-        // пикер открыт → фокус в поиск + применить фильтр (переживает ре-рендер)
-        if (rbw.picker) {
-            var inp = document.querySelector('.rbw-pop-inp');
-            if (inp && document.activeElement !== inp) { try { inp.focus(); var v = inp.value; inp.value = ''; inp.value = v; } catch (e) {} }
-            if (rbw.pickerQ) applyPickerFilter(rbw.pickerQ);
-            highlightFirst();
         }
         if (!reviewScanned) { reviewScanned = true; try { scanReviews(); } catch (e) {} }
     };
@@ -1319,82 +1178,138 @@
         } else if (PF.renderNoAnim) { PF.renderNoAnim(); }
     }
 
-    /* фильтр/клавиатура пикера — работают по DOM, без ре-рендера (не сбивают фокус) */
-    function applyPickerFilter(q) {
-        q = String(q || '').trim().toLowerCase();
-        var rows = document.querySelectorAll('.rbw-pop .rbw-pop-row');
-        Array.prototype.forEach.call(rows, function (r) {
-            var nm = r.getAttribute('data-nm') || '';
-            r.style.display = (!q || nm.indexOf(q) >= 0) ? '' : 'none';
-        });
+    /* ═══ СПИСОК КАНДИДАТОВ (в мокапе не нарисован; собран из компонентов сцены 07,
+       потому что «выбрать другую ›» на «Подробностях» обязано куда-то вести) ═══ */
+    function viewBuyPick() {
+        var p = curPf();
+        if (!p) return viewNoPf();
+        var ctx = dealCtx();
+        if (!ctx || !ctx.sell) return viewNoDeal(ctx);
+        var cls = ctx.buyClass, sell = ctx.sell;
+        var list = cls === 'bond'
+            ? bondCands().filter(function (x) { return isinKey(x.isin) !== isinKey(sell.isin || ''); })
+                .sort(function (a, b) { return (b.yield || -1e9) - (a.yield || -1e9); })
+            : stockCandsFor(sell.ech >= 1 ? sell.ech : 0).filter(function (x) { return x.ticker !== sell.ticker; });
+        var curId = ctx.buy ? (cls === 'bond' ? ctx.buy.isin : ctx.buy.ticker) : null;
+        var sellUnit = ctx.sellClass === 'bond' ? sell.unit : sell.price;
+        var sum = (ctx.deal ? ctx.deal.qty : 1) * sellUnit;
+        var rows = list.slice(0, 12).map(function (x) {
+            var id = cls === 'bond' ? x.isin : x.ticker, unit = cls === 'bond' ? x.unit : x.price;
+            var n = unit > 0 ? Math.floor(sum / unit) : 0;
+            return '<div class="r5-lr' + (id === curId ? ' on' : '') + '" onclick="rbwChoose(\'buy\',\'' + esc(id) + '\')">'
+                + '<span class="rd"></span><span class="mn' + (cls === 'stock' ? ' st' : '') + '">' + mono2(nameOf(x, cls)) + '</span>'
+                + '<div class="t"><b>' + esc(nameOf(x, cls)) + '</b><span>' + f2(unit) + ' ₽ за штуку'
+                    + (cls === 'stock' && x.name && x.name !== x.ticker ? ' · ' + esc(x.name) : '') + '</span></div>'
+                + '<div class="g">' + (cls === 'bond'
+                    ? (x.yield != null ? 'даёт ' + fmtPct(x.yield) + ' в год' : '—')
+                    : (x.pot != null ? 'ожидаемый рост ' + fmtPct(x.pot) : '—')) + '</div>'
+                + '<div class="p num">' + fmtQty(n) + ' шт</div></div>';
+        }).join('');
+        var body = '<div class="r5-kick">' + (ctx.kind === 'annual' ? 'Раз в год' : 'В моменте') + ' · что покупаем</div>'
+            + '<div class="r5-h1">Куда переложить деньги?</div>'
+            + '<div class="r5-sub" style="max-width:800px">Сверху — ' + (cls === 'bond' ? 'самые доходные выпуски' : 'бумаги с самым большим ожидаемым ростом')
+                + '. Справа видно, сколько штук выйдет на вашу сумму.</div>'
+            + '<div class="r5-list">'
+                + '<div class="r5-lh"><b>' + (cls === 'bond' ? 'Облигации — сверху доходные' : 'Акции — сверху перспективные') + '</b></div>'
+                + (rows || '<div class="r5-lnote">Кандидатов пока нет — цены ещё подгружаются.</div>')
+            + '</div>'
+            + '<div class="r5-acts" style="margin-top:30px;padding-bottom:0">'
+                + btn('Готово ' + ARR, 'rbwGo(\'details\')')
+                + '<span class="sp"></span>'
+                + quiet('Считаем от суммы продажи — ' + rub(sum))
+            + '</div>';
+        return topHtml({ eyebrow: ctx.kind === 'annual' ? 'Раз в год' : 'В моменте', name: 'Что покупаем',
+                back: 'К подробностям', backFn: 'rbwGo(\'details\')', onePf: true })
+            + stage('center', GLOW + body);
     }
-    function visibleRows() { return Array.prototype.filter.call(document.querySelectorAll('.rbw-pop .rbw-pop-row'), function (r) { return r.style.display !== 'none'; }); }
-    function highlightFirst() {
-        Array.prototype.forEach.call(document.querySelectorAll('.rbw-pop .rbw-pop-row'), function (r) { r.classList.remove('hi'); });
-        var vr = visibleRows(); if (vr[0]) vr[0].classList.add('hi');
-    }
-    window.rbwPickerFilter = function (q) { rbw.pickerQ = q; applyPickerFilter(q); highlightFirst(); };
-    window.rbwPickerKey = function (e) {
-        var vr = visibleRows(); if (!vr.length) { if (e.key === 'Escape') { rbw.picker = null; rerender(); } return; }
-        var cur = vr.findIndex ? vr.findIndex(function (r) { return r.classList.contains('hi'); }) : (function () { for (var i = 0; i < vr.length; i++) if (vr[i].classList.contains('hi')) return i; return -1; })();
-        if (e.key === 'ArrowDown') { e.preventDefault(); var n = Math.min(vr.length - 1, cur + 1); vr.forEach(function (r, i) { r.classList.toggle('hi', i === n); }); vr[n].scrollIntoView({ block: 'nearest' }); }
-        else if (e.key === 'ArrowUp') { e.preventDefault(); var m = Math.max(0, cur - 1); vr.forEach(function (r, i) { r.classList.toggle('hi', i === m); }); vr[m].scrollIntoView({ block: 'nearest' }); }
-        else if (e.key === 'Enter') { e.preventDefault(); (vr[cur] || vr[0]).click(); }
-        else if (e.key === 'Escape') { e.preventDefault(); rbw.picker = null; rerender(); }
-    };
-    window.rbwSetThr = function (delta) {
-        var p = curPf(); if (!p) return;
-        p.driftThreshold = clamp(driftThr(p) + delta, 0, 20);
-        if (PF.saveStore) PF.saveStore();
-        rerender();
-    };
-    window.rbwSetQty = function (v) { var ctx = dealCtx(); if (!ctx || !ctx.sell) return; rbw.pick.qty = clamp(Math.round(+v), 1, ctx.sell.qty); rerender(); };
-    window.rbwQtyStep = function (delta) { var ctx = dealCtx(); if (!ctx || !ctx.deal) return; window.rbwSetQty((ctx.deal.qty || 1) + delta); };
 
     /* ═══════════ ДЕЙСТВИЯ ═══════════ */
     window.rbwExit = function () { if (window.pfxGoTab) window.pfxGoTab('overview'); };
-    window.rbwPickPf = function (pid) { if (pid !== rbw.pid) rbw.cart = []; rbw.pid = pid; persist(); rerender(); };
-    window.rbwGoStep = function (n) {
-        if (n === 2 && !curPf()) return;
-        if (n >= 3 && !rbw.mode) { rbw.step = 2; rerender(); return; }
-        if (n < rbw.step && n <= 2) { resetPicks(); rbw.cart = []; }
-        rbw.step = n; rbw.picker = null; rbw.whatIf = false; rerender();
+    window.rbwGo = function (v) { rbw.view = v; rerender(); };
+    window.rbwPickPf = function (pid) {
+        if (pid === rbw.pid) return;
+        rbw.pid = pid; rbw.mode = null; resetPicks(); rbw.receipt = null; rbw.view = 'diag';
+        persist(); rerender();
     };
-    window.rbwSetMode = function (m) { if (m !== rbw.mode) rbw.cart = []; rbw.mode = m; resetPicks(); if (m === 'moment') { var p = curPf(); if (p) { var c = PF.calcPf(p); rbw.cls = c.bondVal > 0 ? 'bond' : 'stock'; } } rerender(); };
+    window.rbwNextPf = function () {
+        var list = portfolios(); if (list.length < 2) { toast('Другого портфеля пока нет'); return; }
+        var i = 0; list.forEach(function (p, k) { if (p.id === rbw.pid) i = k; });
+        window.rbwPickPf(list[(i + 1) % list.length].id);
+    };
+    window.rbwStartAnnual = function () {
+        var p = curPf(); if (!p || !annualOk(p)) { toast('Для этого способа нужны и акции, и облигации, и план по долям'); return; }
+        rbw.mode = 'annual'; resetPicks(); rbw.view = 'deal'; rerender();
+    };
+    window.rbwStartMoment = function () {
+        var p = curPf(); if (!p) return;
+        var best = momentBest(p);
+        rbw.mode = 'moment';
+        rbw.cls = best ? best.cls : (PF.calcPf(p).bondVal > 0 ? 'bond' : 'stock');
+        resetPicks(); rbw.view = 'sellpick'; rerender();
+    };
     window.rbwSetCls = function (cls) { rbw.cls = cls; resetPicks(); rerender(); };
-    window.rbwOpenPicker = function (side) { rbw.picker = rbw.picker === side ? null : side; rerender(); };
-    window.rbwClosePicker = function () { if (rbw.picker) { rbw.picker = null; rerender(); } };
     window.rbwChoose = function (side, id) {
         rbw.pick[side] = id;
-        if (side === 'sell') rbw.pick.buy = null;  // сменили продаваемую — сбросить куплю
-        rbw.pick.qty = null; rbw.picker = null; rerender();
+        if (side === 'sell') rbw.pick.buy = null;   // сменили продаваемую — подбор покупки заново
+        rbw.pick.qty = null;
+        rerender();
     };
-    window.rbwAuto = function () {
+    window.rbwBuyPicker = function () { rbw.view = 'buypick'; rerender(); };
+    window.rbwSetQty = function (v) {
+        var ctx = dealCtx(); if (!ctx || !ctx.sell) return;
+        rbw.pick.qty = clamp(Math.round(+v), 1, ctx.sell.qty); rerender();
+    };
+    /* ползунок «сколько»: клик по дорожке и стрелки — шаг ровно в одну бумагу */
+    window.rbwTrackClick = function (e) {
+        var t = e.currentTarget, ctx = dealCtx(); if (!ctx || !ctx.sell) return;
+        var r = t.getBoundingClientRect(); if (!(r.width > 0)) return;
+        var k = clamp((e.clientX - r.left) / r.width, 0, 1);
+        window.rbwSetQty(1 + Math.round(k * (ctx.sell.qty - 1)));
+    };
+    window.rbwTrackKey = function (e) {
+        var ctx = dealCtx(); if (!ctx || !ctx.deal) return;
+        var q = ctx.deal.qty, max = ctx.sell.qty;
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); window.rbwSetQty(q - 1); }
+        else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); window.rbwSetQty(q + 1); }
+        else if (e.key === 'Home') { e.preventDefault(); window.rbwSetQty(1); }
+        else if (e.key === 'End') { e.preventDefault(); window.rbwSetQty(max); }
+    };
+    window.rbwEditPlan = function () {
+        toast('План по долям задаётся в карточке портфеля — открываю «Мои портфели»');
+        if (window.pfxGoTab) window.pfxGoTab('ports');
+    };
+    window.rbwRemind = function (months) {
         var p = curPf(); if (!p) return;
-        var ctx = dealCtx(); var cls = ctx.kind === 'annual' ? ctx.sellClass : ctx.cls;
-        var auto = cls === 'bond' ? autoBondPair(p, rbw.pick.sell, rbw.pick.buy) : autoStockPair(p, rbw.pick.sell, rbw.pick.buy);
-        if (!auto) { toast('Выгодной пары сейчас не видно — бумаги и так работают хорошо'); return; }
-        // sell id — это h.id; buy id — isin/ticker
-        var bs = cls === 'bond' ? heldBonds(p) : heldStocks(p);
-        rbw.pick.sell = auto.sellId; rbw.pick.buy = auto.buyId; rbw.pick.qty = null; rbw.picker = null; rerender();
+        var d = new Date(); d.setMonth(d.getMonth() + (months || 12));
+        p.nextReview = d.toISOString().slice(0, 10); p.reviewNotified = null;
+        if (PF.saveStore) PF.saveStore();
+        toast('Напомним ' + fmtDate(p.nextReview));
+        rerender();
     };
-    window.rbwPickAuto = function (i) { rbw.autoIdx = i; rerender(); };
-    window.rbwOpenAuto = function () {
-        var p = curPf(); var vs = autoVariants(p); var v = vs[rbw.autoIdx || 0]; if (!v) return;
-        if (v.key === 'annual') { rbw.mode = 'annual'; resetPicks(); }
-        else if (v.key === 'moment-bond') { rbw.mode = 'moment'; rbw.cls = 'bond'; resetPicks(); rbw.pick.sell = v.sellId; rbw.pick.buy = v.buyId; }
-        else if (v.key === 'moment-stock') { rbw.mode = 'moment'; rbw.cls = 'stock'; resetPicks(); rbw.pick.sell = v.sellId; rbw.pick.buy = v.buyId; }
-        rbw.step = 3; rerender();
+    window.rbwWhyModes = function () {
+        toast('«Раз в год» возвращает доли акций и облигаций к плану. «В моменте» меняет бумагу на бумагу внутри одного класса — доли не двигаются.');
     };
-    window.rbwOrd = function (side, type) { rbw.ord[side] = type; rerender(); };
+    window.rbwWhySort = function () {
+        toast('Сверху та бумага, что сильнее подорожала: её рост уже случился, и его можно забрать, не дожидаясь отката.');
+    };
+    window.rbwToPortfolio = function () { rbw.receipt = null; rbw.view = 'diag'; if (window.pfxGoTab) window.pfxGoTab('overview'); };
+    window.rbwUndo = function () {
+        var r = rbw.receipt, p = curPf();
+        if (!r || !r.tradeId || !p || !window.pfRbUndoTrade) { toast('Отмена доступна из истории сделок портфеля'); return; }
+        window.pfRbUndoTrade(p.id, r.tradeId);
+        rbw.receipt = null; rbw.view = 'diag'; resetPicks(); rerender();
+    };
 
+    /* ═══════════ ИСПОЛНЕНИЕ ═══════════ */
     window.rbwExecute = function () {
         if (rbw.executing) return;
         var p = curPf(); if (!p) return;
-        var deals = effectiveDeals(); if (!deals.length) { toast('Нечего исполнять'); return; }
-        if (p.broker) { return execBroker(p, deals); }
-        return execPaper(p, deals);
+        var ctx = dealCtx();
+        if (!ctx || !ctx.sell || !ctx.buy || !ctx.deal || !(ctx.deal.buyQty > 0)) { toast('Нечего исполнять'); return; }
+        if (p.broker) return execBroker(p, ctx);
+        return execPaper(p, ctx);
     };
+
     function setNextReview(p) { var d = new Date(); d.setFullYear(d.getFullYear() + 1); p.nextReview = d.toISOString().slice(0, 10); p.reviewNotified = null; }
 
     /* применение к локальному портфелю (дубль pfReduceHolding/pfAddBought/pfLogTrade) */
@@ -1418,59 +1333,80 @@
         var nh = { id: genId('h'), ticker: o.ticker, name: o.name || o.ticker, type: o.type, lots: [lot], potAtBuy: o.type === 'stock' ? (o.pot != null ? o.pot : (PF.potentialOf ? PF.potentialOf(o.ticker) : null)) : null };
         p.holdings.push(nh); return { hid: nh.id, lotId: lot.id };
     }
-    function logTrade(p, t) { t.id = genId('t'); t.ts = Date.now(); t.fee = feeTax().fee; p.trades = p.trades || []; p.trades.unshift(t); if (p.trades.length > 120) p.trades.length = 120; }
+    function logTrade(p, t) { t.id = genId('t'); t.ts = Date.now(); t.fee = feeTax().fee; p.trades = p.trades || []; p.trades.unshift(t); if (p.trades.length > 120) p.trades.length = 120; return t.id; }
 
-    function execPaper(p, deals) {
-        var before = { bondPct: PF.calcPf(p).bondPct, stockPct: PF.calcPf(p).stockPct };
-        var coupBefore0 = heldBonds(p).reduce(function (s, x) { return s + x.coupYear; }, 0);
-        var legsR = [], totProceeds = 0, totSpend = 0, totTax = 0, applied = 0;
-        deals.forEach(function (dl) {
-            var sellH = (p.holdings || []).filter(function (h) { return h.id === dl.sell.id; })[0];
-            if (!sellH) return;
-            var avail = (PF.ensureLots ? PF.ensureLots(sellH) : (sellH.lots || [])).reduce(function (s, l) { return s + (+l.qty || 0); }, 0);
-            var qty = Math.min(dl.qty, avail); if (!(qty > 0)) return;
-            var sellIdx = (p.holdings || []).indexOf(sellH);
-            var soldSnap = JSON.parse(JSON.stringify(sellH));
-            reduceHolding(p, sellH, qty);
-            var buyO = dl.buyClass === 'bond'
-                ? { type: 'bond', ticker: isinKey(dl.buy.isin), name: dl.buy.name, price: dl.buy.price, nkd: dl.buy.nkd, qty: dl.buyQty }
-                : { type: 'stock', ticker: dl.buy.ticker, name: dl.buy.name, price: dl.buy.price, qty: dl.buyQty, pot: dl.buy.pot };
-            var bought = addBought(p, buyO);
-            logTrade(p, {
-                kind: dl.sellClass === 'bond' ? 'bond' : 'stock',
-                sellTicker: dl.sellClass === 'bond' ? isinKey(dl.sell.isin) : dl.sell.ticker, sellName: dl.sell.name, sellQty: qty,
-                buyTicker: buyO.ticker, buyName: dl.buy.name, buyQty: dl.buyQty, proceeds: dl.proceeds, rest: dl.rest,
-                potFrom: dl.potDelta != null ? null : null,
-                undo: { sold: soldSnap, soldIdx: sellIdx, buyHid: bought.hid, buyLotId: bought.lotId }
-            });
-            if (dl.rest > 0.005) p.cash = (p.cash || 0) + dl.rest;
-            totProceeds += dl.proceeds; totSpend += dl.buyQty * dl.buy.unit; totTax += saleTax(dl.sell, qty); applied++;
-            legsR.push({ st: 'done', side: 'sell', qty: qty, name: dl.sell.name, sub: 'средняя ' + f2(dl.sell.price) + ' ₽', val: '+' + fmtRub(dl.proceeds), note: qty + ' из ' + qty });
-            legsR.push({ st: 'done', side: 'buy', qty: dl.buyQty, name: dl.buy.name, sub: (dl.buyClass === 'bond' ? 'цена ' + f2(dl.buy.price) + ' ₽ +НКД' : 'цена ' + f2(dl.buy.price) + ' ₽'), val: '−' + fmtRub(dl.buyQty * dl.buy.unit), note: dl.buyQty + ' из ' + dl.buyQty });
+    /* ── «Готово»: сцены 06 и 11 мокапа. Заголовок повторяет обещание, данное на
+         экране выбора способа, слово в слово; для «в моменте» отдельной строкой
+         сказано, что доли не поехали (заметка 2 к сцене 11) ── */
+    function buildDoneReceipt(p, ctx, applied) {
+        var annual = ctx.kind === 'annual', d = ctx.deal;
+        var sellNm = nameOf(ctx.sell, ctx.sellClass), buyNm = nameOf(ctx.buy, ctx.buyClass);
+        var spend = applied.buyQty * (ctx.buyClass === 'bond' ? ctx.buy.unit : ctx.buy.price);
+        var after = { stockPct: PF.calcPf(p).stockPct, bondPct: PF.calcPf(p).bondPct };
+        var head, plainTxt;
+        if (annual) {
+            head = 'Портфель снова по плану';
+            plainTxt = 'Теперь у вас <b>' + pct0(after.stockPct) + ' % акций и ' + pct0(after.bondPct) + ' % облигаций</b>.'
+                + (applied.coupDelta > 0.5 ? ' Облигации будут приносить <b>на ' + rub(applied.coupDelta) + ' в год больше</b>.' : '')
+                + '<br>Следующая сверка — <b>' + fmtDate(p.nextReview) + '</b>, напомним сами.';
+        } else {
+            var more = applied.buyQty - applied.qty;
+            head = (ctx.cls === 'bond' && more > 0)
+                ? 'Облигаций стало ' + fmtQty(applied.buyQty) + ' вместо ' + fmtQty(applied.qty)
+                : 'Обмен сделан';
+            plainTxt = (applied.coupAfter != null && applied.coupBefore != null && Math.abs(applied.coupAfter - applied.coupBefore) > 0.5
+                    ? 'Купоны теперь <b>' + rub(applied.coupAfter) + ' в год</b> вместо ' + rub(applied.coupBefore) + '. ' : '')
+                + 'Доли акций и облигаций не изменились — <b>' + pct0(after.stockPct) + ' % и ' + pct0(after.bondPct) + ' %</b>, как были.'
+                + (applied.rest > 0.5 ? '<br>На счёт вернулось <b>' + rub(applied.rest) + '</b>.' : '');
+        }
+        return {
+            mode: annual ? 'annual' : 'moment',
+            headline: head,
+            sub: 'Обе заявки исполнены. Всё записано в историю операций.',
+            rows: [
+                { cls: ctx.sellClass, name: sellNm, title: 'Продали ' + sellNm, price: ctx.sellClass === 'bond' ? ctx.sell.unit : ctx.sell.price, qty: applied.qty, sum: applied.proceeds, side: 'sell' },
+                { cls: ctx.buyClass, name: buyNm, title: 'Купили ' + buyNm, price: ctx.buyClass === 'bond' ? ctx.buy.unit : ctx.buy.price, qty: applied.buyQty, sum: spend, side: 'buy' }
+            ],
+            plain: plainTxt,
+            canUndo: true,
+            tradeId: applied.tradeId
+        };
+    }
+
+    function execPaper(p, ctx) {
+        var d = ctx.deal;
+        var sellH = (p.holdings || []).filter(function (h) { return h.id === ctx.sell.id; })[0];
+        if (!sellH) { toast('Обмен не применился — бумаги уже нет в портфеле', true); return; }
+        var avail = (PF.ensureLots ? PF.ensureLots(sellH) : (sellH.lots || [])).reduce(function (s, l) { return s + (+l.qty || 0); }, 0);
+        var qty = Math.min(d.qty, avail); if (!(qty > 0)) { toast('Нечего продавать', true); return; }
+        var coupBefore = heldBonds(p).reduce(function (s, x) { return s + x.coupYear; }, 0);
+        var sellIdx = (p.holdings || []).indexOf(sellH);
+        var soldSnap = JSON.parse(JSON.stringify(sellH));
+        reduceHolding(p, sellH, qty);
+        var buyO = ctx.buyClass === 'bond'
+            ? { type: 'bond', ticker: isinKey(ctx.buy.isin), name: ctx.buy.name, price: ctx.buy.price, nkd: ctx.buy.nkd, qty: d.buyQty }
+            : { type: 'stock', ticker: ctx.buy.ticker, name: ctx.buy.name, price: ctx.buy.price, qty: d.buyQty, pot: ctx.buy.pot };
+        var bought = addBought(p, buyO);
+        var tradeId = logTrade(p, {
+            kind: ctx.sellClass === 'bond' ? 'bond' : 'stock',
+            sellTicker: ctx.sellClass === 'bond' ? isinKey(ctx.sell.isin) : ctx.sell.ticker, sellName: ctx.sell.name, sellQty: qty,
+            buyTicker: buyO.ticker, buyName: ctx.buy.name, buyQty: d.buyQty, proceeds: d.proceeds, rest: d.rest,
+            undo: { sold: soldSnap, soldIdx: sellIdx, buyHid: bought.hid, buyLotId: bought.lotId }
         });
-        if (!applied) { toast('Обмен не применился — бумаги уже нет в портфеле'); return; }
+        if (d.rest > 0.005) p.cash = (p.cash || 0) + d.rest;
         PF.saveStore(); if (PF.pfInvalidateCharts) PF.pfInvalidateCharts(p.id);
         if (PF.ensureQuotes) try { PF.ensureQuotes(true); } catch (e) {}
         setNextReview(p);
-        var after = { bondPct: PF.calcPf(p).bondPct, stockPct: PF.calcPf(p).stockPct };
-        var coupAfter0 = heldBonds(p).reduce(function (s, x) { return s + x.coupYear; }, 0);
-        var ft = feeTax(), multi = applied > 1;
-        rbw.receipt = {
-            title: multi ? applied + ' ' + plur(applied, 'обмен применён', 'обмена применены', 'обменов применены') : 'Обмен применён',
-            sub: 'Продажа и покупка записаны в портфель',
-            legs: legsR,
-            tot: [['Комиссия', '≈ ' + fmtRub((totProceeds + totSpend) * ft.fee)]]
-                .concat(totTax > 0.5 ? [['Налог', '≈ ' + fmtRub(totTax)]] : [])
-                .concat([['Свободно', fmtRub(p.cash || 0)], ['Доли', Math.round(after.stockPct) + ' / ' + Math.round(after.bondPct)]]),
-            foot: 'Записано в историю сделок портфеля — можно отменить оттуда. Следующая годовая сверка — ' + fmtDate(p.nextReview) + '.',
-            alloc: { before: before, after: after },
-            coup: (coupAfter0 > coupBefore0 + 0.5) ? { beforeRub: coupBefore0, afterRub: coupAfter0, delta: coupAfter0 - coupBefore0 } : null,
-            forecast: buildForecast(p),
-            nextReview: p.nextReview,
-            doneText: 'Портфель обновлён — доли и купоны пересчитаны.'
-        };
-        if (window.msNotify && window.msNotify.local) window.msNotify.local('success', multi ? 'Ребаланс: ' + applied + ' обмена' : 'Ребаланс применён', (deals[0] ? dealName(deals[0].sell) + ' → ' + dealName(deals[0].buy) : '') + ' · ' + fmtRub(totProceeds));
-        rbw.cart = []; rbw.step = 'receipt'; rerender();
+        var coupAfter = heldBonds(p).reduce(function (s, x) { return s + x.coupYear; }, 0);
+        rbw.receipt = buildDoneReceipt(p, ctx, {
+            qty: qty, buyQty: d.buyQty, proceeds: d.proceeds, rest: d.rest, tradeId: tradeId,
+            coupBefore: coupBefore, coupAfter: coupAfter, coupDelta: coupAfter - coupBefore
+        });
+        if (window.msNotify && window.msNotify.local) {
+            window.msNotify.local('success', 'Ребаланс применён',
+                nameOf(ctx.sell, ctx.sellClass) + ' → ' + nameOf(ctx.buy, ctx.buyClass) + ' · ' + rub(d.proceeds));
+        }
+        resetPicks(); rbw.view = 'done'; rerender();
     }
 
     function brokerCanTrade() { var A = window.brokerApi; return !!(A && A.canTrade && A.canTrade()); }
@@ -1478,13 +1414,12 @@
         if (cls === 'bond') return (side === 'buy' && x.t) ? x.t : ((PF.fullBondId && PF.fullBondId(x.isin)) || x.isin);
         return x.ticker;
     }
-    function execBroker(p, deals) {
-        var legs = [];
-        deals.forEach(function (dl) {
-            legs.push({ ticker: brokerLegTicker(dl.sellClass, 'sell', dl.sell), side: 'sell', qty: dl.qty, orderType: rbw.ord.sell, price: dl.sell.price, nm: dealName(dl.sell) });
-            legs.push({ ticker: brokerLegTicker(dl.buyClass, 'buy', dl.buy), side: 'buy', qty: dl.buyQty, orderType: rbw.ord.buy, price: dl.buy.price, nm: dealName(dl.buy) });
-        });
-        // нет торгующего подключения → безопасный мост: грузим тикеты в терминал (заявки НЕ шлём)
+    function execBroker(p, ctx) {
+        var d = ctx.deal;
+        var legs = [
+            { ticker: brokerLegTicker(ctx.sellClass, 'sell', ctx.sell), side: 'sell', qty: d.qty, orderType: 'market', price: ctx.sell.price, nm: nameOf(ctx.sell, ctx.sellClass), cls: ctx.sellClass },
+            { ticker: brokerLegTicker(ctx.buyClass, 'buy', ctx.buy), side: 'buy', qty: d.buyQty, orderType: 'limit', price: ctx.buy.price, nm: nameOf(ctx.buy, ctx.buyClass), cls: ctx.buyClass }
+        ];
         if (!brokerCanTrade() || !PF.pftPlaceOrders) {
             if (PF.pftLoadPlan) { try { PF.pftLoadPlan(legs.map(function (l) { return { ticker: l.ticker, side: l.side, qty: l.qty }; })); } catch (e) {} }
             else toast('Подключите брокера в «Торговле», чтобы выставить заявки', true);
@@ -1494,18 +1429,17 @@
             rbw.executing = true; rerender();
             PF.pftPlaceOrders(legs).then(function (results) {
                 rbw.executing = false;
-                buildBrokerReceipt(p, results);
+                buildBrokerReceipt(p, ctx, legs, results);
                 var okN = results.filter(function (r) { return r.ok; }).length;
                 if (window.msNotify && window.msNotify.local) window.msNotify.local(okN ? 'success' : 'warn', 'Заявки ребаланса', okN + ' из ' + results.length + ' отправлено брокеру Т-Инвестиций');
-                rbw.cart = []; rbw.step = 'receipt'; rerender();
-                pollBrokerOrders(p);   // №6: уточнить статусы (частично/в очереди/отменено)
+                resetPicks(); rbw.view = 'done'; rerender();
+                pollBrokerOrders(p);
             }, function (e) {
                 rbw.executing = false; rerender();
                 toast((e && e.message) || 'Не удалось выставить заявки', true);
             });
         };
-        var n = legs.length;
-        if (window.pfConfirm) window.pfConfirm('Выставить ' + n + ' ' + plur(n, 'заявку', 'заявки', 'заявок') + ' брокеру Т-Инвестиций? Это реальные сделки на вашем счёте.', fire);
+        if (window.pfConfirm) window.pfConfirm('Выставить 2 заявки брокеру Т-Инвестиций? Это реальные сделки на вашем счёте.', fire);
         else if (!window.confirm || window.confirm('Выставить реальные заявки брокеру?')) fire();
     }
     function brokerStatusOf(r) {
@@ -1513,70 +1447,60 @@
         var resp = r.resp || {}, req = +resp.lotsRequested || r.lots, exe = +resp.lotsExecuted || 0;
         var rej = /REJECT/i.test(resp.executionReportStatus || '');
         var st = rej ? 'rej' : (exe >= req && req > 0 ? 'done' : 'part');
-        var reqSh = req * r.lot, exeSh = exe * r.lot;
-        return { st: st, note: rej ? (r.error || 'отклонено') : (st === 'done' ? reqSh + ' из ' + reqSh + ' шт' : exeSh + ' из ' + reqSh + ' шт · в очереди') };
+        return { st: st, exeSh: exe * (r.lot || 1), reqSh: req * (r.lot || 1) };
     }
-    function buildBrokerReceipt(p, results) {
+    /* квитанция брокера живёт в той же сцене «Готово»: у частично исполненной
+       строки — янтарная дробь «118 / 130» (заметка 6 к сцене 11 мокапа) */
+    function buildBrokerReceipt(p, ctx, legs, results) {
         var acc = (window.brokerApi && window.brokerApi.getConn && window.brokerApi.getConn()) || {};
-        var legsR = results.map(function (r) {
-            var s = brokerStatusOf(r), isSell = r.leg.side === 'sell';
-            return { st: s.st, side: r.leg.side, qty: r.leg.qty, name: r.leg.nm || r.leg.ticker, lot: r.lot || 1,
-                sub: (isSell ? 'продажа' : 'покупка') + (r.ok ? ' · ' + r.lots + ' лот' : ''), val: '', note: s.note,
-                orderId: (r.resp && r.resp.orderId) || null };
+        var anyPart = false, anyRej = false;
+        var rows = results.map(function (r, i) {
+            var s = brokerStatusOf(r), l = legs[i] || r.leg || {};
+            if (s.st === 'part') anyPart = true;
+            if (s.st === 'rej') anyRej = true;
+            return {
+                cls: l.cls, name: l.nm || l.ticker, side: l.side,
+                title: (l.side === 'sell' ? 'Продаём ' : 'Покупаем ') + (l.nm || l.ticker),
+                price: l.price, qty: l.qty,
+                sum: (l.qty || 0) * (l.price || 0),
+                part: s.st === 'part' ? (fmtQty(s.exeSh) + ' <i>/ ' + fmtQty(s.reqSh) + '</i>') : (s.st === 'rej' ? 'отклонена' : null),
+                orderId: (r.resp && r.resp.orderId) || null, st: s.st, lot: r.lot || 1
+            };
         });
-        var anyOk = results.some(function (r) { return r.ok; });
-        var anyOpen = legsR.some(function (l) { return l.orderId && l.st === 'part'; });
         rbw.receipt = {
-            broker: true, accountId: acc.accountId,
-            title: anyOk ? 'Заявки приняты' : 'Заявки не прошли',
-            sub: anyOk ? 'Отправлены брокеру Т-Инвестиций; статус обновляется автоматически' : 'Проверьте подключение брокера и попробуйте снова',
-            legs: legsR,
-            tot: [['Счёт', 'Т-Инвестиции'], ['Статус', anyOk ? (anyOpen ? 'в исполнении' : 'у брокера') : 'ошибка']],
-            foot: 'Зеркало брокерского счёта — «бумажная» запись не создаётся. Состав обновится синком, а о закрытии заявок придёт звоночек сайта.',
-            alloc: null, coup: null, forecast: buildForecast(p),
-            doneText: 'Заявки ушли брокеру — состав портфеля обновится, как счёт синхронизируется.'
+            broker: true, accountId: acc.accountId, mode: ctx.kind === 'annual' ? 'annual' : 'moment',
+            headline: anyRej ? 'Заявки не прошли' : (anyPart ? 'Заявки приняты, исполняются' : 'Заявки исполнены'),
+            sub: anyPart ? 'Остаток живёт в терминале — звоночек придёт, когда он доисполнится.'
+                         : 'Отправлены брокеру Т-Инвестиций. Состав портфеля обновится синком.',
+            rows: rows,
+            plain: 'Это зеркало брокерского счёта — «бумажная» запись не создаётся.'
+                + (anyPart ? '<br>Остаток докупится сам, отменить его можно в «Заявках».' : ''),
+            canUndo: false, tradeId: null
         };
     }
-    // №6: поллинг статуса выставленных заявок (GetOrderState) — уточняет «частично/в очереди/отменено»
     function pollBrokerOrders(p) {
         var r = rbw.receipt; if (!r || !r.broker || !r.accountId) return;
-        var open = r.legs.filter(function (l) { return l.orderId && l.st === 'part'; });
+        var open = r.rows.filter(function (l) { return l.orderId && l.st === 'part'; });
         if (!open.length || !(window.brokerApi && window.brokerApi.call)) return;
         setTimeout(function () {
-            if (rbw.receipt !== r) return;   // пользователь ушёл с квитанции
+            if (rbw.receipt !== r) return;
             Promise.all(open.map(function (l) {
                 return window.brokerApi.call('GetOrderState', { accountId: r.accountId, orderId: l.orderId }).then(function (st) {
                     var req = +st.lotsRequested || 0, exe = +st.lotsExecuted || 0, rej = /REJECT|CANCEL/i.test(st.executionReportStatus || '');
                     l.st = rej ? 'rej' : (req > 0 && exe >= req ? 'done' : 'part');
-                    l.note = rej ? 'отменена' : (l.st === 'done' ? (exe * (l.lot || 1)) + ' шт · исполнено' : exe + ' из ' + req + ' лот · в очереди');
+                    l.part = rej ? 'отменена' : (l.st === 'done' ? null : (fmtQty(exe * (l.lot || 1)) + ' <i>/ ' + fmtQty(req * (l.lot || 1)) + '</i>'));
                 }, function () {});
-            })).then(function () { if (rbw.receipt === r && rbw.step === 'receipt') rerender(); });
+            })).then(function () { if (rbw.receipt === r && rbw.view === 'done') rerender(); });
         }, 3500);
     }
     window.rbwCancelOrder = function (orderId) {
         var r = rbw.receipt; if (!r || !orderId || !r.accountId || !(window.brokerApi && window.brokerApi.call)) return;
         window.brokerApi.call('CancelOrder', { accountId: r.accountId, orderId: orderId }).then(function () {
-            var l = r.legs.filter(function (x) { return x.orderId === orderId; })[0];
-            if (l) { l.st = 'rej'; l.note = 'отменена'; }
+            var l = r.rows.filter(function (x) { return x.orderId === orderId; })[0];
+            if (l) { l.st = 'rej'; l.part = 'отменена'; }
             toast('Заявка отменена'); rerender();
         }, function (e) { toast((e && e.message) || 'Не удалось отменить заявку', true); });
     };
-
-    window.rbwGoDone = function () { rbw.step = 'done'; rerender(); };
-    window.rbwRestart = function () { rbw.step = 1; rbw.mode = null; rbw.cart = []; resetPicks(); rbw.receipt = null; rerender(); };
-    window.rbwToPortfolio = function () { rbw.step = 1; rbw.cart = []; rbw.receipt = null; if (window.pfxGoTab) window.pfxGoTab('overview'); };
-
-    /* мультизаявка: корзина обменов */
-    window.rbwCartAdd = function () {
-        var dr = curDraft(); if (!dr) { toast('Нет готового обмена для добавления'); return; }
-        if (rbw.cart.some(function (x) { return sameDeal(x, dr); })) { toast('Такой обмен уже в корзине'); return; }
-        rbw.cart.push(dr); resetPicks(); toast('В корзине обменов: ' + rbw.cart.length); rerender();
-    };
-    window.rbwToBasket = function () { if (!effectiveDeals().length) { toast('Сначала соберите обмен'); return; } rbw.step = 4; rbw.picker = null; rbw.whatIf = false; rerender(); };
-    window.rbwCartDel = function (i) { rbw.cart.splice(i, 1); rerender(); };
-    window.rbwWhatIf = function () { if (!effectiveDeals().length) { toast('Сначала соберите обмен'); return; } rbw.whatIf = true; rbw.picker = null; rerender(); };
-    window.rbwWhatIfClose = function () { rbw.whatIf = false; rerender(); };
-    window.rbwQtyLive = function (v) { var el = document.querySelector('.rbw-qty-v'); if (el) el.textContent = fmtQty(+v) + ' шт'; };
 
     /* №5: разовое напоминание о наступившей годовой сверке */
     function scanReviews() {

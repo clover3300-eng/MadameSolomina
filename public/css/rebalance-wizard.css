@@ -1,55 +1,26 @@
 /* ===== «МАСТЕР РЕБАЛАНСА» · подвкладка «Портфелей» перед «Торговлей» =====
-   Полноэкранный пошаговый визард: тихая рельса шагов слева, центрированная
-   рабочая колонка справа. Раунд 2 «Воздух» — классы зеркалят мокапы
-   dev/mockups/rebalance-wizard2-mockups.html (правило «мокапы = 1в1»),
-   ВСЁ под корнем .rbw с префиксом rbw- — наружу ничего не течёт, а
-   id-скоуп-правила #pfWrap/#panel-portfolios внутрь не бьют.
+   РАУНД 5 «Два вопроса и один обмен». Стили перенесены ИЗ МОКАПА
+   dev/mockups/rebalance-wizard5-mockups.html машинным извлечением (правило
+   проекта «мокапы = 1в1»): блок сцены выдран целиком, у каждого селектора
+   заменён корень `.scr` → `#rbwBar`, числа не трогались вообще.
 
-   Язык раунда: рельса без фона и рамок, контент в колонке 980px (шаг 3 —
-   1092px), один уровень вложенности, кнопки-пилюли, прозрачный футер, один
-   акцент на экран. Тёмная плита обмена (шаг 3) — ФИКСИРОВАННАЯ палитра ink,
-   не темизируется. Полноэкранность — CSS-гейт body:has(#rbwBar). */
+   Почему корень — ID, а не класс: внутри `#pfWrap`/`#panel-portfolios` живут
+   id-скоупные правила, и одноклассовый селектор им проигрывает. `#rbwBar .x`
+   даёт (1,1,0) и выигрывает у `#panel-portfolios .y` (1,1,0) по порядку, а у
+   голых `#id элемент` — по числу классов.
 
-.rbw, .rbw *, .rbw *::before, .rbw *::after { box-sizing: border-box; }
+   НАЗВАННЫЕ ОТСТУПЛЕНИЯ ОТ МОКАПА (их всего четыре, все вынужденные):
+   1. сцена мокапа — фиксированные 1440×880; в приложении корень тянется на
+      вьюпорт (`--real-vh`, деление на 0.9 под desktop-zoom), а ряд и сцена
+      капнуты 1440px и центрированы — при 1440×880 геометрия совпадает 1в1;
+   2. `justify-content: safe center` добавлен рядом с мокапным `center`:
+      на низких экранах обычный center срезал бы верх контента;
+   3. тёмная тема — в мокапе её нет; сделана переопределением ТОКЕНОВ, ни одно
+      правило раскладки не тронуто;
+   4. `.r5-rr .s.part` (янтарный статус частичного исполнения) — в мокапе описан
+      словами в заметке 6 к сцене 11, но не нарисован. */
 
-.rbw {
-    --fT: var(--font-title); --fU: var(--font-ui); --fN: var(--font-num);
-    --ink: #101828; --mut: #5d6b7e; --dim: #98a4b4;
-    --line: #e6eaf1; --hair: rgba(16, 24, 40, 0.06);
-    --bg: #f6f7fa; --card: #fff;
-    --acc: #4453ef; --grn: #16a34a; --red: #dc2626; --amb: #b45309;
-    --bond: #5f7fa8; --bond-s: #eef3f9; --stock: #c9683f; --stock-s: #fbf1ea;
-    --quote: #334155;
-    --shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
-    /* «чернильные» инвертируемые элементы (кнопка/чип выбора): в светлой теме
-       тёмный фон + белый текст, в тёмной — инвертируются (см. body.dark-mode) */
-    --chip-bg: var(--ink); --chip-fg: #fff;
-    --warn-ink: #6b4700; --warn-t: #8a5a00;
-    position: relative; display: flex;
-    height: var(--real-vh, 100vh); min-height: 520px; overflow: hidden;
-    background: var(--bg); color: var(--ink);
-    font-family: var(--fU); -webkit-font-smoothing: antialiased;
-}
-/* zoom:0.9 (desktop-zoom.css) сжимает px — полноэкранную высоту делим обратно,
-   как #appShell. Только ≥1024px, где включён zoom. */
-@media (min-width: 1024px) { .rbw { height: calc(var(--real-vh, 100vh) / 0.9); } }
-
-/* ── тёмная тема: следует за body.dark-mode сайта (токены из мокапа, экран 08:
-   ступени поверхностей вместо теней, классовые цвета высветлены) ── */
-body.dark-mode .rbw {
-    --ink: #e7ebf2; --mut: #98a4b6; --dim: #5c6879;
-    --line: #242b37; --hair: rgba(255, 255, 255, 0.06);
-    --bg: #0f1216; --card: #161a21;
-    --acc: #7c88ff; --grn: #4ade80; --red: #f87171; --amb: #fbbf24;
-    --bond: #7b98bd; --bond-s: rgba(123, 152, 189, 0.14); --stock: #d98a63; --stock-s: rgba(217, 138, 99, 0.14);
-    --quote: #c2ccdb;
-    --shadow: none;
-    --chip-bg: #e7ebf2; --chip-fg: #0f1216;
-    --warn-t: #f0c17c; --warn-ink: #f6d9a8;
-}
-.rbw .num { font-family: var(--fN); font-variant-numeric: tabular-nums; }
-
-/* ── полноэкранный гейт (как body:has(#pftBar) для «Торговли») ── */
+/* ── полноэкранный гейт (как body:has(#pftBar) у «Торговли») ── */
 body:has(#rbwBar) #headerWrapper,
 body:has(#rbwBar) #sideBar,
 body:has(#rbwBar) .ms-nav-widget,
@@ -58,461 +29,373 @@ body:has(#rbwBar) #pfxFab,
 body:has(#rbwBar) #pfActBar { display: none !important; }
 body:has(#rbwBar) #appShell { grid-template-columns: 0 1fr !important; }
 body:has(#rbwBar) #panel-portfolios { padding: 0 !important; }
+body:has(#rbwBar) #contentArea { padding: 0 !important; }
 body:has(#rbwBar) #pfWrap { gap: 0; }
+/* мозаика-фон сайта (#siteBgTiles, fixed z-index:1) иначе проступает ПОВЕРХ
+   мастера и выбеливает всю сцену — поднимаем корень над ней */
+body:has(#rbwBar) #siteBgTiles { display: none !important; }
 
-/* ═══════ рельса: без фона и рамок, только типографика ═══════ */
-.rbw-rail { flex: none; width: 252px; padding: 26px 26px 24px; display: flex; flex-direction: column; }
-.rbw-exit { display: inline-flex; align-items: center; gap: 7px; align-self: flex-start;
-    font-size: 12px; font-weight: 600; color: var(--mut); border: 0; background: none;
-    padding: 0; cursor: pointer; margin-bottom: 26px; font-family: var(--fU); }
-.rbw-exit:hover { color: var(--ink); }
-.rbw-exit svg { width: 14px; height: 14px; }
-.rbw-brand em { display: block; font-style: normal; font-family: var(--fN); font-size: 10px; font-weight: 700;
-    letter-spacing: 0.16em; text-transform: uppercase; color: var(--acc); }
-.rbw-brand b { display: block; font-family: var(--fT); font-weight: 400; font-size: 23px; letter-spacing: -0.01em; margin-top: 3px; }
-.rbw-steps { margin-top: 36px; display: flex; flex-direction: column; }
-.rbw-rs { position: relative; display: flex; align-items: flex-start; gap: 13px; padding: 10px 0; cursor: default; }
-.rbw-rs.done { cursor: pointer; }
-.rbw-rs::after { content: ''; position: absolute; left: 11px; top: 36px; bottom: -12px; width: 1.5px;
-    border-radius: 1px; background: var(--line); }
-.rbw-rs:last-child::after { display: none; }
-.rbw-rs.done::after { background: color-mix(in srgb, var(--ink) 35%, transparent); }
-.rbw-rs-i { flex: none; position: relative; z-index: 1; width: 24px; height: 24px; border-radius: 50%;
-    display: grid; place-items: center; font-family: var(--fN); font-size: 11px; font-weight: 700;
-    border: 1.5px solid var(--line); color: var(--dim); background: var(--bg); }
-.rbw-rs.on .rbw-rs-i { background: var(--chip-bg); border-color: var(--chip-bg); color: var(--chip-fg); }
-.rbw-rs.done .rbw-rs-i { border-color: color-mix(in srgb, var(--ink) 40%, transparent); color: var(--ink); font-size: 10px; }
-.rbw-rs-t { padding-top: 3px; }
-.rbw-rs-t b { display: block; font-size: 13.5px; font-weight: 600; color: var(--dim); line-height: 1.25; }
-.rbw-rs-t em { display: none; font-style: normal; font-size: 11.5px; color: var(--mut); margin-top: 2px; max-width: 150px; }
-.rbw-rs.on .rbw-rs-t b { color: var(--ink); }
-.rbw-rs.on .rbw-rs-t em { display: block; }
-.rbw-rs.done .rbw-rs-t b { color: var(--mut); }
-.rbw-rs.done:hover .rbw-rs-t b { color: var(--ink); }
-.rbw-rail-bot { margin-top: auto; }
-.rbw-ctx { padding-top: 18px; font-size: 11.5px; line-height: 1.55; color: var(--mut); }
-.rbw-ctx b { font-family: var(--fN); font-weight: 700; color: var(--ink); }
-.rbw-railsub { margin-top: 20px; display: inline-flex; align-items: center; gap: 6px;
-    font-size: 9.5px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
-.rbw-railsub i { flex: none; width: 5px; height: 5px; border-radius: 50%; background: var(--amb); }
+#rbwBar, #rbwBar *, #rbwBar *::before, #rbwBar *::after { box-sizing: border-box; }
+/* мокап опирается на свой документный сброс `*{margin:0;padding:0}` — переносим его
+   внутрь корня. :where() держит специфичность нулевой, поэтому любое правило ниже
+   (и любое правило мокапа) перебивает сброс, как и в самом мокапе. */
+#rbwBar :where(*) { margin: 0; padding: 0; }
 
-/* ═══════ рабочая область: центрированная колонка ═══════ */
-.rbw-main { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 0 48px; }
-.rbw-wrap { width: 100%; max-width: 980px; margin: 0 auto; flex: 1; min-height: 0;
-    display: flex; flex-direction: column; padding-top: 40px; }
-.rbw-wrap.wide { max-width: 1092px; }
-.rbw-mh { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 26px; }
-.rbw-mh-t { flex: 1; min-width: 0; }
-.rbw-mh-r { flex: none; padding-top: 6px; }
-.rbw-clswrap { display: inline-flex; align-items: center; gap: 9px; }
-.rbw-clslbl { font-size: 11.5px; color: var(--dim); }
-.rbw-mh em { font-style: normal; font-family: var(--fN); font-size: 10.5px; font-weight: 700;
-    letter-spacing: 0.13em; text-transform: uppercase; color: var(--acc); }
-.rbw-mh h3 { font-family: var(--fT); font-weight: 400; font-size: 31px; line-height: 1.15; margin-top: 9px; letter-spacing: -0.01em; }
-.rbw-mh p { margin-top: 9px; font-size: 13.5px; line-height: 1.55; color: var(--mut); max-width: 640px; }
-.rbw-body { flex: 1; min-height: 0; overflow: auto; display: flex; flex-direction: column;
-    justify-content: flex-start; padding-bottom: 28px; }
-.rbw-foot { margin-top: auto; padding: 18px 0 24px; border-top: 1px solid var(--line);
-    display: flex; align-items: center; gap: 12px; background: transparent; }
-.rbw-foothint { flex: 1; text-align: right; font-size: 12px; color: var(--dim); }
-.rbw-btn { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600;
-    border-radius: 999px; padding: 11px 20px; cursor: pointer; border: 1px solid transparent;
-    background: none; font-family: var(--fU); white-space: nowrap; }
-.rbw-btn svg { width: 15px; height: 15px; }
-.rbw-btn-ghost { color: var(--mut); border-color: var(--line); background: transparent; }
-.rbw-btn-ghost:hover { color: var(--ink); }
-.rbw-btn-dark { color: var(--chip-fg); background: var(--chip-bg); margin-left: auto;
-    box-shadow: 0 14px 30px -18px rgba(16, 24, 40, 0.6); }
-.rbw-btn-dark.wide { padding: 12px 24px; font-size: 13.5px; }
-.rbw-btn-dark:disabled { opacity: 0.5; cursor: not-allowed; }
-.rbw-btn-dark i { font-style: normal; font-family: var(--fN); opacity: 0.7; }
-.rbw-foothint + .rbw-btn-dark { margin-left: 0; }
+#rbwBar {/* мокап объявляет --fT/--fU/--fN в :root документа; в приложении это
+     токены проекта (typography-tokens.css) — сопоставляем один в один */
+     --fT:var(--font-title); --fU:var(--font-ui); --fN:var(--font-num);
+     --ink:#101828; --mut:#5c6a7d; --dim:#8d9aad; --line:#e6eaf1; --hair:rgba(16,24,40,.06);
+     --card:#fff; --acc:#4453ef; --grn:#16a34a; --red:#dc2626; --amb:#b45309;
+     --st:#c9683f; --st-s:#fbf1ea; --bd:#5f7fa8; --bd-s:#eef3f9;
+     position:relative;width:1440px;height:880px;flex:none;overflow:hidden;
+     background:#f4f6fa;color:var(--ink);font-family:var(--fU);line-height:normal;
+     border-radius:16px;border:1px solid rgba(15,23,42,.09);
+     box-shadow:0 2px 4px rgba(15,23,42,.05),0 34px 70px -34px rgba(24,38,60,.4)}
+#rbwBar .num {font-family:var(--fN);font-variant-numeric:tabular-nums}
+/* :where() обнуляет специфичность сброса — иначе `.scr button` съедает фон кнопок */
+#rbwBar :where(button) {font-family:inherit;border:0;background:none;cursor:pointer;color:inherit}
+/* ── верхняя строка ── */
+#rbwBar .r5-top {height:66px;display:flex;align-items:center;gap:20px;padding:0 44px;position:relative;z-index:5}
+#rbwBar .r5-top::after {content:"";position:absolute;left:44px;right:44px;bottom:0;height:1px;background:var(--hair)}
+#rbwBar .r5-back {display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--mut)}
+#rbwBar .r5-back svg {width:14px;height:14px}
+#rbwBar .r5-brand {padding-left:20px;margin-left:4px;border-left:1px solid var(--line)}
+#rbwBar .r5-brand em {display:block;font-style:normal;font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--acc)}
+#rbwBar .r5-brand b {display:block;font-family:var(--fT);font-weight:400;font-size:18px;margin-top:2px}
+#rbwBar .r5-pfs {display:flex;align-items:center;gap:7px;margin-left:auto}
+#rbwBar .r5-pf {display:inline-flex;align-items:center;height:32px;padding:0 15px;border-radius:999px;
+       border:1px solid var(--line);background:var(--card);font-size:12.5px;font-weight:600;color:var(--mut)}
+#rbwBar .r5-pf.on {background:var(--ink);border-color:var(--ink);color:#fff}
+#rbwBar .r5-pf i {font-style:normal;width:6px;height:6px;border-radius:50%;background:var(--amb);margin-left:8px}
+#rbwBar .r5-clock {font-family:var(--fN);font-size:11px;color:var(--dim);white-space:nowrap}
+/* ── рабочая область ── */
+#rbwBar .r5-stage {position:relative;height:814px;padding:44px 84px 0;display:flex;flex-direction:column}
+#rbwBar .r5-glow {position:absolute;left:50%;top:100px;width:1100px;height:520px;transform:translateX(-50%);pointer-events:none;
+         background:radial-gradient(520px 300px at 50% 40%,rgba(68,83,239,.08),transparent 70%)}
+#rbwBar .r5-kick {font-family:var(--fN);font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);position:relative;z-index:2}
+#rbwBar .r5-kick b {color:var(--mut)}
+#rbwBar .r5-h1 {font-family:var(--fT);font-weight:400;font-size:46px;line-height:1.14;letter-spacing:-.018em;margin-top:12px;position:relative;z-index:2}
+#rbwBar .r5-sub {font-size:15.5px;line-height:1.55;color:var(--mut);margin-top:13px;max-width:720px;position:relative;z-index:2}
+#rbwBar .r5-sub b {color:var(--ink);font-weight:700}
+/* ── ЭКРАН 1: два способа ── */
+#rbwBar .r5-pick {flex:none;display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-top:34px;position:relative;z-index:2}
+#rbwBar .r5-pc {flex:none;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:28px 30px 24px;
+       display:flex;flex-direction:column;position:relative;
+       box-shadow:0 1px 2px rgba(16,24,40,.04),0 26px 58px -42px rgba(24,38,60,.5)}
+#rbwBar .r5-pc.reco {box-shadow:0 0 0 2px color-mix(in srgb,var(--acc) 30%,transparent),0 26px 58px -36px rgba(68,83,239,.5);border-color:transparent}
+#rbwBar .r5-pc-tag {position:absolute;right:26px;top:26px;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+     border-radius:999px;padding:5px 11px;background:color-mix(in srgb,var(--acc) 13%,transparent);color:var(--acc)}
+#rbwBar .r5-pc h3 {font-family:var(--fT);font-weight:400;font-size:31px;letter-spacing:-.012em}
+#rbwBar .r5-pc p {font-size:14.5px;line-height:1.55;color:var(--mut);margin-top:11px;max-width:26em}
+#rbwBar .r5-pc-fig {margin-top:24px;padding-top:22px;border-top:1px solid var(--hair)}
+/* картинка «раз в год»: две полосы — сейчас и план */
+#rbwBar .r5-brow {display:flex;align-items:center;gap:14px}
+#rbwBar .r5-brow+.r5-brow {margin-top:11px}
+#rbwBar .r5-brow em {font-style:normal;flex:none;width:56px;font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--dim)}
+#rbwBar .r5-bbar {flex:1;min-width:0;height:22px;border-radius:8px;display:flex;overflow:hidden;background:var(--hair)}
+#rbwBar .r5-bbar i {height:100%}
+#rbwBar .r5-bbar i.st {background:color-mix(in srgb,var(--st) 78%,#fff)}
+#rbwBar .r5-bbar i.bd {background:color-mix(in srgb,var(--bd) 60%,#fff)}
+#rbwBar .r5-brow.plan .r5-bbar {height:12px;background:transparent;box-shadow:inset 0 0 0 1px var(--line)}
+#rbwBar .r5-brow.plan .r5-bbar i.st {background:color-mix(in srgb,var(--ink) 20%,transparent)}
+#rbwBar .r5-brow.plan .r5-bbar i.bd {background:transparent}
+#rbwBar .r5-brow b {flex:none;width:74px;text-align:right;font-family:var(--fN);font-size:13.5px;font-weight:700}
+#rbwBar .r5-brow.plan b {font-size:12.5px;font-weight:600;color:var(--mut)}
+/* картинка «в моменте»: было → станет */
+#rbwBar .r5-cnt {display:flex;align-items:center;gap:18px}
+#rbwBar .r5-cnt .v {font-family:var(--fN);font-size:44px;font-weight:700;line-height:1.08;letter-spacing:-.03em}
+#rbwBar .r5-cnt .v.was {color:var(--dim)}
+#rbwBar .r5-cnt .v.now {color:var(--grn)}
+#rbwBar .r5-cnt .ar {color:var(--dim);font-size:22px}
+#rbwBar .r5-cnt .cap {font-size:13px;color:var(--mut);line-height:1.45}
+#rbwBar .r5-pc-note {font-size:13.5px;color:var(--mut);margin-top:18px;line-height:1.5}
+#rbwBar .r5-pc-note b {color:var(--ink);font-weight:700}
+#rbwBar .r5-pc-go {margin-top:auto;padding-top:22px}
+#rbwBar .r5-btn {display:inline-flex;align-items:center;justify-content:center;gap:10px;height:52px;padding:0 28px;border-radius:999px;flex:none;
+     white-space:nowrap;background:var(--ink);color:#fff;font-size:15px;font-weight:700;
+     box-shadow:0 16px 34px -18px rgba(16,24,40,.7)}
+#rbwBar .r5-btn svg {width:17px;height:17px}
+#rbwBar .r5-btn.acc {background:var(--acc);box-shadow:0 16px 34px -18px rgba(68,83,239,.8)}
+#rbwBar .r5-btn.ghost {background:transparent;color:var(--mut);border:1px solid var(--line);box-shadow:none;font-weight:600;font-size:14px}
+#rbwBar .r5-btn.full {width:100%}
+#rbwBar .r5-quiet {display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;color:var(--mut);flex:none;white-space:nowrap}
+#rbwBar .r5-quiet svg {width:13px;height:13px}
+/* ── КАРТА ОБМЕНА (экраны 2–3) ── */
+/* КАРТА ОБМЕНА. В раунде 4 она читалась «обрезанной» по двум причинам, обе сняты:
+   (1) середина имела border-left+border-right — две вертикальные линии резали карту
+       на три отдельных куска; теперь их нет, вместо них ОДНА горизонтальная волосяная
+       линия, проходящая ЗА кружком: она связывает ноги, а не разделяет;
+   (2) карта шла во всю ширину 1272, из-за чего «−244» и «+96» разъезжались к самым
+       краям, а середина зияла пустотой. Ширина 1080 — половины держатся вместе. */
+#rbwBar .r5-deal {flex:none;margin-top:34px;width:1120px;max-width:100%;background:var(--card);border:1px solid var(--line);border-radius:22px;
+     overflow:hidden;position:relative;z-index:2;
+     box-shadow:0 1px 2px rgba(16,24,40,.04),0 30px 64px -40px rgba(24,38,60,.5)}
+#rbwBar .r5-deal-top {display:flex;align-items:stretch;position:relative}
+#rbwBar .r5-deal-top::before {content:"";position:absolute;left:38px;right:38px;top:50%;height:1px;background:var(--hair)}
+#rbwBar .r5-leg {flex:1;min-width:0;padding:36px 38px 32px;display:flex;flex-direction:column;gap:15px}
+#rbwBar .r5-leg.buy {align-items:flex-end;text-align:right}
+#rbwBar .r5-legk {font-family:var(--fN);font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}
+#rbwBar .r5-inst {display:flex;align-items:center;gap:13px;min-width:0}
+#rbwBar .r5-leg.buy .r5-inst {flex-direction:row-reverse}
+#rbwBar .r5-mn {flex:none;width:42px;height:42px;border-radius:13px;display:grid;place-items:center;
+     font-family:var(--fN);font-size:11.5px;font-weight:700;background:var(--st-s);color:var(--st)}
+#rbwBar .r5-mn.bd {background:var(--bd-s);color:var(--bd)}
+#rbwBar .r5-inst .t b {display:block;font-size:18px;font-weight:700;white-space:nowrap}
+#rbwBar .r5-inst .t span {display:block;font-size:12.5px;color:var(--mut);margin-top:3px;white-space:nowrap}
+/* line-height ≥1.06 обязателен: при .96 глифы срезаются снизу и карта читается «обрезанной» */
+#rbwBar .r5-q {font-family:var(--fN);font-size:72px;font-weight:700;letter-spacing:-.045em;line-height:1.16;white-space:nowrap}
+#rbwBar .r5-q span {font-size:29%;font-weight:600;letter-spacing:0;color:var(--mut)}
+#rbwBar .r5-q.sell {color:var(--red)}
+#rbwBar .r5-q.buy {color:var(--bd)}
+#rbwBar .r5-money {font-size:15px;font-weight:700}
+#rbwBar .r5-money em {font-style:normal;font-weight:600;color:var(--mut)}
+#rbwBar .r5-mid {flex:none;width:112px;display:grid;place-items:center;position:relative;z-index:1}
+#rbwBar .r5-mid span {width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:var(--ink);color:#fff;
+     box-shadow:0 0 0 10px var(--card)}
+#rbwBar .r5-mid svg {width:22px;height:22px}
+/* единственная строка итога — во всю ширину подвала карты */
+#rbwBar .r5-out {display:flex;align-items:flex-start;gap:14px;padding:18px 34px;border-top:1px solid var(--hair);
+     background:color-mix(in srgb,var(--grn) 6%,transparent);font-size:15px;line-height:1.55;color:var(--mut)}
+#rbwBar .r5-out .tx {min-width:0}
+#rbwBar .r5-out .ic {flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
+     background:color-mix(in srgb,var(--grn) 18%,transparent);color:var(--grn)}
+#rbwBar .r5-out .ic svg {width:14px;height:14px}
+#rbwBar .r5-out b {color:var(--ink);font-weight:700}
+#rbwBar .r5-acts {margin-top:auto;padding:26px 0 34px;display:flex;align-items:center;gap:20px;position:relative;z-index:2}
+/* экран-обмен: пять блоков не растягиваем по высоте, а собираем в оптический центр —
+   иначе между картой и кнопкой зияет 200 px пустоты */
+#rbwBar .r5-stage.center {justify-content:center}
+#rbwBar .r5-stage.center .r5-acts {margin-top:34px;padding-bottom:0}
+#rbwBar .r5-acts .sp {flex:1}
+/* ── ЭКРАН 4: подробности ── */
+#rbwBar .r5-two {flex:none;display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:30px;position:relative;z-index:2}
+#rbwBar .r5-dc {background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px 28px}
+#rbwBar .r5-dc-h {display:flex;align-items:center;gap:13px;padding-bottom:16px;border-bottom:1px solid var(--hair)}
+#rbwBar .r5-dc-h .t b {display:block;font-size:17px;font-weight:700}
+#rbwBar .r5-dc-h .t span {display:block;font-size:12.5px;color:var(--mut);margin-top:2px}
+#rbwBar .r5-dc-h .ch {margin-left:auto;font-size:12.5px;font-weight:700;color:var(--acc);white-space:nowrap}
+#rbwBar .r5-fr {display:flex;align-items:baseline;gap:14px;padding:13px 0;border-bottom:1px solid var(--hair);font-size:14px}
+#rbwBar .r5-fr:last-child {border-bottom:0}
+#rbwBar .r5-fr .k {color:var(--mut)}
+#rbwBar .r5-fr .v {margin-left:auto;font-family:var(--fN);font-size:14.5px;font-weight:700;text-align:right}
+#rbwBar .r5-fr .v.pos {color:var(--grn)}
+#rbwBar .r5-why {margin-top:16px;padding:14px 16px;border-radius:14px;background:color-mix(in srgb,var(--ink) 4%,transparent);
+     font-size:13.5px;line-height:1.55;color:var(--mut)}
+#rbwBar .r5-why b {color:var(--ink);font-weight:700}
+#rbwBar .r5-money-strip {flex:none;margin-top:24px;display:grid;grid-template-columns:repeat(4,1fr);gap:24px;padding:20px 28px;
+     background:var(--card);border:1px solid var(--line);border-radius:20px;position:relative;z-index:2}
+#rbwBar .r5-ms em {display:block;font-style:normal;font-size:12.5px;color:var(--mut)}
+#rbwBar .r5-ms b {display:block;font-family:var(--fN);font-size:22px;font-weight:700;margin-top:7px;letter-spacing:-.015em}
+/* ── ЭКРАН 5: сколько продаём ── */
+#rbwBar .r5-slab {flex:none;margin-top:34px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:34px 40px 30px;position:relative;z-index:2;
+     box-shadow:0 1px 2px rgba(16,24,40,.04),0 30px 64px -42px rgba(24,38,60,.5)}
+#rbwBar .r5-big {display:flex;align-items:baseline;gap:16px}
+#rbwBar .r5-big b {font-family:var(--fN);font-size:74px;font-weight:700;line-height:1.08;letter-spacing:-.04em}
+#rbwBar .r5-big span {font-size:17px;color:var(--mut)}
+#rbwBar .r5-track {position:relative;height:16px;border-radius:999px;background:var(--hair);margin:34px 0 0}
+#rbwBar .r5-track .fill {position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:color-mix(in srgb,var(--st) 72%,#fff)}
+/* засечка рисуется ТОЛЬКО НАД дорожкой: в состоянии по умолчанию ползунок стоит
+   ровно на ней, и общая вертикальная линия просто спряталась бы под белым кругом */
+#rbwBar .r5-track .mark {position:absolute;top:-15px;height:11px;width:2px;background:var(--ink);border-radius:2px}
+#rbwBar .r5-track .mark.m2::after {content:"столько, чтобы бумаг стало на 10 больше"}
+#rbwBar .r5-track .mark::after {content:"столько нужно, чтобы вернуться к плану";position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);
+     font-size:11.5px;font-weight:600;color:var(--ink);white-space:nowrap}
+#rbwBar .r5-track .knob {position:absolute;top:50%;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:#fff;
+     border:1px solid var(--line);box-shadow:0 8px 20px -8px rgba(16,24,40,.55)}
+#rbwBar .r5-scale {display:flex;justify-content:space-between;margin-top:16px;font-size:11.5px;color:var(--dim)}
+#rbwBar .r5-res {margin-top:30px;padding-top:24px;border-top:1px solid var(--hair);display:flex;align-items:center;gap:18px}
+#rbwBar .r5-res .t {font-size:16px;line-height:1.5;color:var(--mut)}
+#rbwBar .r5-res .t b {color:var(--ink);font-weight:700}
+#rbwBar .r5-res .warn {margin-left:auto;font-size:13px;color:var(--amb);text-align:right;line-height:1.45;flex:none}
+/* ── ЭКРАН 6: готово ── */
+#rbwBar .r5-done {flex:none;width:760px;margin:0 auto;text-align:center;position:relative;z-index:2}
+#rbwBar .r5-done .ic {width:64px;height:64px;border-radius:50%;display:grid;place-items:center;margin:0 auto 18px;
+     background:color-mix(in srgb,var(--grn) 15%,transparent);color:var(--grn)}
+#rbwBar .r5-done .ic svg {width:30px;height:30px}
+#rbwBar .r5-done h3 {font-family:var(--fT);font-weight:400;font-size:42px;letter-spacing:-.016em}
+#rbwBar .r5-done p {font-size:15.5px;color:var(--mut);margin-top:12px;line-height:1.55}
+#rbwBar .r5-rows {margin-top:32px;background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden;text-align:left}
+#rbwBar .r5-rr {display:grid;grid-template-columns:42px minmax(0,1fr) 96px 118px;gap:16px;align-items:center;padding:17px 26px;border-bottom:1px solid var(--hair)}
+#rbwBar .r5-rr:last-child {border-bottom:0}
+#rbwBar .r5-rr .mn {width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-family:var(--fN);font-size:10.5px;font-weight:700;background:var(--st-s);color:var(--st)}
+#rbwBar .r5-rr .mn.bd {background:var(--bd-s);color:var(--bd)}
+#rbwBar .r5-rr .t b {display:block;font-size:15px;font-weight:700}
+#rbwBar .r5-rr .t span {display:block;font-size:12.5px;color:var(--mut);margin-top:2px}
+#rbwBar .r5-rr .q {text-align:right;font-family:var(--fN);font-size:15px;font-weight:700}
+#rbwBar .r5-rr .s {text-align:right;font-size:13px;font-weight:700;color:var(--grn)}
+/* покупка — деньги ушли: зелёным её красить нельзя */
+#rbwBar .r5-rr .s.out {color:var(--ink)}
+#rbwBar .r5-plain {margin-top:26px;font-size:15px;line-height:1.6;color:var(--mut)}
+#rbwBar .r5-plain b {color:var(--ink);font-weight:700}
+/* ── ЭКРАН 7: ровно ── */
+#rbwBar .r5-calm {max-width:900px;position:relative;z-index:2}
+#rbwBar .r5-hint {margin-top:auto;margin-bottom:38px;padding-top:22px;border-top:1px solid var(--hair);display:flex;align-items:center;gap:18px;
+     position:relative;z-index:2}
+#rbwBar .r5-hint .t {font-size:14.5px;line-height:1.5;color:var(--mut);max-width:640px}
+#rbwBar .r5-hint .t b {color:var(--ink);font-weight:700}
+/* ── ГЕРОЙ-ПОЛОСА (экран «Что происходит»): заштрихованный кусок = ровно те деньги,
+   которые надо переложить; скоба с суммой стоит ПОД ним ── */
+#rbwBar .r5-hb {margin-top:36px;position:relative;z-index:2}
+#rbwBar .r5-hb-hd {display:flex;align-items:flex-end;margin-bottom:11px}
+#rbwBar .r5-hb-hd .s {min-width:0}
+#rbwBar .r5-hb-hd .s.r {margin-left:auto;text-align:right}
+#rbwBar .r5-hb-hd b {display:block;font-family:var(--fN);font-size:30px;font-weight:700;letter-spacing:-.022em}
+#rbwBar .r5-hb-hd b.st {color:var(--st)}
+#rbwBar .r5-hb-hd b.bd {color:var(--bd)}
+#rbwBar .r5-hb-hd span {display:block;font-size:12.5px;color:var(--mut);margin-top:5px}
+#rbwBar .r5-bar {position:relative;height:38px;border-radius:12px;display:flex;overflow:visible;background:var(--hair)}
+#rbwBar .r5-bar i {height:100%}
+#rbwBar .r5-bar i:first-child {border-radius:12px 0 0 12px}
+#rbwBar .r5-bar i:last-child {border-radius:0 12px 12px 0}
+#rbwBar .r5-bar i.st {background:color-mix(in srgb,var(--st) 78%,#fff)}
+#rbwBar .r5-bar i.bd {background:color-mix(in srgb,var(--bd) 60%,#fff)}
+#rbwBar .r5-bar i.over {background:repeating-linear-gradient(45deg,
+    color-mix(in srgb,var(--amb) 52%,transparent) 0 5px, color-mix(in srgb,var(--amb) 20%,transparent) 5px 10px);
+    animation:r5-breath 3.4s ease-in-out infinite alternate}
+@keyframes r5-breath{from{opacity:.75}to{opacity:1}}
+#rbwBar .r5-bar u.tgt {position:absolute;top:-9px;bottom:-9px;width:2px;border-radius:2px;background:var(--ink);transform:translateX(-1px)}
+#rbwBar .r5-bar .tgtlbl {position:absolute;top:-32px;transform:translateX(-50%);font-family:var(--fN);font-size:10px;font-weight:700;
+     letter-spacing:.1em;text-transform:uppercase;color:var(--ink);white-space:nowrap}
+#rbwBar .r5-brace {position:absolute;top:calc(100% + 8px);height:10px;border:1px solid color-mix(in srgb,var(--amb) 55%,transparent);
+     border-top:0;border-radius:0 0 7px 7px}
+#rbwBar .r5-bracelbl {position:absolute;top:calc(100% + 22px);transform:translateX(-50%);white-space:nowrap;text-align:center}
+#rbwBar .r5-bracelbl b {font-family:var(--fN);font-size:14.5px;font-weight:700;color:var(--amb)}
+#rbwBar .r5-bracelbl span {display:block;font-size:11.5px;color:var(--mut);margin-top:2px}
+#rbwBar .r5-legend {display:flex;align-items:center;gap:20px;margin-top:56px;font-size:11.5px;color:var(--mut)}
+#rbwBar .r5-legend span {display:inline-flex;align-items:center;gap:7px}
+#rbwBar .r5-legend i {width:11px;height:11px;border-radius:3px}
+#rbwBar .r5-legend i.st {background:color-mix(in srgb,var(--st) 78%,#fff)}
+#rbwBar .r5-legend i.bd {background:color-mix(in srgb,var(--bd) 60%,#fff)}
+#rbwBar .r5-legend i.hz {background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--amb) 55%,transparent) 0 3px,color-mix(in srgb,var(--amb) 22%,transparent) 3px 6px)}
+#rbwBar .r5-legend i.tg {width:2px;height:13px;border-radius:2px;background:var(--ink)}
+/* ── СПИСОК БУМАГ («какую забираем») ── */
+#rbwBar .r5-list {flex:none;margin-top:26px;background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden;position:relative;z-index:2}
+#rbwBar .r5-lh {display:flex;align-items:center;gap:12px;padding:15px 26px;border-bottom:1px solid var(--hair)}
+#rbwBar .r5-lh b {font-size:13.5px;font-weight:700}
+#rbwBar .r5-lh .sw {margin-left:auto;display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px}
+#rbwBar .r5-lh .sw span {font-size:12.5px;font-weight:600;color:var(--mut);border-radius:999px;padding:6px 16px}
+#rbwBar .r5-lh .sw span.on {background:var(--ink);color:#fff}
+#rbwBar .r5-lr {display:grid;grid-template-columns:26px 46px minmax(0,1fr) 190px 130px;gap:18px;align-items:center;
+     padding:17px 26px;border-bottom:1px solid var(--hair)}
+#rbwBar .r5-lr:last-child {border-bottom:0}
+#rbwBar .r5-lr .rd {width:20px;height:20px;border-radius:50%;border:1.5px solid var(--dim)}
+#rbwBar .r5-lr.on .rd {border-color:var(--ink);border-width:6px}
+#rbwBar .r5-lr.on {background:color-mix(in srgb,var(--acc) 5%,transparent)}
+#rbwBar .r5-lr .mn {width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-family:var(--fN);font-size:11px;font-weight:700;
+     background:var(--bd-s);color:var(--bd)}
+#rbwBar .r5-lr .mn.st {background:var(--st-s);color:var(--st)}
+#rbwBar .r5-lr .t b {display:block;font-size:16px;font-weight:700}
+#rbwBar .r5-lr .t span {display:block;font-size:12.5px;color:var(--mut);margin-top:3px}
+#rbwBar .r5-lr .g {font-size:14.5px;font-weight:700;color:var(--grn)}
+#rbwBar .r5-lr .g.down {color:var(--mut);font-weight:600}
+#rbwBar .r5-lr .p {text-align:right;font-family:var(--fN);font-size:14.5px;font-weight:700;color:var(--grn)}
+#rbwBar .r5-lr .p.down {color:var(--mut)}
+#rbwBar .r5-lr.mute {opacity:.55}
+#rbwBar .r5-lnote {padding:14px 26px;font-size:12.5px;color:var(--dim);background:color-mix(in srgb,var(--ink) 3%,transparent)}
+/* мёртвая зона ползунка: до неё обмен ничего не даёт */
+#rbwBar .r5-track .dead {position:absolute;z-index:1;left:0;top:0;bottom:0;border-radius:999px 0 0 999px;
+     background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--ink) 13%,transparent) 0 4px,transparent 4px 8px)}
+#rbwBar .r5-fig2 {flex:none;margin-top:22px;display:grid;grid-template-columns:repeat(2,1fr);gap:20px;position:relative;z-index:2}
+#rbwBar .r5-fc {background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 22px;display:flex;align-items:center;gap:18px}
+#rbwBar .r5-fc em {font-style:normal;font-size:12.5px;color:var(--mut);line-height:1.45}
+#rbwBar .r5-fc .vv {margin-left:auto;display:flex;align-items:baseline;gap:10px;flex:none}
+#rbwBar .r5-fc .vv s {text-decoration:none;font-family:var(--fN);font-size:20px;font-weight:700;color:var(--dim)}
+#rbwBar .r5-fc .vv i {font-style:normal;color:var(--dim)}
+#rbwBar .r5-fc .vv b {font-family:var(--fN);font-size:26px;font-weight:700;color:var(--grn);letter-spacing:-.02em}
 
-/* ═══════ ПОЛОСА ДОЛЕЙ — один контрол на весь мастер (мокап overview3, экран 21)
-   «Сейчас» — полноценная полоса, где часть сверх цели заштрихована; «Цель» —
-   тонкая опорная линия под фактом. Ступенька между ними и есть дрейф. ═══════ */
-.rbw-alc { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.rbw-alc-r { display: flex; align-items: center; gap: 12px; }
-.rbw-alc-k { flex: none; width: 46px; font-family: var(--fN); font-size: 8.5px; font-weight: 700;
-    letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
-.rbw-alc-b { flex: 1; min-width: 0; height: 11px; border-radius: 99px; display: flex; overflow: hidden;
-    background: color-mix(in srgb, var(--ink) 7%, transparent); }
-.rbw-alc-b i { display: block; height: 100%; }
-.rbw-alc-b i.st { background: color-mix(in srgb, var(--stock) 58%, transparent); }
-.rbw-alc-b i.bd { background: color-mix(in srgb, var(--bond) 34%, transparent); }
-/* зона сверх цели — та же заливка, но заштрихована: это «лишнее» */
-.rbw-alc-b i.over { background: repeating-linear-gradient(45deg,
-    color-mix(in srgb, var(--amb) 40%, transparent) 0 4px,
-    color-mix(in srgb, var(--amb) 16%, transparent) 4px 8px); }
-.rbw-alc-n { flex: none; width: 66px; text-align: right; font-size: 11.5px; font-weight: 700; color: var(--mut); }
-.rbw-alc-r.now .rbw-alc-n { color: var(--ink); }
-.rbw-alc-r.goal .rbw-alc-b { height: 5px; background: color-mix(in srgb, var(--ink) 5%, transparent); }
-.rbw-alc-r.goal .rbw-alc-b i.st { background: color-mix(in srgb, var(--ink) 26%, transparent); }
-.rbw-alc-r.goal .rbw-alc-b i.bd { background: transparent; }
-.rbw-alc-r.goal .rbw-alc-n { font-weight: 600; font-size: 11px; }
-.rbw-alc-lg { display: flex; align-items: center; gap: 16px; font-size: 11px; color: var(--mut);
-    padding-left: 58px; margin-top: 2px; }
-.rbw-alc-lg span { display: inline-flex; align-items: center; gap: 6px; }
-.rbw-alc-lg i { width: 9px; height: 9px; border-radius: 3px; }
-.rbw-alc-lg i.st { background: color-mix(in srgb, var(--stock) 82%, transparent); }
-.rbw-alc-lg i.bd { background: color-mix(in srgb, var(--bond) 55%, transparent); }
-.rbw-alc-lg i.hatch { background: repeating-linear-gradient(45deg,
-    color-mix(in srgb, var(--amb) 62%, transparent) 0 3px,
-    color-mix(in srgb, var(--amb) 30%, transparent) 3px 6px); }
-.rbw-alc-lg b { margin-left: auto; font-family: var(--fN); font-weight: 700; font-size: 11.5px;
-    background: color-mix(in srgb, var(--amb) 14%, transparent); color: var(--amb);
-    border-radius: 99px; padding: 3px 10px; }
-.rbw-alc-lg b.ok { background: color-mix(in srgb, var(--grn) 14%, transparent); color: var(--grn); }
-.rbw-alc-none { font-size: 11px; color: var(--dim); padding-left: 58px; }
 
-/* ═══════ шаг 1 · СТРОКА на портфель (были карточки: пилюли, легенда и бейдж
-   дрейфа — четыре способа сказать одно) ═══════ */
-.rbw-wzp { display: flex; flex-direction: column; gap: 10px; }
-.rbw-wzp-r { display: grid; grid-template-columns: 22px 190px 150px minmax(0, 1fr) 128px; gap: 18px;
-    align-items: center; padding: 14px 18px; border-radius: 14px; cursor: pointer;
-    border: 1px solid var(--line); background: var(--card); }
-.rbw-wzp-r:hover { border-color: color-mix(in srgb, var(--ink) 22%, transparent); }
-.rbw-wzp-r.on { box-shadow: 0 0 0 2px color-mix(in srgb, var(--ink) 66%, transparent); border-color: transparent; }
-.rbw-wzp-r.off { opacity: 0.62; }
-.rbw-wzp-r .rd { width: 19px; height: 19px; border-radius: 50%; border: 1.5px solid var(--dim); }
-.rbw-wzp-r.on .rd { border-color: var(--ink); border-width: 6px; }
-.rbw-wzp-chip { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
-    white-space: nowrap; font-size: 12px; font-weight: 700; border-radius: 99px; padding: 4px 11px;
-    background: color-mix(in srgb, var(--c) 15%, transparent); color: var(--c); }
-.rbw-wzp-sum { font-size: 19px; font-weight: 700; }
-.rbw-wzp-sum em { display: block; font-style: normal; font-size: 57%; font-weight: 600; color: var(--mut); margin-top: 2px; }
-.rbw-wzp-d { text-align: right; }
-.rbw-wzp-d b { font-family: var(--fN); font-size: 22px; font-weight: 700; }
-.rbw-wzp-d b span { font-size: 52%; font-weight: 600; }
-.rbw-wzp-d b.warn { color: var(--amb); }
-.rbw-wzp-d > span { display: block; font-size: 10.5px; color: var(--mut); margin-top: 2px; }
-.rbw-wzp-d .set { font-size: 12px; font-weight: 700; color: var(--ink); }
-
-/* ═══════ шаг 2 · три режима, у каждого ОДНО число выгоды ═══════ */
-.rbw-wzmodes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
-.rbw-wzm { position: relative; border-radius: 14px; padding: 16px 18px; cursor: pointer;
-    background: var(--card); border: 1px solid var(--line); display: flex; flex-direction: column; }
-.rbw-wzm:hover { border-color: color-mix(in srgb, var(--ink) 22%, transparent); }
-.rbw-wzm.on { box-shadow: 0 0 0 2px color-mix(in srgb, var(--ink) 62%, transparent); border-color: transparent; }
-.rbw-wzm.dis { opacity: 0.5; cursor: default; }
-.rbw-wzm h4 { font-family: var(--fT); font-weight: 400; font-size: 18px; }
-.rbw-wzm p { font-size: 11.5px; color: var(--mut); line-height: 1.5; margin-top: 6px; min-height: 50px; }
-.rbw-wzm-fig { font-family: var(--fN); font-size: 24px; font-weight: 700; margin-top: auto; padding-top: 12px;
-    font-variant-numeric: tabular-nums; }
-.rbw-wzm-fig span { font-size: 46%; font-weight: 600; color: var(--mut); }
-.rbw-wzm-fig.pos { color: var(--grn); }
-.rbw-wzm-cap { font-size: 11px; color: var(--mut); margin-top: 3px; }
-.rbw-wzm-rec { position: absolute; right: 14px; top: 14px; font-family: var(--fN); font-size: 8.5px;
-    font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--grn);
-    background: color-mix(in srgb, var(--grn) 14%, transparent); border-radius: 99px; padding: 3px 9px; }
-.rbw-wzhint { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--dim); margin-top: 14px; }
-.rbw-thr-b { flex: none; width: 22px; height: 22px; border-radius: 7px; border: 1px solid var(--line);
-    background: transparent; color: var(--mut); cursor: pointer; line-height: 1; font-family: var(--fU); }
-.rbw-thr-b:hover { color: var(--ink); border-color: color-mix(in srgb, var(--ink) 30%, transparent); }
-
-/* ═══════ шаг 3 · КАРТОЧКА ОБМЕНА (мокап overview3, экран 21) ═══════
-   Была тёмная плита с числами 16px, два списка и третья колонка-панель.
-   Контраст делал работу, которую должны делать сами числа: теперь карточка
-   светлая, а число сделки 38px — самое крупное на экране, крупнее заголовка. */
-.rbw-swp { display: flex; align-items: stretch; border-radius: 16px 16px 0 0; overflow: hidden;
-    background: var(--card); border: 1px solid var(--line); border-bottom: 0; }
-.rbw-swp-leg { flex: 1; min-width: 0; padding: 20px 22px; display: flex; flex-direction: column; gap: 9px; }
-.rbw-swp-k { font-family: var(--fN); font-size: 9.5px; font-weight: 700; letter-spacing: 0.12em;
-    text-transform: uppercase; color: var(--dim); }
-.rbw-swp-pick { display: inline-flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 700;
-    min-width: 0; }
-.rbw-swp-pick i { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
-    font-style: normal; font-family: var(--fN); font-size: 9.5px; font-weight: 700;
-    background: var(--bond-s); color: var(--bond); }
-.rbw-swp-pick.cls-stock i { background: var(--stock-s); color: var(--stock); }
-/* число сделки — главное на экране; знак и цвет несут смысл, больше ничего */
-.rbw-swp-q { font-size: 38px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; white-space: nowrap; }
-.rbw-swp-q span { font-size: 38%; font-weight: 600; color: var(--mut); }
-.rbw-swp-q.sell { color: var(--red); }
-.rbw-swp-q.buy { color: var(--bond); }
-.rbw-swp-s { font-size: 11.5px; color: var(--mut); }
-.rbw-swp-mid { flex: none; width: 64px; display: grid; place-items: center;
-    border-left: 1px solid var(--hair); border-right: 1px solid var(--hair); }
-.rbw-swp-mid span { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
-    background: var(--ink); color: var(--card); }
-.rbw-swp-mid svg { width: 17px; height: 17px; }
-/* подвал карточки: одна фраза пользы слева, счётчик количества справа */
-.rbw-swp-foot { display: flex; align-items: center; gap: 12px; padding: 13px 22px; font-size: 12.5px; color: var(--mut);
-    background: var(--card); border: 1px solid var(--line); border-radius: 0 0 16px 16px; }
-.rbw-swp-foot > span:first-child { min-width: 0; }
-.rbw-swp-foot b { font-family: var(--fN); font-weight: 700; color: var(--ink); }
-.rbw-swp-foot b.pos { color: var(--grn); }
-.rbw-swp-cnt { margin-left: auto; display: flex; align-items: center; gap: 9px; flex: none; }
-.rbw-swp-cnt em { font-style: normal; font-size: 10.5px; color: var(--dim); }
-.rbw-swp-b { width: 28px; height: 28px; border-radius: 9px; border: 1px solid var(--line); background: transparent;
-    display: grid; place-items: center; font-size: 13px; color: var(--mut); cursor: pointer; line-height: 1;
-    font-family: var(--fU); }
-.rbw-swp-b:hover { color: var(--ink); border-color: color-mix(in srgb, var(--ink) 30%, transparent); }
-.rbw-swp-cnt .rbw-qty-v { font-size: 15px; font-weight: 700; min-width: 34px; text-align: center; }
-.rbw-swp-cnt u { text-decoration: none; font-size: 11px; color: var(--dim); white-space: nowrap; }
-
-/* действия по самой сделке — сразу под карточкой, а не в подвале шага */
-.rbw-dacts { display: flex; gap: 10px; margin-top: 12px; }
-
-/* годовой режим: две полосы долей над карточкой обмена */
-.rbw-abars { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 34px; margin-bottom: 18px; }
-.rbw-abars-k { font-family: var(--fN); font-size: 9.5px; font-weight: 700; letter-spacing: 0.12em;
-    text-transform: uppercase; color: var(--dim); margin-bottom: 10px; }
-.rbw-abars .rbw-fx-leg { grid-column: 1 / -1; margin-top: 0; }
-
-/* два списка: «В портфеле» и «На замену». Метрика названа один раз — в шапке */
-.rbw-wztwo { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 18px; }
-.rbw-wzl { border-radius: 14px; border: 1px solid var(--line); background: var(--card); padding: 14px 16px;
-    min-width: 0; }
-.rbw-wzlh { display: flex; align-items: baseline; gap: 9px; padding-bottom: 10px; border-bottom: 1px solid var(--hair); }
-.rbw-wzlh b { font-size: 15px; font-weight: 650; }
-.rbw-wzlh em { font-style: normal; font-family: var(--fN); font-size: 10px; font-weight: 700; color: var(--mut); }
-.rbw-wzlh span { margin-left: auto; font-family: var(--fN); font-size: 9px; font-weight: 700; letter-spacing: 0.11em;
-    text-transform: uppercase; color: var(--dim); text-align: right; }
-.rbw-wzr { display: grid; grid-template-columns: 20px minmax(0, 1fr) 66px 82px; gap: 10px; align-items: center;
-    padding: 9px 0; border-bottom: 1px solid var(--hair); cursor: pointer; }
-.rbw-wzr:last-child { border-bottom: 0; }
-.rbw-wzr:hover { background: var(--hair); }
-.rbw-wzr .rd { width: 15px; height: 15px; border-radius: 50%; border: 1.5px solid var(--dim); }
-.rbw-wzr.on .rd { border-color: var(--ink); border-width: 5px; }
-.rbw-wzr.on { font-weight: 700; }
-.rbw-wzr .nm { min-width: 0; }
-.rbw-wzr .nm b { display: block; font-family: var(--fN); font-size: 12.5px; font-weight: 700;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rbw-wzr .nm span { display: block; font-size: 10.5px; color: var(--mut);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rbw-wzr .m { text-align: right; font-size: 12.5px; font-weight: 700; }
-.rbw-wzr .q { text-align: right; font-size: 11.5px; color: var(--mut); }
-/* мелочь сделки — тихой строкой, ниже всего остального */
-.rbw-wztail { margin-top: 14px; font-family: var(--fN); font-size: 11.5px; color: var(--dim); }
-
-.rbw-skrow { display: flex; align-items: center; gap: 10px; padding: 9px 0; }
-.rbw-skc { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
-
-/* панель эффекта ушла; от неё остались полосы долей, легенда и кнопки действий */
-.rbw-fxba-row { display: flex; align-items: center; gap: 9px; }
-.rbw-fxba-row em { font-style: normal; font-size: 9.5px; font-weight: 800; letter-spacing: 0.07em;
-    text-transform: uppercase; color: var(--dim); }
-.rbw-fxba-row.on em { color: var(--ink); }
-.rbw-fxba-bar { position: relative; flex: 1; height: 14px; border-radius: 7px; display: flex; overflow: visible; }
-.rbw-fxba-bar i { height: 100%; }
-.rbw-fxba-bar i:first-child { border-radius: 7px 0 0 7px; }
-.rbw-fxba-bar i:last-child { border-radius: 0 7px 7px 0; }
-.rbw-fxba-bar .st { background: var(--stock); } .rbw-fxba-bar .bd { background: var(--bond); }
-.rbw-fxba-bar u { position: absolute; top: -4px; width: 2px; height: 22px; border-radius: 2px; background: var(--ink); }
-.rbw-fxba-row b { font-family: var(--fN); font-size: 11.5px; font-weight: 600; width: 52px; text-align: right; flex: none; }
-.rbw-fx-leg { display: flex; gap: 14px; margin-top: 12px; }
-.rbw-fx-leg span { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; color: var(--mut); }
-.rbw-fx-leg i { width: 8px; height: 8px; border-radius: 3px; }
-.rbw-fx-leg i.st { background: var(--stock); } .rbw-fx-leg i.bd { background: var(--bond); }
-.rbw-fx-leg i.tg { width: 2px; height: 11px; border-radius: 2px; background: var(--ink); }
-.rbw-fx-act { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12.5px; font-weight: 600;
-    padding: 9px 16px; border-radius: 999px; border: 1px solid var(--line); background: transparent;
-    color: var(--mut); cursor: pointer; }
-.rbw-fx-act:hover { color: var(--ink); border-color: color-mix(in srgb, var(--ink) 30%, transparent); }
-.rbw-fx-act.pri { border-color: color-mix(in srgb, var(--acc) 35%, transparent); color: var(--acc); }
-.rbw-fx-act.pri:hover { background: color-mix(in srgb, var(--acc) 10%, transparent); }
-.rbw-fx-act svg { width: 15px; height: 15px; }
-
-/* тумблер Облигации/Акции */
-.rbw-cls { flex: none; display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: var(--card); }
-.rbw-cls span { font-size: 12px; font-weight: 600; color: var(--mut); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
-.rbw-cls span.on { background: var(--chip-bg); color: var(--chip-fg); }
-
-/* ═══════ шаг 3 · авто: СТРОКИ вариантов (пара · что делаем · сколько даёт) ═══════ */
-.rbw-wzauto { display: flex; flex-direction: column; gap: 12px; }
-.rbw-wza { display: flex; align-items: center; gap: 16px; border-radius: 14px; padding: 14px 18px;
-    cursor: pointer; background: var(--card); border: 1px solid var(--line); }
-.rbw-wza:hover { border-color: color-mix(in srgb, var(--ink) 22%, transparent); }
-.rbw-wza.on { box-shadow: 0 0 0 2px color-mix(in srgb, var(--ink) 62%, transparent); border-color: transparent; }
-.rbw-wza .rd { flex: none; width: 15px; height: 15px; border-radius: 50%; border: 1.5px solid var(--dim); }
-.rbw-wza.on .rd { border-color: var(--ink); border-width: 5px; }
-.rbw-wza .tx { min-width: 0; }
-.rbw-wza .tx b { display: block; font-size: 13px; font-weight: 700; }
-.rbw-wza .tx span { display: block; font-size: 11.5px; color: var(--mut); margin-top: 3px; }
-.rbw-wza .fig { margin-left: auto; text-align: right; flex: none; }
-.rbw-wza .fig b { font-family: var(--fN); font-size: 19px; font-weight: 700; color: var(--grn); }
-.rbw-wza .fig span { display: block; font-size: 10.5px; color: var(--mut); }
-
-/* ═══════ предупреждения мастера: тон несут иконка и подложка, не текст ═══════ */
-.rbw-wn { display: flex; align-items: flex-start; gap: 11px; border-radius: 12px; padding: 12px 14px;
-    font-size: 12px; line-height: 1.5; margin-top: 12px; color: var(--mut); }
-.rbw-wn .ic { flex: none; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; }
-.rbw-wn .ic svg { width: 12px; height: 12px; }
-.rbw-wn b { font-weight: 700; }
-.rbw-wn.warn { background: color-mix(in srgb, var(--amb) 11%, transparent); }
-.rbw-wn.warn .ic { background: color-mix(in srgb, var(--amb) 20%, transparent); color: var(--amb); }
-.rbw-wn.warn b { color: var(--amb); }
-.rbw-wn.info { background: color-mix(in srgb, var(--ink) 4%, transparent); }
-.rbw-wn.info .ic { background: color-mix(in srgb, var(--ink) 10%, transparent); color: var(--mut); }
-.rbw-wn.info b { color: var(--ink); }
-.rbw-wn.ok { background: color-mix(in srgb, var(--grn) 11%, transparent); }
-.rbw-wn.ok .ic { background: color-mix(in srgb, var(--grn) 18%, transparent); color: var(--grn); }
-.rbw-wn.ok b { color: var(--grn); }
-
-/* ═══════ шаг 4 · корзина: строка на заявку и одна сводка ═══════ */
-.rbw-ord { border-radius: 14px; border: 1px solid var(--line); overflow: hidden; background: var(--card); }
-.rbw-o { display: grid; grid-template-columns: 34px minmax(0, 1fr) 128px 108px 120px; gap: 14px;
-    align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--hair); }
-.rbw-o:last-of-type { border-bottom: 0; }
-.rbw-o .mono { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
-    font-family: var(--fN); font-size: 11px; font-weight: 700; background: var(--bond-s); color: var(--bond); }
-.rbw-o .mono.cls-stock { background: var(--stock-s); color: var(--stock); }
-.rbw-o .tx { min-width: 0; }
-.rbw-o .tx b { display: block; font-size: 13px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rbw-o .tx span { display: block; font-size: 11px; color: var(--mut); }
-.rbw-o .ty { display: flex; gap: 3px; }
-.rbw-o .ty b { font-family: var(--fN); font-size: 10.5px; font-weight: 600; color: var(--mut);
-    border: 1px solid var(--line); border-radius: 7px; padding: 3px 9px; cursor: pointer; }
-.rbw-o .ty b.on { color: var(--ink); background: color-mix(in srgb, var(--ink) 6%, transparent); }
-.rbw-o .qt, .rbw-o .vl { text-align: right; font-size: 13px; font-weight: 700; }
-.rbw-o .vl.pos { color: var(--grn); }
-.rbw-osum { display: flex; align-items: baseline; gap: 12px; padding: 13px 18px; font-size: 12px;
-    color: var(--mut); background: color-mix(in srgb, var(--ink) 4%, transparent); }
-.rbw-osum b { font-family: var(--fN); font-weight: 700; color: var(--ink); }
-.rbw-cart-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
-
-/* ═══════ квитанция: узкий чек по центру, честный про частичное ═══════ */
-.rbw-rc { width: 660px; max-width: 100%; margin: 0 auto; border-radius: 16px; background: var(--card);
-    border: 1px solid var(--line); padding: 22px 26px; box-shadow: var(--shadow); }
-.rbw-rc-h { text-align: center; padding-bottom: 16px; border-bottom: 1px dashed var(--line); }
-.rbw-rc-h .ic { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center;
-    margin: 0 auto 10px; font-size: 20px; }
-.rbw-rc-h .ic.ok { background: color-mix(in srgb, var(--grn) 16%, transparent); color: var(--grn); }
-.rbw-rc-h .ic.warn { background: color-mix(in srgb, var(--amb) 16%, transparent); color: var(--amb); }
-.rbw-rc-h h4 { font-family: var(--fT); font-weight: 400; font-size: 21px; }
-.rbw-rc-h p { font-size: 12px; color: var(--mut); margin-top: 5px; }
-.rbw-rc-r { display: flex; align-items: center; gap: 12px; padding: 12px 0;
-    border-bottom: 1px solid var(--hair); font-size: 12.5px; }
-.rbw-rc-r:last-of-type { border-bottom: 0; }
-.rbw-rc-r .st { width: 9px; height: 9px; border-radius: 50%; flex: none; }
-.rbw-rc-r .st.ok { background: var(--grn); } .rbw-rc-r .st.warn { background: var(--amb); }
-.rbw-rc-r .st.bad { background: var(--red); }
-.rbw-rc-r .tx b { display: block; font-family: var(--fN); font-size: 12.5px; font-weight: 700; }
-.rbw-rc-r .tx span { font-size: 11px; color: var(--mut); }
-.rbw-rc-r .vl { margin-left: auto; text-align: right; font-size: 12.5px; font-weight: 700; }
-.rbw-rc-r .vl em { display: block; font-style: normal; font-size: 10.5px; font-weight: 600; color: var(--mut); }
-.rbw-rc-tot { display: flex; justify-content: space-between; padding-top: 14px; margin-top: 6px;
-    border-top: 1px dashed var(--line); font-size: 12.5px; color: var(--mut); }
-.rbw-rc-tot.plain { border-top: 0; padding-top: 8px; margin-top: 0; }
-.rbw-rc-tot b { font-family: var(--fN); font-weight: 700; color: var(--ink); }
-.rbw-rl-cancel { cursor: pointer; text-decoration: underline; }
-
-/* ═══════ «Готово»: три итога в одном формате и дата следующей сверки ═══════ */
-.rbw-dn3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 18px; }
-.rbw-dn-c { border-radius: 14px; padding: 16px 18px; background: var(--card); border: 1px solid var(--line); }
-.rbw-dn-c .k { font-family: var(--fN); font-size: 9px; font-weight: 700; letter-spacing: 0.12em;
-    text-transform: uppercase; color: var(--dim); }
-.rbw-dn-c .v { font-size: 26px; font-weight: 700; margin-top: 9px; }
-.rbw-dn-c .v span { font-size: 44%; font-weight: 600; color: var(--mut); }
-.rbw-dn-c .v.pos { color: var(--grn); }
-.rbw-dn-c .s { font-size: 11.5px; color: var(--mut); margin-top: 5px; }
-
-/* до→после (используется в «Готово» и оверлее «Что если») */
-.rbw-done-c { border: 1px solid var(--line); border-radius: 16px; padding: 18px 22px; background: var(--card); }
-.rbw-done-c em { font-style: normal; font-size: 9.5px; font-weight: 800; letter-spacing: 0.08em;
-    text-transform: uppercase; color: var(--dim); display: block; margin-bottom: 14px; }
-.rbw-ba { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; margin-bottom: 12px; }
-.rbw-ba-b { opacity: 0.55; }
-.rbw-ba-b em, .rbw-ba-a em { font-style: normal; font-size: 9px; font-weight: 800; letter-spacing: 0.06em;
-    text-transform: uppercase; color: var(--dim); display: block; margin-bottom: 5px; }
-.rbw-ba-mini { height: 10px; border-radius: 999px; display: flex; overflow: hidden; background: var(--hair); }
-.rbw-ba-mini .st { background: var(--stock); } .rbw-ba-mini .bd { background: var(--bond); }
-.rbw-ba-cap { display: flex; justify-content: space-between; font-family: var(--fN); font-size: 10px; margin-top: 5px; color: var(--mut); }
-.rbw-ba-ar { color: var(--dim); font-size: 16px; }
-.rbw-mmini { display: flex; align-items: center; gap: 14px; }
-.rbw-mm-big { font-family: var(--fN); font-size: 26px; font-weight: 700; color: var(--grn); }
-.rbw-mm-t { font-size: 12px; color: var(--mut); line-height: 1.5; }
-.rbw-mm-t b { color: var(--ink); font-family: var(--fN); }
-
-/* ── микрокопия: термины с тултипом ── */
-.rbw-gl { border-bottom: 1px dotted currentColor; cursor: help; position: relative; outline: none; }
-.rbw-gl-tip { display: none; position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(100% + 9px);
-    width: 250px; max-width: 46vw; z-index: 90; background: var(--ink); color: var(--bg); font-family: var(--fU);
-    font-weight: 500; font-size: 11.5px; line-height: 1.5; letter-spacing: 0; text-transform: none; text-align: left;
-    border-radius: 11px; padding: 10px 13px; box-shadow: 0 20px 44px -18px rgba(0, 0, 0, 0.55); }
-.rbw-gl:hover .rbw-gl-tip, .rbw-gl:focus .rbw-gl-tip, .rbw-gl:focus-visible .rbw-gl-tip { display: block; }
-.rbw-gl-tip::after { content: ''; position: absolute; left: 50%; transform: translateX(-50%); top: 100%;
-    border: 6px solid transparent; border-top-color: var(--ink); }
-
-/* ── «Что если»: предпросмотр эффекта (оверлей) ── */
-@keyframes rbw-fade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes rbw-pop { from { opacity: 0; transform: translateY(-6px) scale(0.985); } to { opacity: 1; transform: none; } }
-.rbw-wi-back { position: absolute; inset: 0; background: rgba(16, 24, 40, 0.5); backdrop-filter: blur(3px); z-index: 80; animation: rbw-fade .18s ease both; }
-.rbw-wi { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 81; width: 660px; max-width: 92%;
-    background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 26px 30px;
-    box-shadow: 0 44px 100px -34px rgba(0, 0, 0, 0.55); animation: rbw-pop .2s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
-.rbw-wi-h { display: flex; align-items: center; }
-.rbw-wi-h b { font-family: var(--fT); font-weight: 400; font-size: 22px; }
-.rbw-wi-x { margin-left: auto; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
-    color: var(--mut); cursor: pointer; border: 1px solid var(--line); }
-.rbw-wi-x:hover { color: var(--ink); border-color: var(--acc); }
-.rbw-wi-sub { font-size: 13px; color: var(--mut); margin: 8px 0 18px; line-height: 1.5; }
-.rbw-wi-sub b { color: var(--ink); }
-.rbw-wi-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.rbw-wi-cards .rbw-done-c:only-child { grid-column: 1 / -1; }
-.rbw-wi-tot { display: flex; gap: 24px; flex-wrap: wrap; margin: 18px 0; padding: 14px 0;
-    border-top: 1px dashed var(--line); border-bottom: 1px dashed var(--line); }
-.rbw-wi-tot > span { display: flex; flex-direction: column; gap: 3px; }
-.rbw-wi-tot em { font-style: normal; font-size: 9px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); }
-.rbw-wi-tot b { font-family: var(--fN); font-size: 15px; font-weight: 700; }
-.rbw-wi-foot { display: flex; gap: 12px; justify-content: flex-end; }
-.rbw-wi-foot .rbw-btn-dark { margin-left: 0; }
-
-/* ═══════════ интерактив ═══════════ */
-.rbw button:focus-visible, .rbw .rbw-wzp-r:focus-visible, .rbw .rbw-wzm:focus-visible,
-.rbw .rbw-wza:focus-visible, .rbw .rbw-wzr:focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--acc) 60%, transparent); outline-offset: 2px; }
-
-.rbw-btn, .rbw-exit, .rbw-wzp-r, .rbw-wzm, .rbw-wza, .rbw-cchip, .rbw-thr-b, .rbw-swp-b,
-.rbw-cls span, .rbw-o .ty b, .rbw-rs, .rbw-wzr, .rbw-fx-act, .rbw-rl-cancel {
-    transition: border-color .15s ease, box-shadow .16s ease, transform .15s ease, background .15s ease, color .14s ease; }
-.rbw-btn-dark:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 18px 36px -16px rgba(16, 24, 40, 0.62); }
-.rbw-btn-dark:active:not(:disabled) { transform: translateY(0); box-shadow: 0 8px 18px -12px rgba(16, 24, 40, 0.6); }
-.rbw-wzp-r:not(.on):hover, .rbw-wzm:not(.on):not(.dis):hover, .rbw-wza:not(.on):hover {
-    border-color: color-mix(in srgb, var(--ink) 25%, transparent); transform: translateY(-1px);
-    box-shadow: 0 12px 28px -18px rgba(24, 38, 60, 0.35); }
-
-/* появление контента при смене шага */
-@keyframes rbw-in { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: none; } }
-.rbw-main.rbw-anim .rbw-mh { animation: rbw-in .3s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
-.rbw-main.rbw-anim .rbw-body { animation: rbw-in .36s cubic-bezier(0.2, 0.7, 0.3, 1) .05s both; }
-
-@media (prefers-reduced-motion: reduce) {
-    .rbw-main.rbw-anim .rbw-mh, .rbw-main.rbw-anim .rbw-body, .rbw-wi, .rbw-wi-back, .rbw-sk { animation: none; transition: none; }
-    .rbw-btn-dark:hover, .rbw-wzp-r:hover, .rbw-wzm:hover, .rbw-wza:hover { transform: none; }
+/* ═══════════ ОТСТУПЛЕНИЕ 1 · сцена мокапа → полноэкранная страница ═══════════
+   Мокап рисует прямоугольник 1440×880 с рамкой, радиусом и тенью — это рамка
+   картинки, а не элемент интерфейса. В приложении корень занимает вьюпорт,
+   рамка снимается, а ряд и рабочая область остаются шириной 1440 и стоят по
+   центру: на эталонных 1440×880 всё совпадает пиксель в пиксель. */
+#rbwBar {
+    width: 100%; height: var(--real-vh, 100vh); min-height: 620px; z-index: 3;
+    border: 0; border-radius: 0; box-shadow: none;
+    display: flex; flex-direction: column; align-items: center;
 }
+/* zoom:0.9 (desktop-zoom.css) сжимает px — полноэкранную высоту делим обратно */
+@media (min-width: 1024px) { #rbwBar { height: calc(var(--real-vh, 100vh) / 0.9); } }
+#rbwBar .r5-top { flex: none; width: 100%; max-width: 1440px; }
+#rbwBar .r5-stage {
+    height: auto; flex: 1; min-height: 0; width: 100%; max-width: 1440px; overflow: auto;
+}
+/* ОТСТУПЛЕНИЕ 2: safe center — контент выше экрана не срезается сверху */
+#rbwBar .r5-stage.center { justify-content: safe center; }
+#rbwBar .r5-stage::-webkit-scrollbar { width: 9px; }
+#rbwBar .r5-stage::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--mut) 28%, transparent); border-radius: 999px;
+    border: 3px solid transparent; background-clip: padding-box; }
+#rbwBar .r5-stage { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--mut) 30%, transparent) transparent; }
 
-/* тонкие скроллбары */
-.rbw-body::-webkit-scrollbar { width: 9px; }
-.rbw-body::-webkit-scrollbar-thumb {
-    background: color-mix(in srgb, var(--mut) 28%, transparent); border-radius: 999px; border: 3px solid transparent; background-clip: padding-box; }
-.rbw-body::-webkit-scrollbar-thumb:hover {
-    background: color-mix(in srgb, var(--mut) 45%, transparent); background-clip: padding-box; }
-.rbw-body { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--mut) 30%, transparent) transparent; }
+/* кликабельность: в мокапе строки и чипы — картинки, здесь это контролы */
+#rbwBar .r5-pf, #rbwBar .r5-lr, #rbwBar .r5-pc, #rbwBar .r5-quiet,
+#rbwBar .r5-dc-h .ch, #rbwBar .r5-lh .sw span { cursor: pointer; }
+/* background в переходе НЕТ намеренно: он анимирует var(--ink) и при смене темы
+   кнопка на полсекунды остаётся светлой на тёмном (ловил при проверке) */
+#rbwBar .r5-pc, #rbwBar .r5-lr, #rbwBar .r5-btn, #rbwBar .r5-pf {
+    transition: border-color .15s ease, box-shadow .16s ease, transform .15s ease; }
+#rbwBar .r5-pc:not(.reco):hover { border-color: color-mix(in srgb, var(--ink) 25%, transparent); }
+#rbwBar .r5-lr:not(.on):hover { background: color-mix(in srgb, var(--ink) 3%, transparent); }
+#rbwBar .r5-btn:hover { transform: translateY(-1px); }
+#rbwBar .r5-btn:active { transform: translateY(0); }
+#rbwBar .r5-btn[disabled] { opacity: .5; cursor: not-allowed; transform: none; }
+#rbwBar .r5-quiet:hover { color: var(--ink); }
+#rbwBar :focus-visible { outline: 2px solid color-mix(in srgb, var(--acc) 60%, transparent); outline-offset: 2px; }
+
+/* ОТСТУПЛЕНИЕ 4: частичное исполнение (заметка 6 к сцене 11) */
+#rbwBar .r5-rr .s.part { color: var(--amb); }
+#rbwBar .r5-rr .s.part i { font-style: normal; color: var(--dim); font-weight: 600; }
+
+/* пустой экран/ошибка — типографика та же, что у «Здесь всё в порядке» */
+#rbwBar .r5-empty { font-size: 15.5px; line-height: 1.55; color: var(--mut); max-width: 720px; margin-top: 14px; }
+
+/* ═══════════ ОТСТУПЛЕНИЕ 3 · тёмная тема ═══════════
+   Мокап нарисован только светлым. Тема следует за body.dark-mode сайта и меняет
+   ТОЛЬКО токены: ни одного правила раскладки, кегля или отступа здесь нет. */
+body.dark-mode #rbwBar {
+    --ink: #e7ebf2; --mut: #98a4b6; --dim: #5c6879;
+    --line: #242b37; --hair: rgba(255, 255, 255, .06);
+    --card: #161a21; --acc: #7c88ff; --grn: #4ade80; --red: #f87171; --amb: #fbbf24;
+    --st: #d98a63; --st-s: rgba(217, 138, 99, .16); --bd: #7b98bd; --bd-s: rgba(123, 152, 189, .16);
+    background: #0f1216;
+}
+/* «чернильные» элементы инвертируются: на светлом фоне текст обязан быть тёмным */
+body.dark-mode #rbwBar .r5-pf.on,
+body.dark-mode #rbwBar .r5-btn,
+body.dark-mode #rbwBar .r5-mid span,
+body.dark-mode #rbwBar .r5-lh .sw span.on { color: #0f1216; }
+body.dark-mode #rbwBar .r5-btn.ghost { color: var(--mut); }
+body.dark-mode #rbwBar .r5-btn.acc { color: #0f1216; }
+/* полосы: в светлой они смешаны с белым, в тёмной белого нет */
+body.dark-mode #rbwBar .r5-bar i.st, body.dark-mode #rbwBar .r5-bbar i.st,
+body.dark-mode #rbwBar .r5-track .fill { background: color-mix(in srgb, var(--st) 72%, transparent); }
+body.dark-mode #rbwBar .r5-bar i.bd, body.dark-mode #rbwBar .r5-bbar i.bd { background: color-mix(in srgb, var(--bd) 62%, transparent); }
+body.dark-mode #rbwBar .r5-track .knob, body.dark-mode #rbwBar .r5-handle { background: var(--card); }
+body.dark-mode #rbwBar .r5-mid span { box-shadow: 0 0 0 10px var(--card); }
 
 /* ═══════════ адаптив ═══════════ */
-@media (min-width: 1500px) {
-    .rbw-main { padding: 0 60px; }
-    .rbw-wrap { max-width: 1080px; }
-    .rbw-wrap.wide { max-width: 1240px; }
-    .rbw-mh h3 { font-size: 33px; }
-    .rbw-mh p { font-size: 14.5px; max-width: 720px; }
-}
 @media (max-width: 1240px) {
-    .rbw-wzmodes, .rbw-dn3 { grid-template-columns: 1fr; }
-}
-@media (max-width: 1000px) {
-    .rbw-wzp-r { grid-template-columns: 22px minmax(0, 1fr) 110px; row-gap: 12px; }
-    .rbw-wzp-r .rbw-alc, .rbw-wzp-r .rbw-wzp-d { grid-column: 2 / -1; }
-    .rbw-main { padding: 0 28px; }
+    #rbwBar .r5-stage { padding-left: 44px; padding-right: 44px; }
+    #rbwBar .r5-top { padding: 0 24px; }
+    #rbwBar .r5-top::after { left: 24px; right: 24px; }
+    #rbwBar .r5-h1 { font-size: 38px; }
+    #rbwBar .r5-q { font-size: 54px; }
+    #rbwBar .r5-deal { width: 100%; }
+    #rbwBar .r5-lv-hd b { font-size: 46px; }
 }
 @media (max-width: 900px) {
-    .rbw-wztwo, .rbw-abars { grid-template-columns: 1fr; }
-    .rbw-swp { flex-wrap: wrap; }
-    .rbw-swp-mid { width: 100%; height: 44px; border-left: 0; border-right: 0;
-        border-top: 1px solid var(--hair); border-bottom: 1px solid var(--hair); }
-    .rbw-o { grid-template-columns: 34px minmax(0, 1fr) 108px; row-gap: 10px; }
-    .rbw-o .ty { grid-column: 2 / -1; }
-    .rbw-osum { flex-wrap: wrap; }
+    #rbwBar .r5-pick, #rbwBar .r5-two, #rbwBar .r5-fig2 { grid-template-columns: 1fr; }
+    #rbwBar .r5-money-strip { grid-template-columns: 1fr 1fr; gap: 16px; }
+    #rbwBar .r5-lr { grid-template-columns: 26px 46px minmax(0, 1fr); row-gap: 8px; }
+    #rbwBar .r5-lr .g, #rbwBar .r5-lr .p { grid-column: 3; text-align: left; }
+    #rbwBar .r5-stage { padding-left: 22px; padding-right: 22px; }
+    #rbwBar .r5-deal-top { flex-wrap: wrap; }
+    #rbwBar .r5-mid { width: 100%; height: 60px; }
+    #rbwBar .r5-leg.buy { align-items: flex-start; text-align: left; }
+    #rbwBar .r5-leg.buy .r5-inst { flex-direction: row; }
+}
+@media (prefers-reduced-motion: reduce) {
+    #rbwBar .r5-bar i.over { animation: none; }
+    #rbwBar .r5-btn:hover, #rbwBar .r5-pc:hover { transform: none; }
 }

@@ -9,9 +9,8 @@
 <style>
 /* ==========================================================================
    Р4 · «ЛИСТ» — «Обзор» и страница портфеля
-   Материал взят из боевого кода, но собран иначе: вместо восьми карточек —
-   один лист бумаги, на котором всё НАБРАНО, а не разложено по коробкам.
-   Голоса прежние: Georgia (смысл), Inter (интерфейс и главное число),
+   Вместо восьми карточек — один лист бумаги, на котором всё НАБРАНО.
+   Голоса: Georgia (смысл), Inter (интерфейс и главное число),
    JetBrains Mono (мелкие числа в рядах).
    ========================================================================== */
 :root{
@@ -29,6 +28,10 @@
   --neg:#BE4A40;      /* терракота, не алый */
   --amb:#A9762A;
 
+  --fill1:rgba(22,34,55,.50);   /* акции */
+  --fill2:rgba(22,34,55,.20);   /* облигации */
+  --fill3:rgba(22,34,55,.09);   /* деньги */
+
   --sheet: rgba(255,255,255,.80);
   --sheet-bd: rgba(255,255,255,.9);
   --sheet-sh: 0 34px 70px -40px rgba(22,34,55,.36), 0 2px 6px -3px rgba(22,34,55,.06), inset 0 1px 0 rgba(255,255,255,.9);
@@ -39,8 +42,7 @@ body{margin:0;background:#EDF0F5;color:var(--tx);font-family:var(--fN);
 
 /* ---------- каркас документа ---------- */
 .wrap{max-width:1660px;margin:0 auto;padding:60px 24px 0}
-.doc-h{font-family:var(--fU);font-size:42px;line-height:1.1;letter-spacing:-.5px;color:var(--ink);
-       margin:0 0 16px;font-weight:400}
+.doc-h{font-family:var(--fU);font-size:42px;line-height:1.1;letter-spacing:-.5px;color:var(--ink);margin:0 0 16px;font-weight:400}
 .doc-s{font-size:15.5px;line-height:1.68;color:var(--mut);max-width:900px;margin:0 0 34px}
 .doc-s b{color:var(--tx);font-weight:600}
 .laws{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:0 0 52px}
@@ -50,8 +52,7 @@ body{margin:0;background:#EDF0F5;color:var(--tx);font-family:var(--fN);
 .law p{margin:0;font-size:13px;line-height:1.62;color:var(--mut)}
 
 .sec{margin:0 0 20px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
-.sec .n{font-family:var(--fM);font-size:11.5px;font-weight:500;color:#fff;background:var(--ink);
-        border-radius:6px;padding:4px 8px;letter-spacing:.06em}
+.sec .n{font-family:var(--fM);font-size:11.5px;font-weight:500;color:#fff;background:var(--ink);border-radius:6px;padding:4px 8px;letter-spacing:.06em}
 .sec h2{font-family:var(--fU);font-size:27px;font-weight:400;color:var(--ink);margin:0;letter-spacing:-.25px}
 .sec p{margin:0;font-size:13.5px;color:var(--mut);max-width:800px;line-height:1.6}
 .block{margin:0 0 74px}
@@ -77,6 +78,7 @@ body{margin:0;background:#EDF0F5;color:var(--tx);font-family:var(--fN);
 .scr.dk{--ink:#EAF0F7;--tx:#C3CFDD;--mut:#8A98AB;--fnt:#6B7A8E;
         --hair:rgba(255,255,255,.10);--hair2:rgba(255,255,255,.18);
         --pos:#4FBE85;--neg:#E0776C;--amb:#D6A052;
+        --fill1:rgba(255,255,255,.46);--fill2:rgba(255,255,255,.18);--fill3:rgba(255,255,255,.08);
         --sheet:rgba(24,34,48,.72);--sheet-bd:rgba(255,255,255,.08);
         --sheet-sh:0 36px 76px -44px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.055)}
 .scr.dk::before{background:
@@ -90,8 +92,7 @@ body{margin:0;background:#EDF0F5;color:var(--tx);font-family:var(--fN);
 /* ---------- колонка навигации ---------- */
 .sb{width:282px;flex:0 0 282px;position:relative;z-index:1;padding:20px 16px 16px;display:flex;flex-direction:column;gap:15px}
 .sb-brand{display:flex;align-items:center;gap:11px;padding:2px 6px 0}
-.sb-logo{width:34px;height:34px;border-radius:11px;background:var(--ink);color:#fff;font-family:var(--fU);
-         font-size:19px;display:flex;align-items:center;justify-content:center}
+.sb-logo{width:34px;height:34px;border-radius:11px;background:var(--ink);color:#fff;font-family:var(--fU);font-size:19px;display:flex;align-items:center;justify-content:center}
 .scr.dk .sb-logo{background:#EAF0F7;color:#111A26}
 .sb-nm{font-size:14.5px;color:var(--ink);line-height:1.15}
 .sb-nm b{font-weight:600}
@@ -106,8 +107,7 @@ body{margin:0;background:#EDF0F5;color:var(--tx);font-family:var(--fN);
 .scr.dk .sb-i.on{background:rgba(255,255,255,.09);box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
 .sb-i.on .g{opacity:.85}
 .sb-i .cnt{margin-left:auto;font-family:var(--fM);font-size:10.5px;color:var(--fnt)}
-.sb-cap{font-family:var(--fU);font-style:italic;font-size:12px;color:var(--fnt);padding:14px 11px 6px;
-        border-top:1px solid var(--hair);margin-top:8px}
+.sb-cap{font-family:var(--fU);font-style:italic;font-size:12px;color:var(--fnt);padding:14px 11px 6px;border-top:1px solid var(--hair);margin-top:8px}
 .sb-p{display:flex;align-items:center;gap:9px;height:30px;padding:0 11px;border-radius:8px;font-size:12.5px;color:var(--tx)}
 .sb-p .d{width:6px;height:6px;border-radius:50%;flex:0 0 6px}
 .sb-p .v{margin-left:auto;font-family:var(--fM);font-size:10.5px;color:var(--fnt)}
@@ -117,13 +117,21 @@ body{margin:0;background:#EDF0F5;color:var(--tx);font-family:var(--fN);
 .sb-foot .t{font-size:12.5px;color:var(--tx);font-weight:600;line-height:1.2}
 .sb-foot .t i{display:block;font-style:normal;font-size:10.5px;color:var(--fnt);font-weight:400}
 
+/* рейка узкого экрана */
+.rail{width:80px;flex:0 0 80px;position:relative;z-index:1;padding:20px 0 16px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.rail .lg{width:34px;height:34px;border-radius:11px;background:var(--ink);color:#fff;font-family:var(--fU);font-size:19px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.rail .ic{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:var(--mut)}
+.rail .ic.on{background:rgba(255,255,255,.62);color:var(--ink);box-shadow:inset 0 0 0 1px rgba(255,255,255,.8)}
+.rail .sp{margin-top:auto}
+
 /* ---------- полотно и ЛИСТ ---------- */
 .pg{flex:1;position:relative;z-index:1;padding:26px 26px 0;overflow:hidden}
+.pg.tight{padding:20px 20px 0}
 .sheet{background:var(--sheet);border:1px solid var(--sheet-bd);border-radius:20px;box-shadow:var(--sheet-sh);
-       backdrop-filter:blur(20px) saturate(1.3);padding:36px 52px 32px}
-.sheet.p2{padding:32px 52px 28px}
+       backdrop-filter:blur(20px) saturate(1.3);padding:36px 52px 28px}
+.sheet.p2{padding:32px 52px 26px}
+.sheet.nar{padding:26px 30px 22px}
 
-/* надстрочная метка раздела — серифный курсив, а не капс */
 .lb{font-family:var(--fU);font-style:italic;font-size:13.5px;color:var(--fnt);letter-spacing:.1px}
 .lb.tt{color:var(--mut)}
 
@@ -136,7 +144,9 @@ body{margin:0;background:#EDF0F5;color:var(--tx);font-family:var(--fN);
 .big em{font-style:normal;font-size:32px;font-weight:300;color:var(--fnt);letter-spacing:0}
 .big.md{font-size:64px;letter-spacing:-2.4px}
 .big.md em{font-size:26px}
-.sumline{display:flex;align-items:baseline;margin-top:14px;font-size:14.5px;color:var(--mut)}
+.big.sm{font-size:48px;letter-spacing:-1.6px}
+.big.sm em{font-size:21px}
+.sumline{display:flex;align-items:baseline;margin-top:14px;font-size:14.5px;color:var(--mut);flex-wrap:wrap}
 .sumline i{font-style:normal;padding:0 16px;position:relative}
 .sumline i:first-child{padding-left:0}
 .sumline i + i::before{content:'';position:absolute;left:0;top:2px;bottom:2px;width:1px;background:var(--hair2);opacity:.6}
@@ -145,40 +155,69 @@ body{margin:0;background:#EDF0F5;color:var(--tx);font-family:var(--fN);
 .sumline b.neg{color:var(--neg)}
 
 /* --- кривая-волосок --- */
-.curve{margin:22px 0 0;position:relative;height:84px}
+.curve{margin:22px 0 0;position:relative;height:76px}
 .curve svg{display:block;width:100%;height:100%;overflow:visible}
 .curve .mk{position:absolute;font-family:var(--fM);font-size:10.5px;color:var(--fnt);white-space:nowrap}
 .curve-ft{display:flex;align-items:baseline;margin-top:9px;font-family:var(--fM);font-size:10.5px;color:var(--fnt)}
 .curve-ft .seg{margin-left:auto;display:flex;gap:14px}
 .curve-ft .seg span.on{color:var(--ink);font-weight:500;border-bottom:1px solid var(--ink);padding-bottom:2px}
+/* кривой ещё нет — вместо неё строка, а не пустая рамка */
+.curve-no{margin:22px 0 0;height:76px;display:flex;align-items:center;gap:12px;font-size:13px;color:var(--mut);
+          border-top:1px solid var(--hair);border-bottom:1px solid var(--hair)}
+.curve-no i{font-style:italic;font-family:var(--fU);color:var(--fnt)}
 
-.rule{height:1px;background:var(--hair);margin:28px 0 0}
-.gap{height:26px}
+.rule{height:1px;background:var(--hair);margin:26px 0 0}
+.gap{height:22px}
 
 /* --- ОГЛАВЛЕНИЕ ПОРТФЕЛЕЙ --- */
-.toc{margin-top:20px}
-.toc-r{display:flex;align-items:baseline;padding:11px 0;position:relative}
+.toc{margin-top:18px}
+.toc-r{display:flex;align-items:baseline;padding:10px 0;position:relative}
 .toc-r + .toc-r{border-top:1px solid var(--hair)}
 .toc-r .d{width:6px;height:6px;border-radius:50%;flex:0 0 6px;align-self:center;margin-right:13px;opacity:.85}
 .toc-r .nm{font-family:var(--fU);font-size:19px;color:var(--ink);letter-spacing:-.1px;white-space:nowrap}
 .toc-r .sub{font-size:12.5px;color:var(--fnt);margin-left:12px;white-space:nowrap}
-.toc-r .dots{flex:1;margin:0 16px 6px;height:0;align-self:flex-end;
-   border-bottom:2px dotted var(--fnt);opacity:.62}
+.toc-r .dots{flex:1;margin:0 16px 6px;height:0;align-self:flex-end;border-bottom:2px dotted var(--fnt);opacity:.62}
 .toc-r .val{font-size:18px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
 .toc-r .day{width:96px;text-align:right;font-family:var(--fM);font-size:12.5px;white-space:nowrap}
 .toc-r .go{width:22px;text-align:right;color:var(--fnt);font-size:14px}
 .toc-r.hov{background:rgba(22,34,55,.028);border-radius:10px;box-shadow:0 0 0 12px rgba(22,34,55,.028)}
 .scr.dk .toc-r.hov{background:rgba(255,255,255,.045);box-shadow:0 0 0 12px rgba(255,255,255,.045)}
 .toc-r.hov .go{color:var(--ink)}
-.toc-ft{display:flex;align-items:baseline;padding:14px 0 0;border-top:1px solid var(--hair2);margin-top:2px;
-        font-size:13.5px;color:var(--mut)}
-.toc-ft .val{margin-left:auto;font-size:15px;font-weight:500;color:var(--tx);font-variant-numeric:tabular-nums}
+
+/* --- ИЗ ЧЕГО СОБРАНО (распределение по классам) --- */
+.mix{padding:14px 0 0;border-top:1px solid var(--hair2);margin-top:2px}
+.mix-h{display:flex;align-items:baseline;margin-bottom:10px}
+.mix-h .r{margin-left:auto;font-size:12.5px;color:var(--mut)}
+.mix-h .r b{font-family:var(--fM);font-weight:600;color:var(--amb)}
+.mix-bar{position:relative;display:flex;height:6px;border-radius:4px;overflow:visible;background:transparent}
+.mix-bar i{display:block;height:6px;position:relative}
+.mix-bar i:first-child{border-radius:4px 0 0 4px}
+.mix-bar i:last-child{border-radius:0 4px 4px 0}
+.mix-bar i + i{margin-left:2px}
+.mix-bar .f1{background:var(--fill1)}
+.mix-bar .f2{background:var(--fill2)}
+.mix-bar .f3{background:var(--fill3);box-shadow:inset 0 0 0 1px var(--hair)}
+/* насечка цели — единственный акцент на полосе */
+.mix-bar .tgt{position:absolute;top:-5px;bottom:-5px;width:1.5px;background:var(--amb);opacity:.9}
+.mix-bar .tgt b{position:absolute;top:-17px;left:50%;transform:translateX(-50%);font-family:var(--fM);font-size:9.5px;
+                font-weight:500;color:var(--amb);white-space:nowrap}
+.mix-lg{display:flex;margin-top:11px;font-size:13px;color:var(--mut)}
+.mix-lg .it{display:flex;align-items:baseline;gap:8px;padding-right:34px}
+.mix-lg .sw{width:9px;height:9px;border-radius:3px;flex:0 0 9px;align-self:center}
+.mix-lg .sw.f1{background:var(--fill1)}
+.mix-lg .sw.f2{background:var(--fill2)}
+.mix-lg .sw.f3{background:var(--fill3);box-shadow:inset 0 0 0 1px var(--hair)}
+.mix-lg .pc{font-family:var(--fM);font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.mix-lg .rb{font-family:var(--fM);font-size:12px;color:var(--fnt)}
+.mix-lg .last{margin-left:auto;padding-right:0;color:var(--fnt);font-size:12.5px}
 
 /* --- ДВЕ ТИХИЕ КОЛОНКИ --- */
 .two{display:grid;grid-template-columns:1fr 1px 1fr;margin-top:18px}
+.two.one{grid-template-columns:1fr}
 .two .vr{background:var(--hair)}
 .two .col{padding:0 34px 0 0}
 .two .col + .vr + .col{padding:0 0 0 34px}
+.two.one .col{padding:0}
 .mini-r{display:flex;align-items:baseline;padding:9px 0;font-size:13px}
 .mini-r + .mini-r{border-top:1px solid var(--hair)}
 .mini-r .tk{font-family:var(--fM);font-size:12px;font-weight:500;color:var(--ink);width:62px;flex:0 0 62px}
@@ -186,12 +225,14 @@ body{margin:0;background:#EDF0F5;color:var(--tx);font-family:var(--fN);
 .mini-r .v{font-family:var(--fM);font-size:12.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .mini-r .p{font-family:var(--fM);font-size:11px;color:var(--fnt);width:52px;text-align:right}
 .mini-r .dt{color:var(--mut);font-size:12.5px;width:112px;flex:0 0 112px}
+.mini-e{padding:12px 0;font-size:12.5px;color:var(--fnt);font-family:var(--fU);font-style:italic}
 .more{display:block;text-align:right;font-size:12.5px;color:var(--mut);padding-top:12px}
 
 /* --- ЗАМЕТКА НА ПОЛЯХ --- */
-.marg{display:flex;align-items:center;gap:14px;margin-top:22px;padding-top:15px;border-top:1px solid var(--hair);
+.marg{display:flex;align-items:center;gap:14px;margin-top:18px;padding-top:15px;border-top:1px solid var(--hair);
       font-size:13.5px;color:var(--mut);line-height:1.5}
 .marg .bar{width:2px;align-self:stretch;background:var(--amb);opacity:.55;border-radius:2px;margin-right:2px}
+.marg.ok .bar{background:var(--pos)}
 .marg b{color:var(--tx);font-weight:600}
 .marg .act{margin-left:auto;font-size:13.5px;color:var(--ink);font-weight:600;white-space:nowrap;
            border-bottom:1px solid var(--hair2);padding-bottom:1px}
@@ -211,32 +252,56 @@ body{margin:0;background:#EDF0F5;color:var(--tx);font-family:var(--fN);
 
 /* --- ссылки-действия строкой --- */
 .acts{display:flex;align-items:baseline;flex-wrap:wrap}
-.acts a{font-size:13px;color:var(--ink);font-weight:500;text-decoration:none;padding:0 15px;position:relative;
-        border-bottom:1px solid transparent}
+.acts a{font-size:13px;color:var(--ink);font-weight:500;text-decoration:none;padding:0 15px;position:relative;border-bottom:1px solid transparent}
 .acts a:first-child{padding-left:0}
 .acts a + a::before{content:'';position:absolute;left:0;top:2px;bottom:1px;width:1px;background:var(--hair2);opacity:.55}
 .acts a.q{color:var(--mut);font-weight:400}
 .acts a.hov{border-bottom-color:var(--hair2)}
 
-/* --- кнопка: только на пустых состояниях --- */
 .btn{display:inline-flex;align-items:center;justify-content:center;height:42px;padding:0 22px;border-radius:12px;
      font-size:14px;font-weight:600;font-family:var(--fN)}
 .btn.ink{background:var(--ink);color:#fff;box-shadow:0 18px 34px -20px rgba(22,34,55,.9)}
 .scr.dk .btn.ink{background:#EAF0F7;color:#0F1720}
 .btn.q{border:1px solid var(--hair2);color:var(--tx)}
 
+/* ---------- ГДЕ Я: принадлежность странице портфеля ----------
+   Пять сигналов сразу: крошка над листом, цветная кромка листа, имя
+   серифом 30 px вместо метки «Капитал», слово «портфель» в подписи,
+   пейджер «2-й из 4» в подвале. Плюс активная строка в колонке слева. */
+.crumb{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--mut);padding:0 0 11px 4px}
+.crumb a{color:var(--tx);text-decoration:none;border-bottom:1px solid var(--hair2);padding-bottom:1px}
+.crumb i{font-style:normal;color:var(--fnt)}
+.sheet.pf{position:relative;overflow:hidden}
+.sheet.pf::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--pf)}
+.pfh{display:flex;align-items:flex-start;gap:13px;margin-bottom:18px}
+.pfh .dot{width:10px;height:10px;border-radius:50%;background:var(--pf);flex:0 0 10px;margin-top:11px}
+.pfh .nm{font-family:var(--fU);font-size:30px;line-height:1.08;color:var(--ink);letter-spacing:-.5px}
+.pfh .sub{font-size:13px;color:var(--mut);margin-top:8px}
+.pfh .sub b{color:var(--tx);font-weight:600}
+.pfh .r{margin-left:auto;font-family:var(--fM);font-size:11.5px;color:var(--fnt);display:flex;gap:16px;align-items:baseline;padding-top:12px}
+.pfh-rule{height:1px;background:var(--pf);opacity:.3;margin-bottom:20px}
+.pager{display:flex;align-items:center;margin-top:20px;padding-top:14px;border-top:1px solid var(--hair);font-size:13px}
+.pager a{color:var(--tx);text-decoration:none}
+.pager a.off{color:var(--fnt)}
+.pager .c{margin:0 auto;font-family:var(--fU);font-style:italic;color:var(--fnt);font-size:12.5px}
+.sb-p.on{background:rgba(255,255,255,.62);box-shadow:inset 0 0 0 1px rgba(255,255,255,.8);color:var(--ink);font-weight:600}
+.scr.dk .sb-p.on{background:rgba(255,255,255,.09);box-shadow:inset 0 0 0 1px rgba(255,255,255,.07)}
+.sb-p.on .d{box-shadow:0 0 0 3px rgba(255,255,255,.55)}
+.scr.dk .sb-p.on .d{box-shadow:0 0 0 3px rgba(255,255,255,.10)}
+
 /* ---------- СОСТАВ ---------- */
-.hold{margin-top:18px}
+.hold{margin-top:16px}
 .hold-h{display:grid;grid-template-columns:1fr 132px 108px 92px 26px;gap:18px;padding:0 0 10px;
         border-bottom:1px solid var(--hair2);font-family:var(--fU);font-style:italic;font-size:12.5px;color:var(--fnt)}
 .hold-h span:not(:first-child){text-align:right}
-.hold-r{display:grid;grid-template-columns:1fr 132px 108px 92px 26px;gap:18px;align-items:center;padding:15px 0}
+.hold-r{display:grid;grid-template-columns:1fr 132px 108px 92px 26px;gap:18px;align-items:center;padding:14px 0}
 .hold-r + .hold-r,.hold-x + .hold-r{border-top:1px solid var(--hair)}
 .hold-r .as{display:flex;align-items:baseline;gap:11px;min-width:0}
 .hold-r .as b{font-family:var(--fM);font-size:13.5px;font-weight:500;color:var(--ink)}
 .hold-r .as em{font-style:normal;font-size:14px;color:var(--tx)}
 .hold-r .as i{font-style:normal;font-family:var(--fM);font-size:11.5px;color:var(--fnt);margin-left:auto;padding-left:14px;white-space:nowrap}
 .hold-r .v{text-align:right;font-size:15px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums}
+.hold-r .v.no{color:var(--fnt);font-size:13px;font-family:var(--fU);font-style:italic;font-weight:400}
 .hold-r .sh{text-align:right;font-family:var(--fM);font-size:12.5px;color:var(--tx)}
 .hold-r .sh u{display:block;text-decoration:none;height:2px;border-radius:2px;background:var(--hair2);margin:5px 0 0 auto}
 .hold-r .sh u.hi{background:var(--amb);opacity:.7}
@@ -244,18 +309,19 @@ body{margin:0;background:#EDF0F5;color:var(--tx);font-family:var(--fN);
 .hold-r .ch{text-align:right;color:var(--fnt);font-size:13px}
 .hold-r.open{background:rgba(22,34,55,.028);border-radius:12px 12px 0 0;box-shadow:0 0 0 12px rgba(22,34,55,.028)}
 .scr.dk .hold-r.open{background:rgba(255,255,255,.05);box-shadow:0 0 0 12px rgba(255,255,255,.05)}
-.hold-g{padding:26px 0 9px;font-family:var(--fU);font-style:italic;font-size:13px;color:var(--fnt);
-        border-bottom:1px solid var(--hair)}
+.hold-g{padding:22px 0 9px;font-family:var(--fU);font-style:italic;font-size:13px;color:var(--fnt);border-bottom:1px solid var(--hair)}
 .hold-f{display:grid;grid-template-columns:1fr 132px 108px 92px 26px;gap:18px;align-items:baseline;
-        padding:16px 0 0;border-top:1px solid var(--hair2);margin-top:2px;font-size:13.5px;color:var(--mut)}
+        padding:15px 0 0;border-top:1px solid var(--hair2);margin-top:2px;font-size:13.5px;color:var(--mut)}
 .hold-f .v{text-align:right;font-size:16px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
 .hold-f .sh,.hold-f .dp{text-align:right;font-family:var(--fM);font-size:12.5px}
+.hold-more{padding:13px 0 0;font-size:12.5px;color:var(--mut);display:flex;align-items:baseline}
+.hold-more .r{margin-left:auto;color:var(--ink);font-weight:600;border-bottom:1px solid var(--hair2)}
 
 /* --- РАЗВОРОТ СТРОКИ --- */
 .dos{padding:4px 0 22px;margin-bottom:2px;background:rgba(22,34,55,.028);border-radius:0 0 12px 12px;
      box-shadow:0 0 0 12px rgba(22,34,55,.028);position:relative}
 .scr.dk .dos{background:rgba(255,255,255,.05);box-shadow:0 0 0 12px rgba(255,255,255,.05)}
-.dos-say{font-family:var(--fU);font-size:18px;line-height:1.5;color:var(--ink);margin:0 0 18px;max-width:800px;letter-spacing:-.1px}
+.dos-say{font-family:var(--fU);font-size:18px;line-height:1.5;color:var(--ink);margin:0 0 18px;max-width:820px;letter-spacing:-.1px}
 .dos-say b{font-weight:400;border-bottom:1px solid var(--hair2);padding-bottom:1px}
 .dos-facts{display:flex;margin-bottom:18px}
 .dos-facts .f{padding:0 26px;position:relative}
@@ -278,8 +344,7 @@ body{margin:0;background:#EDF0F5;color:var(--tx);font-family:var(--fN);
 /* диагноз */
 .pin{position:absolute;z-index:5;display:flex;align-items:flex-start;gap:8px}
 .pin b{width:21px;height:21px;flex:0 0 21px;border-radius:50%;background:#BE4A40;color:#fff;font-family:var(--fM);
-       font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;
-       box-shadow:0 6px 14px -6px rgba(190,74,64,.9)}
+       font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 14px -6px rgba(190,74,64,.9)}
 .pin span{background:rgba(255,255,255,.95);border:1px solid rgba(190,74,64,.25);border-radius:9px;padding:6px 10px;
           font-size:11.5px;color:#7E2A24;max-width:300px;line-height:1.45;box-shadow:0 12px 26px -16px rgba(22,34,55,.6)}
 .dgi{display:flex;gap:11px;font-size:13.5px;line-height:1.6;color:var(--tx)}
@@ -291,8 +356,7 @@ body{margin:0;background:#EDF0F5;color:var(--tx);font-family:var(--fN);
 .rul .bar{border-radius:8px 8px 0 0;position:relative}
 .rul .bar.was{background:linear-gradient(180deg,rgba(190,74,64,.26),rgba(190,74,64,.07));height:200px}
 .rul .bar.now{background:linear-gradient(180deg,rgba(31,138,84,.28),rgba(31,138,84,.07));height:78px}
-.rul .bar i{position:absolute;left:0;right:0;top:-23px;font-style:normal;font-family:var(--fM);font-size:13px;
-            font-weight:600;color:var(--ink)}
+.rul .bar i{position:absolute;left:0;right:0;top:-23px;font-style:normal;font-family:var(--fM);font-size:13px;font-weight:600;color:var(--ink)}
 .rul .lb2{font-size:12px;color:var(--mut);margin-top:8px}
 
 /* состояния */
@@ -304,10 +368,8 @@ body{margin:0;background:#EDF0F5;color:var(--tx);font-family:var(--fN);
 .st .b{overflow:hidden}
 
 /* итоговая таблица */
-.code-t{width:100%;border-collapse:collapse;font-size:13.5px;background:#fff;border-radius:16px;overflow:hidden;
-        box-shadow:0 0 0 1px rgba(22,34,55,.08)}
-.code-t th{text-align:left;font-family:var(--fU);font-style:italic;font-size:13px;color:var(--fnt);font-weight:400;
-           padding:14px 18px;background:rgba(22,34,55,.025)}
+.code-t{width:100%;border-collapse:collapse;font-size:13.5px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 0 0 1px rgba(22,34,55,.08)}
+.code-t th{text-align:left;font-family:var(--fU);font-style:italic;font-size:13px;color:var(--fnt);font-weight:400;padding:14px 18px;background:rgba(22,34,55,.025)}
 .code-t td{padding:13px 18px;border-top:1px solid rgba(22,34,55,.07);vertical-align:top;line-height:1.6}
 .code-t td code{font-family:var(--fM);font-size:11.5px;color:var(--ink);background:rgba(22,34,55,.05);padding:1px 5px;border-radius:4px}
 .code-t td.w1{width:220px;font-weight:600;color:var(--ink)}
@@ -321,21 +383,19 @@ body{margin:0;background:#EDF0F5;color:var(--tx);font-family:var(--fN);
 <div class="wrap">
 
   <h1 class="doc-h">Раунд 4 · «Обзор» и страница портфеля<br>«Лист»</h1>
-  <p class="doc-s">Первый заход был отвергнут справедливо: большая цветная карта капитала занимала треть экрана
-  и не говорила ничего, чего не сказали бы четыре строки; кнопки под фразой требовали действий, о которых никто
-  не просил; лента выплат была графикой ради графики. <b>Вау — не в размере и не в яркости.</b>
-  Второй заход: вся страница — один лист бумаги, на котором всё <i>набрано</i>, а не разложено по коробкам.
-  Крупное тонкое число, волосяная кривая, оглавление портфелей с точками-лидерами, две тихие колонки — и ни одной
-  плашки, пока она правда не нужна. Из прошлого захода целиком сохранены две вещи, которые понравились:
-  экран «портфелей пока нет» и разворачивающиеся детали в составе — второй переработан и упрощён.</p>
+  <p class="doc-s">Вся страница — один лист бумаги, на котором всё <i>набрано</i>, а не разложено по коробкам.
+  Крупное тонкое число, волосяная кривая, оглавление портфелей с точками-лидерами, полоса «из чего собрано»,
+  две тихие колонки — и ни одной плашки, пока она правда не нужна.
+  <b>Обновление после первого просмотра:</b> на лист добавлено распределение по классам — тонкая полоса
+  с насечкой цели прямо под оглавлением портфелей; и дорисован полный набор состояний обеих страниц.</p>
 
   <div class="laws">
     <div class="law"><i>первое</i><b>Лист вместо коробок</b><p>Наверху страницы нет карточек. Есть один лист:
       воздух 52 px по краям, волоски вместо границ. Ритм задаёт типографика, а не сетка виджетов.</p></div>
     <div class="law"><i>второе</i><b>Тише — значит дороже</b><p>Цвет только на дельтах, и приглушённый:
-      терракота вместо алого, тёмно-зелёный вместо салатового. Ни заливок, ни чипов, ни плашек.</p></div>
+      терракота вместо алого, тёмно-зелёный вместо салатового. Полоса классов — ступени серого, а не радуга.</p></div>
     <div class="law"><i>третье</i><b>Кнопка — только по делу</b><p>Пока всё в порядке, страница ничего не просит.
-      Есть проблема — появляется <i>одна</i> строка на полях с текстовой ссылкой. Кнопок «на всякий случай» нет.</p></div>
+      Есть проблема — появляется <i>одна</i> строка на полях с текстовой ссылкой.</p></div>
     <div class="law"><i>четвёртое</i><b>Глубина по требованию</b><p>Подробности живут внутри строк и
       разворачиваются на месте. Ничего не открывается поверх, ничего не уводит со страницы.</p></div>
   </div>
@@ -364,51 +424,68 @@ body{margin:0;background:#EDF0F5;color:var(--tx);font-family:var(--fN);
   </div>
 
   <div class="block">
-    <div class="sec"><span class="n">05</span><h2>Вся страница целиком</h2>
-      <p>Масштаб 70 %. Под листом — только справочное, тонким стеклом.</p></div>
+    <div class="sec"><span class="n">05</span><h2>«Из чего собрано» — акции и облигации</h2>
+      <p>То, чего не хватало. Полоса без единого нового цвета, с насечкой цели и честным дрейфом.</p></div>
     <div id="s05"></div>
   </div>
 
   <div class="block">
-    <div class="sec"><span class="n">06</span><h2>Состояния «Обзора»</h2></div>
+    <div class="sec"><span class="n">06</span><h2>Вся страница целиком</h2>
+      <p>Масштаб 70 %. Под листом — только справочное, тонким стеклом.</p></div>
     <div id="s06"></div>
   </div>
 
   <div class="block">
-    <div class="sec"><span class="n">07</span><h2>Тёмная тема</h2></div>
+    <div class="sec"><span class="n">07</span><h2>Состояния «Обзора» — восемь</h2></div>
     <div id="s07"></div>
   </div>
 
   <div class="block">
-    <div class="sec"><span class="n">08</span><h2>Диагноз: страница портфеля сегодня</h2></div>
+    <div class="sec"><span class="n">08</span><h2>Тёмная тема «Обзора»</h2></div>
     <div id="s08"></div>
   </div>
 
   <div class="block">
-    <div class="sec"><span class="n">09</span><h2>Страница портфеля — лист</h2></div>
+    <div class="sec"><span class="n">09</span><h2>Диагноз: страница портфеля сегодня</h2></div>
     <div id="s09"></div>
   </div>
 
   <div class="block">
-    <div class="sec"><span class="n">10</span><h2>Разворот строки — упрощённый</h2>
-      <p>Было шестнадцать фактов в четырёх колонках — стало фраза, четыре числа и строка ссылок.</p></div>
+    <div class="sec"><span class="n">10</span><h2>Страница портфеля — лист</h2></div>
     <div id="s10"></div>
   </div>
 
   <div class="block">
-    <div class="sec"><span class="n">11</span><h2>Портфель: состояния и тёмная тема</h2></div>
+    <div class="sec"><span class="n">11</span><h2>Разворот строки — упрощённый</h2>
+      <p>Было шестнадцать фактов в четырёх колонках — стало фраза, четыре числа и строка ссылок.</p></div>
     <div id="s11"></div>
   </div>
 
   <div class="block">
-    <div class="sec"><span class="n">12</span><h2>Движение</h2>
-      <p>Четыре анимации на всю страницу, все медленные и маленькие.</p></div>
+    <div class="sec"><span class="n">12</span><h2>Состояния страницы портфеля — восемь</h2></div>
     <div id="s12"></div>
   </div>
 
   <div class="block">
-    <div class="sec"><span class="n">13</span><h2>Что берём в код</h2></div>
+    <div class="sec"><span class="n">13</span><h2>Портфель в тёмной теме</h2></div>
     <div id="s13"></div>
+  </div>
+
+  <div class="block">
+    <div class="sec"><span class="n">14</span><h2>Узкий экран: 1180 и 1024</h2>
+      <p>Что уходит первым и что не уходит никогда.</p></div>
+    <div id="s14"></div>
+  </div>
+
+  <div class="block">
+    <div class="sec"><span class="n">15</span><h2>Движение</h2>
+      <p>Четыре анимации на всю страницу, все медленные и маленькие.</p></div>
+    <div id="s15"></div>
+  </div>
+
+  <div class="block">
+    <div class="sec"><span class="n">16</span><h2>Что берём в код</h2></div>
+    <div id="s16"></div>
   </div>
 
 </div>
@@ -416,9 +493,10 @@ body{margin:0;background:#EDF0F5;color:var(--tx);font-family:var(--fN);
 <script>
 /* ==========================================================================
    ДАННЫЕ — один согласованный набор: сумма портфелей = капитал,
-   сумма дней = день, вложено − доход = позиции.
+   сумма дней = день, вложено − доход = позиции, классы = капитал.
    ========================================================================== */
 var CAP = 2812016, CAP_DAY = -26087, CAP_PNL = -234660, CAP_INV = 2986276, CASH = 60400;
+var CLS = { stock: 2165579, bond: 586037, cash: 60400 };   /* 77,0 / 20,8 / 2,2 % */
 
 var PFS = [
   { nm:'Основной',     col:'#2F8F63', val:1782059, n:5, day:-17037, pnlp:-9.1 },
@@ -452,17 +530,20 @@ var HOLD = [
 function nf(n){ return Math.abs(Math.round(n)).toLocaleString('ru-RU').replace(/ /g, ' '); }
 function rub(n, plus){ return (n < 0 ? '−' : (plus ? '+' : '')) + nf(n) + ' ₽'; }
 function pct(n){ return (n >= 0 ? '+' : '−') + Math.abs(n).toFixed(1).replace('.', ',') + '%'; }
+function p1(n){ return n.toFixed(1).replace('.', ',') + ' %'; }
 function cl(n){ return n > 0 ? 'pos' : n < 0 ? 'neg' : ''; }
 
 /* ---------- колонка навигации ---------- */
-function NAVI(){
+function NAVI(act){
   var g = '<svg class="g" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg>';
   var items = ['Обзор', 'Мои портфели', 'Ребаланс', 'Торговля', 'Рынок', 'Расчёт', 'Академия'];
+  /* act — индекс открытого портфеля; тогда «Обзор» гаснет, а активной
+     становится строка портфеля: колонка отвечает на «где я» первой */
   var nav = items.map(function(t, i){
-    return '<div class="sb-i' + (i === 0 ? ' on' : '') + '">' + g + t + (i === 1 ? '<span class="cnt">4</span>' : '') + '</div>';
+    return '<div class="sb-i' + (i === 0 && act == null ? ' on' : '') + '">' + g + t + (i === 1 ? '<span class="cnt">4</span>' : '') + '</div>';
   }).join('');
-  var pl = PFS.map(function(p){
-    return '<div class="sb-p"><i class="d" style="background:' + p.col + '"></i>' + p.nm + '<span class="v">' + pct(p.pnlp) + '</span></div>';
+  var pl = PFS.map(function(p, i){
+    return '<div class="sb-p' + (i === act ? ' on' : '') + '"><i class="d" style="background:' + p.col + '"></i>' + p.nm + '<span class="v">' + pct(p.pnlp) + '</span></div>';
   }).join('');
   return '<div class="sb"><div class="sb-brand"><div class="sb-logo">M</div><div class="sb-nm"><b>Madame Solomi\'na</b><i>TERMINAL</i></div></div>' +
     '<div class="sb-search"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>Бумага, портфель, действие</div>' +
@@ -470,6 +551,12 @@ function NAVI(){
     '<div class="sb-cap">Открытые портфели</div>' + pl +
     '<div class="sb-p" style="color:var(--fnt)"><i class="d" style="background:transparent;box-shadow:inset 0 0 0 1.2px currentColor"></i>Новый портфель</div>' +
     '<div class="sb-foot"><div class="sb-ava"></div><div class="t">Денис<i>кабинет</i></div></div></div>';
+}
+function RAIL(){
+  var g = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></svg>';
+  var ic = '';
+  for (var i = 0; i < 7; i++) ic += '<div class="ic' + (i === 0 ? ' on' : '') + '">' + g + '</div>';
+  return '<div class="rail"><div class="lg">M</div>' + ic + '<div class="sp"></div><div class="sb-ava"></div></div>';
 }
 
 /* ---------- кривая-волосок ---------- */
@@ -483,7 +570,6 @@ function curvePts(seed, n, w, h){
   }
   return pts;
 }
-/* мягкая кривая: линия должна быть «дорогой», без углов */
 function smooth(pts){
   var d = 'M' + pts[0][0].toFixed(1) + ' ' + pts[0][1].toFixed(1);
   for (var i = 1; i < pts.length; i++){
@@ -494,13 +580,12 @@ function smooth(pts){
 }
 function CURVE(opt){
   opt = opt || {};
-  var w = 1000, h = 84, seed = opt.seed || 41;
+  var w = 1000, h = 76, seed = opt.seed || 41;
   var pts = curvePts(seed, 46, w, h), d = smooth(pts);
   var last = pts[pts.length - 1];
   var hi = pts.reduce(function(a, b){ return b[1] < a[1] ? b : a; }, pts[0]);
-  var id = 'cv' + seed;
-  var bench = opt.bench ? '<path d="' + smooth(curvePts(seed + 19, 46, w, h).map(function(p){ return [p[0], p[1] * 0.62 + 22]; })) + '" fill="none" stroke="var(--fnt)" stroke-width="1" stroke-dasharray="3 4" opacity=".85"/>' : '';
-  /* засечки выплат: короткие штрихи по нижней кромке — обещаны подписью */
+  var id = 'cv' + seed + (opt.bench ? 'b' : '');
+  var bench = opt.bench ? '<path d="' + smooth(curvePts(seed + 19, 46, w, h).map(function(p){ return [p[0], p[1] * 0.62 + 20]; })) + '" fill="none" stroke="currentColor" stroke-opacity=".33" stroke-width="1" stroke-dasharray="3 4"/>' : '';
   var ticks = (opt.ticks === false ? [] : (opt.ticks || [8, 27, 44, 61, 79])).map(function(x){
     return '<line x1="' + (x / 100 * w) + '" y1="' + (h - 5) + '" x2="' + (x / 100 * w) + '" y2="' + h + '" stroke="currentColor" stroke-opacity=".3" stroke-width="1.4"/>';
   }).join('');
@@ -508,30 +593,32 @@ function CURVE(opt){
       '<defs><linearGradient id="' + id + '" x1="0" y1="0" x2="0" y2="1">' +
       '<stop offset="0" stop-color="#16233A" stop-opacity=".085"/><stop offset="1" stop-color="#16233A" stop-opacity="0"/></linearGradient></defs>' +
       '<path d="' + d + ' L' + w + ' ' + h + ' L0 ' + h + ' Z" fill="url(#' + id + ')"/>' + bench +
-      '<path d="' + d + '" fill="none" stroke="currentColor" stroke-width="1.35" stroke-opacity=".42" stroke-linecap="round"/>' +
-      ticks +
+      '<path d="' + d + '" fill="none" stroke="currentColor" stroke-width="1.35" stroke-opacity=".42" stroke-linecap="round"/>' + ticks +
       '<circle cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="3.2" fill="currentColor" fill-opacity=".8"/>' +
     '</svg>' +
-    '<div class="mk" style="left:' + (hi[0] / w * 100).toFixed(1) + '%;top:' + (hi[1] - 19).toFixed(0) + 'px;transform:translateX(-50%)">' + (opt.hi || 'максимум 3 194 800 ₽') + '</div>' +
+    '<div class="mk" style="left:' + (hi[0] / w * 100).toFixed(1) + '%;top:' + (hi[1] - 18).toFixed(0) + 'px;transform:translateX(-50%)">' + (opt.hi || 'максимум 3 194 800 ₽') + '</div>' +
     '<div class="mk" style="left:0;bottom:-4px">' + (opt.from || '9 мая') + '</div></div>' +
   '<div class="curve-ft"><span>' + (opt.foot || 'засечки под линией — дни, когда приходили выплаты') + '</span>' +
     '<span class="seg"><span>30д</span><span class="on">90д</span><span>Год</span><span>Всё</span>' +
     '<span>' + (opt.cmp || '⊕ Сравнить') + '</span></span></div>';
+}
+function CURVE_NONE(txt){
+  return '<div class="curve-no"><i>кривой пока нет</i><span>' + txt + '</span></div>';
 }
 
 function SHEET_HEAD(label, right){
   return '<div class="hd"><span class="lb">' + label + '</span><span class="r">' +
     right.map(function(r){ return '<span>' + r + '</span>'; }).join('') + '</span></div>';
 }
-function BIG(v, lines, md){
-  return '<div class="big' + (md ? ' md' : '') + '">' + nf(v) + '<em>₽</em></div>' +
+function BIG(v, lines, size){
+  return '<div class="big' + (size ? ' ' + size : '') + '">' + nf(v) + '<em>₽</em></div>' +
     '<div class="sumline">' + lines.map(function(l){ return '<i>' + l + '</i>'; }).join('') + '</div>';
 }
 
 /* ---------- ОГЛАВЛЕНИЕ ---------- */
-function TOC(list, hov, foot){
+function TOC(list, hov){
   list = list || PFS;
-  var rows = list.map(function(p, i){
+  return '<div class="toc">' + list.map(function(p, i){
     return '<div class="toc-r' + (i === hov ? ' hov' : '') + '">' +
       '<i class="d" style="background:' + p.col + '"></i>' +
       '<span class="nm">' + p.nm + '</span>' +
@@ -540,29 +627,78 @@ function TOC(list, hov, foot){
       '<span class="val">' + rub(p.val) + '</span>' +
       '<span class="day ' + cl(p.day) + '">' + (p.day === 0 ? '—' : rub(p.day, p.day > 0)) + '</span>' +
       '<span class="go">' + (i === hov ? '›' : '') + '</span></div>';
-  }).join('');
-  return '<div class="toc">' + rows +
-    (foot === false ? '' : '<div class="toc-ft"><span>Свободные деньги</span><span class="val">' + rub(CASH) + '</span></div>') + '</div>';
+  }).join('') + '</div>';
+}
+
+/* ---------- «ИЗ ЧЕГО СОБРАНО» ----------
+   Полоса классов на том же листе: ступени серого (акции — плотная,
+   облигации — вдвое светлее, деньги — контур), насечка цели янтарным.
+   Это единственное место на «Обзоре», где живут доли по классам. */
+function MIX(opt){
+  opt = opt || {};
+  var st = opt.stock == null ? CLS.stock : opt.stock,
+      bd = opt.bond  == null ? CLS.bond  : opt.bond,
+      cs = opt.cash  == null ? CLS.cash  : opt.cash;
+  var tot = st + bd + cs;
+  /* проценты досчитываются до ровных 100,0 методом наибольшего остатка —
+     иначе легенда складывается в 99,9 и это первое, что замечают */
+  var raw = [st / tot * 100, bd / tot * 100, cs / tot * 100];
+  var rnd = raw.map(function(v){ return Math.round(v * 10) / 10; });
+  var diff = Math.round((100 - rnd.reduce(function(a, b){ return a + b; }, 0)) * 10) / 10;
+  if (diff !== 0){
+    var best = 0, bestRem = -1;
+    raw.forEach(function(v, i){
+      var rem = Math.abs(v * 10 - Math.round(v * 10));
+      if (raw[i] > 0 && rem > bestRem){ bestRem = rem; best = i; }
+    });
+    rnd[best] = Math.round((rnd[best] + diff) * 10) / 10;
+  }
+  var ps = rnd[0], pb = rnd[1], pc = rnd[2];
+  var tgt = opt.tgt;   /* цель по акциям, % */
+  var head = '<div class="mix-h"><span class="lb tt">' + (opt.title || 'Из чего собрано') + '</span>' +
+    '<span class="r">' + (tgt == null
+      ? 'цель по долям не задана'
+      : 'цель ' + tgt + ' / ' + (100 - tgt) + ' · дрейф <b>' + Math.abs(Math.round(ps - tgt)) + ' п.п.</b>') + '</span></div>';
+  var mark = tgt == null ? '' : '<span class="tgt" style="left:' + tgt + '%"><b>цель ' + tgt + ' %</b></span>';
+  /* сегмент не тоньше 4 px даже у класса в 0,3 % — иначе он исчезает,
+     а число в легенде остаётся; ширины берём сырые, не округлённые */
+  function seg(cls, v){
+    return v <= 0 ? '' : '<i class="' + cls + '" style="width:' + v.toFixed(2) + '%;min-width:4px"></i>';
+  }
+  var bar = '<div class="mix-bar">' + seg('f1', raw[0]) + seg('f2', raw[1]) + seg('f3', raw[2]) + mark + '</div>';
+  function leg(cls, nm, v, val){
+    return val <= 0 ? '' : '<span class="it"><i class="sw ' + cls + '"></i>' + nm +
+      ' <b class="pc">' + p1(v) + '</b><span class="rb">' + rub(val) + '</span></span>';
+  }
+  var lg = '<div class="mix-lg">' +
+    leg('f1', 'Акции', ps, st) + leg('f2', 'Облигации', pb, bd) + leg('f3', 'Деньги', pc, cs) +
+    (opt.go === false ? '' : '<span class="last">' + (opt.goText || 'по классам и по портфелям ›') + '</span>') + '</div>';
+  return '<div class="mix">' + head + bar + lg + '</div>';
 }
 
 /* ---------- ДВЕ ТИХИЕ КОЛОНКИ ---------- */
-function TWO(){
-  var left = MOVERS.map(function(m){
-    return '<div class="mini-r"><span class="tk">' + m.tk + '</span><span class="nm">' + m.nm + '</span>' +
-      '<span class="v ' + cl(m.rub) + '">' + rub(m.rub) + '</span><span class="p">' + pct(m.pc) + '</span></div>';
-  }).join('');
-  var right = NEXT.map(function(e){
-    return '<div class="mini-r"><span class="dt">' + e.dt + '</span><span class="nm">' + e.tk + '</span>' +
-      '<span class="v pos">' + rub(e.sum, 1) + '</span></div>';
-  }).join('');
+function TWO(opt){
+  opt = opt || {};
+  var left = (opt.movers === null)
+    ? '<div class="mini-e">сегодня биржа не работала — двигать было нечему</div>'
+    : (opt.movers || MOVERS).map(function(m){
+        return '<div class="mini-r"><span class="tk">' + m.tk + '</span><span class="nm">' + m.nm + '</span>' +
+          '<span class="v ' + cl(m.rub) + '">' + rub(m.rub) + '</span><span class="p">' + pct(m.pc) + '</span></div>';
+      }).join('');
+  var right = (opt.next === null)
+    ? '<div class="mini-e">купонов не ожидается — в портфелях только акции</div>'
+    : (opt.next || NEXT).map(function(e){
+        return '<div class="mini-r"><span class="dt">' + e.dt + '</span><span class="nm">' + e.tk + '</span>' +
+          '<span class="v pos">' + rub(e.sum, 1) + '</span></div>';
+      }).join('');
   return '<div class="two"><div class="col"><span class="lb tt">Сегодня двигали</span>' + left +
-      '<span class="more">ещё 9 бумаг ›</span></div><div class="vr"></div>' +
+      (opt.movers === null ? '' : '<span class="more">ещё 9 бумаг ›</span>') + '</div><div class="vr"></div>' +
     '<div class="col"><span class="lb tt">Дальше</span>' + right +
-      '<span class="more">за 12 месяцев <b class="m pos" style="font-weight:600">' + rub(NEXT_YEAR, 1) + '</b> · все выплаты ›</span></div></div>';
+      (opt.next === null ? '' : '<span class="more">за 12 месяцев <b class="m pos" style="font-weight:600">' + rub(NEXT_YEAR, 1) + '</b> · все выплаты ›</span>') + '</div></div>';
 }
 
-function MARG(text, act){
-  return '<div class="marg"><span class="bar"></span><span>' + text + '</span>' +
+function MARG(text, act, ok){
+  return '<div class="marg' + (ok ? ' ok' : '') + '"><span class="bar"></span><span>' + text + '</span>' +
     (act ? '<span class="act">' + act + '</span>' : '') + '</div>';
 }
 
@@ -570,14 +706,15 @@ function MARG(text, act){
 function OVERVIEW_SHEET(opt){
   opt = opt || {};
   return '<div class="sheet">' +
-    SHEET_HEAD('Капитал', ['4 портфеля', '12 бумаг', '7 августа, 15:39']) +
+    SHEET_HEAD('Капитал', opt.meta || ['4 портфеля', '12 бумаг', '7 августа, 15:39']) +
     BIG(CAP, ['<b class="neg">' + rub(CAP_DAY) + '</b> сегодня',
               '<b class="neg">' + rub(CAP_PNL) + '</b> за всё время',
               'вложено <b>' + rub(CAP_INV) + '</b>']) +
     CURVE({ seed:41 }) +
     '<div class="rule"></div><div class="gap"></div>' +
     '<span class="lb tt">Портфели</span>' + TOC(null, opt.hov === undefined ? -1 : opt.hov) +
-    '<div class="gap" style="height:12px"></div>' + TWO() +
+    MIX({ tgt: opt.tgt }) +
+    TWO() +
     (opt.marg === false ? '' : MARG('Целей по долям нет ни у одного портфеля — пока их нет, <b>«Ребаланс» не сможет подсказать, когда сверяться</b>.', 'Задать цели')) +
   '</div>';
 }
@@ -607,8 +744,8 @@ function OVERVIEW_SHEET(opt){
   ];
   document.getElementById('s01').innerHTML =
     '<div style="display:grid;grid-template-columns:1058px 1fr;gap:36px;align-items:start">' +
-      '<div class="zoomwrap" style="width:1058px;height:640px;position:relative">' +
-        '<div class="scr" style="transform:scale(.7);transform-origin:0 0;height:914px">' + NAVI() +
+      '<div class="zoomwrap" style="width:1058px;height:666px;position:relative">' +
+        '<div class="scr" style="transform:scale(.7);transform-origin:0 0;height:952px">' + NAVI() +
           '<div class="pg"><div style="display:flex;flex-direction:column;gap:14px">' + body + '</div></div></div>' +
         pins.map(function(p){ return '<div class="pin" style="left:' + p[0] + '%;top:' + p[1] + '%"><b>' + p[2] + '</b><span>' + p[3] + '</span></div>'; }).join('') +
       '</div>' +
@@ -622,7 +759,7 @@ function OVERVIEW_SHEET(opt){
          'Капитал считается <i>без</i> свободных денег, а «стоимость портфеля» в карточке — <i>с</i> ними. Одно слово — два числа.'
         ].map(function(t, i){ return '<div class="dgi"><b>' + (i + 1) + '</b><span>' + t + '</span></div>'; }).join('') + '</div>' +
         '<div class="ruler"><div class="rul"><div class="bar was"><i>4 288</i></div><div class="lb2">сейчас, px</div></div>' +
-          '<div class="rul"><div class="bar now"><i>1 660</i></div><div class="lb2">раунд 4, px</div></div>' +
+          '<div class="rul"><div class="bar now"><i>1 720</i></div><div class="lb2">раунд 4, px</div></div>' +
           '<div style="font-size:13px;color:var(--mut);line-height:1.65;max-width:240px;padding-bottom:4px">Экран — 950 px. Было четыре с половиной экрана, стало меньше двух. Ничего не выброшено: убраны повторы.</div></div>' +
       '</div></div>';
 })();
@@ -632,7 +769,7 @@ function OVERVIEW_SHEET(opt){
    ========================================================================== */
 document.getElementById('s02').innerHTML =
   '<div class="scr">' + NAVI() + '<div class="pg">' + OVERVIEW_SHEET() + '</div></div>' +
-  '<p class="note"><b>Один экран отвечает на всё.</b> Сколько у меня (число), как оно сегодня и за всё время (строка под числом), как оно шло (кривая), из чего состоит (оглавление), что случилось и что придёт (две колонки) и единственное, о чём стоит подумать (строка на полях). Ни одной карточки, ни одного чипа, ни одной кнопки-плашки.</p>';
+  '<p class="note"><b>Один экран отвечает на всё.</b> Сколько у меня (число), как оно сегодня и за всё время (строка под числом), как оно шло (кривая), из каких портфелей состоит (оглавление), <b>из каких классов состоит</b> (полоса), что случилось и что придёт (две колонки) и единственное, о чём стоит подумать (строка на полях). Ни одной карточки, ни одного чипа, ни одной кнопки-плашки.</p>';
 
 /* ==========================================================================
    03 — АНАТОМИЯ ЛИСТА
@@ -645,10 +782,10 @@ document.getElementById('s02').innerHTML =
     '<div style="display:grid;grid-template-columns:1fr 420px;gap:30px;align-items:start">' +
       '<div class="scr" style="height:auto;width:1160px"><div class="pg" style="padding:26px">' + head + '</div></div>' +
       '<div style="display:flex;flex-direction:column;gap:14px">' +
-      [['почему не моноширинное', 'Главное число — единственное во всём проекте, набранное <b>Inter Light 84 px</b> с табличными цифрами, а не JetBrains Mono. Моноширинный шрифт хорош, когда числа сравнивают столбиком; здесь число одно, и его задача — быть красивым. Все остальные числа остаются моно: в оглавлении, в колонках, в составе.'],
-       ['ритм', 'Воздух 52 px по краям, 44 сверху. Между разделами — <b>34 px и волосок</b>, внутри раздела — 13 px на строку. Три кегля на весь лист: 84 (число), 19 (имена портфелей), 13 (всё остальное). Метки разделов — <i>Georgia курсивом</i>, а не капсом: капс кричит, курсив шепчет.'],
-       ['кривая', 'Высота 104 px во всю ширину листа. Линия <b>серая, а не зелёная</b>: цвет уже сказан числом дельты, второй раз он не нужен. Ни осей, ни сетки, ни легенды — только две засечки: начало окна и максимум. Заливка под линией — 8,5 % чернил, почти незаметная.'],
-       ['цвет', 'Зелёный <b>#1F8A54</b> и терракота <b>#BE4A40</b> вместо салатового и алого — оба проверены на контраст 4,5:1 к листу. Всё остальное — четыре ступени серого. Цвета портфелей приглушены до пыльных: они метки, а не украшение.'],
+      [['почему не моноширинное', 'Главное число — единственное во всём проекте, набранное <b>Inter Light 84 px</b> с табличными цифрами, а не JetBrains Mono. Моноширинный шрифт хорош, когда числа сравнивают столбиком; здесь число одно, и его задача — быть красивым. Все остальные числа остаются моно: в оглавлении, в полосе классов, в составе.'],
+       ['ритм', 'Воздух 52 px по краям, 36 сверху. Между разделами — <b>26 px и волосок</b>, внутри раздела — 10 px на строку. Три кегля на весь лист: 84 (число), 19 (имена портфелей), 13 (всё остальное). Метки разделов — <i>Georgia курсивом</i>, а не капсом: капс кричит, курсив шепчет.'],
+       ['кривая', 'Высота 76 px во всю ширину листа. Линия <b>серая, а не зелёная</b>: цвет уже сказан числом дельты, второй раз он не нужен. Ни осей, ни сетки, ни легенды — только две засечки: начало окна и максимум, плюс штрихи выплат по нижней кромке.'],
+       ['цвет', 'Зелёный <b>#1F8A54</b> и терракота <b>#BE4A40</b> вместо салатового и алого — оба проверены на контраст 4,5:1 к листу. Полоса классов — ступени чернил (.50 / .20 / контур), янтарный <b>#A9762A</b> только на насечке цели. Цвета портфелей приглушены до пыльных: они метки, а не украшение.'],
        ['где кнопки', 'Их нет. Действие живёт в трёх местах: строка на полях, когда есть проблема; разворот строки состава; пустое состояние, где кнопка — единственное содержимое экрана. Вход в портфель — это <b>вся строка оглавления</b>, а не кнопка в ней.']
       ].map(function(z){ return '<div class="ex"><div class="t">' + z[0] + '</div><div class="b">' + z[1] + '</div></div>'; }).join('') +
       '</div></div>';
@@ -658,8 +795,8 @@ document.getElementById('s02').innerHTML =
    04 — ОГЛАВЛЕНИЕ
    ========================================================================== */
 (function(){
-  function sheetToc(list, hov, foot){
-    return '<div class="sheet p2"><span class="lb tt">Портфели</span>' + TOC(list, hov, foot) + '</div>';
+  function sheetToc(list, hov, mix){
+    return '<div class="sheet p2"><span class="lb tt">Портфели</span>' + TOC(list, hov) + (mix === false ? '' : MIX({})) + '</div>';
   }
   var many = PFS.concat([
     { nm:'ИИС',          col:'#4F8FA0', val:184300, n:4, day:820,   pnlp:6.2 },
@@ -672,22 +809,45 @@ document.getElementById('s02').innerHTML =
     '<div class="scr" style="height:auto;width:1300px"><div class="pg" style="padding:26px">' + sheetToc(PFS, 1) + '</div></div>' +
     '<div class="cards3">' +
       [['строка = вход', 'Кликается вся строка, а не кнопка в ней. На ховере — подложка 2,8 % чернил с выносом 12 px за края (лист не разлиновывается рамками) и стрелка справа. Никаких «Открыть» и «Ребаланс» в каждой строке: восемь кнопок на четыре портфеля были самым громким элементом старого «Обзора».'],
-       ['точки-лидеры', 'Классический типографский приём оглавления. Он делает две вещи сразу: ведёт глаз от имени к сумме через любую ширину и снимает нужду в вертикальных линейках и колонках. Точки — 0,8 px с шагом 6, прозрачность 55 %: их видно, но они не читаются как рисунок.'],
-       ['что в строке и чего в ней нет', 'Есть: метка цвета, имя, число бумаг, стоимость, движение за день. Нет: доходности за всё время (она в колонке слева), полос акций/облигаций, графика, кнопок. Всё это живёт на странице портфеля — в одном клике.']
+       ['точки-лидеры', 'Классический типографский приём оглавления. Он делает две вещи сразу: ведёт глаз от имени к сумме через любую ширину и снимает нужду в вертикальных линейках и колонках. Точки — 2 px с шагом 6, прозрачность 62 %: их видно, но они не читаются как рисунок.'],
+       ['что в строке и чего в ней нет', 'Есть: метка цвета, имя, число бумаг, стоимость, движение за день. Нет: доходности за всё время (она в колонке слева), полос акций/облигаций в каждой строке, графика, кнопок. Разбивка по классам — общая, одной полосой под списком.']
       ].map(function(z){ return '<div class="ex"><div class="t">' + z[0] + '</div><div class="b">' + z[1] + '</div></div>'; }).join('') +
     '</div>' +
     '<div class="states c2" style="margin-top:22px">' +
-      '<div class="st"><div class="h">Один портфель<i>оглавление в одну строку, без итога</i></div><div class="b">' +
-        '<div style="height:150px"><div class="scr" style="height:270px;width:1200px;transform:scale(.55);transform-origin:0 0">' +
-        '<div class="pg" style="padding:20px">' + sheetToc(one, -1, false) + '</div></div></div></div></div>' +
+      '<div class="st"><div class="h">Один портфель<i>оглавление одной строкой, полоса классов остаётся</i></div><div class="b">' +
+        '<div style="height:190px"><div class="scr" style="height:345px;width:1200px;transform:scale(.55);transform-origin:0 0">' +
+        '<div class="pg" style="padding:20px">' + sheetToc(one, -1) + '</div></div></div></div></div>' +
       '<div class="st"><div class="h">Восемь портфелей<i>лист растёт, ничего не ломается</i></div><div class="b">' +
-        '<div style="height:330px"><div class="scr" style="height:600px;width:1200px;transform:scale(.55);transform-origin:0 0">' +
+        '<div style="height:355px"><div class="scr" style="height:645px;width:1200px;transform:scale(.55);transform-origin:0 0">' +
         '<div class="pg" style="padding:20px">' + sheetToc(many, -1) + '</div></div></div></div></div>' +
     '</div>';
 })();
 
 /* ==========================================================================
-   05 — ВСЯ СТРАНИЦА
+   05 — «ИЗ ЧЕГО СОБРАНО»
+   ========================================================================== */
+(function(){
+  function demo(o, w){
+    return '<div class="scr" style="height:auto;width:' + (w || 1180) + 'px"><div class="pg" style="padding:22px">' +
+      '<div class="sheet p2" style="padding:22px 40px 20px">' + MIX(o) + '</div></div></div>';
+  }
+  document.getElementById('s05').innerHTML =
+    '<div style="display:flex;flex-direction:column;gap:16px">' +
+      demo({ tgt:null }) +
+      demo({ tgt:60 }) +
+      demo({ stock:520000, bond:2231616, cash:60400, tgt:20, title:'Из чего собрано' }) +
+    '</div>' +
+    '<div class="cards3">' +
+      [['ступени серого, а не радуга', 'Акции — чернила 50 %, облигации — 20 %, деньги — контурная плашка 9 %. Три ступени одного тона читаются как «плотное → лёгкое → пустое», и это ровно та шкала, которая тут нужна. Ни один новый цвет на лист не заходит: цвет остаётся языком дельт.'],
+       ['насечка цели — единственный акцент', 'Если цель задана, на полосе появляется янтарная риска на отметке цели и справа печатается дрейф числом: <b>«цель 60 / 40 · дрейф 17 п.п.»</b>. Видно и на глаз (насечка не совпала со стыком), и цифрой. Цели нет — насечки нет, и справа честно написано «цель по долям не задана», а не «дрейф от цели 100 %».'],
+       ['где она стоит и почему', 'Сразу под оглавлением портфелей, отделённая волоском: сначала «из каких портфелей», сразу следом «из каких классов». Занимает <b>75 px</b> — вчетверо меньше доната, который она заменяет, и при этом показывает ещё и рубли, и цель, и дрейф.']
+      ].map(function(z){ return '<div class="ex"><div class="t">' + z[0] + '</div><div class="b">' + z[1] + '</div></div>'; }).join('') +
+    '</div>' +
+    '<p class="note"><b>Крайние случаи.</b> Класс меньше 2 % — сегмент рисуется минимальной шириной 4 px, а число в легенде остаётся точным (полоса не врёт, но и не исчезает). Класс с нулём не рисуется вовсе — ни сегмента, ни строки в легенде. Проценты досчитываются до ровных <b>100,0</b> методом наибольшего остатка: легенда, складывающаяся в 99,9, — первое, что замечают. Портфель целиком в облигациях — полоса почти сплошная светлая, и это правильная картинка. <b>На странице портфеля</b> та же полоса показывает классы этого портфеля и стоит под составом; заголовок тот же, данные — свои.</p>';
+})();
+
+/* ==========================================================================
+   06 — ВСЯ СТРАНИЦА
    ========================================================================== */
 (function(){
   var rates = '<div class="strip"><div class="rates">' +
@@ -709,15 +869,15 @@ document.getElementById('s02').innerHTML =
   var fav = '<div class="strip"><div class="rates" style="height:56px"><span class="lb tt">Избранное пусто</span>' +
     '<span style="font-size:13px;color:var(--mut);margin-left:18px">отмечайте бумаги звёздочкой в «Рынок · Акции» — здесь появятся потенциал и свежие новости</span>' +
     '<span class="src" style="font-size:13px;color:var(--mut)">Открыть «Рынок» ›</span></div></div>';
-  document.getElementById('s05').innerHTML =
-    '<div class="zoomwrap" style="width:1058px;height:1190px">' +
-      '<div class="scr tall" style="transform:scale(.7);transform-origin:0 0;width:1512px;height:1700px">' + NAVI() +
+  document.getElementById('s06').innerHTML =
+    '<div class="zoomwrap" style="width:1058px;height:1232px">' +
+      '<div class="scr tall" style="transform:scale(.7);transform-origin:0 0;width:1512px;height:1760px">' + NAVI() +
       '<div class="pg">' + OVERVIEW_SHEET() + hist + rates + fav + '<div style="height:26px"></div></div></div></div>' +
     '<p class="note"><b>Под листом — только справочное.</b> «Что изменилось», ставки и «Избранное» живут тонким стеклом: 42 % белого, без тени, с волоском. Они читаются как приложение к листу, а не как ещё три виджета. Пустое «Избранное» — одна строка 56 px, а не карточка на 400.</p>';
 })();
 
 /* ==========================================================================
-   06 — СОСТОЯНИЯ «ОБЗОРА»
+   07 — ВОСЕМЬ СОСТОЯНИЙ «ОБЗОРА»
    ========================================================================== */
 (function(){
   var zero = '<div class="sheet"><div class="zero">' +
@@ -729,23 +889,45 @@ document.getElementById('s02').innerHTML =
         '<span class="v ' + cl(r[2]) + '">' + pct(r[2]) + '</span></div>';
     }).join('') + '</div></div></div>';
 
+  var one = '<div class="sheet">' + SHEET_HEAD('Капитал', ['портфель «Основной»', '5 бумаг', '15:39']) +
+    BIG(1782059, ['<b class="neg">−17 037 ₽</b> сегодня', '<b class="neg">−174 797 ₽</b> за всё время', 'вложено <b>1 914 856 ₽</b>']) +
+    CURVE({ seed:57 }) + '<div class="rule"></div><div class="gap"></div>' +
+    MIX({ stock:1572959, bond:167100, cash:42000, tgt:null, title:'Из чего собран' }) + '</div>';
+
+  var firstDay = '<div class="sheet">' + SHEET_HEAD('Капитал', ['1 портфель', '3 бумаги', 'сегодня']) +
+    BIG(214800, ['за сегодня <b>—</b>', 'вложено <b>214 800 ₽</b>']) +
+    CURVE_NONE('появится завтра: нужен второй дневной снимок, чтобы было что соединять') +
+    '<div class="rule"></div><div class="gap"></div>' + MIX({ stock:132400, bond:74000, cash:8400, tgt:null }) + '</div>';
+
   var calm = '<div class="sheet">' + SHEET_HEAD('Капитал', ['4 портфеля', '12 бумаг', '7 августа, 15:39']) +
     BIG(2841200, ['<b class="pos">+2 810 ₽</b> сегодня', '<b class="pos">+118 440 ₽</b> за всё время', 'вложено <b>2 722 760 ₽</b>']) +
     CURVE({ seed:23 }) + '<div class="rule"></div><div class="gap"></div>' +
-    '<span class="lb tt">Портфели</span>' + TOC(null, -1) + '</div>';
+    '<span class="lb tt">Портфели</span>' + TOC(null, -1) + MIX({ tgt:62 }) + '</div>';
+
+  var drift = '<div class="sheet">' + SHEET_HEAD('Капитал', ['4 портфеля', '12 бумаг', '7 августа, 15:39']) +
+    BIG(CAP, ['<b class="neg">−26 087 ₽</b> сегодня', '<b class="neg">−234 660 ₽</b> за всё время', 'вложено <b>2 986 276 ₽</b>']) +
+    '<div class="rule"></div><div class="gap"></div>' + MIX({ tgt:60 }) +
+    MARG('Акции ушли на <b>17 п.п.</b> выше цели — порог сверки 3 п.п. Продать акций на 478 000 ₽ и купить облигаций вернёт доли к 60 / 40.', 'Открыть мастер') + '</div>';
 
   var load = '<div class="sheet">' +
     '<div class="hd"><span class="sk" style="width:88px;height:15px"></span><span class="r"><span class="sk" style="width:150px;height:12px;display:inline-block"></span></span></div>' +
     '<div class="sk" style="width:520px;height:76px;border-radius:12px"></div>' +
     '<div class="sk" style="width:420px;height:16px;margin-top:20px"></div>' +
-    '<div class="sk" style="width:100%;height:104px;margin-top:28px;border-radius:12px"></div>' +
+    '<div class="sk" style="width:100%;height:76px;margin-top:24px;border-radius:12px"></div>' +
     '<div class="rule"></div><div class="gap"></div>' +
-    [0,1,2,3].map(function(){ return '<div style="display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--hair)"><span class="sk" style="width:150px;height:16px"></span><span class="sk" style="flex:1;height:1px"></span><span class="sk" style="width:110px;height:16px"></span></div>'; }).join('') + '</div>';
+    [0,1,2,3].map(function(){ return '<div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--hair)"><span class="sk" style="width:150px;height:16px"></span><span class="sk" style="flex:1;height:1px"></span><span class="sk" style="width:110px;height:16px"></span></div>'; }).join('') +
+    '<div class="sk" style="width:100%;height:6px;margin-top:20px"></div></div>';
 
   var stale = '<div class="sheet">' + SHEET_HEAD('Капитал', ['4 портфеля', '12 бумаг', '<span class="amb">биржа не отвечает</span>']) +
     BIG(CAP, ['числа на <b>6 августа, 18:45</b>', 'движение за сегодня посчитать не из чего']) +
-    CURVE({ seed:41 }) +
+    CURVE({ seed:41 }) + MIX({ tgt:null, go:false }) +
     MARG('Цены не пришли — на листе вчерашние числа. Всё, что ниже, посчитано по ним.', 'Повторить запрос') + '</div>';
+
+  var weekend = '<div class="sheet">' + SHEET_HEAD('Капитал', ['4 портфеля', '12 бумаг', 'суббота, торгов нет']) +
+    BIG(CAP, ['за сегодня <b>—</b>', '<b class="neg">−234 660 ₽</b> за всё время', 'последняя цена <b>пятница, 18:45</b>']) +
+    CURVE({ seed:41 }) + '<div class="rule"></div><div class="gap"></div>' +
+    '<span class="lb tt">Портфели</span>' + TOC([PFS[0], PFS[1]], -1) + MIX({ tgt:null }) +
+    TWO({ movers:null }) + '</div>';
 
   function frame(inner, h){
     var sc = 0.56;
@@ -753,28 +935,35 @@ document.getElementById('s02').innerHTML =
       '<div class="scr" style="height:' + h + 'px;width:1220px;transform:scale(' + sc + ');transform-origin:0 0">' +
       '<div class="pg" style="padding:20px">' + inner + '</div></div></div></div>';
   }
-  document.getElementById('s06').innerHTML =
-    '<div class="states c2">' +
-      '<div class="st"><div class="h">Портфелей нет<i>то самое приглашение</i></div>' + frame(zero, 300) + '</div>' +
-      '<div class="st"><div class="h">Всё спокойно<i>строки на полях нет — просить нечего</i></div>' + frame(calm, 560) + '</div>' +
-      '<div class="st"><div class="h">Загрузка<i>скелетон листа, порог 300 мс</i></div>' + frame(load, 560) + '</div>' +
-      '<div class="st"><div class="h">Биржа не отвечает<i>числа остаются, подпись честная</i></div>' + frame(stale, 420) + '</div>' +
-    '</div>' +
-    '<p class="note"><b>Правило состояний.</b> Ломаемся локально: не пришли цены — гаснет движение дня, но не капитал; не пришла история — исчезает кривая, но не число. Данные никогда не заменяются пустотой: вчерашнее число с честной подписью лучше заглушки. Скелетон показываем только после 300 мс — быстрее это читается как мигание.</p>';
+  var boxes = [
+    ['Портфелей нет', 'приглашение вместо нулей', zero, 320],
+    ['Один портфель', 'оглавления нет — капитал и есть этот портфель', one, 496],
+    ['Первый день', 'кривой нет, но лист не пустой', firstDay, 470],
+    ['Всё спокойно', 'строки на полях нет — просить нечего', calm, 700],
+    ['Дрейф за порог', 'единственный случай, когда лист настаивает', drift, 430],
+    ['Загрузка', 'скелетон листа, порог 300 мс', load, 586],
+    ['Биржа не отвечает', 'числа остаются, подпись честная', stale, 500],
+    ['Выходной', '«сегодня» пустое, и это нормально', weekend, 786]
+  ];
+  document.getElementById('s07').innerHTML =
+    '<div class="states c2">' + boxes.map(function(b){
+      return '<div class="st"><div class="h">' + b[0] + '<i>' + b[1] + '</i></div>' + frame(b[2], b[3]) + '</div>';
+    }).join('') + '</div>' +
+    '<p class="note"><b>Правило состояний.</b> Ломаемся локально: не пришли цены — гаснет движение дня, но не капитал; не пришла история — вместо кривой строка, а не пустая рамка. Данные никогда не заменяются пустотой: вчерашнее число с честной подписью лучше заглушки. Прочерк «—» ставим только там, где числа <i>действительно нет</i> (выходной, первый день), и рядом пишем почему. Скелетон показываем после 300 мс — быстрее это читается как мигание.</p>';
 })();
 
 /* ==========================================================================
-   07 — ТЁМНАЯ ТЕМА
+   08 — ТЁМНАЯ ТЕМА «ОБЗОРА»
    ========================================================================== */
-document.getElementById('s07').innerHTML =
+document.getElementById('s08').innerHTML =
   '<div class="scr dk">' + NAVI() + '<div class="pg">' + OVERVIEW_SHEET() + '</div></div>' +
-  '<p class="note">Лист становится <code>rgba(24,34,48,.72)</code> на тёмной версии того же фона. Зелёный и терракота светлеют до <code>#4FBE85</code> и <code>#E0776C</code> — иначе на тёмном они проваливаются. Кривая по-прежнему нейтральная, только теперь это светлый серый на тёмном. Отдельной палитры «для тёмной темы» не заводим: меняются четыре переменные.</p>';
+  '<p class="note">Лист становится <code>rgba(24,34,48,.72)</code> на тёмной версии того же фона. Зелёный и терракота светлеют до <code>#4FBE85</code> и <code>#E0776C</code>, ступени полосы классов инвертируются в белые прозрачности <code>.46 / .18 / .08</code> — иначе на тёмном они проваливаются. Кривая по-прежнему нейтральная. Отдельной палитры «для тёмной темы» не заводим: меняются семь переменных.</p>';
 
 /* ==========================================================================
-   08 — ДИАГНОЗ СТРАНИЦЫ ПОРТФЕЛЯ
+   09 — ДИАГНОЗ СТРАНИЦЫ ПОРТФЕЛЯ
    ========================================================================== */
 (function(){
-  document.getElementById('s08').innerHTML =
+  document.getElementById('s09').innerHTML =
     '<div style="display:grid;grid-template-columns:1fr 420px;gap:32px;align-items:start">' +
       '<div class="zoomwrap" style="width:1020px;position:relative">' +
         '<div class="scr" style="transform:scale(.68);transform-origin:0 0;width:1500px;height:1330px">' + NAVI() +
@@ -810,7 +999,18 @@ document.getElementById('s07').innerHTML =
 /* ==========================================================================
    СТРАНИЦА ПОРТФЕЛЯ
    ========================================================================== */
-function DOSSIER(){
+function DOSSIER(kind){
+  if (kind === 'bond') {
+    return '<div class="hold-x"></div><div class="dos">' +
+      '<p class="dos-say">Куплено одним лотом: 300 шт по 532,00 ₽ 15 января. Сейчас <b>543,77 ₽</b> плюс накопленный купон <b>13,23 ₽</b> на бумагу. До погашения — 4 года 3 месяца.</p>' +
+      '<div class="dos-facts">' +
+        '<div class="f"><div class="k">цена → сейчас</div><div class="v">532,00 → 543,77 ₽</div></div>' +
+        '<div class="f"><div class="k">НКД на пакет</div><div class="v">3 969 ₽</div></div>' +
+        '<div class="f"><div class="k">купон</div><div class="v pos">+10 620 ₽ · 2 раза в год</div></div>' +
+        '<div class="f"><div class="k">доходность к погашению</div><div class="v">13,4 % годовых</div></div>' +
+      '</div>' +
+      '<div class="acts"><a class="hov">Открыть в терминале</a><a>Докупить</a><a>Продать часть</a><a class="q">Купоны · 9</a><a class="q">Карточка выпуска</a></div></div>';
+  }
   return '<div class="hold-x"></div><div class="dos">' +
     '<p class="dos-say">Куплено двумя частями: 2 000 шт по 268,40 ₽ и 1 200 шт по 291,10 ₽. Средняя — <b>278,43 ₽</b>, сейчас на 1,2 % выше. За всё время бумага принесла <b>42 688 ₽</b> — единственный плюс в этом портфеле.</p>' +
     '<div class="dos-facts">' +
@@ -822,37 +1022,66 @@ function DOSSIER(){
     '<div class="acts"><a class="hov">Открыть в терминале</a><a>Докупить</a><a>Продать часть</a><a class="q">Сделки по бумаге</a><a class="q">Новости · 3</a></div></div>';
 }
 
-function HOLDINGS(openIdx){
+function HOLDINGS(openIdx, opt){
+  opt = opt || {};
+  var list = opt.list || HOLD;
+  var groups = opt.groups || [['Акции','a'],['Облигации','b']];
   var out = '<div class="hold"><div class="hold-h"><span>бумага</span><span>стоимость</span><span>доля</span><span>за день</span><span></span></div>';
-  [['Акции','a'],['Облигации','b']].forEach(function(g, gi){
+  var gi = 0;
+  groups.forEach(function(g){
+    var rows = list.filter(function(h){ return h.cls === g[1]; });
+    if (!rows.length) return;
     if (gi) out += '<div class="hold-g">' + g[0] + '</div>';
-    HOLD.filter(function(h){ return h.cls === g[1]; }).forEach(function(h){
-      var i = HOLD.indexOf(h), open = i === openIdx;
+    gi++;
+    rows.forEach(function(h){
+      var i = list.indexOf(h), open = i === openIdx;
       out += '<div class="hold-r' + (open ? ' open' : '') + '">' +
         '<span class="as"><b>' + h.tk + '</b><em>' + h.nm + '</em><i>' + h.qty + '</i></span>' +
-        '<span class="v">' + rub(h.val) + '</span>' +
-        '<span class="sh">' + h.sh.toFixed(1).replace('.', ',') + ' %<u class="' + (h.sh > 40 ? 'hi' : '') + '" style="width:' + Math.round(h.sh * 0.9) + 'px"></u></span>' +
-        '<span class="dp ' + cl(h.dp) + '">' + (h.dp === 0 ? '—' : pct(h.dp)) + '</span>' +
+        (h.noprice
+          ? '<span class="v no">нет цены</span><span class="sh">—</span><span class="dp">—</span>'
+          : '<span class="v">' + rub(h.val) + '</span>' +
+            '<span class="sh">' + h.sh.toFixed(1).replace('.', ',') + ' %<u class="' + (h.sh > 40 ? 'hi' : '') + '" style="width:' + Math.round(h.sh * 0.9) + 'px"></u></span>' +
+            '<span class="dp ' + cl(h.dp) + '">' + (h.dp === 0 ? '—' : pct(h.dp)) + '</span>') +
         '<span class="ch">' + (open ? '⌃' : '›') + '</span></div>';
-      if (open) out += DOSSIER();
+      if (open) out += DOSSIER(h.cls === 'b' ? 'bond' : '');
     });
   });
-  out += '<div class="hold-f"><span>Итого · 5 бумаг · и 42 000 ₽ свободных</span><span class="v">1 740 059 ₽</span>' +
-    '<span class="sh">100,0 %</span><span class="dp neg">−1,0%</span><span></span></div></div>';
-  return out;
+  out += '<div class="hold-f"><span>' + (opt.total || 'Итого · 5 бумаг · и 42 000 ₽ свободных') + '</span><span class="v">' +
+    (opt.totalV || '1 740 059 ₽') + '</span><span class="sh">100,0 %</span><span class="dp neg">' + (opt.totalD || '−1,0%') + '</span><span></span></div>';
+  if (opt.more) out += '<div class="hold-more"><span>показаны 6 бумаг из 23 — самые крупные</span><span class="r">Показать все ›</span></div>';
+  return out + '</div>';
+}
+
+/* ЛИСТ ПОРТФЕЛЯ = крошка + лист с цветной кромкой + шапка с именем + пейджер.
+   Всё, что отличает его от листа «Обзора», собрано здесь одним местом. */
+function PF_CRUMB(nm){
+  return '<div class="crumb"><a>‹ Обзор</a><i>·</i><span>' + nm + '</span></div>';
+}
+function PF_PAGER(o){
+  var prev = o.prev ? '<a>‹ ' + o.prev + '</a>' : '<a class="off">‹ первый портфель</a>';
+  var next = o.next ? '<a>' + o.next + ' ›</a>' : '<a class="off">последний ›</a>';
+  return '<div class="pager">' + prev + '<span class="c">' + o.no + '-й из 4 портфелей</span>' + next + '</div>';
+}
+function PF_SHEET(o, inner){
+  return PF_CRUMB(o.nm) + '<div class="sheet pf' + (o.cls ? ' ' + o.cls : '') + '" style="--pf:' + o.col + '">' +
+    '<div class="pfh"><i class="dot"></i><div><div class="nm">' + o.nm + '</div>' +
+    '<div class="sub">' + o.sub + '</div></div>' +
+    '<span class="r">' + (o.meta || []).map(function(m){ return '<span>' + m + '</span>'; }).join('') + '</span></div>' +
+    '<div class="pfh-rule"></div>' + inner +
+    (o.pager === false ? '' : PF_PAGER(o)) + '</div>';
 }
 
 function PORTFOLIO_SHEET(openIdx, opt){
   opt = opt || {};
-  return '<div class="sheet">' +
-    '<div class="hd"><i style="width:8px;height:8px;border-radius:50%;background:#2F8F63;align-self:center;margin-right:2px"></i>' +
-    '<span class="lb" style="font-size:15px;color:var(--mut)">Основной</span>' +
-    '<span class="r"><span>5 бумаг</span><span>котировки 15:39</span><span>настройки</span></span></div>' +
-    BIG(1782059, ['<b class="neg">−17 037 ₽</b> сегодня', '<b class="neg">−174 797 ₽</b> за всё время', 'вложено <b>1 914 856 ₽</b>'], true) +
+  return PF_SHEET({ nm:'Основной', col:'#2F8F63', no:1, next:'Т-Инвестиции',
+      sub:'портфель · 5 бумаг · собран 12 ноября 2024',
+      meta:['котировки 15:39', 'настройки'] },
+    '<span class="lb tt" style="display:block;margin-bottom:6px">Стоимость портфеля</span>' +
+    BIG(1782059, ['<b class="neg">−17 037 ₽</b> сегодня', '<b class="neg">−174 797 ₽</b> за всё время', 'вложено <b>1 914 856 ₽</b>'], 'md') +
     CURVE({ seed:57, bench:1, hi:'максимум 1 986 400 ₽', foot:'пунктиром — IMOEX за то же окно: портфель отстаёт на 6,7 п.п.', cmp:'IMOEX' }) +
     '<div class="rule"></div><div class="gap"></div>' +
     '<span class="lb tt">Состав</span>' + HOLDINGS(openIdx === undefined ? -1 : openIdx) +
-    '<div class="gap" style="height:14px"></div>' +
+    MIX({ stock:1572959, bond:167100, cash:42000, tgt:opt.tgt === undefined ? null : opt.tgt, title:'Из чего собран', goText:'история долей ›' }) +
     '<div class="two"><div class="col"><span class="lb tt">Сегодня двигали</span>' +
       [['SBER','Сбербанк',-9659,-1.1],['GAZP','Газпром',-3332,-1.5],['MTSS','МТС',-3097,-1.8]].map(function(m){
         return '<div class="mini-r"><span class="tk">' + m[0] + '</span><span class="nm">' + m[1] + '</span>' +
@@ -861,15 +1090,14 @@ function PORTFOLIO_SHEET(openIdx, opt){
       '<div class="mini-r"><span class="dt">2 декабря</span><span class="nm">купон ОФЗ 26238 · 300 шт</span><span class="v pos">+10 620 ₽</span></div>' +
       '<div class="mini-r"><span class="dt">10 июля</span><span class="nm">дивиденды SBER · 3 200 шт</span><span class="v pos">+111 488 ₽</span></div>' +
       '<span class="more">снимок сегодня <b class="m" style="font-weight:600;color:var(--tx)">1 782 059 ₽</b> · календарь ›</span></div></div>' +
-    (opt.marg === false ? '' : MARG('Больше половины портфеля — одна бумага: <b>SBER, 51,8 %</b>. Порог тревоги — 40 %.', 'Чем разбавить')) +
-  '</div>';
+    (opt.marg === false ? '' : MARG('Больше половины портфеля — одна бумага: <b>SBER, 51,8 %</b>. Порог тревоги — 40 %.', 'Чем разбавить')));
 }
 
-document.getElementById('s09').innerHTML =
-  '<div class="scr" style="height:1080px">' + NAVI() + '<div class="pg">' + PORTFOLIO_SHEET(-1) + '</div></div>' +
-  '<p class="note"><b>Тот же лист, тот же порядок мыслей.</b> Отличий два. Первое — кривая сравнивается с IMOEX <i>по умолчанию</i>: это единственное сравнение, которое отвечает на вопрос «я вообще хорошо иду или просто рынок такой», и отставание печатается числом в подписи, а не оставляется на глазомер. Второе — вместо правой колонки из пяти капс-заголовков две тихие колонки внизу: что двигало сегодня и что придёт дальше. Пустоты под составом нет: лист заканчивается там, где заканчивается содержимое.</p>';
-
 document.getElementById('s10').innerHTML =
+  '<div class="scr" style="height:1100px">' + NAVI() + '<div class="pg">' + PORTFOLIO_SHEET(-1) + '</div></div>' +
+  '<p class="note"><b>Тот же лист, тот же порядок мыслей.</b> Отличий три. Первое — кривая сравнивается с IMOEX <i>по умолчанию</i>: это единственное сравнение, которое отвечает на вопрос «я вообще хорошо иду или просто рынок такой», и отставание печатается числом в подписи. Второе — полоса «из чего собран» стоит под составом и показывает классы <i>этого</i> портфеля. Третье — вместо правой колонки из пяти капс-заголовков две тихие колонки внизу. Пустоты под составом нет: лист заканчивается там, где заканчивается содержимое.</p>';
+
+document.getElementById('s11').innerHTML =
   '<div class="scr" style="height:auto;width:1220px"><div class="pg" style="padding:26px">' +
   '<div class="sheet p2"><span class="lb tt">Состав</span>' + HOLDINGS(0) + '</div></div></div>' +
   '<div class="cards3">' +
@@ -878,87 +1106,216 @@ document.getElementById('s10').innerHTML =
      ['действия строкой', 'Пять текстовых ссылок через разделители вместо четырёх кнопок-плашек. Первая («Открыть в терминале») чуть темнее — это главное. Высота разворота — около 200 px, и он не выглядит вторым экраном внутри страницы.']
     ].map(function(z){ return '<div class="ex"><div class="t">' + z[0] + '</div><div class="b">' + z[1] + '</div></div>'; }).join('') +
   '</div>' +
-  '<p class="note"><b>Поведение.</b> Открыт может быть один разворот: открывая второй, первый закрывается. Строка остаётся на месте, соседи не прыгают — разворот вырастает под ней за 200 мс. Ниже 900 px ширины листа четыре числа становятся двумя рядами по два, ниже 560 — столбиком; ссылки не уходят никогда. У облигации вместо дивидендов — купон и НКД, у бумаги без цены — строка «биржа не отвечает» на месте чисел.</p>';
+  '<p class="note"><b>Поведение.</b> Открыт может быть один разворот: открывая второй, первый закрывается. Строка остаётся на месте, соседи не прыгают — разворот вырастает под ней за 200 мс. Ниже 900 px ширины листа четыре числа становятся двумя рядами по два, ниже 560 — столбиком; ссылки не уходят никогда. <b>У облигации свой набор</b> — цена, НКД на пакет, купон и доходность к погашению вместо дивидендов (см. следующий экран).</p>';
 
-/* 11 — состояния портфеля + тёмная */
+/* ==========================================================================
+   12 — ВОСЕМЬ СОСТОЯНИЙ СТРАНИЦЫ ПОРТФЕЛЯ
+   ========================================================================== */
 (function(){
   var empty = '<div class="sheet"><div class="zero">' +
     '<div><span class="lb">Портфель «Новый»</span><h3>Здесь пока ничего нет.<br>Добавьте первую бумагу —<br>и лист начнёт считать.</h3>' +
     '<div class="btns"><button class="btn ink">Добавить бумагу</button><button class="btn q">Импорт из брокера</button></div></div>' +
-    '<div style="font-size:13.5px;color:var(--mut);line-height:1.7">Что появится: состав с долями, кривая против IMOEX, ближайшие выплаты и одна строка на полях — если с портфелем что-то будет не так.</div></div></div>';
+    '<div style="font-size:13.5px;color:var(--mut);line-height:1.7">Что появится: состав с долями, полоса «из чего собран», кривая против IMOEX, ближайшие выплаты и строка на полях — если с портфелем что-то будет не так.</div></div></div>';
+
   var broker = '<div class="sheet">' +
     '<div class="hd"><i style="width:8px;height:8px;border-radius:50%;background:#4A6FA5;align-self:center;margin-right:2px"></i>' +
     '<span class="lb" style="font-size:15px;color:var(--mut)">Т-Инвестиции</span>' +
     '<span class="r"><span>3 бумаги</span><span>из брокера · 15:38</span></span></div>' +
-    BIG(526326, ['<b class="neg">−5 337 ₽</b> сегодня', '<b class="neg">−32 554 ₽</b> за всё время', 'вложено <b>558 880 ₽</b>'], true) +
+    BIG(526326, ['<b class="neg">−5 337 ₽</b> сегодня', '<b class="neg">−32 554 ₽</b> за всё время', 'вложено <b>558 880 ₽</b>'], 'md') +
+    MIX({ stock:379444, bond:131582, cash:15300, tgt:null, title:'Из чего собран', go:false }) +
     MARG('Состав и сделки приходят из брокера — руками их не изменить. Считаем и проверяем так же, как свои.', 'Обновить') + '</div>';
+
+  var offline = '<div class="sheet">' +
+    '<div class="hd"><i style="width:8px;height:8px;border-radius:50%;background:#2F8F63;align-self:center;margin-right:2px"></i>' +
+    '<span class="lb" style="font-size:15px;color:var(--mut)">Основной</span>' +
+    '<span class="r"><span>5 бумаг</span><span class="amb">биржа не отвечает</span></span></div>' +
+    BIG(1782059, ['числа на <b>6 августа, 18:45</b>', 'движение за сегодня посчитать не из чего'], 'md') +
+    MIX({ stock:1572959, bond:167100, cash:42000, tgt:null, title:'Из чего собран', go:false }) +
+    MARG('Цены не пришли. Доли и суммы — вчерашние, состав ниже настоящий.', 'Повторить запрос') + '</div>';
+
+  var single = '<div class="sheet">' +
+    '<div class="hd"><i style="width:8px;height:8px;border-radius:50%;background:#B58234;align-self:center;margin-right:2px"></i>' +
+    '<span class="lb" style="font-size:15px;color:var(--mut)">Дивидендный</span>' +
+    '<span class="r"><span>1 бумага</span><span>15:39</span></span></div>' +
+    BIG(111188, ['<b class="neg">−1 350 ₽</b> сегодня', '<b class="pos">+8 420 ₽</b> за всё время'], 'sm') +
+    '<span class="lb tt" style="display:block;margin-top:20px">Состав</span>' +
+    HOLDINGS(-1, { list:[{ tk:'MOEX', nm:'Мосбиржа', qty:'700 шт', val:111188, sh:100, dp:-1.2, cls:'a' }],
+                   total:'Итого · 1 бумага', totalV:'111 188 ₽', totalD:'−1,2%' }) +
+    MARG('Портфель из одной бумаги: его судьба целиком повторяет судьбу MOEX.', 'Чем разбавить') + '</div>';
+
+  var bondsOnly = '<div class="sheet">' +
+    '<div class="hd"><i style="width:8px;height:8px;border-radius:50%;background:#7C6BB0;align-self:center;margin-right:2px"></i>' +
+    '<span class="lb" style="font-size:15px;color:var(--mut)">Облигации</span>' +
+    '<span class="r"><span>2 бумаги</span><span>15:39</span></span></div>' +
+    BIG(287355, ['<b class="pos">+111 ₽</b> сегодня', '<b class="pos">+8 495 ₽</b> за всё время'], 'sm') +
+    '<span class="lb tt" style="display:block;margin-top:20px">Состав</span>' +
+    HOLDINGS(-1, { list:[{ tk:'26233', nm:'ОФЗ 26233', qty:'260 шт · НКД 30,42 ₽', val:150555, sh:52.4, dp:0.1, cls:'b' },
+                         { tk:'26230', nm:'ОФЗ 26230', qty:'220 шт · НКД 38,40 ₽', val:136800, sh:47.6, dp:0.0, cls:'b' }],
+                   groups:[['Облигации','b']], total:'Итого · 2 бумаги', totalV:'287 355 ₽', totalD:'+0,0%' }) +
+    MIX({ stock:0, bond:287355, cash:0, tgt:null, title:'Из чего собран', go:false }) +
+    TWO({ movers:null }) + '</div>';
+
+  var noprice = '<div class="sheet"><span class="lb tt">Состав</span>' +
+    HOLDINGS(-1, { list:[
+      { tk:'SBER', nm:'Сбербанк', qty:'3 200 шт', val:901664, sh:57.8, dp:-1.1, cls:'a' },
+      { tk:'LKOH', nm:'Лукойл',   qty:'60 шт',    val:278130, sh:17.8, dp:-0.3, cls:'a' },
+      { tk:'QIWI', nm:'QIWI',     qty:'400 шт',   noprice:1,           cls:'a' },
+      { tk:'26238', nm:'ОФЗ 26238', qty:'300 шт', val:167100, sh:10.7, dp:0.0, cls:'b' }],
+      total:'Итого · 4 бумаги · одна без цены', totalV:'1 346 894 ₽', totalD:'−1,0%' }) +
+    MARG('По <b>QIWI</b> биржа не отдаёт цену — торги приостановлены. Бумага не участвует в сумме и долях, но из состава не исчезает.', 'Что делать') + '</div>';
+
+  var manyRows = '<div class="sheet"><span class="lb tt">Состав</span>' +
+    HOLDINGS(-1, { list:[
+      { tk:'SBER', nm:'Сбербанк', qty:'3 200 шт', val:901664, sh:22.4, dp:-1.1, cls:'a' },
+      { tk:'LKOH', nm:'Лукойл',   qty:'60 шт',    val:278130, sh:11.9, dp:-0.3, cls:'a' },
+      { tk:'GAZP', nm:'Газпром',  qty:'2 400 шт', val:220320, sh: 9.6, dp:-1.5, cls:'a' },
+      { tk:'ROSN', nm:'Роснефть', qty:'380 шт',   val:198740, sh: 8.4, dp: 0.7, cls:'a' },
+      { tk:'PLZL', nm:'Полюс',    qty:'11 шт',    val:164230, sh: 7.1, dp: 1.9, cls:'a' },
+      { tk:'26238', nm:'ОФЗ 26238', qty:'300 шт', val:167100, sh: 7.2, dp: 0.0, cls:'b' }],
+      total:'Итого · 23 бумаги', totalV:'2 318 440 ₽', totalD:'−0,6%', more:1 }) + '</div>';
+
+  var bondDos = '<div class="sheet"><span class="lb tt">Состав · разворот облигации</span>' +
+    HOLDINGS(4) + '</div>';
+
   function frame(inner, h){
     var sc = 0.56;
     return '<div class="b"><div style="height:' + Math.round(h * sc) + 'px">' +
       '<div class="scr" style="height:' + h + 'px;width:1220px;transform:scale(' + sc + ');transform-origin:0 0">' +
       '<div class="pg" style="padding:20px">' + inner + '</div></div></div></div>';
   }
-  document.getElementById('s11').innerHTML =
-    '<div class="states c2" style="margin-bottom:24px">' +
-      '<div class="st"><div class="h">Портфель пуст<i>приглашение вместо нулей</i></div>' + frame(empty, 310) + '</div>' +
-      '<div class="st"><div class="h">Портфель у брокера<i>тот же лист, другой источник</i></div>' + frame(broker, 350) + '</div>' +
-    '</div>' +
-    '<div class="scr dk" style="height:1290px">' + NAVI() + '<div class="pg">' + PORTFOLIO_SHEET(0) + '</div></div>';
+  var boxes = [
+    ['Портфель пуст', 'приглашение вместо нулей', empty, 310],
+    ['Портфель у брокера', 'тот же лист, другой источник', broker, 420],
+    ['Биржа не отвечает', 'состав настоящий, цены вчерашние', offline, 430],
+    ['Одна бумага', 'долей нет смысла рисовать — есть смысл предупредить', single, 460],
+    ['Только облигации', 'полоса почти сплошная, «сегодня двигали» пусто', bondsOnly, 680],
+    ['Бумага без цены', 'из состава не исчезает, в сумму не входит', noprice, 500],
+    ['Много бумаг', 'шесть крупнейших и вход в полный список', manyRows, 586],
+    ['Разворот облигации', 'НКД, купон и доходность вместо дивидендов', bondDos, 676]
+  ];
+  document.getElementById('s12').innerHTML =
+    '<div class="states c2">' + boxes.map(function(b){
+      return '<div class="st"><div class="h">' + b[0] + '<i>' + b[1] + '</i></div>' + frame(b[2], b[3]) + '</div>';
+    }).join('') + '</div>' +
+    '<p class="note"><b>Общее правило состава.</b> Строка бумаги не исчезает никогда — исчезают только её числа, и на их месте стоит причина («нет цены»), а не пустота. Итог всегда честно называет, что в него вошло: «4 бумаги · одна без цены», «23 бумаги» при шести показанных. Полоса «из чего собран» рисуется даже когда класс один: сплошная светлая полоса — это и есть правильная картинка облигационного портфеля.</p>';
 })();
 
-/* 12 — движение */
-document.getElementById('s12').innerHTML =
+/* ==========================================================================
+   13 — ТЁМНАЯ ТЕМА ПОРТФЕЛЯ
+   ========================================================================== */
+document.getElementById('s13').innerHTML =
+  '<div class="scr dk" style="height:1280px">' + NAVI() + '<div class="pg">' + PORTFOLIO_SHEET(0) + '</div></div>';
+
+/* ==========================================================================
+   14 — УЗКИЙ ЭКРАН
+   ========================================================================== */
+(function(){
+  function narrowSheet(){
+    return '<div class="sheet nar">' +
+      '<div class="hd"><span class="lb">Капитал</span><span class="r"><span>4 портфеля</span><span>15:39</span></span></div>' +
+      BIG(CAP, ['<b class="neg">−26 087 ₽</b> сегодня', '<b class="neg">−234 660 ₽</b> за всё время'], 'md') +
+      CURVE({ seed:41, foot:'засечки — дни выплат' }) +
+      '<div class="rule"></div><div class="gap"></div>' +
+      '<span class="lb tt">Портфели</span>' +
+      '<div class="toc">' + PFS.map(function(p){
+        return '<div class="toc-r"><i class="d" style="background:' + p.col + '"></i>' +
+          '<span class="nm" style="font-size:17px">' + p.nm + '</span><span class="dots"></span>' +
+          '<span class="val" style="font-size:16px">' + rub(p.val) + '</span>' +
+          '<span class="day ' + cl(p.day) + '" style="width:78px">' + (p.day === 0 ? '—' : rub(p.day, p.day > 0)) + '</span>' +
+          '<span class="go"></span></div>';
+      }).join('') + '</div>' +
+      MIX({ tgt:null, go:false }) +
+      '<div class="two one"><div class="col"><span class="lb tt">Сегодня двигали</span>' +
+        MOVERS.slice(0, 2).map(function(m){
+          return '<div class="mini-r"><span class="tk">' + m.tk + '</span><span class="nm">' + m.nm + '</span>' +
+            '<span class="v neg">' + rub(m.rub) + '</span></div>'; }).join('') +
+        '<div style="height:14px"></div><span class="lb tt">Дальше</span>' +
+        '<div class="mini-r"><span class="dt">30 сентября</span><span class="nm">купон ОФЗ 26230</span><span class="v pos">+8 446 ₽</span></div>' +
+        '</div></div>' +
+      MARG('Целей по долям нет — <b>«Ребаланс» не подскажет, когда сверяться</b>.', 'Задать') + '</div>';
+  }
+  document.getElementById('s14').innerHTML =
+    '<div style="display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap">' +
+      '<div><div class="lb tt" style="display:block;margin-bottom:10px">1180 · колонка навигации на месте</div>' +
+      '<div class="scr" style="width:1180px;height:900px">' + NAVI() + '<div class="pg tight">' +
+      OVERVIEW_SHEET({ marg:false }).replace('class="sheet"', 'class="sheet nar"') + '</div></div></div>' +
+      '<div><div class="lb tt" style="display:block;margin-bottom:10px">1024 · колонка свёрнута в рейку 80</div>' +
+      '<div class="scr" style="width:1024px;height:900px">' + RAIL() + '<div class="pg tight">' + narrowSheet() + '</div></div></div>' +
+    '</div>' +
+    '<div class="cards3">' +
+      [['что уходит и в каком порядке', 'Первым — правый столбец «за всё время» из строки под числом (он есть в колонке слева). Вторым — «N бумаг» в строке портфеля. Третьим — рубли в легенде полосы классов (проценты остаются). Четвёртым — две колонки складываются в одну, по два пункта в каждой секции.'],
+       ['что не уходит никогда', 'Число капитала, дельта дня, имя и сумма каждого портфеля, полоса классов с процентами, строка на полях. Это и есть ответ страницы — его нельзя сократить, можно только набрать мельче: воздух листа 52 → 30 px, число 84 → 64.'],
+       ['рейка вместо колонки', 'Ниже 1100 px колонка навигации схлопывается в рейку 80 px с иконками — так уже устроен боевой сайдбар. Лист от этого только выигрывает: ему достаётся 944 px вместо 742, и оглавление снова дышит.']
+      ].map(function(z){ return '<div class="ex"><div class="t">' + z[0] + '</div><div class="b">' + z[1] + '</div></div>'; }).join('') +
+    '</div>';
+})();
+
+/* ==========================================================================
+   15 — ДВИЖЕНИЕ
+   ========================================================================== */
+document.getElementById('s15').innerHTML =
   '<div class="cards2">' +
     [['число', 'Капитал набегает от нуля за <b>560 мс</b>, easing <code>cubic-bezier(.16,1,.3,1)</code>, одновременно снимается размытие 6 px → 0. Единственная «дорогая» анимация страницы, играет один раз за визит.'],
      ['кривая', 'Рисуется слева направо за <b>900 мс</b> через <code>stroke-dashoffset</code>, точка на конце появляется последней, заливка проступает следом за 300 мс. Ощущение «линия чертится», а не «картинка мигнула».'],
-     ['оглавление', 'Строки проявляются волной: <b>28 мс</b> между строками, каждая 240 мс, сдвиг снизу 6 px. Четыре портфеля — вся волна 350 мс.'],
+     ['оглавление и полоса', 'Строки проявляются волной: <b>28 мс</b> между строками, каждая 240 мс, сдвиг снизу 6 px. Полоса классов растёт из нуля по ширине сегментов, 420 мс, сразу после последней строки — так видно, что она подводит итог списку.'],
      ['разворот', 'Высота 200 мс, содержимое проступает с задержкой 80 мс. Закрытие — 140 мс: уходить всегда быстрее, чем приходить.']
     ].map(function(z){ return '<div class="ex"><div class="t">' + z[0] + '</div><div class="b">' + z[1] + '</div></div>'; }).join('') +
   '</div>' +
-  '<p class="note"><b>Ни одна анимация не двигает соседей и не меняет размер контейнера, кроме разворота.</b> Всё — на <code>transform</code> и <code>opacity</code>. При <code>prefers-reduced-motion: reduce</code> число появляется сразу, кривая рисуется целиком, волна оглавления отключается, разворот открывается мгновенно. Никаких пульсаций, парения и «дыхания»: движение здесь только чтобы объяснить, откуда что взялось.</p>';
+  '<p class="note"><b>Ни одна анимация не двигает соседей и не меняет размер контейнера, кроме разворота.</b> Всё — на <code>transform</code> и <code>opacity</code> (полоса классов — на <code>scaleX</code> с <code>transform-origin:left</code>). При <code>prefers-reduced-motion: reduce</code> число появляется сразу, кривая рисуется целиком, волна оглавления отключается, полоса появляется готовой, разворот открывается мгновенно.</p>';
 
-/* 13 — что берём в код */
+/* ==========================================================================
+   16 — ЧТО БЕРЁМ В КОД
+   ========================================================================== */
 (function(){
   var rows = [
     ['Лист «Обзора»', '<span class="tag new">новое</span>',
      'Один блок вместо героя и пяти виджетов. Внутри — готовые величины: <code>calcPf</code>, <code>dayDeltaFromQuotes</code>, <code>pfdCapParts</code>, <code>collectUpcomingPayouts</code>. Новых запросов к бирже нет.',
      '<code>portfolios-dash.js</code> → <code>pfxHeroBlockHtml</code>'],
     ['Оглавление портфелей', '<span class="tag chg">переделка</span>',
-     'Карточка <code>pf:*</code> на «Обзоре» ужимается до строки: метка, имя, число бумаг, точки-лидеры, стоимость, движение дня. Полная карточка остаётся тем, чем должна быть, — страницей портфеля.',
+     'Карточка <code>pf:*</code> на «Обзоре» ужимается до строки: метка, имя, число бумаг, точки-лидеры, стоимость, движение дня. Полная карточка остаётся страницей портфеля.',
      '<code>PF.cardHtml</code>, <code>portfolios-cards.js</code>'],
+    ['Полоса «Из чего собрано»', '<span class="tag new">новое</span>',
+     'Три ступени серого + насечка цели. Данные уже считает донат: доли классов из <code>calcPf</code>, цель — из настроек портфеля, дрейф — та же формула, что в «Ребалансе». Тот же компонент с другими входами работает на странице портфеля.',
+     'новый узел листа; данные — <code>PF.pfdAllocHtml</code>'],
     ['Строка на полях', '<span class="tag chg">переделка</span>',
      'Строка вердикта из нынешнего героя становится единственным местом, где страница просит действие. Приоритет: дрейф → концентрация → целей нет → сверка давно → ничего.',
      'вердикт в <code>pfxHeroBlockHtml</code>'],
     ['Две тихие колонки', '<span class="tag chg">переделка</span>',
-     'Виджеты <code>movers</code> и <code>cal</code> сворачиваются в две колонки листа по три строки. Полные списки открываются по ссылке «ещё» / «все выплаты».',
+     'Виджеты <code>movers</code> и <code>cal</code> сворачиваются в две колонки листа по три строки. Полные списки открываются по ссылке.',
      '<code>PF.pfwMoversHtml</code>, <code>paymentCalendarHtml</code>'],
     ['Разворот строки состава', '<span class="tag new">новое</span>',
-     'Инлайн-разворот в <code>pfz</code>-таблице: фраза + четыре числа + строка ссылок. Лоты уже в <code>holding.lots[]</code>, вклад в день — из <code>calcHold</code>, выплаты — из расписаний.',
+     'Инлайн-разворот в <code>pfz</code>-таблице: фраза + четыре числа + строка ссылок; у облигации свой набор (НКД, купон, доходность к погашению). Лоты уже в <code>holding.lots[]</code>, НКД — <code>PF.curNkdOf</code>.',
      '<code>portfolios-tabs.js</code>, <code>pfz*</code>'],
     ['IMOEX по умолчанию', '<span class="tag chg">правка</span>',
-     'Механика сравнения уже есть (<code>cmpBtn</code>, база «индекс»). Меняется одно: на странице портфеля она включена сразу, а разница печатается числом в подписи кривой.',
+     'Механика сравнения уже есть (<code>cmpBtn</code>, база «индекс»). На странице портфеля она включена сразу, а разница печатается числом в подписи кривой.',
      '<code>pfdCapParts</code>, <code>btFetchHistorySeries</code>'],
     ['Капитал = позиции + деньги', '<span class="tag chg">правка</span>',
      '«Обзор» считает капитал без свободных денег, карточка портфеля — с ними. Одно слово должно значить одно число.',
      '<code>calcPf</code> / лист «Обзора»'],
+    ['«Кривой пока нет»', '<span class="tag new">новое</span>',
+     'Вместо пустой рамки графика — строка 76 px с объяснением. Условие уже известно: снимков меньше двух.',
+     '<code>pf_snapshots_v1</code>, <code>pfdCapParts</code>'],
     ['KPI · Капитал / За сегодня', '<span class="tag del">в опт-ин</span>',
-     'Повторяют шапку листа слово в слово. Остаются в магазине виджетов для тех, кто собирает свою раскладку.',
+     'Повторяют шапку листа слово в слово. Остаются в магазине виджетов.',
      '<code>kpi:cap</code>, <code>kpi:day</code>'],
     ['График капитала (отдельный)', '<span class="tag del">в опт-ин</span>',
      'Тот же ряд, что в шапке листа, только на 700 px.',
      '<code>cap</code>, <code>cap2</code>'],
+    ['Донат «Распределение»', '<span class="tag del">в опт-ин</span>',
+     'Полоса на листе показывает то же самое и ещё цель с дрейфом, занимая 75 px вместо 300. Кольцо остаётся в магазине виджетов.',
+     '<code>alloc</code>'],
     ['Правая колонка страницы портфеля', '<span class="tag del">удалить</span>',
-     'Пять капс-секций расходятся: капитал и распределение — в шапку листа, движение дня и выплата — в две колонки, снимки — ссылкой в подвале колонки «Дальше».',
+     'Пять капс-секций расходятся: капитал — в шапку листа, распределение — в полосу, движение дня и выплата — в две колонки, снимки — ссылкой в подвале.',
      '<code>.pfz-side</code>, <code>pfzAllocCard</code>'],
     ['Призрак «Добавить виджет»', '<span class="tag del">удалить</span>',
      '390 px пунктира под каждым портфелем. Заменяется тихой строкой 40 px в самом низу страницы.',
      '<code>pfxGhostClick</code>']
   ];
-  document.getElementById('s13').innerHTML =
+  document.getElementById('s16').innerHTML =
     '<table class="code-t"><thead><tr><th style="width:220px">что</th><th style="width:104px">как</th><th>чем это делается</th><th style="width:280px">где живёт</th></tr></thead><tbody>' +
     rows.map(function(r){ return '<tr><td class="w1">' + r[0] + '</td><td>' + r[1] + '</td><td>' + r[2] + '</td><td>' + r[3] + '</td></tr>'; }).join('') +
     '</tbody></table>' +
-    '<p class="note"><b>Ни одного нового запроса к бирже и ни одной новой библиотеки.</b> Кривая — тот же SVG, что рисует <code>pfdCapParts</code>, только без осей и сетки. Точки-лидеры — <code>background-image: radial-gradient</code>, три строки CSS. Всё остальное — типографика: кегли, воздух и волоски.<br><br><b>Что теряется, честно.</b> С «Обзора» уходят донат распределения и полосы акций/облигаций в каждой строке — доли по классам остаются на странице портфеля и в «Ребалансе». Уходит месячная сетка календаря — она живёт под ссылкой «все выплаты». Если окажется, что доли по классам нужны прямо на «Обзоре», их место — в строке на полях, а не отдельным виджетом.</p>';
+    '<p class="note"><b>Ни одного нового запроса к бирже и ни одной новой библиотеки.</b> Кривая — тот же SVG, что рисует <code>pfdCapParts</code>, только без осей и сетки. Точки-лидеры — <code>border-bottom: 2px dotted</code>. Полоса классов — три <code>div</code> с процентными ширинами. Всё остальное — типографика: кегли, воздух и волоски.<br><br><b>Что теряется, честно.</b> Уходит месячная сетка календаря выплат — она живёт под ссылкой «все выплаты». Уходят полосы акций/облигаций в каждой строке портфеля: разбивка стала общей, а по каждому портфелю она видна на его странице. Доли по классам с «Обзора» больше не пропадают — они в полосе.</p>';
 })();
 </script>
 </body>
