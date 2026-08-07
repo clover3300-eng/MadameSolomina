@@ -150,7 +150,10 @@
 
   /* ── ГРАФИКИ: геометрия 1в1 из мокапа, данные — из движка ────────────────── */
 
-  // «Как растёт капитал»: вложенное + прибыль облигаций + прибыль акций
+  // «Как растёт капитал» — ось начинается ОТ ВЛОЖЕННОГО, а не от нуля.
+  // С нулевой осью полоса «вложено» забирала 62% высоты, и рост оставался
+  // лентой сверху (правка владельца 2026-08-07). Вложенное называет себя
+  // подписью на базовой линии, высоту получает прибыль облигаций и акций.
   function growSVG(w, h, S, g) {
     var n = yearsV() + 1;
     var pts = [], i, sim = SIM();
@@ -158,9 +161,10 @@
       var split = (sim && i > 0) ? sim.split(S, g, i) : { bond: 0, eq: 0 };
       pts.push({ t: S * Math.pow(1 + g.r, i), b: split.bond, e: split.eq });
     }
-    var top = 20, bot = h - 26, max = g.base * 1.074;
+    var top = 20, bot = h - 26;
+    var span = Math.max(1, (pts[n - 1].t - S) * 1.12);
     var X = function (k) { return 4 + k * (w - 8) / (n - 1); };
-    var Y = function (v) { return bot - (v / max) * (bot - top); };
+    var Y = function (v) { return bot - ((v - S) / span) * (bot - top); };
     var s = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" class="c9-pl">';
     s += '<g stroke="var(--line)" stroke-width="1" fill="none">';
     for (i = 0; i <= 3; i++) {
@@ -174,17 +178,21 @@
       for (k = n - 1; k >= 0; k--) d += 'L' + X(k).toFixed(1) + ' ' + Y(to(k)).toFixed(1);
       return '<path d="' + d + 'Z" fill="' + fill + '" opacity="' + op + '"/>';
     }
-    s += band(function () { return S; }, function () { return 0; }, 'var(--cbase)', '1');
     s += band(function (k) { return S + pts[k].b; }, function () { return S; }, 'var(--bond)', '.55');
     s += band(function (k) { return pts[k].t; }, function (k) { return S + pts[k].b; }, 'var(--eq)', '.6');
     var ln = 'M' + X(0) + ' ' + Y(pts[0].t).toFixed(1);
     for (i = 1; i < n; i++) ln += 'L' + X(i).toFixed(1) + ' ' + Y(pts[i].t).toFixed(1);
     s += '<path d="' + ln + '" fill="none" stroke="var(--eqtx)" stroke-width="2"/>';
     s += '<circle cx="' + X(n - 1).toFixed(1) + '" cy="' + Y(pts[n - 1].t).toFixed(1) + '" r="4.5" fill="var(--eqtx)"/>';
-    // подписи только промежуточных лет: итог уже назван крупно
+    // базовая линия называет вложенное — отдельной полосы под него больше нет
+    s += '<path d="M0 ' + bot + 'H' + w + '" stroke="var(--cbase)" stroke-width="2" fill="none"/>';
+    s += '<text x="0" y="' + (bot - 8) + '" font-family="var(--fN)" font-size="10.5" font-weight="700"' +
+         ' fill="var(--dim)">вложено ' + capBoth(S) + '</text>';
+    // подписи промежуточных лет: итог уже назван крупно
     s += '<g font-family="var(--fN)" font-size="11.5" font-weight="700" fill="var(--mut)" text-anchor="middle">';
     for (i = 1; i < n - 1; i++) {
-      s += '<text x="' + X(i).toFixed(1) + '" y="' + (Y(pts[i].t) - 11).toFixed(1) + '">' + capBoth(pts[i].t).replace(' млн', '') + '</text>';
+      s += '<text x="' + X(i).toFixed(1) + '" y="' + (Y(pts[i].t) - 11).toFixed(1) + '">' +
+           capBoth(pts[i].t).replace(' млн', '') + '</text>';
     }
     s += '</g>';
     var y0 = new Date().getFullYear();
@@ -347,8 +355,8 @@
         '<div class="c9-cv-h"><span class="c9-lb">Как растёт капитал</span>' +
           '<span class="c9-qt">вложенное не трогаем — сверху копится прибыль</span></div>' +
         '<div class="c9-chart" id="cx9Grow"></div>' +
+        // «вложено» ушло на базовую линию графика — в подписи два цвета прибыли
         '<div class="c9-leg">' +
-          '<s><em style="background:var(--cbase)"></em>вложено</s>' +
           '<s><em style="background:var(--bond);opacity:.75"></em>прибыль облигаций</s>' +
           '<s><em style="background:var(--eq);opacity:.8"></em>прибыль акций</s></div>' +
       '</div></div>';

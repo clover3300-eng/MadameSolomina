@@ -623,41 +623,45 @@ function bx(sub){
   return h;
 }
 
-/* ───────── график роста: сложенные полосы «вложено / облигации / акции» ───────── */
+/* ───────── график роста ─────────
+   ОСЬ НАЧИНАЕТСЯ ОТ ВЛОЖЕННОГО, а не от нуля. С нулевой осью полоса «вложено»
+   забирала 62% высоты, и весь рост оставался тонкой лентой сверху (правка
+   владельца 2026-08-07). Вложенное называет себя подписью на базовой линии,
+   а высоту получает то, ради чего график и нужен: прибыль облигаций и акций. */
 function grow(w, h){
-  var pts = [ {y:'2026', t:1.00, b:0,   e:0,   cap:'сегодня'},
+  var pts = [ {y:'2026', t:1.00, b:0,   e:0},
               {y:'2027', t:1.14, b:.06, e:.08},
               {y:'2028', t:1.30, b:.13, e:.17},
               {y:'2029', t:1.49, b:.21, e:.28} ];
-  var top = 20, bot = h - 26, max = 1.6;
+  var base = pts[0].t, top = 20, bot = h - 26;
+  var span = (pts[3].t - base) * 1.12;
   var X = function(i){ return 4 + i * (w - 8) / 3; };
-  var Y = function(v){ return bot - (v / max) * (bot - top); };
+  var Y = function(v){ return bot - ((v - base) / span) * (bot - top); };
   var i, s = '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" class="pl">';
-  /* сетка */
   s += '<g stroke="var(--line)" stroke-width="1" fill="none">';
   for (i = 0; i <= 3; i++){ var gy = top + i * (bot - top) / 3; s += '<path d="M0 ' + gy.toFixed(1) + 'H' + w + '"/>'; }
   s += '</g>';
-  /* три полосы стека */
   function band(from, to, fill, op){
-    var d = 'M' + X(0) + ' ' + Y(from(0)).toFixed(1);
-    for (i = 1; i < 4; i++) d += 'L' + X(i).toFixed(1) + ' ' + Y(from(i)).toFixed(1);
-    for (i = 3; i >= 0; i--) d += 'L' + X(i).toFixed(1) + ' ' + Y(to(i)).toFixed(1);
+    var d = 'M' + X(0) + ' ' + Y(from(0)).toFixed(1), k;
+    for (k = 1; k < 4; k++) d += 'L' + X(k).toFixed(1) + ' ' + Y(from(k)).toFixed(1);
+    for (k = 3; k >= 0; k--) d += 'L' + X(k).toFixed(1) + ' ' + Y(to(k)).toFixed(1);
     return '<path d="' + d + 'Z" fill="' + fill + '" opacity="' + op + '"/>';
   }
-  s += band(function(){ return 1; }, function(){ return 0; }, 'var(--cbase)', '1');
-  s += band(function(i){ return 1 + pts[i].b; }, function(){ return 1; }, 'var(--bond)', '.55');
-  s += band(function(i){ return pts[i].t; }, function(i){ return 1 + pts[i].b; }, 'var(--eq)', '.6');
-  /* верхняя линия и точка итога */
+  s += band(function(k){ return base + pts[k].b; }, function(){ return base; }, 'var(--bond)', '.55');
+  s += band(function(k){ return pts[k].t; }, function(k){ return base + pts[k].b; }, 'var(--eq)', '.6');
   var ln = 'M' + X(0) + ' ' + Y(pts[0].t).toFixed(1);
   for (i = 1; i < 4; i++) ln += 'L' + X(i).toFixed(1) + ' ' + Y(pts[i].t).toFixed(1);
   s += '<path d="' + ln + '" fill="none" stroke="var(--eqtx)" stroke-width="2"/>';
   s += '<circle cx="' + X(3).toFixed(1) + '" cy="' + Y(pts[3].t).toFixed(1) + '" r="4.5" fill="var(--eqtx)"/>';
+  /* базовая линия называет вложенное — отдельной полосы под неё больше нет */
+  s += '<path d="M0 ' + bot + 'H' + w + '" stroke="var(--cbase)" stroke-width="2" fill="none"/>';
+  s += '<text x="0" y="' + (bot - 8) + '" font-family="var(--fN)" font-size="10.5" font-weight="700"'
+    +  ' fill="var(--dim)">вложено 1.00 млн</text>';
   /* подписи промежуточных лет — итог уже назван крупно, второй раз не пишем */
   s += '<g font-family="var(--fN)" font-size="11.5" font-weight="700" fill="var(--mut)" text-anchor="middle">';
   s += '<text x="' + X(1).toFixed(1) + '" y="' + (Y(pts[1].t) - 11).toFixed(1) + '">1.14</text>';
   s += '<text x="' + X(2).toFixed(1) + '" y="' + (Y(pts[2].t) - 11).toFixed(1) + '">1.30</text>';
   s += '</g>';
-  /* ось лет */
   s += '<g font-family="var(--fN)" font-size="10.5" font-weight="600" fill="var(--dim)">';
   for (i = 0; i < 4; i++){
     var a = i === 0 ? 'start' : (i === 3 ? 'end' : 'middle');
@@ -796,7 +800,6 @@ function condMon(){
    wide — вариант Б: полка «число слева, график справа»                     */
 function legend(){
   return '<div class="leg">'
-    + '<s><em style="background:var(--cbase)"></em>вложено</s>'
     + '<s><em style="background:var(--bond);opacity:.75"></em>прибыль облигаций</s>'
     + '<s><em style="background:var(--eq);opacity:.8"></em>прибыль акций</s></div>';
 }
@@ -849,7 +852,6 @@ function ansMix(cw, ch, narrow){
     +     '<span class="qt">вложенное не трогаем — сверху копится прибыль</span></div>'
     +   '<div class="chart">' + grow(cw, ch) + '</div>'
     +   '<div class="leg">'
-    +     '<s><em style="background:var(--cbase)"></em>вложено</s>'
     +     '<s><em style="background:var(--bond);opacity:.75"></em>прибыль облигаций</s>'
     +     '<s><em style="background:var(--eq);opacity:.8"></em>прибыль акций</s></div>'
     + '</div></div>';
