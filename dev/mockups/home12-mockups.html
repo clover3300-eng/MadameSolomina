@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Главная · раунд 12 — заголовок-приглашение, чистая створка и вход через боевой расчёт</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fT:Georgia,'Times New Roman',serif;
+  --fU:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --fN:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+  --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+         --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+}
+:root[data-theme="dark"]{ --doc-bg:#0b0f15; --doc-panel:#141a24; --doc-ink:#e8eef7; --doc-mut:#96a4b8;
+       --doc-dim:#67748a; --doc-line:rgba(255,255,255,.11); --doc-acc:#8e9bff; --doc-quote:#c2ccdb; }
+:root[data-theme="light"]{ --doc-bg:#eef1f6; --doc-panel:#fff; --doc-ink:#0f172a; --doc-mut:#5b6879;
+       --doc-dim:#94a3b8; --doc-line:#e2e8f0; --doc-acc:#4453ef; --doc-quote:#334155; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--doc-bg);font-family:var(--fU);color:var(--doc-ink);padding:44px 0 90px;-webkit-font-smoothing:antialiased}
+.page{width:1480px;max-width:100%;margin:0 auto;padding:0 20px}
+
+/* ---------------- документ ---------------- */
+.doc-h{margin-bottom:34px}
+.doc-kicker{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--doc-acc);margin-bottom:9px}
+.doc-h h1{font-family:var(--fT);font-weight:400;font-size:38px;line-height:1.15;letter-spacing:-.01em;text-wrap:balance}
+.doc-h p{margin-top:12px;font-size:15px;line-height:1.6;color:var(--doc-mut);max-width:940px}
+.verdict{margin-top:20px;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid var(--doc-acc);border-radius:14px;padding:16px 20px;max-width:1000px}
+.verdict p{margin:0;font-size:14.5px;line-height:1.62;color:var(--doc-quote)}
+.verdict p+p{margin-top:10px}
+.verdict b{font-weight:700;color:var(--doc-ink)}
+.fix{margin-top:14px;background:var(--doc-panel);border:1px solid var(--doc-line);border-left:3px solid #16a34a;border-radius:14px;padding:14px 20px;max-width:1000px}
+.fix p{margin:0;font-size:14px;line-height:1.6;color:var(--doc-quote)}
+.fix b{color:var(--doc-ink)}
+
+.mk{margin-top:52px}
+.mk-h{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.mk-n{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--doc-dim)}
+.mk-h h2{font-family:var(--fT);font-weight:400;font-size:25px}
+.mk-tag{font-family:var(--fU);font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:color-mix(in srgb,var(--doc-acc) 14%,transparent);color:var(--doc-acc)}
+.mk-tag.mute{background:color-mix(in srgb,var(--doc-mut) 16%,transparent);color:var(--doc-mut)}
+.mk-tag.ok{background:color-mix(in srgb,#16a34a 16%,transparent);color:#16a34a}
+.mk-sub{font-size:14px;color:var(--doc-mut);line-height:1.62;max-width:1000px;margin-bottom:18px}
+.notes{margin-top:18px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px 26px;max-width:1360px}
+.note{display:flex;gap:9px;font-size:13px;line-height:1.5;color:var(--doc-quote)}
+.note i{flex:none;width:18px;height:18px;border-radius:50%;background:var(--doc-ink);color:var(--doc-bg);font-style:normal;font-family:var(--fN);font-size:10px;font-weight:700;display:grid;place-items:center;margin-top:1px}
+.scroller{overflow-x:auto;padding:4px 0 44px;margin-bottom:-32px}
+.pair{display:flex;gap:20px}
+@media (max-width:1000px){ .notes{grid-template-columns:1fr} .doc-h h1{font-size:30px} }
+
+.map{margin-top:20px;width:100%;border-collapse:collapse;font-size:13px;background:var(--doc-panel);border:1px solid var(--doc-line);border-radius:12px;overflow:hidden}
+.map th{text-align:left;font-size:10px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--doc-dim);padding:10px 14px;border-bottom:1px solid var(--doc-line)}
+.map td{padding:9px 14px;border-bottom:1px solid var(--doc-line);color:var(--doc-quote);line-height:1.5;vertical-align:top}
+.map tr:last-child td{border-bottom:0}
+.map .num{font-family:var(--fN);font-size:12px}
+
+/* ---------------- образцы копирайта ---------------- */
+.spec{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:6px}
+.spec-c{background:#0B1017;border:1px solid rgba(233,237,246,.1);border-radius:16px;padding:28px 30px 24px;color:#E9EDF6;position:relative;overflow:hidden}
+.spec-c.win{border-color:rgba(142,155,255,.42);box-shadow:0 0 0 1px rgba(142,155,255,.16),0 24px 60px -34px rgba(68,83,239,.6)}
+.spec-c::after{content:"";position:absolute;inset:0;background:radial-gradient(420px 220px at 20% 0%,rgba(68,83,239,.16),transparent 70%);pointer-events:none}
+.spec-lb{font-family:var(--fN);font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#68718A;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.spec-lb em{font-style:normal;padding:2px 7px;border-radius:999px;background:rgba(142,155,255,.16);color:#AEB7FF;letter-spacing:.06em}
+.spec-kick{font-family:var(--fN);font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8A94AD;margin-bottom:12px}
+.spec-c h3{font-family:var(--fT);font-weight:400;font-size:33px;line-height:1.16;letter-spacing:-.014em}
+.spec-c h3 em{font-style:italic}
+.spec-c p{margin-top:12px;font-size:13.5px;line-height:1.6;color:#9AA2B5;max-width:34em}
+.spec-why{margin-top:16px;padding-top:14px;border-top:1px solid rgba(233,237,246,.08);font-size:12.5px;line-height:1.55;color:#8A94AD}
+.spec-why b{color:#C3CBDA;font-weight:700}
+
+/* ======================================================================
+   ТЁМНАЯ СЦЕНА
+   ====================================================================== */
+.pg{position:relative;width:1440px;height:880px;flex:none;font-family:var(--fU);overflow:hidden;color:#E9EDF6;
+    border-radius:16px;border:1px solid rgba(15,23,42,.09);
+    box-shadow:0 2px 4px rgba(15,23,42,.05),0 34px 70px -34px rgba(24,38,60,.4);
+    background:
+      radial-gradient(900px 620px at 50% 44%, rgba(68,83,239,.14) 0%, rgba(68,83,239,0) 62%),
+      radial-gradient(760px 520px at 6% 8%, rgba(31,58,68,.7) 0%, rgba(31,58,68,0) 60%),
+      radial-gradient(820px 560px at 94% 6%, rgba(43,44,80,.7) 0%, rgba(43,44,80,0) 62%),
+      linear-gradient(160deg,#0A0F16 0%,#0D1119 50%,#090E15 100%)}
+.num{font-family:var(--fN);font-variant-numeric:tabular-nums}
+
+.hd{height:84px;display:flex;align-items:center;gap:14px;padding:0 64px;position:relative;z-index:9}
+.hd::after{content:"";position:absolute;left:64px;right:64px;bottom:0;height:1px;background:rgba(233,237,246,.08)}
+.hd-mark{width:38px;height:38px;border-radius:11px;background:#fff;color:#161B27;display:grid;place-items:center;
+         font-family:var(--fT);font-size:20px;font-weight:700}
+.hd-name{font-size:16.5px;margin-right:auto}
+.hd-name .w3{font-weight:300}
+.hd-name .w8{font-weight:800}
+.hd-nav{display:flex;align-items:center;gap:30px;margin-right:34px}
+.hd-nav a{font-size:13.5px;font-weight:600;color:#9AA2B5;text-decoration:none}
+.hd-login{display:inline-flex;align-items:center;height:38px;padding:0 20px;border-radius:999px;
+          border:1px solid rgba(233,237,246,.16);background:rgba(255,255,255,.06);font-size:13.5px;font-weight:700;color:#E9EDF6}
+.hd-login.on{background:rgba(142,155,255,.18);border-color:rgba(142,155,255,.5);color:#DDE1FF}
+
+.btm{position:absolute;left:64px;right:64px;bottom:0;height:54px;display:flex;align-items:center;gap:16px;
+     font-size:12px;color:#68718A;border-top:1px solid rgba(233,237,246,.08);z-index:9}
+.btm .sp{flex:1}
+.btm .num{font-size:11.5px}
+
+.obs{position:absolute;inset:0;z-index:2}
+.obs svg.rings{position:absolute;inset:0}
+.core{position:absolute;transform:translate(-50%,-50%);text-align:center;z-index:4;
+      animation:breath 6s ease-in-out infinite alternate}
+@keyframes breath{from{transform:translate(-50%,-50%) scale(1)}to{transform:translate(-50%,-50%) scale(1.014)}}
+.core-lb{font-family:var(--fN);font-size:12px;font-weight:700;letter-spacing:.22em;color:#68718A}
+.core-v{font-family:var(--fN);font-weight:700;letter-spacing:-.02em;line-height:1.05;color:#EDF0FA;
+        text-shadow:0 0 46px rgba(120,134,255,.34)}
+.core-d{margin-top:4px;font-family:var(--fN);font-size:15px;font-weight:700;color:#AEB7FF}
+.orb{position:absolute;left:0;top:0;z-index:3;display:inline-flex;align-items:center;gap:7px;
+     border-radius:999px;padding:7px 13px;white-space:nowrap;
+     offset-rotate:0deg;animation:orbit linear infinite}
+@keyframes orbit{from{offset-distance:var(--od)}to{offset-distance:calc(var(--od) + 100%)}}
+.orb b{font-family:var(--fN);font-weight:700;letter-spacing:.03em}
+.orb span{font-family:var(--fN);font-weight:600;opacity:.85}
+@media (prefers-reduced-motion: reduce){ .orb{animation:none;offset-distance:var(--od)} .core{animation:none} }
+
+/* манифест */
+.obs-title{position:absolute;top:104px;left:0;right:0;text-align:center;z-index:5}
+.obs-kick{font-family:var(--fN);font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#7C86A0;margin-bottom:13px}
+.obs-title h1{font-family:var(--fT);font-weight:400;font-size:40px;letter-spacing:-.012em}
+.obs-title h1 em{font-style:italic}
+.obs-title p{margin-top:11px;font-size:14.5px;color:#9AA2B5}
+
+/* ---- док расчёта: цель, сумма, кнопка ---- */
+.dock{position:absolute;left:50%;bottom:82px;transform:translateX(-50%);z-index:6;display:flex;flex-direction:column;
+      align-items:center;gap:14px}
+.goals{display:inline-flex;padding:4px;border-radius:14px;background:rgba(255,255,255,.05);
+       border:1px solid rgba(233,237,246,.12);gap:4px}
+.goal{height:38px;padding:0 18px;border-radius:10px;display:inline-flex;align-items:center;gap:8px;
+      font-size:13.5px;font-weight:600;color:#9AA2B5}
+.goal.on{background:rgba(142,155,255,.2);color:#E4E7FF;font-weight:700;box-shadow:inset 0 0 0 1px rgba(142,155,255,.4)}
+.goal svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.sumrow{display:flex;align-items:center;gap:10px}
+.suminp{display:flex;align-items:baseline;gap:8px;height:62px;padding:0 24px;border-radius:16px;
+        background:rgba(255,255,255,.06);border:1px solid rgba(142,155,255,.34);
+        box-shadow:0 0 0 4px rgba(142,155,255,.08);font-family:var(--fN);font-size:26px;font-weight:700;color:#EDF0FA}
+.suminp span{font-size:16px;color:#8A94AD;font-weight:500}
+.suminp .caret{width:2px;height:26px;background:#AEB7FF;align-self:center;animation:blink 1.1s step-end infinite}
+@keyframes blink{0%,100%{opacity:.25}50%{opacity:1}}
+.gobtn{display:inline-flex;align-items:center;gap:9px;height:62px;padding:0 30px;border-radius:16px;
+       background:linear-gradient(180deg,#5B67F2,#4453EF);color:#fff;font-size:16px;font-weight:700;
+       box-shadow:0 18px 44px -16px rgba(68,83,239,.6)}
+.gobtn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.dock-note{font-size:12.5px;color:#68718A}
+.dock-note b{color:#8A94AD;font-weight:600}
+
+/* ======================================================================
+   А «Стыковка» — ИСПРАВЛЕНО: створка под шапкой, пилюли рынка нет
+   ====================================================================== */
+.dk{position:absolute;right:0;top:84px;bottom:54px;width:556px;z-index:7;padding:26px 30px 26px 0;display:flex}
+.dk-card{flex:1;border-radius:24px;border:1px solid rgba(233,237,246,.13);
+         background:linear-gradient(180deg, rgba(19,25,37,.97) 0%, rgba(12,17,26,.99) 100%);
+         box-shadow:-40px 0 90px -50px rgba(0,0,0,.9), inset 0 1px 0 rgba(255,255,255,.06);
+         padding:34px 44px 30px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.dk-card::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;
+                 background:linear-gradient(90deg,transparent,rgba(142,155,255,.5),transparent)}
+.dk-back{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#8A94AD;margin-bottom:26px}
+.dk-back svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.dk-title{font-family:var(--fT);font-weight:400;font-size:32px;letter-spacing:-.01em}
+.dk-sub{margin-top:9px;font-size:13.5px;line-height:1.55;color:#9AA2B5}
+.dk-form{margin-top:26px;display:flex;flex-direction:column;gap:15px}
+.dk-foot{margin-top:auto;padding-top:20px;font-size:13px;color:#9AA2B5}
+.dk-foot a{color:#AEB7FF;font-weight:700;text-decoration:none}
+.dk-sec{margin-top:14px;display:flex;align-items:center;gap:7px;font-size:11px;color:#5C6479}
+.dk-sec svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2}
+/* сцена за створкой гасится мягкой вуалью, чтобы шапка и узлы не лезли в глаза */
+.veil{position:absolute;right:0;top:0;bottom:0;width:760px;z-index:6;pointer-events:none;
+      background:linear-gradient(90deg, rgba(9,13,20,0) 0%, rgba(9,13,20,.72) 46%, rgba(9,13,20,.92) 100%)}
+
+/* поле */
+.fld{display:flex;flex-direction:column;gap:7px}
+.fld-lb{display:flex;align-items:baseline;font-size:12px;font-weight:600;color:#C3CBDA;letter-spacing:.01em}
+.fld-lb .fg{margin-left:auto;font-size:12px;font-weight:600;color:#AEB7FF}
+.fld-in{display:flex;align-items:center;gap:10px;height:52px;border-radius:14px;padding:0 16px;
+        background:rgba(255,255,255,.045);border:1px solid rgba(233,237,246,.13);font-size:14.5px;color:#E9EDF6}
+.fld-in.ph{color:#5F687E}
+.fld-in.focus{border-color:rgba(142,155,255,.75);box-shadow:0 0 0 4px rgba(142,155,255,.14);background:rgba(255,255,255,.06)}
+.fld-in.bad{border-color:rgba(255,138,138,.7);box-shadow:0 0 0 4px rgba(255,120,120,.12)}
+.fld-in svg{width:17px;height:17px;fill:none;stroke:#6E7790;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.fld-in .sp{flex:1}
+.fld-help{font-size:11.5px;color:#7A8399}
+.fld-err{display:flex;align-items:center;gap:6px;font-size:12px;color:#FF9C9C;font-weight:600}
+.fld-err svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2}
+.fld-err a{color:#FFC2C2;text-decoration:underline}
+.btn-main{display:flex;align-items:center;justify-content:center;gap:9px;height:54px;border-radius:14px;margin-top:4px;
+          background:linear-gradient(180deg,#5B67F2,#4453EF);color:#fff;font-size:15px;font-weight:700;
+          box-shadow:0 18px 44px -18px rgba(68,83,239,.7)}
+.btn-main svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.or{display:flex;align-items:center;gap:14px;margin:18px 0 14px;font-size:11.5px;color:#68718A}
+.or::before,.or::after{content:"";flex:1;height:1px;background:rgba(233,237,246,.1)}
+.btn-tg{display:flex;align-items:center;justify-content:center;gap:9px;height:52px;border-radius:14px;
+        background:rgba(255,255,255,.05);border:1px solid rgba(233,237,246,.13);font-size:14px;font-weight:700;color:#E9EDF6}
+.btn-tg svg{width:19px;height:19px}
+/* напоминание, ЧТО именно сохраняем (появляется, когда пришли из расчёта) */
+.dk-keep{display:flex;gap:12px;padding:14px 16px;border-radius:14px;margin-bottom:22px;
+         background:rgba(142,155,255,.09);border:1px solid rgba(142,155,255,.2)}
+.dk-keep svg{width:19px;height:19px;flex:none;fill:none;stroke:#AEB7FF;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.dk-keep div{font-size:12.5px;line-height:1.5;color:#C3CBDA}
+.dk-keep b{color:#E9EDF6;font-weight:700}
+
+/* ======================================================================
+   СВЕТЛЫЙ ЭКРАН БОЕВОГО РАСЧЁТА (для врезки «Сохранить расчёт»)
+   ====================================================================== */
+.lp{position:relative;width:1440px;height:880px;flex:none;font-family:var(--fU);overflow:hidden;color:#161B27;
+    border-radius:16px;border:1px solid rgba(15,23,42,.09);
+    box-shadow:0 2px 4px rgba(15,23,42,.05),0 34px 70px -34px rgba(24,38,60,.4);
+    background:linear-gradient(155deg,#F4F2F0 0%,#EEF1F6 45%,#EDEEF4 100%);display:flex}
+.lp-sb{width:230px;flex:none;padding:22px 18px;border-right:1px solid rgba(15,23,42,.06)}
+.lp-mark{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+.lp-mark i{width:30px;height:30px;border-radius:9px;background:#161B27;color:#fff;display:grid;place-items:center;
+           font-family:var(--fT);font-size:16px;font-style:normal}
+.lp-mark b{font-size:13.5px;font-weight:700}
+.lp-mark b span{font-weight:300}
+.lp-it{height:34px;display:flex;align-items:center;padding:0 12px;border-radius:9px;font-size:13px;color:#5B6879;margin-bottom:3px}
+.lp-it.on{background:#fff;color:#161B27;font-weight:600;box-shadow:0 1px 3px rgba(15,23,42,.08)}
+.lp-gr{font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#A3AEBF;margin:18px 0 8px 12px}
+.lp-main{flex:1;min-width:0;padding:22px 26px}
+/* тёмная плашка-герой боевого результата */
+.rs-hero{height:78px;border-radius:16px;background:linear-gradient(180deg,#161C28,#10141D);color:#E9EDF6;
+         display:flex;align-items:center;gap:22px;padding:0 22px}
+.rs-ring{width:44px;height:44px;border-radius:50%;flex:none;
+         background:conic-gradient(#5B67F2 0 52%, #E8B77A 52% 100%);position:relative}
+.rs-ring::after{content:"";position:absolute;inset:11px;border-radius:50%;background:#141925}
+.rs-lb{display:block;font-family:var(--fN);font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#7C86A0;white-space:nowrap}
+.rs-v{display:block;font-family:var(--fN);font-size:21px;font-weight:700;margin-top:3px;white-space:nowrap}
+.rs-sp{flex:1}
+.rs-chip{display:inline-flex;align-items:center;height:26px;padding:0 10px;border-radius:8px;background:rgba(255,255,255,.08);
+         font-family:var(--fN);font-size:11px;font-weight:700;color:#C7CFE0;margin-right:6px;white-space:nowrap;flex:none}
+.rs-chip.up{background:rgba(126,214,164,.16);color:#8FE0B4}
+.rs-btn{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 16px;border-radius:11px;font-size:13px;font-weight:700;white-space:nowrap;flex:none}
+.rs-btn.ghost{background:rgba(255,255,255,.07);color:#D6DCE9;border:1px solid rgba(255,255,255,.1)}
+.rs-btn.buy{background:#E86F4B;color:#fff}
+.rs-btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ПОЛОСА СОХРАНЕНИЯ — то, ради чего экран здесь */
+.save{margin-top:14px;border-radius:16px;background:#fff;border:1px solid #E3E7EF;
+      box-shadow:0 1px 2px rgba(15,23,42,.04),0 18px 40px -30px rgba(24,38,60,.5);
+      padding:16px 20px;display:flex;align-items:center;gap:18px;position:relative;overflow:hidden}
+.save::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#4453EF}
+.save-ic{width:38px;height:38px;border-radius:11px;flex:none;display:grid;place-items:center;background:#EEF0FF}
+.save-ic svg{width:19px;height:19px;fill:none;stroke:#4453EF;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.save-tx b{display:block;font-size:14.5px;font-weight:700}
+.save-tx span{display:block;margin-top:3px;font-size:12.5px;color:#6B7789;line-height:1.45}
+.save-sp{flex:1}
+.save-in{display:flex;align-items:center;gap:9px;height:44px;width:250px;border-radius:11px;padding:0 14px;
+         background:#F5F7FA;border:1px solid #DFE5EE;font-size:13.5px;color:#161B27}
+.save-in.ph{color:#98A2B3}
+.save-in.focus{border-color:#4453EF;box-shadow:0 0 0 4px rgba(68,83,239,.12);background:#fff}
+.save-in svg{width:16px;height:16px;fill:none;stroke:#98A2B3;stroke-width:1.7}
+.save-btn{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 20px;border-radius:11px;
+          background:linear-gradient(180deg,#5B67F2,#4453EF);color:#fff;font-size:13.5px;font-weight:700;
+          box-shadow:0 14px 30px -14px rgba(68,83,239,.7)}
+.save-btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.save-x{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;color:#A3AEBF;flex:none}
+.save-x svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.save.done{border-color:#BFE3CD;background:#F5FBF7}
+.save.done::before{background:#16A34A}
+.save.done .save-ic{background:#DFF3E6}
+.save.done .save-ic svg{stroke:#16A34A}
+.save-tg{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 16px;border-radius:11px;
+         background:#fff;border:1px solid #DFE5EE;font-size:13px;font-weight:700;color:#161B27}
+.save-tg svg{width:17px;height:17px}
+
+/* две карточки результата */
+.rs-cols{margin-top:14px;display:flex;gap:14px}
+.rs-card{flex:1;background:#fff;border:1px solid #E3E7EF;border-radius:16px;padding:18px 20px;
+         box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.rs-card h3{font-family:var(--fT);font-weight:400;font-size:19px;display:flex;align-items:center;gap:9px}
+.rs-card h3 i{font-style:normal;font-family:var(--fN);font-size:10.5px;font-weight:700;background:#EEF0FF;color:#4453EF;
+              padding:2px 7px;border-radius:999px}
+.rs-card .sub{margin-top:3px;font-size:12px;color:#8A94A6}
+.rs-th{display:flex;gap:10px;margin-top:14px;padding-bottom:7px;border-bottom:1px solid #EEF1F6;
+       font-family:var(--fN);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#A3AEBF}
+.rs-tr{display:flex;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid #F2F4F8;font-size:12.5px}
+.rs-tr .n{font-family:var(--fN);font-size:10.5px;color:#B6BECC;width:20px;flex:none}
+.rs-tr .nm{font-family:var(--fN);font-weight:700;font-size:12.5px;width:96px;flex:none}
+.rs-tr .y{font-family:var(--fN);font-weight:700;color:#16A34A;width:60px;flex:none}
+.rs-tr .q{font-family:var(--fN);color:#6B7789;width:44px;flex:none}
+.rs-tr .c{font-family:var(--fN);margin-left:auto;font-weight:600}
+.rs-tot{display:flex;align-items:center;gap:9px;margin-top:12px;padding:11px 14px;border-radius:11px;background:#F5F7FA;
+        font-size:13px;font-weight:700}
+.rs-tot .c{margin-left:auto;font-family:var(--fN)}
+.ech{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid #F2F4F8;font-size:12.5px}
+.ech i{width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-style:normal;
+       font-family:var(--fN);font-size:10px;font-weight:700}
+.ech b{font-family:var(--fU);font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}
+.ech .c{margin-left:auto;font-family:var(--fN);font-weight:700}
+.ech .p{font-family:var(--fN);font-size:11px;color:#8A94A6;width:38px;text-align:right}
+.pay{margin-top:14px;background:#fff;border:1px solid #E3E7EF;border-radius:16px;padding:16px 20px;
+     display:flex;align-items:center;gap:12px;font-size:13.5px;box-shadow:0 1px 2px rgba(15,23,42,.04)}
+.pay svg{width:18px;height:18px;fill:none;stroke:#8A94A6;stroke-width:1.7;stroke-linecap:round}
+.pay b{font-weight:700}
+.pay .sp{flex:1}
+.pay .num{font-family:var(--fN);font-size:12px;color:#6B7789}
+.pay .num.up{color:#16A34A;font-weight:700}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="doc-h">
+    <div class="doc-kicker">Главная · раунд 12 · заголовок, чистая створка, вход через расчёт</div>
+    <h1>Заголовок как приглашение — и регистрация в конце расчёта, а не вместо него</h1>
+    <p>Три вещи по вашим замечаниям. Заголовок ещё раз, но в другую сторону: не описание продукта,
+       а приглашение к действию, потому что теперь на Главной есть само действие. Створка входа
+       вычищена: пилюли рынка нет, шапка сквозь стекло не лезет. И главное — идея «сначала расчёт,
+       потом аккаунт» переложена на ВАШ существующий расчёт, без второго движка.</p>
+    <div class="verdict">
+      <p><b>Ответ по расчёту: да, адаптируется — и почти без кода.</b> Боевой «Расчёт» уже устроен ровно
+         как надо: экран-развилка «Что для вас важнее сейчас?» (сумма + две цели) → стратегия →
+         готовый результат со списком к покупке (8 ОФЗ и 12 акций, прогноз ≈ 2 058 176 ₽).
+         Дублировать нечего. Главная берёт на себя только первый шаг — сумму и цель, — и передаёт
+         их в тот же расчёт. Аккаунт спрашивается один раз и в конце: полосой «Сохранить расчёт»
+         на экране результата, когда ценность уже на столе.</p>
+      <p><b>Что это меняет на Главной.</b> Поле почты внизу заменяется полем суммы: страница перестаёт
+         просить регистрацию первой репликой и начинает предлагать работу. «Войти» остаётся в шапке
+         для тех, кто вернулся.</p>
+    </div>
+    <div class="fix">
+      <p><b>Правки по створке (пункт 2).</b> Пилюля «Рынок сейчас · IMOEX» убрана — она отвлекала
+         ровно в тот момент, когда человек заполняет поля. Створка опущена под шапку (top 84) и
+         перестала быть полупрозрачной: подложка 97–99% плюс мягкая вуаль по сцене справа, так что
+         ни навигация, ни узлы больше не просвечивают сквозь форму. Орбиты видны только слева,
+         в чистой части сцены. Это и на регистрации, и на входе.</p>
+    </div>
+  </header>
+
+  <!-- ================= 01 копирайт ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">01</span><h2>Заголовок: четыре новых направления</h2><span class="mk-tag">Выбрать одну</span></div>
+    <p class="mk-sub">Прошлый заход был про описание («портфель из ОФЗ и акций под вашу цель») — вам
+       не зашло, и, кажется, по делу: описание объясняет, но не зовёт. Здесь другой принцип — заголовок
+       обещает конкретный результат, который терминал реально выдаёт: <b>точный список бумаг
+       с количествами</b>. Это то, чего нет у брокерских «идей» и советов.</p>
+    <div class="spec">
+      <div class="spec-c win">
+        <div class="spec-lb">Вариант А <em>рекомендую</em></div>
+        <div class="spec-kick">Терминал частного инвестора · Московская биржа</div>
+        <h3>Что будет с вашими деньгами <em>через три года</em></h3>
+        <p>Назовите сумму — соберём портфель из ОФЗ и акций по ценам Мосбиржи, покажем прогноз,
+           выплаты и точный список к покупке.</p>
+        <div class="spec-why"><b>Почему.</b> Заголовок — прямое приглашение к тому самому полю суммы,
+          что теперь стоит под ним: прочитал и сразу сделал. Никакого обещания доходности:
+          «что будет» — это вопрос, ответ считает калькулятор на реальных ценах.</div>
+      </div>
+      <div class="spec-c">
+        <div class="spec-lb">Вариант Б</div>
+        <div class="spec-kick">Терминал частного инвестора · Московская биржа</div>
+        <h3>Не советы, а <em>список к покупке</em></h3>
+        <p>Скажите сумму — посчитаем, сколько взять ОФЗ и каких акций, по каким ценам и что это даст.
+           Дальше ведём учёт и подсказываем, когда выравнивать доли.</p>
+        <div class="spec-why"><b>Почему.</b> Самая точная отстройка: все вокруг дают «идеи», мы даём
+          восемь облигаций и двенадцать акций с количествами. <b>Риск:</b> начинается с отрицания —
+          интонация чуть спорит, а не приглашает.</div>
+      </div>
+      <div class="spec-c">
+        <div class="spec-lb">Вариант В</div>
+        <div class="spec-kick">Московская биржа · ОФЗ, акции, выплаты</div>
+        <h3>Портфель за пять минут — <em>и всё видно</em></h3>
+        <p>Сумма → доли ОФЗ и акций → список к покупке с количествами. Потом учёт по ценам биржи,
+           календарь выплат и напоминание о ребалансе.</p>
+        <div class="spec-why"><b>Почему.</b> Обещает лёгкость входа и показывает маршрут одной строкой.
+          <b>Риск:</b> «за пять минут» — обещание скорости, которое придётся держать: если тест
+          риск-профиля на одиннадцать вопросов окажется на пути, будет неловко.</div>
+      </div>
+      <div class="spec-c">
+        <div class="spec-lb">Вариант Г</div>
+        <div class="spec-kick">Терминал частного инвестора · Московская биржа</div>
+        <h3>Деньги под присмотром — <em>от расчёта до ребаланса</em></h3>
+        <p>Считаем состав под вашу цель, ведём учёт по ценам Мосбиржи, напоминаем о выплатах
+           и показываем, чем выровнять доли.</p>
+        <div class="spec-why"><b>Почему.</b> Спокойная интонация в характере марки и весь цикл в одной
+          строке. <b>Риск:</b> снова описание, а не приглашение — ближе всего к тому, что вам
+          уже не понравилось.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 02 главная ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">02</span><h2>Главная: вместо поля почты — поле суммы</h2><span class="mk-tag">Вариант А</span></div>
+    <p class="mk-sub">Первое, что просит страница, — не регистрацию, а сумму. Две цели переключателем
+       (те же «Рост капитала» и «Ежемесячный доход», что в сайдбаре «Расчёта»), сумма моно-цифрами,
+       кнопка «Посчитать». Под ними одна тихая строка: расчёт бесплатный, аккаунт не нужен.
+       «Войти» остаётся в шапке — для тех, кто вернулся.</p>
+    <div class="scroller"><div id="mk1"><div class="pg"><div class="hd"><span class="hd-mark">M</span><span class="hd-name"><span class="w3">Madame </span><span class="w8">Solomi'na</span></span><span class="hd-nav"><a href="#">Рынок</a><a href="#">Расчёт</a><a href="#">Академия</a></span><span class="hd-login">Войти</span></div><div class="obs-title"><div class="obs-kick">Терминал частного инвестора · Московская биржа</div><h1>Что будет с вашими деньгами <em>через три года</em></h1><p>Назовите сумму — соберём портфель из ОФЗ и акций по ценам Мосбиржи, покажем прогноз, выплаты и точный список к покупке.</p></div><div class="obs"><svg class="rings" width="1440" height="880" viewBox="0 0 1440 880" fill="none"><ellipse cx="720" cy="410" rx="336" ry="118" stroke="rgba(142,155,255,.11)" stroke-width="1"/><ellipse cx="720" cy="410" rx="478" ry="168" stroke="rgba(142,155,255,.11)" stroke-width="1"/><ellipse cx="720" cy="410" rx="610" ry="214" stroke="rgba(142,155,255,.11)" stroke-width="1"/></svg><span class="orb" style="offset-path:ellipse(336px 118px at 720px 410px);--od:0.0%;animation-duration:90s;animation-direction:normal;padding:9.8px 18.6px;color:#CFD5F7;background:oklch(0.5 0.17 274 / 0.47);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:17.5px">SBER</b><span style="font-size:14.3px">+1,12%</span></span><span class="orb" style="offset-path:ellipse(336px 118px at 720px 410px);--od:25.0%;animation-duration:90s;animation-direction:normal;padding:7.1px 13.5px;color:#CFD5F7;background:oklch(0.5 0.17 274 / 0.50);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:13.2px">TATN</b><span style="font-size:10.8px">+1,35%</span></span><span class="orb" style="offset-path:ellipse(336px 118px at 720px 410px);--od:50.0%;animation-duration:90s;animation-direction:normal;padding:6.5px 12.3px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.68);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:12.4px">GMKN</b><span style="font-size:10.2px">+2,52%</span></span><span class="orb" style="offset-path:ellipse(336px 118px at 720px 410px);--od:75.0%;animation-duration:90s;animation-direction:normal;padding:6.2px 11.8px;color:#CFD5F7;background:oklch(0.5 0.17 274 / 0.36);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:11.9px">SNGS</b><span style="font-size:9.8px">+0,42%</span></span><span class="orb" style="offset-path:ellipse(478px 168px at 720px 410px);--od:11.0%;animation-duration:140s;animation-direction:reverse;padding:8.9px 16.9px;color:#9AA5CC;background:rgba(233,237,246,.03);border:1px solid rgba(142,155,255,0.41);"><b style="font-size:16.2px">LKOH</b><span style="font-size:13.3px">−0,83%</span></span><span class="orb" style="offset-path:ellipse(478px 168px at 720px 410px);--od:36.0%;animation-duration:140s;animation-direction:reverse;padding:6.9px 13.1px;color:#9AA5CC;background:rgba(233,237,246,.03);border:2px solid rgba(142,155,255,0.45);"><b style="font-size:13.0px">NVTK</b><span style="font-size:10.7px">−1,14%</span></span><span class="orb" style="offset-path:ellipse(478px 168px at 720px 410px);--od:61.0%;animation-duration:140s;animation-direction:reverse;padding:6.5px 12.3px;color:#9AA5CC;background:rgba(233,237,246,.03);border:2px solid rgba(142,155,255,0.47);"><b style="font-size:12.4px">ROSN</b><span style="font-size:10.2px">−1,24%</span></span><span class="orb" style="offset-path:ellipse(478px 168px at 720px 410px);--od:86.0%;animation-duration:140s;animation-direction:reverse;padding:6.2px 11.8px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.58);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:11.8px">T</b><span style="font-size:9.7px">+1,88%</span></span><span class="orb" style="offset-path:ellipse(610px 214px at 720px 410px);--od:22.0%;animation-duration:200s;animation-direction:normal;padding:8.3px 15.8px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.61);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:15.1px">GAZP</b><span style="font-size:12.4px">+2,06%</span></span><span class="orb" style="offset-path:ellipse(610px 214px at 720px 410px);--od:47.0%;animation-duration:200s;animation-direction:normal;padding:6.8px 12.9px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.61);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:12.8px">YDEX</b><span style="font-size:10.5px">+2,08%</span></span><span class="orb" style="offset-path:ellipse(610px 214px at 720px 410px);--od:72.0%;animation-duration:200s;animation-direction:normal;padding:6.4px 12.2px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.75);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:12.2px">PLZL</b><span style="font-size:10.0px">+4,97%</span></span><span class="orb" style="offset-path:ellipse(610px 214px at 720px 410px);--od:97.0%;animation-duration:200s;animation-direction:normal;padding:6.0px 11.4px;color:#9AA5CC;background:rgba(233,237,246,.03);border:1px solid rgba(142,155,255,0.38);"><b style="font-size:11.6px">X5</b></span></div><div class="core" style="left:720px;top:410px"><div class="core-lb">IMOEX</div><div class="core-v" style="font-size:92px">2 301,65</div><div class="core-d">+1,43% сегодня</div></div><div class="dock"><div class="goals"><span class="goal on"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg> Нарастить капитал</span><span class="goal"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg> Ежемесячный доход</span></div><div class="sumrow"><span class="suminp">1 000 000<span class="caret"></span><span>₽</span></span><span class="gobtn">Посчитать<svg viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span></div><div class="dock-note">Расчёт бесплатный, аккаунт не нужен — <b>он понадобится, только чтобы сохранить результат</b></div></div><div class="btm"><span>Данные Московской биржи</span><span class="sp"></span><span>залито растёт, контур падает</span><span class="num">топ-12 весов · срез 19:25</span></div></div></div></div>
+    <div class="notes">
+      <div class="note"><i>1</i><span>Клик по «Посчитать» уводит на «Расчёт» с уже заполненной суммой и выбранной целью — человек попадает сразу на второй шаг, а не в пустую форму.</span></div>
+      <div class="note"><i>2</i><span>Сумма и цель живут в том же состоянии, что вкладка «Расчёт» (localStorage), — вернулся через день, всё на месте.</span></div>
+      <div class="note"><i>3</i><span>Обсерватория не пострадала: док стал на 30 пикселей выше, орбиты и центр не двигались.</span></div>
+      <div class="note"><i>4</i><span>Строка «Расчёт бесплатный — аккаунт понадобится только чтобы сохранить» снимает главный страх первой секунды.</span></div>
+      <div class="note"><i>5</i><span>Мобильная версия: цели в строку, сумма во всю ширину, кнопка снизу — тот же порядок.</span></div>
+      <div class="note"><i>6</i><span>Telegram-вход не потерялся: он внутри створки, куда ведёт «Войти».</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 03 расчёт → сохранить ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">03</span><h2>Ваш боевой результат расчёта — и полоса «Сохранить»</h2><span class="mk-tag ok">Переиспользуем как есть</span></div>
+    <p class="mk-sub">Это ваш существующий экран результата, ничего в нём не переставлено: тёмная плашка
+       с капиталом и прогнозом, «Облигации к покупке», «Акции к покупке» по эшелонам. Добавлена одна
+       полоса под плашкой — просьба сохранить расчёт. Она появляется только у гостя, закрывается
+       крестиком и не загораживает результат: ценность уже отдана, аккаунт — по желанию.</p>
+    <div class="scroller"><div id="mk2"><div class="lp"><div class="lp-sb"><div class="lp-mark"><i>M</i><b><span>Madame </span>Solomi'na</b></div><div class="lp-it">Рынок</div><div class="lp-it on">Расчёт</div><div class="lp-it">Академия</div><div class="lp-it">Тест</div><div class="lp-gr">Тип портфеля</div><div class="lp-it">Рост капитала</div><div class="lp-it">Ежемесячный доход</div><div class="lp-gr">Готовый расчёт</div><div class="lp-it on">Смешанный портфель</div></div><div class="lp-main"><div class="rs-hero"><span class="rs-ring"></span><span><span class="rs-lb">Текущий капитал</span><span class="rs-v">1 000 000 ₽</span></span><span class="rs-chip">за 3 года</span><span><span class="rs-lb">Прогноз</span><span class="rs-v">≈ 2 058 176 ₽</span></span><span class="rs-chip up">×2.06</span><span class="rs-chip up">+105.8%</span><span class="rs-sp"></span><span class="rs-btn ghost">Новый расчёт</span>&nbsp;&nbsp;<span class="rs-btn buy">Перейти к покупке<svg viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span></div><div class="save"><span class="save-ic"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg></span><span class="save-tx"><b>Сохранить этот расчёт?</b><span>8 ОФЗ и 12 акций, прогноз ≈ 2 058 176 ₽. Будет доступен с любого устройства, плюс напоминания о выплатах.</span></span><span class="save-sp"></span><span class="save-in focus">denis@example.com<span style="flex:1"></span><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></span><span class="save-btn">Сохранить<svg viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span><span class="save-tg"><svg viewBox="0 0 24 24" fill="#2AABEE"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0Zm5.9 8.2-2 9.3c-.1.7-.5.8-1.1.5l-3-2.2-1.5 1.4c-.2.2-.3.3-.6.3l.2-3.1 5.6-5c.2-.2-.1-.3-.4-.1l-6.9 4.3-3-.9c-.6-.2-.7-.6.2-.9l11.6-4.5c.5-.2 1 .1.9.9Z"/></svg> Telegram</span><span class="save-x"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></span></div><div class="rs-cols"><div class="rs-card"><h3>Облигации к покупке <i>8</i></h3><div class="sub">Ваши ОФЗ</div><div class="rs-th"><span style="width:20px"></span><span style="width:96px">Облигация</span><span style="width:60px">Доходность</span><span style="width:44px">Кол-во</span><span style="margin-left:auto">Расходы</span></div><div class="rs-tr"><span class="n">#1</span><span class="nm">ОФЗ 26233</span><span class="y">18.53%</span><span class="q">108</span><span class="c">62 896 ₽</span></div><div class="rs-tr"><span class="n">#2</span><span class="nm">ОФЗ 26238</span><span class="y">18.26%</span><span class="q">113</span><span class="c">63 032 ₽</span></div><div class="rs-tr"><span class="n">#3</span><span class="nm">ОФЗ 26230</span><span class="y">17.58%</span><span class="q">100</span><span class="c">62 129 ₽</span></div><div class="rs-tr"><span class="n">#4</span><span class="nm">ОФЗ 26225</span><span class="y">17.40%</span><span class="q">93</span><span class="c">62 492 ₽</span></div><div class="rs-tr"><span class="n">#5</span><span class="nm">ОФЗ 26240</span><span class="y">17.23%</span><span class="q">98</span><span class="c">62 441 ₽</span></div><div class="rs-tr"><span class="n">#6</span><span class="nm">ОФЗ 26243</span><span class="y">16.63%</span><span class="q">85</span><span class="c">62 418 ₽</span></div><div class="rs-tr"><span class="n">#7</span><span class="nm">ОФЗ 26221</span><span class="y">16.41%</span><span class="q">84</span><span class="c">61 889 ₽</span></div><div class="rs-tr"><span class="n">#8</span><span class="nm">ОФЗ 26239</span><span class="y">16.30%</span><span class="q">84</span><span class="c">62 449 ₽</span></div><div class="rs-tot">Итого ОФЗ<span class="c">499 746 ₽</span></div></div><div class="rs-card"><h3>Акции к покупке <i>12</i></h3><div class="sub">Растущая часть по эшелонам</div><div class="rs-th"><span>Эшелон</span><span style="margin-left:auto">Расходы</span><span style="width:38px;text-align:right">%</span></div><div class="ech"><i style="background:#DFF3E6;color:#16A34A">I</i><b>НАДЁЖНЫЙ</b><span class="c">150 000 ₽</span><span class="p">30%</span></div><div class="ech"><i style="background:#E7EEFB;color:#3B6BD6">II</i><b>СТАБИЛЬНЫЙ</b><span class="c">200 000 ₽</span><span class="p">40%</span></div><div class="ech"><i style="background:#FBF0DC;color:#B87A1E">III</i><b>РИСКОВЫЙ</b><span class="c">75 000 ₽</span><span class="p">15%</span></div><div class="ech"><i style="background:#F6E7E3;color:#C0563A">IV</i><b>ВЕНЧУРНЫЙ</b><span class="c">75 000 ₽</span><span class="p">15%</span></div><div class="rs-tot">Итого акции<span class="c">497 288 ₽</span></div><div style="margin-top:14px;font-size:12px;line-height:1.5;color:#6B7789;background:#F5F7FA;border-radius:11px;padding:12px 14px"><b style="font-weight:700">Важно знать.</b> В растущей части <b style="color:#4453EF">70% средств</b> держим в первых двух эшелонах — они обеспечивают оптимальный баланс надёжности и доходности.</div></div></div><div class="pay"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><b>Ближайшие выплаты</b><span class="sp"></span><span class="num">ОФЗ 26240 · через 5 дн. · 12 АВГ</span><span class="num up">+2 976 ₽</span></div></div></div></div></div>
+    <div class="notes">
+      <div class="note"><i>1</i><span>Просим ровно то, что нужно: почта и пароль. Имя спросим позже, в кабинете, — на этом шаге оно ничего не решает.</span></div>
+      <div class="note"><i>2</i><span>В тексте названо, ЧТО именно сохраняется: «8 ОФЗ и 12 акций, прогноз ≈ 2 058 176 ₽» — абстрактное «сохранить» не мотивирует.</span></div>
+      <div class="note"><i>3</i><span>Полоса не модалка и не блокирует прокрутку: закрыл — расчёт остался в браузере, о чём прямо сказано.</span></div>
+      <div class="note"><i>4</i><span>Второй вид полосы — после сохранения: зелёная, с «Расчёт в кабинете» и ссылкой на портфель.</span></div>
+      <div class="note"><i>5</i><span>Тот же приём работает и на «Ежемесячном доходе» — экран результата у них общий.</span></div>
+      <div class="note"><i>6</i><span>Telegram здесь тоже равноправен: кнопка рядом, один клик вместо пароля.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= 04 состояние «сохранено» ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">04</span><h2>Полоса после сохранения</h2><span class="mk-tag mute">Состояние</span></div>
+    <p class="mk-sub">Подтверждение на том же месте, где была просьба, — человеку не надо искать, что
+       произошло.</p>
+    <div class="scroller"><div id="mk3"><div class="lp"><div class="lp-sb"><div class="lp-mark"><i>M</i><b><span>Madame </span>Solomi'na</b></div><div class="lp-it">Рынок</div><div class="lp-it on">Расчёт</div><div class="lp-it">Академия</div><div class="lp-it">Тест</div><div class="lp-gr">Тип портфеля</div><div class="lp-it">Рост капитала</div><div class="lp-it">Ежемесячный доход</div><div class="lp-gr">Готовый расчёт</div><div class="lp-it on">Смешанный портфель</div></div><div class="lp-main"><div class="rs-hero"><span class="rs-ring"></span><span><span class="rs-lb">Текущий капитал</span><span class="rs-v">1 000 000 ₽</span></span><span class="rs-chip">за 3 года</span><span><span class="rs-lb">Прогноз</span><span class="rs-v">≈ 2 058 176 ₽</span></span><span class="rs-chip up">×2.06</span><span class="rs-chip up">+105.8%</span><span class="rs-sp"></span><span class="rs-btn ghost">Новый расчёт</span>&nbsp;&nbsp;<span class="rs-btn buy">Перейти к покупке<svg viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span></div><div class="save done"><span class="save-ic"><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span><span class="save-tx"><b>Расчёт сохранён в кабинете</b><span>Смешанный портфель на 1 000 000 ₽ · 8 ОФЗ и 12 акций. Напомним, когда доли уйдут от плана.</span></span><span class="save-sp"></span><span class="save-tg">Открыть в кабинете<svg viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span></div><div class="rs-cols"><div class="rs-card"><h3>Облигации к покупке <i>8</i></h3><div class="sub">Ваши ОФЗ</div><div class="rs-th"><span style="width:20px"></span><span style="width:96px">Облигация</span><span style="width:60px">Доходность</span><span style="width:44px">Кол-во</span><span style="margin-left:auto">Расходы</span></div><div class="rs-tr"><span class="n">#1</span><span class="nm">ОФЗ 26233</span><span class="y">18.53%</span><span class="q">108</span><span class="c">62 896 ₽</span></div><div class="rs-tr"><span class="n">#2</span><span class="nm">ОФЗ 26238</span><span class="y">18.26%</span><span class="q">113</span><span class="c">63 032 ₽</span></div><div class="rs-tr"><span class="n">#3</span><span class="nm">ОФЗ 26230</span><span class="y">17.58%</span><span class="q">100</span><span class="c">62 129 ₽</span></div><div class="rs-tr"><span class="n">#4</span><span class="nm">ОФЗ 26225</span><span class="y">17.40%</span><span class="q">93</span><span class="c">62 492 ₽</span></div><div class="rs-tr"><span class="n">#5</span><span class="nm">ОФЗ 26240</span><span class="y">17.23%</span><span class="q">98</span><span class="c">62 441 ₽</span></div><div class="rs-tr"><span class="n">#6</span><span class="nm">ОФЗ 26243</span><span class="y">16.63%</span><span class="q">85</span><span class="c">62 418 ₽</span></div><div class="rs-tr"><span class="n">#7</span><span class="nm">ОФЗ 26221</span><span class="y">16.41%</span><span class="q">84</span><span class="c">61 889 ₽</span></div><div class="rs-tr"><span class="n">#8</span><span class="nm">ОФЗ 26239</span><span class="y">16.30%</span><span class="q">84</span><span class="c">62 449 ₽</span></div><div class="rs-tot">Итого ОФЗ<span class="c">499 746 ₽</span></div></div><div class="rs-card"><h3>Акции к покупке <i>12</i></h3><div class="sub">Растущая часть по эшелонам</div><div class="rs-th"><span>Эшелон</span><span style="margin-left:auto">Расходы</span><span style="width:38px;text-align:right">%</span></div><div class="ech"><i style="background:#DFF3E6;color:#16A34A">I</i><b>НАДЁЖНЫЙ</b><span class="c">150 000 ₽</span><span class="p">30%</span></div><div class="ech"><i style="background:#E7EEFB;color:#3B6BD6">II</i><b>СТАБИЛЬНЫЙ</b><span class="c">200 000 ₽</span><span class="p">40%</span></div><div class="ech"><i style="background:#FBF0DC;color:#B87A1E">III</i><b>РИСКОВЫЙ</b><span class="c">75 000 ₽</span><span class="p">15%</span></div><div class="ech"><i style="background:#F6E7E3;color:#C0563A">IV</i><b>ВЕНЧУРНЫЙ</b><span class="c">75 000 ₽</span><span class="p">15%</span></div><div class="rs-tot">Итого акции<span class="c">497 288 ₽</span></div><div style="margin-top:14px;font-size:12px;line-height:1.5;color:#6B7789;background:#F5F7FA;border-radius:11px;padding:12px 14px"><b style="font-weight:700">Важно знать.</b> В растущей части <b style="color:#4453EF">70% средств</b> держим в первых двух эшелонах — они обеспечивают оптимальный баланс надёжности и доходности.</div></div></div><div class="pay"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><b>Ближайшие выплаты</b><span class="sp"></span><span class="num">ОФЗ 26240 · через 5 дн. · 12 АВГ</span><span class="num up">+2 976 ₽</span></div></div></div></div></div>
+  </section>
+
+  <!-- ================= 05 створка ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">05</span><h2>Створка входа — вычищена</h2><span class="mk-tag ok">Правки</span></div>
+    <p class="mk-sub">Пилюли рынка нет. Створка стоит под шапкой и не пропускает её сквозь себя.
+       Справа по сцене — мягкая вуаль, поэтому узлы не мельтешат за формой; слева сцена живёт как жила.
+       Слева — регистрация «из расчёта» (с напоминанием, что именно сохраняем), справа — обычный вход.</p>
+    <div class="scroller"><div class="pair"><div id="mk4"><div class="pg"><div class="hd"><span class="hd-mark">M</span><span class="hd-name"><span class="w3">Madame </span><span class="w8">Solomi'na</span></span><span class="hd-nav"><a href="#">Рынок</a><a href="#">Расчёт</a><a href="#">Академия</a></span><span class="hd-login on">Войти</span></div><div class="obs"><svg class="rings" width="1440" height="880" viewBox="0 0 1440 880" fill="none"><ellipse cx="440" cy="470" rx="222" ry="78" stroke="rgba(142,155,255,.11)" stroke-width="1"/><ellipse cx="440" cy="470" rx="315" ry="111" stroke="rgba(142,155,255,.11)" stroke-width="1"/><ellipse cx="440" cy="470" rx="403" ry="141" stroke="rgba(142,155,255,.11)" stroke-width="1"/></svg><span class="orb" style="offset-path:ellipse(222px 78px at 440px 470px);--od:0.0%;animation-duration:90s;animation-direction:normal;padding:9.0px 17.1px;color:#CFD5F7;background:oklch(0.5 0.17 274 / 0.47);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:16.1px">SBER</b><span style="font-size:13.2px">+1,12%</span></span><span class="orb" style="offset-path:ellipse(222px 78px at 440px 470px);--od:25.0%;animation-duration:90s;animation-direction:normal;padding:6.5px 12.3px;color:#CFD5F7;background:oklch(0.5 0.17 274 / 0.50);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:12.2px">TATN</b><span style="font-size:10.0px">+1,35%</span></span><span class="orb" style="offset-path:ellipse(222px 78px at 440px 470px);--od:50.0%;animation-duration:90s;animation-direction:normal;padding:6.0px 11.4px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.68);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:11.4px">GMKN</b><span style="font-size:9.3px">+2,52%</span></span><span class="orb" style="offset-path:ellipse(222px 78px at 440px 470px);--od:75.0%;animation-duration:90s;animation-direction:normal;padding:5.7px 10.8px;color:#CFD5F7;background:oklch(0.5 0.17 274 / 0.36);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:10.9px">SNGS</b><span style="font-size:8.9px">+0,42%</span></span><span class="orb" style="offset-path:ellipse(315px 111px at 440px 470px);--od:11.0%;animation-duration:140s;animation-direction:reverse;padding:8.2px 15.6px;color:#9AA5CC;background:rgba(233,237,246,.03);border:1px solid rgba(142,155,255,0.41);"><b style="font-size:14.9px">LKOH</b><span style="font-size:12.2px">−0,83%</span></span><span class="orb" style="offset-path:ellipse(315px 111px at 440px 470px);--od:36.0%;animation-duration:140s;animation-direction:reverse;padding:6.3px 12.0px;color:#9AA5CC;background:rgba(233,237,246,.03);border:2px solid rgba(142,155,255,0.45);"><b style="font-size:11.9px">NVTK</b><span style="font-size:9.8px">−1,14%</span></span><span class="orb" style="offset-path:ellipse(315px 111px at 440px 470px);--od:61.0%;animation-duration:140s;animation-direction:reverse;padding:6.0px 11.4px;color:#9AA5CC;background:rgba(233,237,246,.03);border:2px solid rgba(142,155,255,0.47);"><b style="font-size:11.4px">ROSN</b><span style="font-size:9.3px">−1,24%</span></span><span class="orb" style="offset-path:ellipse(315px 111px at 440px 470px);--od:86.0%;animation-duration:140s;animation-direction:reverse;padding:5.7px 10.8px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.58);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:10.9px">T</b><span style="font-size:8.9px">+1,88%</span></span><span class="orb" style="offset-path:ellipse(403px 141px at 440px 470px);--od:22.0%;animation-duration:200s;animation-direction:normal;padding:7.6px 14.4px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.61);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:13.9px">GAZP</b><span style="font-size:11.4px">+2,06%</span></span><span class="orb" style="offset-path:ellipse(403px 141px at 440px 470px);--od:47.0%;animation-duration:200s;animation-direction:normal;padding:6.2px 11.8px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.61);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:11.7px">YDEX</b><span style="font-size:9.6px">+2,08%</span></span><span class="orb" style="offset-path:ellipse(403px 141px at 440px 470px);--od:72.0%;animation-duration:200s;animation-direction:normal;padding:5.9px 11.2px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.75);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:11.2px">PLZL</b><span style="font-size:9.2px">+4,97%</span></span><span class="orb" style="offset-path:ellipse(403px 141px at 440px 470px);--od:97.0%;animation-duration:200s;animation-direction:normal;padding:5.5px 10.4px;color:#9AA5CC;background:rgba(233,237,246,.03);border:1px solid rgba(142,155,255,0.38);"><b style="font-size:10.7px">X5</b></span></div><div class="core" style="left:440px;top:470px"><div class="core-lb">IMOEX</div><div class="core-v" style="font-size:58px">2 301,65</div><div class="core-d">+1,43% сегодня</div></div><div class="veil"></div><div class="dk"><div class="dk-card"><span class="dk-back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg> Назад к расчёту</span><div class="dk-keep"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg><div>Сохраняем ваш расчёт: <b>смешанный портфель на 1 000 000 ₽</b>, 8 ОФЗ и 12 акций, прогноз ≈ 2 058 176 ₽.</div></div><h2 class="dk-title">Создайте аккаунт</h2><p class="dk-sub">Расчёты, портфели и календарь выплат будут доступны с любого устройства.</p><div class="dk-form"><label class="fld"><span class="fld-lb">Email</span><span class="fld-in focus"><span>denis@example.com</span><span class="sp"></span><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></span></label><label class="fld"><span class="fld-lb">Пароль</span><span class="fld-in"><span>••••••••</span><span class="sp"></span><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="fld-help">Минимум 6 символов</span></label><span class="btn-main">Создать аккаунт<svg viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span></div><div class="or">или</div><span class="btn-tg"><svg viewBox="0 0 24 24" fill="#2AABEE"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0Zm5.9 8.2-2 9.3c-.1.7-.5.8-1.1.5l-3-2.2-1.5 1.4c-.2.2-.3.3-.6.3l.2-3.1 5.6-5c.2-.2-.1-.3-.4-.1l-6.9 4.3-3-.9c-.6-.2-.7-.6.2-.9l11.6-4.5c.5-.2 1 .1.9.9Z"/></svg> Войти через Telegram</span><p class="dk-foot">Уже есть аккаунт? <a href="#">Войти</a></p><p class="dk-sec"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Secure Access · пароль хранится только у вас</p></div></div><div class="btm"><span>Данные Московской биржи</span><span class="sp"></span><span>залито растёт, контур падает</span><span class="num">расчёт ждёт в кабинете</span></div></div></div><div id="mk5"><div class="pg"><div class="hd"><span class="hd-mark">M</span><span class="hd-name"><span class="w3">Madame </span><span class="w8">Solomi'na</span></span><span class="hd-nav"><a href="#">Рынок</a><a href="#">Расчёт</a><a href="#">Академия</a></span><span class="hd-login on">Войти</span></div><div class="obs"><svg class="rings" width="1440" height="880" viewBox="0 0 1440 880" fill="none"><ellipse cx="440" cy="470" rx="222" ry="78" stroke="rgba(142,155,255,.11)" stroke-width="1"/><ellipse cx="440" cy="470" rx="315" ry="111" stroke="rgba(142,155,255,.11)" stroke-width="1"/><ellipse cx="440" cy="470" rx="403" ry="141" stroke="rgba(142,155,255,.11)" stroke-width="1"/></svg><span class="orb" style="offset-path:ellipse(222px 78px at 440px 470px);--od:0.0%;animation-duration:90s;animation-direction:normal;padding:9.0px 17.1px;color:#CFD5F7;background:oklch(0.5 0.17 274 / 0.47);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:16.1px">SBER</b><span style="font-size:13.2px">+1,12%</span></span><span class="orb" style="offset-path:ellipse(222px 78px at 440px 470px);--od:25.0%;animation-duration:90s;animation-direction:normal;padding:6.5px 12.3px;color:#CFD5F7;background:oklch(0.5 0.17 274 / 0.50);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:12.2px">TATN</b><span style="font-size:10.0px">+1,35%</span></span><span class="orb" style="offset-path:ellipse(222px 78px at 440px 470px);--od:50.0%;animation-duration:90s;animation-direction:normal;padding:6.0px 11.4px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.68);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:11.4px">GMKN</b><span style="font-size:9.3px">+2,52%</span></span><span class="orb" style="offset-path:ellipse(222px 78px at 440px 470px);--od:75.0%;animation-duration:90s;animation-direction:normal;padding:5.7px 10.8px;color:#CFD5F7;background:oklch(0.5 0.17 274 / 0.36);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:10.9px">SNGS</b><span style="font-size:8.9px">+0,42%</span></span><span class="orb" style="offset-path:ellipse(315px 111px at 440px 470px);--od:11.0%;animation-duration:140s;animation-direction:reverse;padding:8.2px 15.6px;color:#9AA5CC;background:rgba(233,237,246,.03);border:1px solid rgba(142,155,255,0.41);"><b style="font-size:14.9px">LKOH</b><span style="font-size:12.2px">−0,83%</span></span><span class="orb" style="offset-path:ellipse(315px 111px at 440px 470px);--od:36.0%;animation-duration:140s;animation-direction:reverse;padding:6.3px 12.0px;color:#9AA5CC;background:rgba(233,237,246,.03);border:2px solid rgba(142,155,255,0.45);"><b style="font-size:11.9px">NVTK</b><span style="font-size:9.8px">−1,14%</span></span><span class="orb" style="offset-path:ellipse(315px 111px at 440px 470px);--od:61.0%;animation-duration:140s;animation-direction:reverse;padding:6.0px 11.4px;color:#9AA5CC;background:rgba(233,237,246,.03);border:2px solid rgba(142,155,255,0.47);"><b style="font-size:11.4px">ROSN</b><span style="font-size:9.3px">−1,24%</span></span><span class="orb" style="offset-path:ellipse(315px 111px at 440px 470px);--od:86.0%;animation-duration:140s;animation-direction:reverse;padding:5.7px 10.8px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.58);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:10.9px">T</b><span style="font-size:8.9px">+1,88%</span></span><span class="orb" style="offset-path:ellipse(403px 141px at 440px 470px);--od:22.0%;animation-duration:200s;animation-direction:normal;padding:7.6px 14.4px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.61);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:13.9px">GAZP</b><span style="font-size:11.4px">+2,06%</span></span><span class="orb" style="offset-path:ellipse(403px 141px at 440px 470px);--od:47.0%;animation-duration:200s;animation-direction:normal;padding:6.2px 11.8px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.61);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:11.7px">YDEX</b><span style="font-size:9.6px">+2,08%</span></span><span class="orb" style="offset-path:ellipse(403px 141px at 440px 470px);--od:72.0%;animation-duration:200s;animation-direction:normal;padding:5.9px 11.2px;color:#EEF0FF;background:oklch(0.5 0.17 274 / 0.75);border:1px solid rgba(142,155,255,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.12), 0 6px 24px -10px rgba(68,83,239,.5);"><b style="font-size:11.2px">PLZL</b><span style="font-size:9.2px">+4,97%</span></span><span class="orb" style="offset-path:ellipse(403px 141px at 440px 470px);--od:97.0%;animation-duration:200s;animation-direction:normal;padding:5.5px 10.4px;color:#9AA5CC;background:rgba(233,237,246,.03);border:1px solid rgba(142,155,255,0.38);"><b style="font-size:10.7px">X5</b></span></div><div class="core" style="left:440px;top:470px"><div class="core-lb">IMOEX</div><div class="core-v" style="font-size:58px">2 301,65</div><div class="core-d">+1,43% сегодня</div></div><div class="veil"></div><div class="dk"><div class="dk-card"><span class="dk-back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg> Назад к рынку</span><h2 class="dk-title">Вход в кабинет</h2><p class="dk-sub">Той же почтой, что при регистрации, или через Telegram.</p><div class="dk-form"><label class="fld"><span class="fld-lb">Email</span><span class="fld-in"><span>denis@example.com</span><span class="sp"></span><svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg></span></label><label class="fld"><span class="fld-lb">Пароль<span class="fg">Забыли пароль?</span></span><span class="fld-in focus"><span>••••••••</span><span class="sp"></span><svg viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span></label><span class="btn-main">Войти<svg viewBox="0 0 24 24"><path d="M7 17 17 7"/><path d="M9 7h8v8"/></svg></span></div><div class="or">или</div><span class="btn-tg"><svg viewBox="0 0 24 24" fill="#2AABEE"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0Zm5.9 8.2-2 9.3c-.1.7-.5.8-1.1.5l-3-2.2-1.5 1.4c-.2.2-.3.3-.6.3l.2-3.1 5.6-5c.2-.2-.1-.3-.4-.1l-6.9 4.3-3-.9c-.6-.2-.7-.6.2-.9l11.6-4.5c.5-.2 1 .1.9.9Z"/></svg> Войти через Telegram</span><p class="dk-foot">Нет аккаунта? <a href="#">Создать</a></p><p class="dk-sec"><svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Secure Access · пароль хранится только у вас</p></div></div><div class="btm"><span>Данные Московской биржи</span><span class="sp"></span><span>залито растёт, контур падает</span><span class="num">сцена продолжает идти</span></div></div></div></div></div>
+  </section>
+
+  <!-- ================= карта кода ================= -->
+  <section class="mk">
+    <div class="mk-h"><span class="mk-n">06</span><h2>Что переиспользуем, что дописываем</h2></div>
+    <table class="map">
+      <tr><th>Шаг</th><th>Откуда берём</th><th>Что дописать</th><th>Цена</th></tr>
+      <tr><td>Сумма и цель на Главной</td><td class="num">calc-mode.js (режимы «рост»/«доход»), ключ calc_monthly_v1</td><td>Лёгкий док на Главной: пишет сумму и цель в то же состояние и делает switchTab('calc'). Боевые узлы (#ndInputHero и прочие) НЕ переносим — они одни на весь сайт, перенос сломал бы вкладку.</td><td>полдня</td></tr>
+      <tr><td>Сам расчёт</td><td class="num">calc-r5/r6/r7 + calculator-ui.js</td><td>Ничего. Экраны и движок остаются как есть.</td><td>—</td></tr>
+      <tr><td>Полоса «Сохранить расчёт»</td><td class="num">экран результата</td><td>Новый узел под тёмной плашкой: показывать при отсутствии сессии, закрытие помнить в localStorage; отправка — те же homeRegisterSubmit/homeTelegramLogin.</td><td>полдня</td></tr>
+      <tr><td>Перенос расчёта в кабинет</td><td class="num">cloud-sync.js</td><td>После регистрации черновик расчёта уезжает в user_data тем же зеркалом, что остальные ключи.</td><td>час</td></tr>
+      <tr><td>Створка: чистка</td><td class="num">home-register.css</td><td>Убрать живую строку, top 84 вместо 0, подложка 97–99% вместо стекла, вуаль по сцене.</td><td>час</td></tr>
+      <tr><td>Заголовок и подпись</td><td class="num">index.html, home-register.js</td><td>Кикер + новый H1/подпись, тихая строка под доком.</td><td>полчаса</td></tr>
+      <tr><td>Версии</td><td class="num">index.html</td><td>Бамп ?v у home-register.css/js и calc-*.</td><td>—</td></tr>
+    </table>
+  </section>
+
+</div>
+
+</body>
+</html>
